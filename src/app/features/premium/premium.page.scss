@@ -1,0 +1,132 @@
+@use '../../../theme/variables' as *;
+
+.premium-content-container {
+  width: 100%;
+}
+
+/* Benefits Card */
+.benefits-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-xl, 16px);
+  padding: var(--space-6, 24px);
+  margin-bottom: var(--space-6, 24px);
+  box-shadow: var(--shadow-sm);
+
+  .benefits-title {
+    font-size: var(--font-lg, 18px);
+    font-weight: 700;
+    color: var(--color-text, #0f172a);
+    margin: 0 0 var(--space-4, 16px);
+  }
+
+  .benefits-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4, 16px);
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .benefit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+
+    .benefit-icon-box {
+      font-size: 24px;
+      color: var(--color-success, #16a34a);
+      flex-shrink: 0;
+    }
+
+    h4 {
+      margin: 0;
+      font-size: var(--font-sm, 14px);
+      font-weight: 700;
+      color: var(--color-text, #0f172a);
+    }
+
+    p {
+      margin: 2px 0 0;
+      font-size: var(--font-xs, 12px);
+      color: var(--color-text-secondary, #64748b);
+      line-height: 1.4;
+    }
+  }
+}
+
+/* Pricing Cards */
+.pricing-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4, 16px);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pricing-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-xl, 16px);
+  padding: var(--space-6, 24px);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--color-primary-light, #60a5fa);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  &.featured {
+    border-color: var(--color-primary, #2563eb);
+    box-shadow: 0 0 0 2px var(--color-primary, #2563eb), var(--shadow-md);
+  }
+
+  .popular-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-primary, #2563eb);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: var(--radius-full, 9999px);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .package-title {
+    margin: 0;
+    font-size: var(--font-base, 16px);
+    font-weight: 700;
+    color: var(--color-text, #0f172a);
+    text-align: center;
+  }
+
+  .package-price {
+    font-size: var(--font-2xl, 24px);
+    font-weight: 800;
+    color: var(--color-text, #0f172a);
+    text-align: center;
+    margin: var(--space-3, 12px) 0;
+  }
+
+  .package-desc {
+    font-size: var(--font-xs, 12px);
+    color: var(--color-text-secondary, #64748b);
+    text-align: center;
+    margin: 0 0 var(--space-5, 20px);
+    flex: 1;
+    line-height: 1.4;
+  }
+}

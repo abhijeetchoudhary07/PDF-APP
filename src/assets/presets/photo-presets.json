@@ -1,0 +1,50 @@
+[
+  {
+    "id": "ssc",
+    "name": "SSC (Staff Selection Commission)",
+    "category": "Government Exams",
+    "photo": { "minKb": 20, "maxKb": 50, "width": 350, "height": 450, "aspectRatio": "3.5:4.5", "format": "JPEG", "backgroundGuidance": "Light or white background preferred without border.", "verifiedSource": "ssc.nic.in" }
+  },
+  {
+    "id": "upsc",
+    "name": "UPSC",
+    "category": "Government Exams",
+    "photo": { "minKb": 20, "maxKb": 300, "width": 350, "height": 350, "aspectRatio": "1:1", "format": "JPG", "backgroundGuidance": "White background.", "verifiedSource": "upsc.gov.in" }
+  },
+  {
+    "id": "ibps",
+    "name": "IBPS PO/Clerk",
+    "category": "Bank Exams",
+    "photo": { "minKb": 20, "maxKb": 50, "width": 200, "height": 230, "format": "JPEG" }
+  },
+  {
+    "id": "sbi",
+    "name": "SBI PO/Clerk",
+    "category": "Bank Exams",
+    "photo": { "minKb": 20, "maxKb": 50, "width": 200, "height": 230, "format": "JPEG" }
+  },
+  {
+    "id": "rrb",
+    "name": "RRB (Railways)",
+    "category": "Government Exams",
+    "photo": { "minKb": 20, "maxKb": 50, "width": 350, "height": 450, "format": "JPEG" }
+  },
+  {
+    "id": "passport_in",
+    "name": "Indian Passport",
+    "category": "ID & Visa",
+    "photo": { "minKb": 10, "maxKb": 200, "width": 600, "height": 600, "aspectRatio": "1:1", "format": "JPEG", "backgroundGuidance": "Plain white background, no borders, face covering 70-80%.", "verifiedSource": "passportindia.gov.in" }
+  },
+  {
+    "id": "pan_card",
+    "name": "PAN Card (NSDL/UTIITSL)",
+    "category": "ID & Visa",
+    "photo": { "minKb": 5, "maxKb": 50, "width": 213, "height": 213, "aspectRatio": "1:1", "format": "JPEG", "backgroundGuidance": "White background. 200 DPI resolution.", "verifiedSource": "tin-nsdl.com" }
+  },
+  {
+    "id": "us_visa",
+    "name": "US Visa (DS-160)",
+    "category": "ID & Visa",
+    "photo": { "minKb": 10, "maxKb": 240, "width": 600, "height": 600, "aspectRatio": "1:1", "format": "JPEG", "backgroundGuidance": "Plain white or off-white background, no glasses.", "verifiedSource": "travel.state.gov" }
+  }
+]

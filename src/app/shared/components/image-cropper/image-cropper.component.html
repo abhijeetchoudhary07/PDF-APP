@@ -1,0 +1,56 @@
+<div class="cropper-modal-container">
+  <!-- Top Bar -->
+  <header class="cropper-top-bar">
+    <button type="button" class="bar-btn cancel-btn" (click)="cancel()">Cancel</button>
+    <h3 class="bar-title">Crop Image</h3>
+    <button type="button" class="bar-btn apply-btn" (click)="confirm()">Apply</button>
+  </header>
+
+  <!-- Image Viewport -->
+  <main class="cropper-viewport">
+    <div class="cropper-canvas-stage">
+      <img #image [src]="imageSrc" alt="Crop Preview" class="crop-target-img">
+    </div>
+  </main>
+
+  <!-- Bottom Bar: Aspect Ratios & Rotate -->
+  <footer class="cropper-bottom-bar">
+    <button type="button" class="rotate-btn" (click)="rotate()" title="Rotate 90°" aria-label="Rotate 90 degrees">
+      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+    </button>
+
+    <div class="aspect-ratio-pills" role="radiogroup" aria-label="Crop Aspect Ratio">
+      <button
+        type="button"
+        class="ratio-pill"
+        [class.active]="selectedRatio === 0"
+        (click)="setRatio(0)">
+        Free
+      </button>
+      <button
+        type="button"
+        class="ratio-pill"
+        [class.active]="selectedRatio === 1"
+        (click)="setRatio(1)">
+        1:1
+      </button>
+      <button
+        type="button"
+        class="ratio-pill"
+        [class.active]="selectedRatio === 0.75"
+        (click)="setRatio(0.75)">
+        3:4
+      </button>
+      <button
+        type="button"
+        class="ratio-pill"
+        [class.active]="selectedRatio === 1.3333"
+        (click)="setRatio(1.3333)">
+        4:3
+      </button>
+    </div>
+  </footer>
+</div>

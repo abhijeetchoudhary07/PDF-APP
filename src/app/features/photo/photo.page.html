@@ -1,0 +1,183 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      
+      <!-- PAGE HEADER -->
+      <app-page-header
+        title="Photo Tools"
+        subtitle="Compress, resize, and crop passport photos to exact KB and dimensions for online forms."
+        [breadcrumbs]="[{ label: 'Photo Tools' }]"
+        backUrl="/home"
+        badge="PHOTO"
+        badgeVariant="photo">
+      </app-page-header>
+
+      <!-- MODE TABS -->
+      <div class="mode-tabs-wrap">
+        <app-tabs
+          [tabs]="[
+            { id: 'kb', label: 'Exact KB Compression' },
+            { id: 'pixels', label: 'Exact Pixel Resize' }
+          ]"
+          [selectedTab]="mode"
+          [fullWidth]="true"
+          (tabChange)="mode = $any($event)">
+        </app-tabs>
+      </div>
+
+      <!-- WORKSPACE CONTAINER -->
+      <div class="workspace-panel">
+        <!-- 1. EMPTY / UPLOAD STATE -->
+        <div *ngIf="workflowState === 'EMPTY' || (!originalFile && workflowState === 'ERROR')">
+          <app-file-dropzone
+            icon="camera"
+            title="Select or Drag & Drop Passport Photo"
+            description="Supports JPG, PNG, and WebP images. 100% offline & client-side."
+            accept="image/jpeg,image/png,image/webp"
+            [errorMessage]="errorMessage"
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+
+        <!-- 2. SELECTED FILE & CONFIGURATION STATE -->
+        <div *ngIf="originalFile && workflowState !== 'SUCCESS'" class="configuring-section">
+          <!-- File Preview Card -->
+          <app-file-preview
+            [file]="originalFile"
+            [thumbnailUrl]="originalPreviewUrl"
+            [dimensions]="originalWidth ? { width: originalWidth, height: originalHeight } : undefined"
+            (preview)="openCropper()"
+            (replace)="selectPhoto()"
+            (remove)="removePhoto()">
+          </app-file-preview>
+
+          <!-- SMART GOVERNMENT FORM PRESETS -->
+          <div class="smart-presets-card">
+            <label class="control-label">Quick Presets for Indian Portals</label>
+            <div class="preset-cards-grid">
+              <button
+                *ngFor="let preset of formPresets"
+                type="button"
+                class="smart-preset-btn"
+                [class.active]="selectedPresetId === preset.id"
+                (click)="applyPreset(preset)">
+                <strong class="preset-name">{{ preset.name }}</strong>
+                <span class="preset-desc">{{ preset.description }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CONFIGURATION: EXACT KB -->
+          <div *ngIf="mode === 'kb'" class="config-card">
+            <label class="control-label">Select Target File Size</label>
+            <div class="preset-chips">
+              <button
+                *ngFor="let size of targetSizes"
+                type="button"
+                class="preset-chip"
+                [class.active]="selectedTargetKB === size && !selectedPresetId"
+                (click)="selectedTargetKB = size; selectedPresetId = undefined">
+                {{ size }} KB
+              </button>
+            </div>
+            <p class="config-hint">The compression engine iteratively fine-tunes image quality to achieve an exact fit under this size.</p>
+          </div>
+
+          <!-- CONFIGURATION: EXACT PIXELS -->
+          <div *ngIf="mode === 'pixels'" class="config-card">
+            <label class="control-label">Common Form Presets</label>
+            <div class="preset-chips">
+              <button
+                *ngFor="let p of pixelPresets"
+                type="button"
+                class="preset-chip"
+                [class.active]="targetWidth === p.w && targetHeight === p.h"
+                (click)="applyPixelPreset(p.w, p.h)">
+                {{ p.label }} px
+              </button>
+            </div>
+
+            <div class="dims-grid">
+              <div class="field-group">
+                <label class="field-label">Width (px)</label>
+                <input
+                  type="number"
+                  [(ngModel)]="targetWidth"
+                  (input)="onWidthChange()"
+                  class="field-input" />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label">Height (px)</label>
+                <input
+                  type="number"
+                  [(ngModel)]="targetHeight"
+                  (input)="onHeightChange()"
+                  class="field-input" />
+              </div>
+            </div>
+
+            <div class="toggle-row">
+              <label class="toggle-label-wrap">
+                <input type="checkbox" [(ngModel)]="lockAspectRatio" class="native-toggle-check" />
+                <span class="custom-toggle-track">
+                  <span class="custom-toggle-thumb"></span>
+                </span>
+                <span>Lock Aspect Ratio</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- PROCESSING INDICATOR (IF IN PROGRESS) -->
+          <div *ngIf="isProcessing" class="processing-banner">
+            <div class="spinner-box">
+              <div class="loading-spinner"></div>
+            </div>
+            <div class="stage-info">
+              <strong>{{ stageText }}</strong>
+              <span>Compressing photo offline</span>
+            </div>
+            <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">Cancel</button>
+          </div>
+
+          <!-- PRIMARY ACTION -->
+          <div class="action-submit-wrap">
+            <app-button
+              variant="primary"
+              size="lg"
+              [block]="true"
+              [loading]="isProcessing"
+              (clicked)="compressPhoto()">
+              {{ isProcessing ? stageText : (mode === 'kb' ? 'Compress to ' + selectedTargetKB + ' KB' : 'Resize to ' + targetWidth + ' × ' + targetHeight + ' px') }}
+            </app-button>
+          </div>
+        </div>
+
+        <!-- 3. SUCCESS / RESULT STATE -->
+        <div *ngIf="workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData" class="result-section">
+          <app-result-preview
+            [beforeData]="beforePreviewData"
+            [afterData]="afterPreviewData"
+            [beforeUrl]="originalPreviewUrl"
+            [afterUrl]="processedPreviewUrl"
+            [outputFilename]="processedResult?.file?.name"
+            (onSave)="savePhoto()"
+            (onShare)="sharePhoto()"
+            (onChangeSettings)="workflowState = 'CONFIGURING'">
+          </app-result-preview>
+
+          <app-related-tools
+            currentToolId="photo_tools"
+            category="PHOTO"
+            title="Next Steps & Connected Tools"
+            subtitle="Continue preparing your documents with these related tools">
+          </app-related-tools>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

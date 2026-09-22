@@ -1,0 +1,174 @@
+<div class="app-page-wrapper">
+  <!-- COMMON APPLICATION HEADER -->
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      
+      <!-- HERO BANNER -->
+      <section class="home-hero">
+        <div class="hero-badge">
+          <span class="pulse-dot"></span>
+          <span>100% Client-Side &bull; No Server Uploads</span>
+        </div>
+        <h1 class="hero-title">The Complete <span class="accent">Document Utility</span> Platform</h1>
+        <p class="hero-subtitle">
+          Compress photos, clean signatures, edit, merge, sign, convert, and protect PDF documents for exam and government job portals with pixel precision.
+        </p>
+
+        <!-- SEARCH BAR -->
+        <div class="hero-search-box">
+          <div class="search-input-wrap">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.2" fill="none" class="search-icon">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              placeholder="Search tools (e.g. photo compress, merge, word, sign, protect)..."
+              class="search-input" />
+            <button
+              *ngIf="searchQuery"
+              type="button"
+              class="clear-search-btn"
+              (click)="searchQuery = ''"
+              aria-label="Clear search">
+              &times;
+            </button>
+          </div>
+        </div>
+
+        <!-- CATEGORY FILTER PILLS -->
+        <div class="category-pills-scroll" role="tablist" aria-label="Tool Categories">
+          <button
+            *ngFor="let cat of categories"
+            type="button"
+            class="cat-pill"
+            [class.active]="selectedCategory === cat"
+            (click)="setCategory(cat)">
+            {{ cat }}
+          </button>
+        </div>
+
+        <!-- RECENT TOOLS BAR -->
+        <ng-container *ngIf="toolRegistry.recentTools$ | async as recents">
+          <div *ngIf="recents.length > 0" class="recent-tools-bar">
+            <span class="bar-title">Recent Tools:</span>
+            <div class="recent-chips-list">
+              <a
+                *ngFor="let recent of recents"
+                [routerLink]="recent.route"
+                (click)="onToolClick(recent)"
+                class="home-recent-chip">
+                <span class="chip-dot" [ngClass]="'color-' + recent.color"></span>
+                <span>{{ recent.title }}</span>
+              </a>
+            </div>
+          </div>
+        </ng-container>
+      </section>
+
+      <!-- EMPTY SEARCH STATE -->
+      <div *ngIf="filteredTools.length === 0" class="no-results-box">
+        <app-empty-state
+          title="No tools found"
+          [description]="'No tools match &quot;' + searchQuery + '&quot;. Try searching for &quot;compress&quot;, &quot;merge&quot;, or &quot;word&quot;.'"
+          actionLabel="Reset Filters"
+          (actionClicked)="clearFilters()">
+        </app-empty-state>
+      </div>
+
+      <!-- TOOLS GRID -->
+      <section *ngIf="filteredTools.length > 0" class="tools-grid-section">
+        <div class="tools-grid">
+          <a
+            *ngFor="let tool of filteredTools; trackBy: trackByToolId; let i = index"
+            [routerLink]="tool.route"
+            (click)="onToolClick(tool)"
+            class="tool-tile stagger-in"
+            [style.--stagger]="i"
+            [ngClass]="'category-' + tool.category.toLowerCase()">
+            
+            <div class="tile-top">
+              <div class="tile-icon-box">
+                <app-icon [name]="categoryIcon(tool.category)" [size]="22"></app-icon>
+              </div>
+
+              <div class="tile-tags">
+                <span class="category-pill">{{ tool.category }}</span>
+                <span *ngIf="tool.badge" class="badge-pill">{{ tool.badge }}</span>
+                
+                <!-- Favorite Pin Button -->
+                <button
+                  type="button"
+                  class="favorite-star-btn"
+                  [class.is-fav]="isFavorite(tool.id)"
+                  (click)="toggleFavorite($event, tool)"
+                  [attr.aria-label]="isFavorite(tool.id) ? 'Remove favorite' : 'Add to favorites'">
+                  <svg viewBox="0 0 24 24" width="14" height="14" [attr.fill]="isFavorite(tool.id) ? '#f59e0b' : 'none'" [attr.stroke]="isFavorite(tool.id) ? '#f59e0b' : 'currentColor'" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="tile-body">
+              <h3 class="tile-title">{{ tool.title }}</h3>
+              <p class="tile-desc">{{ tool.description }}</p>
+            </div>
+
+            <div class="tile-footer">
+              <span class="launch-text">Launch Tool</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" class="launch-arrow">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- FEATURE HIGHLIGHTS -->
+      <section class="feature-highlights">
+        <div class="highlight-card">
+          <div class="highlight-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h4>Zero-Knowledge Privacy</h4>
+          <p>Files never leave your device. All compression, OCR, conversion, and editing run entirely in your local browser memory.</p>
+        </div>
+
+        <div class="highlight-card">
+          <div class="highlight-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+          <h4>Exact KB Precision</h4>
+          <p>Strict government portal requirements (SSC, UPSC, IBPS, PSC) met with iterative compression that respects maximum size limits.</p>
+        </div>
+
+        <div class="highlight-card">
+          <div class="highlight-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <h4>Full PDF Suite</h4>
+          <p>Convert 15+ formats, merge, split, rotate, fill AcroForms, place multi-party signatures, and password-protect without subscriptions.</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- COMMON APPLICATION FOOTER -->
+  <app-footer></app-footer>
+</div>

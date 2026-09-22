@@ -1,0 +1,14 @@
+[
+  {
+    "id": "ssc",
+    "name": "SSC (Staff Selection Commission)",
+    "category": "Government Exams",
+    "signature": { "minKb": 10, "maxKb": 20, "width": 400, "height": 200, "format": "JPEG" }
+  },
+  {
+    "id": "ibps",
+    "name": "IBPS PO/Clerk",
+    "category": "Bank Exams",
+    "signature": { "minKb": 10, "maxKb": 20, "width": 140, "height": 60, "format": "JPEG" }
+  }
+]

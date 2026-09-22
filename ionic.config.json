@@ -1,0 +1,7 @@
+{
+  "name": "indian-form-helper",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}

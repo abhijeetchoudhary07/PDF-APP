@@ -1,0 +1,275 @@
+.dropzone-box {
+  background-color: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg, 14px);
+  padding: var(--space-8, 32px) var(--space-5, 20px);
+  text-align: center;
+  transition: all var(--transition-normal, 250ms);
+  cursor: pointer;
+  outline: none;
+  position: relative;
+
+  &:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface-hover);
+  }
+
+  &.dragging {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+    transform: scale(1.01);
+  }
+
+  &.drag-rejected {
+    border-color: #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.08) !important;
+    transform: scale(1.01);
+  }
+
+  &.state-processing {
+    cursor: wait;
+    background-color: var(--color-background-subtle);
+  }
+}
+
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-full, 9999px);
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-4, 16px);
+    transition: transform var(--transition-fast, 150ms);
+  }
+
+  &:hover .icon-circle {
+    transform: translateY(-2px);
+  }
+
+  .title {
+    font-size: var(--font-h3, 18px);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-text);
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+
+  .description {
+    font-size: var(--font-small, 13px);
+    color: var(--color-text-secondary);
+    max-width: 440px;
+    margin: 0 0 var(--space-5, 20px);
+    line-height: var(--line-height-normal, 1.5);
+  }
+
+  .offline-note {
+    display: block;
+    margin-top: var(--space-3, 12px);
+    font-size: 11px;
+    font-weight: var(--font-weight-medium, 500);
+    color: var(--color-success);
+    letter-spacing: 0.02em;
+  }
+}
+
+/* SELECTED STATE */
+.selected-state {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+
+  .selected-file-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    box-shadow: var(--shadow-sm);
+    text-align: left;
+  }
+
+  .file-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-sm, 6px);
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .file-details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .file-name {
+    display: block;
+    font-size: var(--font-body, 15px);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-meta {
+    font-size: var(--font-caption, 12px);
+    color: var(--color-text-secondary);
+  }
+
+  .file-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .action-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: var(--font-small, 13px);
+    font-weight: var(--font-weight-medium, 500);
+    border-radius: var(--radius-xs, 4px);
+    padding: 4px 8px;
+    transition: all var(--transition-fast, 150ms);
+  }
+
+  .replace-btn {
+    color: var(--color-primary);
+    &:hover {
+      background-color: var(--color-primary-soft);
+    }
+  }
+
+  .remove-btn {
+    font-size: 20px;
+    color: var(--color-text-muted);
+    line-height: 1;
+    &:hover {
+      color: var(--color-error);
+      background-color: var(--color-error-soft);
+    }
+  }
+}
+
+/* PROCESSING STATE */
+.processing-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3, 12px);
+
+  .spinner-box {
+    color: var(--color-primary);
+  }
+
+  .stage-title {
+    font-size: var(--font-body, 15px);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .progress-bar-container {
+    width: 240px;
+    height: 6px;
+    background-color: var(--color-border);
+    border-radius: var(--radius-full, 9999px);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-full, 9999px);
+    transition: width var(--transition-normal, 250ms);
+  }
+
+  .progress-percent {
+    font-size: var(--font-caption, 12px);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-primary);
+  }
+
+  .cancel-link {
+    background: transparent;
+    border: none;
+    font-size: var(--font-small, 13px);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    text-decoration: underline;
+    &:hover {
+      color: var(--color-error);
+    }
+  }
+}
+
+/* SUCCESS STATE */
+.success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .success-icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-full, 9999px);
+    background-color: var(--color-success-soft);
+    color: var(--color-success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-3, 12px);
+  }
+}
+
+/* ERROR STATE */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .error-icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-full, 9999px);
+    background-color: var(--color-error-soft);
+    color: var(--color-error);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-3, 12px);
+  }
+
+  .error-text {
+    color: var(--color-error) !important;
+  }
+
+  .error-actions {
+    display: flex;
+    gap: var(--space-2, 8px);
+    margin-top: var(--space-3, 12px);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}

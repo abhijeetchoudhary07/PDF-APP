@@ -1,0 +1,202 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+
+      <!-- PAGE HEADER -->
+      <app-page-header
+        title="Signature Tools"
+        subtitle="Clean backgrounds, auto-crop signature bounds, and compress to exact government portal specs."
+        [breadcrumbs]="[{ label: 'Signature Tools' }]"
+        backUrl="/home"
+        badge="SIGNATURE"
+        badgeVariant="signature">
+      </app-page-header>
+
+      <!-- MODE TABS -->
+      <div class="mode-tabs-wrap">
+        <app-tabs
+          [tabs]="[
+            { id: 'kb', label: 'Exact KB Compression' },
+            { id: 'pixels', label: 'Exact Pixel Resize' }
+          ]"
+          [selectedTab]="mode"
+          [fullWidth]="true"
+          (tabChange)="mode = $any($event)">
+        </app-tabs>
+      </div>
+
+      <!-- WORKSPACE PANEL -->
+      <div class="workspace-panel">
+        <!-- 1. EMPTY / UPLOAD STATE -->
+        <div *ngIf="workflowState === 'EMPTY' || (!originalFile && workflowState === 'ERROR')">
+          <app-file-dropzone
+            icon="document-text"
+            title="Select or Drag & Drop Signature"
+            description="Upload a photo or scan of your signature on white paper. Background will be cleaned automatically."
+            accept="image/jpeg,image/png,image/webp"
+            [errorMessage]="errorMessage"
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+
+        <!-- 2. SELECTED FILE & CONFIGURATION STATE -->
+        <div *ngIf="originalFile && workflowState !== 'SUCCESS'" class="configuring-section">
+          <!-- File Preview Card -->
+          <app-file-preview
+            [file]="originalFile"
+            [thumbnailUrl]="cleanedPreviewUrl || originalPreviewUrl"
+            [dimensions]="originalWidth ? { width: originalWidth, height: originalHeight } : undefined"
+            (preview)="openCropper()"
+            (replace)="selectSignature()"
+            (remove)="removeSignature()">
+          </app-file-preview>
+
+          <!-- SIGNATURE VERIFICATION PREVIEW (INTERMEDIATE) -->
+          <div *ngIf="originalPreviewUrl" class="signature-verify-box">
+            <div class="verify-header">
+              <span class="verify-title">Visual Signature Verification</span>
+              <span *ngIf="cleanedPreviewUrl" class="cleaned-badge">Auto-Cropped & Cleaned</span>
+            </div>
+            <div class="verify-canvas-area">
+              <img
+                [src]="cleanedPreviewUrl || originalPreviewUrl"
+                alt="Signature Preview"
+                class="signature-verify-img" />
+            </div>
+            <div class="verify-actions">
+              <app-button variant="outline" size="sm" (clicked)="openCropper()">
+                <svg icon-start viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 4px;">
+                  <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"></path>
+                  <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"></path>
+                </svg>
+                Manual Crop
+              </app-button>
+              <app-button variant="secondary" size="sm" (clicked)="autoCrop()" [disabled]="isProcessing">
+                <svg icon-start viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 4px;">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                </svg>
+                Auto-Crop Bounds
+              </app-button>
+            </div>
+          </div>
+
+          <!-- AUTO-CROP PADDING SETTING -->
+          <div class="padding-config-row">
+            <label class="padding-label">Auto-Crop Margin Padding: <strong>{{ autoCropPadding }}px</strong></label>
+            <input type="range" min="0" max="30" [(ngModel)]="autoCropPadding" class="range-slider" />
+          </div>
+
+          <!-- CONFIGURATION: EXACT KB -->
+          <div *ngIf="mode === 'kb'" class="config-card">
+            <label class="control-label">Select Target File Size</label>
+            <div class="preset-chips">
+              <button
+                *ngFor="let size of targetSizes"
+                type="button"
+                class="preset-chip"
+                [class.active]="selectedTargetKB === size"
+                (click)="selectedTargetKB = size">
+                {{ size }} KB
+              </button>
+            </div>
+            <p class="config-hint">Exam portals typically specify 10 KB to 50 KB limits for signatures.</p>
+          </div>
+
+          <!-- CONFIGURATION: EXACT PIXELS -->
+          <div *ngIf="mode === 'pixels'" class="config-card">
+            <label class="control-label">Standard Portal Presets</label>
+            <div class="preset-chips">
+              <button
+                *ngFor="let p of pixelPresets"
+                type="button"
+                class="preset-chip"
+                [class.active]="targetWidth === p.w && targetHeight === p.h"
+                (click)="applyPixelPreset(p.w, p.h)">
+                {{ p.label }} px
+              </button>
+            </div>
+
+            <div class="dims-grid">
+              <div class="field-group">
+                <label class="field-label">Width (px)</label>
+                <input
+                  type="number"
+                  [(ngModel)]="targetWidth"
+                  (input)="onWidthChange()"
+                  class="field-input" />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label">Height (px)</label>
+                <input
+                  type="number"
+                  [(ngModel)]="targetHeight"
+                  (input)="onHeightChange()"
+                  class="field-input" />
+              </div>
+            </div>
+
+            <div class="toggle-row">
+              <label class="toggle-label-wrap">
+                <input type="checkbox" [(ngModel)]="lockAspectRatio" class="native-toggle-check" />
+                <span class="custom-toggle-track">
+                  <span class="custom-toggle-thumb"></span>
+                </span>
+                <span>Lock Aspect Ratio</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- PROCESSING INDICATOR (IF IN PROGRESS) -->
+          <div *ngIf="isProcessing" class="processing-banner">
+            <div class="spinner-box">
+              <div class="loading-spinner"></div>
+            </div>
+            <div class="stage-info">
+              <strong>{{ stageText }}</strong>
+              <span>Optimizing signature offline</span>
+            </div>
+            <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">Cancel</button>
+          </div>
+
+          <!-- PRIMARY ACTION -->
+          <div class="action-submit-wrap">
+            <app-button
+              variant="primary"
+              size="lg"
+              [block]="true"
+              [loading]="isProcessing"
+              (clicked)="compressSignature()">
+              {{ isProcessing ? stageText : (mode === 'kb' ? 'Compress to ' + selectedTargetKB + ' KB' : 'Resize to ' + targetWidth + ' × ' + targetHeight + ' px') }}
+            </app-button>
+          </div>
+        </div>
+
+        <!-- 3. SUCCESS / RESULTS PREVIEW -->
+        <div *ngIf="workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData" class="result-section">
+          <app-result-preview
+            [beforeData]="beforePreviewData"
+            [afterData]="afterPreviewData"
+            [beforeUrl]="originalPreviewUrl"
+            [afterUrl]="processedPreviewUrl"
+            [outputFilename]="processedResult?.file?.name"
+            (onSave)="saveSignature()"
+            (onShare)="shareSignature()"
+            (onChangeSettings)="workflowState = 'CONFIGURING'">
+          </app-result-preview>
+
+          <app-related-tools
+            currentToolId="signature_tools"
+            category="SIGNATURE"
+            title="Next Steps & Connected Tools"
+            subtitle="Apply your cleaned signature to PDF documents or job presets">
+          </app-related-tools>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

@@ -1,0 +1,159 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        title="Batch Compress PDFs"
+        subtitle="Compress multiple PDF documents consecutively to prevent device memory exhaustion."
+        [breadcrumbs]="[{ label: 'Batch Compress PDFs' }]"
+        badge="BATCH"
+        badgeVariant="batch"
+        backUrl="/home">
+    
+        <div actions class="header-action-group" *ngIf="items.length > 0">
+          <app-button
+            variant="ghost"
+            size="sm"
+            (clicked)="clearAll()"
+            [disabled]="isProcessing">
+            <app-icon name="trash-outline" class="btn-icon"></app-icon>
+            Clear Queue
+          </app-button>
+        </div>
+      </app-page-header>
+
+      <div class="batch-content-container">
+        <!-- CONFIGURATION CARD -->
+        <div *ngIf="items.length > 0" class="batch-config-card">
+          <div class="config-header">
+            <div>
+              <h4>PDF Batch Settings</h4>
+              <span class="file-counter">Total Files: {{ items.length }} / {{ MAX_BATCH_SIZE }}</span>
+            </div>
+          </div>
+
+          <div class="config-fields-grid single-col">
+            <div class="form-group">
+              <label class="form-label">Target Size (KB)</label>
+              <input
+                type="number"
+                [(ngModel)]="targetKB"
+                [disabled]="isProcessing"
+                class="custom-input" />
+            </div>
+          </div>
+
+          <p class="batch-notice">
+            <app-icon name="information-circle-outline"></app-icon>
+            Note: PDFs are processed one by one to prevent memory issues on your device.
+          </p>
+
+          <!-- PROGRESS BAR -->
+          <div *ngIf="isProcessing || completedCount > 0 || errorCount > 0" class="progress-section">
+            <app-progress
+              [value]="progressPercent"
+              [label]="(completedCount + errorCount) + ' / ' + items.length + ' Processed'"
+              [variant]="errorCount > 0 ? 'warning' : 'primary'">
+            </app-progress>
+          </div>
+
+          <!-- MAIN ACTIONS -->
+          <div class="actions-group">
+            <app-button
+              variant="primary"
+              size="lg"
+              [block]="true"
+              (clicked)="processBatch()"
+              [disabled]="isProcessing">
+              <app-icon name="play" class="btn-icon"></app-icon>
+              {{ isProcessing ? 'Processing PDFs...' : 'Start Batch' }}
+            </app-button>
+
+            <div *ngIf="completedCount > 0 || errorCount > 0" class="sub-actions-row">
+              <app-button
+                *ngIf="errorCount > 0"
+                variant="warning"
+                size="md"
+                [block]="true"
+                (clicked)="processBatch(true)"
+                [disabled]="isProcessing">
+                Retry Failed ({{ errorCount }})
+              </app-button>
+
+              <app-button
+                *ngIf="completedCount > 0"
+                variant="success"
+                size="md"
+                [block]="true"
+                (clicked)="saveAll()"
+                [disabled]="isProcessing">
+                Save All ({{ completedCount }})
+              </app-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="empty-batch-container" *ngIf="items.length === 0">
+          <div class="empty-icon-badge">
+            <app-icon name="document-text-outline"></app-icon>
+          </div>
+          <h3>No PDFs Selected</h3>
+          <p>Compress up to {{ MAX_BATCH_SIZE }} PDFs at once safely with memory management.</p>
+          <app-button variant="primary" size="lg" (clicked)="selectPdfs()" style="margin-top: 16px;">
+            <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
+            Select PDFs
+          </app-button>
+        </div>
+
+        <!-- FILE LIST -->
+        <div *ngIf="items.length > 0" class="batch-queue-card">
+          <div class="queue-header">
+            <h4>Queue ({{ items.length }})</h4>
+            <app-button
+              size="sm"
+              variant="outline"
+              (clicked)="selectPdfs()"
+              *ngIf="items.length < MAX_BATCH_SIZE"
+              [disabled]="isProcessing">
+              <app-icon name="add-outline" class="btn-icon"></app-icon>
+              + Add More
+            </app-button>
+          </div>
+
+          <div class="queue-items-list">
+            <div *ngFor="let item of items" class="queue-item">
+              <div class="item-left">
+                <app-icon name="document-outline" class="item-icon"></app-icon>
+                <div class="item-info">
+                  <h5>{{ item.file.name }}</h5>
+                  <p class="meta-orig">Original: {{ (item.file.size / 1024 / 1024) | number:'1.0-2' }} MB</p>
+                  <p *ngIf="item.status === 'done' && item.result?.metadata" class="meta-done">
+                    New: {{ (item.result!.metadata!.sizeBytes / 1024) | number:'1.0-1' }} KB 
+                    <span *ngIf="item.result!.targetMissed" class="target-missed">(Impossible Target)</span>
+                  </p>
+                  <p *ngIf="item.status === 'error'" class="meta-err">
+                    Failed: {{ item.result?.error || 'Unknown Error' }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="item-status">
+                <div *ngIf="item.status === 'processing'" class="custom-spinner-small"></div>
+                <app-icon *ngIf="item.status === 'done'" name="checkmark-circle" class="status-done"></app-icon>
+                <app-icon *ngIf="item.status === 'error'" name="close-circle" class="status-error"></app-icon>
+                <app-icon *ngIf="item.status === 'pending'" name="time-outline" class="status-pending"></app-icon>
+                <button class="remove-btn" (click)="removeFile(item.id)" [disabled]="isProcessing">
+                  <app-icon name="trash-outline"></app-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

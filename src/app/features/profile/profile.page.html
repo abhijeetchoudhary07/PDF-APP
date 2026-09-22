@@ -1,0 +1,362 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      
+      <!-- Page Header with Breadcrumbs -->
+      <app-page-header
+        title="Account & Profile"
+        subtitle="Manage your local device profile, usage statistics, preferences, and privacy settings."
+        [breadcrumbs]="[{ label: 'Account & Profile' }]"
+        [showBack]="true"
+        backUrl="/home">
+      </app-page-header>
+
+      <div class="profile-layout">
+        
+        <!-- 1. PROFILE HERO CARD -->
+        <section class="profile-hero-card">
+          <div class="avatar-column">
+            <div class="avatar-large">
+              <img
+                *ngIf="profile?.avatarUrl as avatarUrl"
+                [src]="avatarUrl"
+                alt="Profile Avatar"
+                class="avatar-large-img" />
+              <span *ngIf="!profile?.avatarUrl" class="avatar-large-initials">
+                {{ profileService.getInitials(profile?.displayName || 'User') }}
+              </span>
+            </div>
+
+            <!-- Avatar Upload / Remove Actions -->
+            <div class="avatar-actions">
+              <label class="avatar-upload-btn" title="Upload Custom Photo">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span>Upload</span>
+                <input type="file" accept="image/*" (change)="onAvatarFileSelected($event)" class="file-input-hidden" />
+              </label>
+
+              <button
+                *ngIf="profile?.avatarUrl"
+                type="button"
+                class="avatar-remove-btn"
+                (click)="removeAvatar()"
+                title="Reset to Initials">
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <div class="profile-hero-details">
+            <div class="name-row">
+              <h2 class="profile-display-name">{{ profile?.displayName || 'Offline User' }}</h2>
+              <button type="button" class="edit-btn" (click)="openEditModal()" aria-label="Edit Name">
+                <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                <span>Edit Profile</span>
+              </button>
+            </div>
+
+            <p *ngIf="profile?.email as email" class="profile-email">{{ email }}</p>
+
+            <div class="hero-tags-row">
+              <span class="membership-chip" [class.is-pro]="monetization.isPremium$ | async">
+                <span class="chip-star">&starf;</span>
+                <span>{{ (monetization.isPremium$ | async) ? 'PRO Active' : 'Free Tier' }}</span>
+              </span>
+
+              <span class="device-id-chip">
+                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                  <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                </svg>
+                <span>Device: {{ profile?.deviceId }}</span>
+              </span>
+
+              <span class="offline-guarantee-chip">
+                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span>100% Local Storage</span>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. USAGE METRICS GRID -->
+        <section class="profile-section">
+          <div class="section-title-wrap">
+            <h3 class="section-title">Usage & Activity</h3>
+            <span class="section-badge">On This Device</span>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon-box color-primary">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+              </div>
+              <div class="metric-val">{{ usageStats?.filesProcessed || 0 }}</div>
+              <div class="metric-label">Files Processed</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box color-photo">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                  <polyline points="2 17 12 22 22 17"></polyline>
+                </svg>
+              </div>
+              <div class="metric-val">{{ usageStats?.toolsUsedCount || 0 }}</div>
+              <div class="metric-label">Unique Tools Used</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box color-success">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+              </div>
+              <div class="metric-val">{{ formatBytes(usageStats?.totalSpaceSavedBytes || 0) }}</div>
+              <div class="metric-label">Storage Saved</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-box color-secondary">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+              </div>
+              <div class="metric-val">{{ formatBytes(usageStats?.estimatedStorageBytes || 0) }}</div>
+              <div class="metric-label">Recent Cache Size</div>
+            </div>
+          </div>
+
+          <!-- Recent Activity Feed -->
+          <div class="activity-box" *ngIf="usageStats?.recentItems as recentItems">
+            <h4 class="activity-heading">Recent Files</h4>
+            <div class="activity-list">
+              <div *ngFor="let item of recentItems" class="activity-item">
+                <span class="activity-op-badge" [ngClass]="'badge-' + item.operation">
+                  {{ item.operation | uppercase }}
+                </span>
+                <span class="activity-name">{{ item.outputFileName }}</span>
+                <span class="activity-size">{{ formatBytes(item.outputSizeBytes) }}</span>
+                <span class="activity-date">{{ item.date | date:'shortDate' }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. PREMIUM & SUBSCRIPTION -->
+        <section class="profile-section">
+          <div class="section-title-wrap">
+            <h3 class="section-title">Premium & Membership</h3>
+          </div>
+
+          <div class="premium-card" [class.is-pro]="monetization.isPremium$ | async">
+            <div class="premium-info">
+              <div class="premium-badge-row">
+                <span class="plan-title">{{ (monetization.isPremium$ | async) ? 'PRO Membership Active' : 'Free Tier Active' }}</span>
+                <span class="status-indicator" [class.active]="monetization.isPremium$ | async">
+                  {{ (monetization.isPremium$ | async) ? 'Active' : 'Standard' }}
+                </span>
+              </div>
+              <p class="plan-desc">
+                {{ (monetization.isPremium$ | async)
+                  ? 'Unlimited batch processing, zero advertisements, and priority WebAssembly conversion unlocked.'
+                  : 'Upgrade to PRO to unlock unlimited batch processing, remove all ads, and support offline development.' }}
+              </p>
+            </div>
+
+            <div class="premium-actions">
+              <app-button
+                *ngIf="!(monetization.isPremium$ | async)"
+                variant="primary"
+                size="md"
+                routerLink="/features/premium">
+                Upgrade to PRO
+              </app-button>
+
+              <app-button
+                variant="outline"
+                size="md"
+                (clicked)="restorePurchases()">
+                Restore Purchases
+              </app-button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. PREFERENCES -->
+        <section class="profile-section">
+          <div class="section-title-wrap">
+            <h3 class="section-title">Preferences</h3>
+          </div>
+
+          <div class="pref-card">
+            <!-- Theme Switcher -->
+            <div class="pref-row">
+              <div class="pref-text">
+                <span class="pref-label">Color Theme</span>
+                <span class="pref-sub">Choose between Light, Dark, or follow your System appearance</span>
+              </div>
+
+              <div class="theme-button-group" role="group" aria-label="Theme Selection">
+                <button
+                  type="button"
+                  class="theme-btn"
+                  [class.active]="(themeService.currentTheme$ | async) === 'light'"
+                  (click)="setAppTheme('light')">
+                  Light
+                </button>
+                <button
+                  type="button"
+                  class="theme-btn"
+                  [class.active]="(themeService.currentTheme$ | async) === 'dark'"
+                  (click)="setAppTheme('dark')">
+                  Dark
+                </button>
+                <button
+                  type="button"
+                  class="theme-btn"
+                  [class.active]="(themeService.currentTheme$ | async) === 'system'"
+                  (click)="setAppTheme('system')">
+                  System
+                </button>
+              </div>
+            </div>
+
+            <!-- Auto Save History Toggle -->
+            <div class="pref-row">
+              <div class="pref-text">
+                <span class="pref-label">Auto-save to History</span>
+                <span class="pref-sub">Save processed file metadata locally for easy retrieval</span>
+              </div>
+              <label class="switch">
+                <input
+                  type="checkbox"
+                  [checked]="profile?.autoSaveHistory"
+                  (change)="profileService.updateProfile({ autoSaveHistory: !profile?.autoSaveHistory })" />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. PRIVACY & SECURITY -->
+        <section class="profile-section">
+          <div class="section-title-wrap">
+            <h3 class="section-title">Privacy & Architecture</h3>
+          </div>
+
+          <div class="privacy-card">
+            <div class="privacy-row">
+              <div class="privacy-shield-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <div class="privacy-text">
+                <h4>100% Client-Side Engine</h4>
+                <p>
+                  Zero bytes of your files or personal documents are ever uploaded to cloud servers. All compression, OCR, conversion, and signature processing run strictly within your device's memory.
+                </p>
+                <div class="privacy-stat">
+                  <span>Network Uploads: <strong>0 KB</strong></span>
+                  <span>&bull;</span>
+                  <span>Remote Accounts: <strong>None</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. ACCOUNT & DATA MANAGEMENT -->
+        <section class="profile-section">
+          <div class="section-title-wrap">
+            <h3 class="section-title">Account & Data Management</h3>
+          </div>
+
+          <div class="danger-card">
+            <div class="danger-text">
+              <span class="danger-label">Reset Local Data & Cache</span>
+              <span class="danger-sub">Clears processing history, custom avatar, and reset settings back to default.</span>
+            </div>
+            <app-button variant="danger" size="md" (clicked)="isResetModalOpen = true">
+              Reset Local Data
+            </app-button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- EDIT PROFILE MODAL -->
+      <app-modal
+        [isOpen]="isEditModalOpen"
+        title="Edit Profile"
+        subtitle="Update your local profile name and optional email"
+        [hasFooter]="true"
+        (closed)="isEditModalOpen = false">
+        
+        <div class="form-group">
+          <label class="form-label" for="displayNameInput">Display Name</label>
+          <input
+            id="displayNameInput"
+            type="text"
+            [(ngModel)]="editDisplayName"
+            class="form-input"
+            placeholder="Enter your name" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="emailInput">Email (Optional)</label>
+          <input
+            id="emailInput"
+            type="email"
+            [(ngModel)]="editEmail"
+            class="form-input"
+            placeholder="e.g. user@example.com" />
+          <span class="form-hint">Stored strictly on this device. Used for notification headers.</span>
+        </div>
+
+        <div modal-footer>
+          <app-button variant="outline" size="md" (clicked)="isEditModalOpen = false">Cancel</app-button>
+          <app-button variant="primary" size="md" (clicked)="saveEditModal()">Save Changes</app-button>
+        </div>
+      </app-modal>
+
+      <!-- RESET CONFIRMATION MODAL -->
+      <app-modal
+        [isOpen]="isResetModalOpen"
+        title="Reset All Local Data?"
+        subtitle="This action cannot be undone"
+        [hasFooter]="true"
+        (closed)="isResetModalOpen = false">
+        
+        <p class="reset-confirm-text">
+          Are you sure you want to clear your local processing history, reset custom avatar, and clear cached files?
+        </p>
+
+        <div modal-footer>
+          <app-button variant="outline" size="md" (clicked)="isResetModalOpen = false">Cancel</app-button>
+          <app-button variant="danger" size="md" (clicked)="confirmResetAllData()">Yes, Reset Data</app-button>
+        </div>
+      </app-modal>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

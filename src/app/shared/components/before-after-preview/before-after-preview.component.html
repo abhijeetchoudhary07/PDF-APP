@@ -1,0 +1,135 @@
+<div class="before-after-container">
+  <!-- HEADER & MODE SWITCHER -->
+  <div class="comparison-header">
+    <div class="header-left">
+      <h4 class="comparison-title">{{ title }}</h4>
+      <div *ngIf="savingsPercentage > 0" class="savings-tag">
+        <app-badge variant="success" size="sm">
+          {{ savingsPercentage | number:'1.0-1' }}% Saved
+        </app-badge>
+      </div>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="mode-switcher">
+      <button
+        *ngFor="let tab of modeTabs"
+        type="button"
+        class="mode-btn"
+        [class.active]="mode === tab.id"
+        (click)="mode = $any(tab.id)">
+        {{ tab.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEWPORT: 1. SIDE-BY-SIDE -->
+  <div *ngIf="mode === 'side-by-side'" class="viewport-side-by-side">
+    <!-- BEFORE -->
+    <div class="side-panel before-side">
+      <div class="panel-header">
+        <span class="badge-tag before-tag">ORIGINAL</span>
+        <span *ngIf="beforeData" class="size-text">
+          {{ (beforeData.sizeBytes / 1024) | number:'1.0-1' }} KB
+        </span>
+      </div>
+      <div class="image-box">
+        <img *ngIf="beforeUrl" [src]="beforeUrl" alt="Original" class="cmp-img" />
+        <div *ngIf="!beforeUrl" class="no-img">No preview available</div>
+      </div>
+      <div *ngIf="beforeData && beforeData.width && beforeData.height" class="panel-footer">
+        {{ beforeData.width }} &times; {{ beforeData.height }} px
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div *ngIf="afterData" class="side-panel after-side">
+      <div class="panel-header">
+        <span class="badge-tag after-tag">PROCESSED</span>
+        <span class="size-text text-success">
+          {{ (afterData.sizeBytes / 1024) | number:'1.0-1' }} KB
+        </span>
+      </div>
+      <div class="image-box">
+        <img *ngIf="afterUrl" [src]="afterUrl" alt="Processed" class="cmp-img" />
+        <div *ngIf="!afterUrl" class="no-img">Processing...</div>
+      </div>
+      <div *ngIf="afterData && afterData.width && afterData.height" class="panel-footer">
+        {{ afterData.width }} &times; {{ afterData.height }} px
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEWPORT: 2. SPLIT SLIDER -->
+  <div *ngIf="mode === 'slider'" class="viewport-slider">
+    <div class="slider-wrapper">
+      <!-- Background (After) -->
+      <img *ngIf="afterUrl" [src]="afterUrl" alt="Processed" class="slider-img after-img" />
+
+      <!-- Foreground (Before) clipped by slider percentage -->
+      <div class="clipped-before" [style.width.%]="sliderPosition">
+        <img *ngIf="beforeUrl" [src]="beforeUrl" alt="Original" class="slider-img before-img" />
+      </div>
+
+      <!-- Divider line -->
+      <div class="divider-line" [style.left.%]="sliderPosition">
+        <div class="divider-handle">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Range input overlay -->
+      <input
+        type="range"
+        min="0"
+        max="100"
+        [value]="sliderPosition"
+        (input)="onSliderInput($event)"
+        class="slider-range-input"
+        aria-label="Drag to compare before and after" />
+    </div>
+
+    <div class="slider-caption">
+      <span>&larr; Original ({{ (beforeData?.sizeBytes! / 1024) | number:'1.0-1' }} KB)</span>
+      <span>Processed ({{ (afterData?.sizeBytes! / 1024) | number:'1.0-1' }} KB) &rarr;</span>
+    </div>
+  </div>
+
+  <!-- VIEWPORT: 3. TOGGLE VIEW -->
+  <div *ngIf="mode === 'toggle'" class="viewport-toggle">
+    <div class="toggle-bar">
+      <button
+        type="button"
+        class="toggle-btn"
+        [class.active]="activeToggleView === 'before'"
+        (click)="setToggleView('before')">
+        Original ({{ (beforeData?.sizeBytes! / 1024) | number:'1.0-1' }} KB)
+      </button>
+      <button
+        type="button"
+        class="toggle-btn"
+        [class.active]="activeToggleView === 'after'"
+        (click)="setToggleView('after')">
+        Processed ({{ (afterData?.sizeBytes! / 1024) | number:'1.0-1' }} KB)
+      </button>
+    </div>
+
+    <div class="toggle-image-box">
+      <img
+        *ngIf="activeToggleView === 'before' && beforeUrl"
+        [src]="beforeUrl"
+        alt="Original"
+        class="cmp-img" />
+      <img
+        *ngIf="activeToggleView === 'after' && afterUrl"
+        [src]="afterUrl"
+        alt="Processed"
+        class="cmp-img" />
+    </div>
+  </div>
+</div>

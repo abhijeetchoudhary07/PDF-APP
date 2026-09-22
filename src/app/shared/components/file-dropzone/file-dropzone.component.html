@@ -1,0 +1,104 @@
+<div
+  class="dropzone-box"
+  [class.dragging]="isDragging"
+  [class.drag-rejected]="isDragRejected"
+  [class.state-empty]="effectiveState === 'empty'"
+  [class.state-selected]="effectiveState === 'selected'"
+  [class.state-processing]="effectiveState === 'processing'"
+  [class.state-success]="effectiveState === 'success'"
+  [class.state-error]="effectiveState === 'error'"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+  tabindex="0"
+  role="region"
+  aria-label="File upload dropzone">
+
+  <input
+    #fileInput
+    type="file"
+    [accept]="accept"
+    [multiple]="multiple"
+    (change)="onFileInputChange($event)"
+    style="display: none;" />
+
+  <!-- STATE 1: EMPTY -->
+  <div *ngIf="effectiveState === 'empty'" class="dropzone-content">
+    <div class="icon-circle">
+      <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="17 8 12 3 7 8"></polyline>
+        <line x1="12" y1="3" x2="12" y2="15"></line>
+      </svg>
+    </div>
+    <h3 class="title">{{ title }}</h3>
+    <p class="description">{{ description }}</p>
+
+    <app-button variant="primary" size="md" (clicked)="fileInput.click()">
+      <svg icon-start viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+      </svg>
+      {{ buttonText }}
+    </app-button>
+    <span class="offline-note">100% Client-Side Processing</span>
+  </div>
+
+  <!-- STATE 2: SELECTED -->
+  <div *ngIf="effectiveState === 'selected' && selectedFile" class="selected-state">
+    <app-file-preview
+      [file]="selectedFile"
+      [thumbnailUrl]="previewUrl"
+      [dimensions]="dimensions"
+      [pageCount]="pageCount"
+      (preview)="preview.emit()"
+      (replace)="fileInput.click()"
+      (remove)="onRemove()">
+    </app-file-preview>
+  </div>
+
+  <!-- STATE 3: PROCESSING -->
+  <div *ngIf="effectiveState === 'processing'" class="processing-state">
+    <div class="spinner-box">
+      <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2.5" fill="none" class="animate-spin">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"></circle>
+        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path>
+      </svg>
+    </div>
+    <h4 class="stage-title">{{ stageText || loadingMessage }}</h4>
+    <div *ngIf="progress > 0" class="progress-bar-container">
+      <div class="progress-fill" [style.width.%]="progress"></div>
+    </div>
+    <span *ngIf="progress > 0" class="progress-percent">{{ progress }}%</span>
+    <button *ngIf="cancel.observers.length > 0" type="button" class="cancel-link" (click)="cancel.emit()">
+      Cancel
+    </button>
+  </div>
+
+  <!-- STATE 4: SUCCESS -->
+  <div *ngIf="effectiveState === 'success'" class="success-state">
+    <div class="success-icon-box">
+      <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2.5" fill="none">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <h3 class="title">Ready!</h3>
+    <p class="description">{{ successMessage || 'File successfully processed and ready for download.' }}</p>
+  </div>
+
+  <!-- STATE 5: ERROR -->
+  <div *ngIf="effectiveState === 'error'" class="error-state">
+    <div class="error-icon-box">
+      <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2.5" fill="none">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    <h3 class="title">Upload Error</h3>
+    <p class="description error-text">{{ errorMessage || 'An unexpected error occurred while reading the file.' }}</p>
+    <div class="error-actions">
+      <app-button variant="danger" size="sm" (clicked)="retry.emit()">Retry</app-button>
+      <app-button variant="outline" size="sm" (clicked)="fileInput.click()">Choose Another</app-button>
+    </div>
+  </div>
+</div>

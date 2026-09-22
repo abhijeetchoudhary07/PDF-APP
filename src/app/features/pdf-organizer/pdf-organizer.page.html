@@ -1,0 +1,574 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      <!-- PAGE HEADER -->
+      <app-page-header
+        [title]="mode === 'organize' ? 'Organize PDF Pages' : (mode === 'merge' ? 'Merge PDF Files' : (mode === 'split' ? 'Split PDF Document' : (mode === 'rotate' ? 'Rotate PDF Pages' : (mode === 'delete' ? 'Delete PDF Pages' : 'Extract PDF Pages'))))"
+        [subtitle]="mode === 'merge' ? 'Combine multiple PDF documents into a single organized file.' : 'Rearrange, rotate, delete, extract or split pages with zero quality loss.'"
+        [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Organize' }]"
+        badge="ORGANIZE"
+        badgeVariant="organize"
+        backUrl="/features/pdf">
+    
+        <div actions class="header-action-group">
+          <!-- Undo / Redo -->
+          <app-button
+            variant="ghost"
+            size="sm"
+            (clicked)="pageManager.undo()"
+            [disabled]="!pageManager.canUndo"
+            title="Undo">
+            <app-icon name="arrow-undo-outline" class="btn-icon"></app-icon>
+          </app-button>
+          <app-button
+            variant="ghost"
+            size="sm"
+            (clicked)="pageManager.redo()"
+            [disabled]="!pageManager.canRedo"
+            title="Redo">
+            <app-icon name="arrow-redo-outline" class="btn-icon"></app-icon>
+          </app-button>
+
+          <!-- Clear / Reset -->
+          <app-button
+            *ngIf="pageManager.pages.length > 0"
+            variant="ghost"
+            size="sm"
+            (clicked)="pageManager.clear(); lastExportResult = undefined; splitExportResults = []"
+            title="Reset">
+            <app-icon name="refresh-outline" class="btn-icon"></app-icon>
+          </app-button>
+
+          <!-- Open in Editor -->
+          <app-button
+            routerLink="/features/pdf/editor"
+            variant="warning"
+            size="sm">
+            <app-icon name="create-outline" class="btn-icon"></app-icon>
+            Editor
+          </app-button>
+        </div>
+      </app-page-header>
+
+      <!-- MODE SELECTOR TABS -->
+      <div class="mode-tabs-container">
+        <app-tabs
+          [tabs]="modeTabs"
+          [activeTab]="mode"
+          (tabChange)="setMode($any($event))"
+          variant="segment"
+          [scrollable]="true">
+        </app-tabs>
+      </div>
+
+      <div class="workspace-container">
+        <!-- UPLOAD DROPZONE (When no files loaded) -->
+        <div *ngIf="pageManager.pages.length === 0 && !isProcessing" class="organizer-dropzone-wrapper">
+          <app-file-dropzone
+            [multiple]="mode === 'merge'"
+            accept="application/pdf"
+            [icon]="mode === 'merge' ? 'documents' : 'document-text'"
+            [title]="mode === 'merge' ? 'Select or Drop PDF Files to Merge' : 'Select or Drop PDF Document'"
+            [description]="mode === 'merge' ? 'Choose 2 or more PDF documents to combine and organize offline.' : 'Upload a PDF to view, reorder, rotate, delete, or split its pages offline.'"
+            (fileSelected)="processSinglePdf($event)"
+            (filesSelected)="processMultiplePdfs($event)">
+          </app-file-dropzone>
+        </div>
+
+
+        <!-- DOCUMENT INFO BAR (When pages loaded) -->
+        <div *ngIf="pageManager.pages.length > 0" class="file-info-bar">
+          <div class="file-info-badges">
+            <app-badge variant="organize" size="md">
+              <app-icon name="document-text" class="badge-icon"></app-icon>
+              {{ pageManager.sourceDocs.length }} File{{ pageManager.sourceDocs.length > 1 ? 's' : '' }}
+            </app-badge>
+            <app-badge variant="neutral" size="md">
+              {{ pageManager.pages.length }} Page{{ pageManager.pages.length > 1 ? 's' : '' }}
+            </app-badge>
+            <span *ngIf="pageManager.sourceDocs[0]" class="file-name-text">
+              {{ pageManager.sourceDocs[0].name }}
+              <span *ngIf="pageManager.sourceDocs.length > 1"> + {{ pageManager.sourceDocs.length - 1 }} more</span>
+            </span>
+          </div>
+
+          <div class="file-info-actions">
+            <app-button
+              variant="outline"
+              size="sm"
+              (clicked)="selectMultiplePdfs()"
+              *ngIf="mode === 'merge' || mode === 'organize'">
+              <app-icon name="add-outline" class="btn-icon"></app-icon>
+              Add PDFs
+            </app-button>
+          </div>
+        </div>
+
+        <!-- MERGE MODE FILE LIST REORDERING -->
+        <div *ngIf="mode === 'merge' && mergeDocs.length > 0" class="merge-file-list-card">
+          <div class="section-card-header">
+            <h4 class="section-title">Files to Merge (in order)</h4>
+            <p class="section-subtitle">Reorder files or customize pages below</p>
+          </div>
+          <div class="merge-items-list">
+            <div *ngFor="let doc of mergeDocs; let i = index" class="merge-doc-item">
+              <div class="doc-item-left">
+                <span class="order-number">{{ i + 1 }}</span>
+                <app-icon name="document-outline" class="doc-icon"></app-icon>
+                <div class="doc-info">
+                  <span class="doc-name">{{ doc.file.name }}</span>
+                  <span class="doc-meta">{{ doc.pageCount }} pages &bull; {{ (doc.size / 1024) | number:'1.0-1' }} KB</span>
+                </div>
+              </div>
+              <div class="doc-item-actions">
+                <app-button variant="ghost" size="sm" (clicked)="moveMergeDoc(i, -1)" [disabled]="i === 0" title="Move Up">
+                  <app-icon name="arrow-up"></app-icon>
+                </app-button>
+                <app-button variant="ghost" size="sm" (clicked)="moveMergeDoc(i, 1)" [disabled]="i === mergeDocs.length - 1" title="Move Down">
+                  <app-icon name="arrow-down"></app-icon>
+                </app-button>
+                <app-button variant="danger" size="sm" (clicked)="removeMergeDoc(i)" title="Remove">
+                  <app-icon name="trash-outline"></app-icon>
+                </app-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SPLIT MODE CONTROLS -->
+        <div *ngIf="mode === 'split' && pageManager.pages.length > 0" class="split-controls-card">
+          <div class="section-card-header">
+            <h4 class="section-title">Split Mode Settings</h4>
+          </div>
+
+          <app-tabs
+            [tabs]="splitModeTabs"
+            [activeTab]="splitMode"
+            (tabChange)="setSplitMode($any($event))"
+            variant="pills"
+            [scrollable]="true">
+          </app-tabs>
+
+          <!-- Every N Pages Config -->
+          <div *ngIf="splitMode === 'every-n'" class="split-option-body">
+            <div class="split-inline-control">
+              <label>Split every</label>
+              <input
+                type="number"
+                min="1"
+                [max]="pageManager.pages.length"
+                [(ngModel)]="splitEveryN"
+                (input)="updateSplitPreview()"
+                class="split-num-input" />
+              <span>pages</span>
+            </div>
+          </div>
+
+          <!-- After Selected Cut Points Config -->
+          <div *ngIf="splitMode === 'after-selected'" class="split-option-body">
+            <p class="split-instruction">Click the scissors button on any page below to toggle a cut point after that page.</p>
+            <div class="cut-points-chips" *ngIf="splitAfterPages.length > 0">
+              <span *ngFor="let p of splitAfterPages" class="cut-chip" (click)="toggleSplitAfterPage(p)">
+                Cut after page {{ p }}
+                <app-icon name="close-circle"></app-icon>
+              </span>
+            </div>
+          </div>
+
+          <!-- Range Expression Config -->
+          <div *ngIf="splitMode === 'extract'" class="split-option-body">
+            <div class="range-input-group">
+              <label class="input-label">Page Ranges (e.g. 1-3, 5, 8-10)</label>
+              <input
+                type="text"
+                placeholder="1-3, 5, 8-10"
+                [(ngModel)]="splitRangeString"
+                (input)="onRangeInputChanged()"
+                class="range-text-input" />
+            </div>
+            <p *ngIf="rangeValidationError" class="validation-error-text">
+              {{ rangeValidationError }}
+            </p>
+          </div>
+
+          <!-- Split Chunks Preview -->
+          <div class="split-chunks-preview" *ngIf="splitChunksPreview.length > 0">
+            <span class="preview-title">Generated Chunks ({{ splitChunksPreview.length }} PDFs):</span>
+            <div class="chunks-tags">
+              <span class="chunk-badge" *ngFor="let chunk of splitChunksPreview; let idx = index">
+                Part {{ idx + 1 }}: Pages {{ chunk[0] }}<span *ngIf="chunk.length > 1">&ndash;{{ chunk[chunk.length - 1] }}</span>
+                <small>({{ chunk.length }}p)</small>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXTRACT MODE CONTROLS -->
+        <div *ngIf="mode === 'extract' && pageManager.pages.length > 0" class="split-controls-card">
+          <div class="section-card-header">
+            <h4 class="section-title">Extract Pages</h4>
+            <p class="section-subtitle">Select pages to extract into a new document by clicking thumbnails or specifying ranges</p>
+          </div>
+
+          <div class="split-option-body">
+            <div class="range-input-group">
+              <label class="input-label">Page Ranges (e.g. 1-3, 5, 8-10)</label>
+              <input
+                type="text"
+                placeholder="1-3, 5, 8-10"
+                [(ngModel)]="splitRangeString"
+                (input)="onRangeInputChanged()"
+                class="range-text-input" />
+            </div>
+            <p *ngIf="rangeValidationError" class="validation-error-text">
+              {{ rangeValidationError }}
+            </p>
+          </div>
+
+          <div class="split-chunks-preview" *ngIf="pageManager.selectedCount > 0">
+            <span class="preview-title">Pages to Extract ({{ pageManager.selectedCount }} selected):</span>
+            <div class="chunks-tags">
+              <span class="chunk-badge" *ngFor="let p of pageManager.getSelectedPages()">
+                Page {{ p.displayNumber }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SELECTION & BATCH ACTIONS TOOLBAR -->
+        <div *ngIf="pageManager.pages.length > 0" class="actions-toolbar">
+          <div class="selection-status">
+            <span *ngIf="pageManager.selectedCount === 0" class="status-hint">Select pages for bulk actions:</span>
+            <app-badge *ngIf="pageManager.selectedCount > 0" variant="primary" size="md">
+              {{ pageManager.selectedCount }} of {{ pageManager.pages.length }} selected
+            </app-badge>
+          </div>
+
+          <div class="toolbar-buttons">
+            <!-- Quick Selection -->
+            <app-button size="sm" variant="outline" (clicked)="selectAll()">All</app-button>
+            <app-button size="sm" variant="outline" (clicked)="deselectAll()" [disabled]="pageManager.selectedCount === 0">None</app-button>
+            <app-button size="sm" variant="outline" (clicked)="invertSelection()">Invert</app-button>
+
+            <!-- Bulk Rotate -->
+            <app-button size="sm" variant="outline" (clicked)="rotateSelected(90)" [disabled]="pageManager.selectedCount === 0" title="Rotate Selected 90° CW">
+              <app-icon name="refresh" class="btn-icon"></app-icon>
+              +90°
+            </app-button>
+            <app-button size="sm" variant="outline" (clicked)="rotateSelected(180)" [disabled]="pageManager.selectedCount === 0" title="Rotate Selected 180°">
+              180°
+            </app-button>
+            <app-button size="sm" variant="outline" (clicked)="rotateSelected(270)" [disabled]="pageManager.selectedCount === 0" title="Rotate Selected 270° (90° CCW)">
+              270°
+            </app-button>
+
+            <!-- Bulk Duplicate -->
+            <app-button size="sm" variant="outline" (clicked)="duplicateSelected()" [disabled]="pageManager.selectedCount === 0" title="Duplicate Selected">
+              <app-icon name="copy-outline"></app-icon>
+            </app-button>
+
+            <!-- Bulk Delete -->
+            <app-button size="sm" variant="danger" (clicked)="deleteSelected()" [disabled]="pageManager.selectedCount === 0" title="Delete Selected">
+              <app-icon name="trash-outline"></app-icon>
+            </app-button>
+          </div>
+
+          <!-- Quick Mode Helpers -->
+          <div *ngIf="mode === 'rotate'" class="rotate-all-bar">
+            <span class="rotate-all-label">Rotate All Pages:</span>
+            <app-button size="sm" variant="secondary" (clicked)="rotateAll(90)">Rotate All 90° CW</app-button>
+            <app-button size="sm" variant="secondary" (clicked)="rotateAll(180)">Rotate All 180°</app-button>
+            <app-button size="sm" variant="secondary" (clicked)="rotateAll(270)">Rotate All 90° CCW</app-button>
+          </div>
+        </div>
+
+        <!-- PAGE THUMBNAILS GRID -->
+        <div *ngIf="pageManager.pages.length > 0" class="page-grid">
+          <div
+            *ngFor="let page of pageManager.pages; let i = index"
+            class="page-card"
+            [class.selected]="pageManager.selectedIds.has(page.id)"
+            [class.drag-over]="dragOverPageIndex === i"
+            draggable="true"
+            (dragstart)="onPageDragStart($event, i)"
+            (dragover)="onPageDragOver($event, i)"
+            (drop)="onPageDrop($event, i)"
+            (dragend)="onPageDragEnd()">
+
+            <!-- Card Header: Selection & Page Number -->
+            <div class="card-header">
+              <label class="checkbox-container" (click)="$event.stopPropagation()">
+                <input
+                  type="checkbox"
+                  [checked]="pageManager.selectedIds.has(page.id)"
+                  (change)="toggleSelectPage(page)" />
+                <span class="custom-checkmark"></span>
+              </label>
+              <div class="page-numbers">
+                <span class="page-display-num">Page {{ page.displayNumber }}</span>
+                <span class="page-original-num" *ngIf="page.displayNumber !== page.sourcePageIndex + 1">
+                  (orig #{{ page.sourcePageIndex + 1 }})
+                </span>
+              </div>
+              <button class="zoom-icon-btn" (click)="openZoomModal(page)" title="Enlarge Page">
+                <app-icon name="expand-outline"></app-icon>
+              </button>
+            </div>
+
+            <!-- Thumbnail Container -->
+            <div class="thumbnail-wrapper" (click)="toggleSelectPage(page)">
+              <!-- Rendered Thumbnail or Loading -->
+              <img
+                *ngIf="page.thumbnailUrl"
+                [src]="page.thumbnailUrl"
+                [alt]="'Page ' + page.displayNumber"
+                class="thumbnail-img"
+                [style.transform]="'rotate(' + page.rotation + 'deg)'" />
+
+              <div *ngIf="!page.thumbnailUrl && !page.thumbnailError" class="thumbnail-loading">
+                <div class="custom-spinner"></div>
+                <span>Rendering...</span>
+              </div>
+
+              <div *ngIf="page.thumbnailError" class="thumbnail-error">
+                <app-icon name="alert-circle-outline"></app-icon>
+                <span>Preview Error</span>
+              </div>
+
+              <!-- Rotation Badge -->
+              <div *ngIf="page.rotation > 0" class="rotation-badge">
+                {{ page.rotation }}°
+              </div>
+
+              <!-- Cut Point Indicator (Split Mode) -->
+              <div
+                *ngIf="mode === 'split' && splitMode === 'after-selected'"
+                class="cut-point-indicator"
+                [class.active]="splitAfterPages.includes(page.displayNumber)"
+                (click)="$event.stopPropagation(); toggleSplitAfterPage(page.displayNumber)">
+                <app-icon name="cut"></app-icon>
+                <span>{{ splitAfterPages.includes(page.displayNumber) ? 'Cut Here' : 'Set Cut' }}</span>
+              </div>
+            </div>
+
+            <!-- Card Actions: Accessible Mobile & Desktop Navigation -->
+            <div class="card-actions">
+              <div class="move-actions">
+                <button
+                  class="action-btn"
+                  (click)="movePageLeft(i)"
+                  [disabled]="i === 0"
+                  title="Move Left / Earlier">
+                  <app-icon name="arrow-back"></app-icon>
+                </button>
+                <button
+                  class="action-btn"
+                  (click)="movePageRight(i)"
+                  [disabled]="i === pageManager.pages.length - 1"
+                  title="Move Right / Later">
+                  <app-icon name="arrow-forward"></app-icon>
+                </button>
+                <button
+                  class="action-btn"
+                  (click)="promptMoveToPosition(page)"
+                  title="Jump to Position">
+                  <app-icon name="swap-horizontal"></app-icon>
+                </button>
+              </div>
+
+              <div class="edit-actions">
+                <button
+                  class="action-btn"
+                  (click)="rotatePage(page, -90)"
+                  title="Rotate 90° Counter-Clockwise (270°)">
+                  <app-icon name="arrow-undo"></app-icon>
+                </button>
+                <button
+                  class="action-btn"
+                  (click)="rotatePage(page, 90)"
+                  title="Rotate 90° Clockwise">
+                  <app-icon name="refresh"></app-icon>
+                </button>
+                <button
+                  class="action-btn"
+                  (click)="duplicatePage(page)"
+                  title="Duplicate Page">
+                  <app-icon name="copy-outline"></app-icon>
+                </button>
+                <button
+                  class="action-btn btn-danger"
+                  (click)="deletePage(page)"
+                  title="Delete Page">
+                  <app-icon name="trash-outline"></app-icon>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- PROCESSING PROGRESS BAR -->
+        <div *ngIf="isProcessing" class="processing-card">
+          <div class="processing-inner">
+            <app-progress
+              [value]="processingProgress"
+              [label]="processingStage"
+              variant="primary">
+            </app-progress>
+            <app-button
+              variant="danger"
+              size="sm"
+              (clicked)="cancelProcessing()"
+              class="cancel-btn">
+              Cancel
+            </app-button>
+          </div>
+        </div>
+
+        <!-- BOTTOM ACTION & EXPORT BAR -->
+        <div *ngIf="pageManager.pages.length > 0 && !isProcessing" class="export-bar">
+          <app-button
+            *ngIf="mode === 'organize'"
+            variant="primary"
+            size="lg"
+            [block]="true"
+            (clicked)="executeExport()">
+            <app-icon name="save-outline" class="btn-icon"></app-icon>
+            Export Organized PDF ({{ pageManager.pages.length }} Pages)
+          </app-button>
+
+          <app-button
+            *ngIf="mode === 'merge'"
+            variant="primary"
+            size="lg"
+            [block]="true"
+            (clicked)="executeExport()">
+            <app-icon name="documents-outline" class="btn-icon"></app-icon>
+            Merge {{ pageManager.sourceDocs.length }} PDFs ({{ pageManager.pages.length }} Pages)
+          </app-button>
+
+          <app-button
+            *ngIf="mode === 'split'"
+            variant="primary"
+            size="lg"
+            [block]="true"
+            (clicked)="executeExport()">
+            <app-icon name="cut-outline" class="btn-icon"></app-icon>
+            Generate Split PDFs ({{ splitChunksPreview.length }} Files)
+          </app-button>
+
+          <app-button
+            *ngIf="mode === 'rotate'"
+            variant="primary"
+            size="lg"
+            [block]="true"
+            (clicked)="executeExport()">
+            <app-icon name="sync-outline" class="btn-icon"></app-icon>
+            Export Rotated PDF ({{ pageManager.pages.length }} Pages)
+          </app-button>
+
+          <app-button
+            *ngIf="mode === 'delete'"
+            variant="primary"
+            size="lg"
+            [block]="true"
+            (clicked)="executeExport()">
+            <app-icon name="trash-outline" class="btn-icon"></app-icon>
+            Export Clean PDF ({{ pageManager.pages.length }} Pages)
+          </app-button>
+
+          <app-button
+            *ngIf="mode === 'extract'"
+            variant="primary"
+            size="lg"
+            [block]="true"
+            (clicked)="executeExport()"
+            [disabled]="pageManager.selectedCount === 0">
+            <app-icon name="copy-outline" class="btn-icon"></app-icon>
+            Extract {{ pageManager.selectedCount }} Selected Page{{ pageManager.selectedCount > 1 ? 's' : '' }}
+          </app-button>
+        </div>
+
+        <!-- RESULT PREVIEW (Single PDF) -->
+        <app-result-preview
+          *ngIf="lastExportResult && mode !== 'split' && beforePreviewData && afterPreviewData"
+          [beforeData]="beforePreviewData"
+          [afterData]="afterPreviewData"
+          (onSave)="saveResult(lastExportResult)"
+          (onShare)="shareResult(lastExportResult)"
+          (onChangeSettings)="lastExportResult = undefined">
+        </app-result-preview>
+
+        <!-- RESULT PREVIEW (Multiple PDFs from Split) -->
+        <div *ngIf="splitExportResults.length > 0" class="split-results-card">
+          <div class="split-results-header">
+            <div>
+              <h3 class="results-title">Split Results</h3>
+              <p class="results-subtitle">{{ splitExportResults.length }} PDF files generated successfully.</p>
+            </div>
+            <app-button variant="primary" (clicked)="downloadAllSplitAsZip()">
+              <app-icon name="download-outline" class="btn-icon"></app-icon>
+              Download All (ZIP)
+            </app-button>
+          </div>
+
+          <div class="split-results-list">
+            <div *ngFor="let result of splitExportResults; let idx = index" class="split-result-item">
+              <div class="result-left">
+                <app-icon name="document-text-outline" class="result-icon"></app-icon>
+                <div class="result-info">
+                  <h4 class="result-name">{{ result.name }}</h4>
+                  <p class="result-meta">{{ result.pageCount }} page{{ result.pageCount > 1 ? 's' : '' }} &bull; {{ (result.sizeBytes / 1024) | number:'1.0-1' }} KB</p>
+                </div>
+              </div>
+              <div class="result-actions">
+                <app-button variant="outline" size="sm" (clicked)="saveResult(result)">
+                  Save
+                </app-button>
+                <app-button variant="ghost" size="sm" (clicked)="shareResult(result)">
+                  <app-icon name="share-social-outline"></app-icon>
+                </app-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- HIGH RESOLUTION ZOOM MODAL -->
+      <app-modal
+        [isOpen]="zoomModalOpen"
+        (closeModal)="closeZoomModal()"
+        [title]="'Page ' + (zoomPage?.displayNumber || 1) + ' Preview'"
+        size="lg">
+        <div class="zoom-image-container">
+          <div *ngIf="isZoomLoading" class="zoom-loading">
+            <div class="custom-spinner"></div>
+            <p>Rendering high-resolution view...</p>
+          </div>
+          <img
+            *ngIf="zoomImageUrl"
+            [src]="zoomImageUrl"
+            [style.transform]="'rotate(' + (zoomPage?.rotation || 0) + 'deg)'"
+            class="zoom-preview-img"
+            alt="Enlarged page preview" />
+        </div>
+
+        <div slot="footer" class="zoom-footer-actions">
+          <app-button variant="outline" size="sm" (clicked)="prevZoomPage()">
+            <app-icon name="chevron-back" class="btn-icon"></app-icon>
+            Previous
+          </app-button>
+          <app-button variant="outline" size="sm" (clicked)="nextZoomPage()">
+            Next
+            <app-icon name="chevron-forward" class="btn-icon"></app-icon>
+          </app-button>
+        </div>
+      </app-modal>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

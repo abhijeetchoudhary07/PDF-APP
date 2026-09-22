@@ -1,0 +1,86 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        title="Go Premium"
+        subtitle="Unlock batch processing, ad-free experience, unlimited custom presets, and advanced tools."
+        [breadcrumbs]="[{ label: 'Go Premium' }]"
+        badge="PREMIUM"
+        badgeVariant="warning"
+        backUrl="/home">
+      </app-page-header>
+
+      <div class="premium-content-container">
+        <!-- BENEFITS HIGHLIGHT -->
+        <div class="benefits-card">
+          <h3 class="benefits-title">Premium Benefits</h3>
+          <div class="benefits-grid">
+            <div class="benefit-item">
+              <div class="benefit-icon-box">
+                <app-icon name="checkmark-circle"></app-icon>
+              </div>
+              <div>
+                <h4>100% Ad-Free</h4>
+                <p>Work without any banner or interstitial interruptions.</p>
+              </div>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon-box">
+                <app-icon name="checkmark-circle"></app-icon>
+              </div>
+              <div>
+                <h4>Batch Processing</h4>
+                <p>Compress up to 50 photos or PDFs simultaneously.</p>
+              </div>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon-box">
+                <app-icon name="checkmark-circle"></app-icon>
+              </div>
+              <div>
+                <h4>Unlimited Custom Presets</h4>
+                <p>Create and save bespoke configurations for any exam or portal.</p>
+              </div>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon-box">
+                <app-icon name="checkmark-circle"></app-icon>
+              </div>
+              <div>
+                <h4>Advanced Canvas Filters</h4>
+                <p>High-contrast signature extraction and document enhancements.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRICING CARDS -->
+        <div class="pricing-cards-grid">
+          <div *ngFor="let pkg of packages" class="pricing-card" [class.featured]="pkg.id === 'yearly'">
+            <div class="popular-badge" *ngIf="pkg.id === 'yearly'">Most Popular</div>
+            <h4 class="package-title">{{ pkg.title }}</h4>
+            <div class="package-price">{{ pkg.priceString }}</div>
+            <p class="package-desc">
+              {{ pkg.id === 'monthly' ? 'Billed monthly. Cancel anytime.' : (pkg.id === 'yearly' ? 'Billed annually. Save over 58%.' : 'One-time payment. Lifetime access.') }}
+            </p>
+
+            <app-button
+              [variant]="pkg.id === 'yearly' ? 'primary' : 'outline'"
+              size="md"
+              [block]="true"
+              (clicked)="buy(pkg)">
+              Choose {{ pkg.title }}
+            </app-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

@@ -1,0 +1,117 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+
+      <!-- PAGE HEADER -->
+      <app-page-header
+        title="Document & PDF Converter"
+        subtitle="100% offline, zero-upload file conversion between PDF and Office, image, and text formats."
+        backUrl="/home"
+        [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Converter' }]"
+        badge="15+ FORMATS"
+        badgeVariant="convert">
+      </app-page-header>
+
+      <!-- SEARCH & CATEGORY BAR -->
+      <div class="converter-filter-card">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="search-icon">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            placeholder="Search conversions (e.g. Word, Excel, PNG, JPG, Text)..."
+            class="search-input" />
+          <button *ngIf="searchTerm" type="button" class="clear-btn" (click)="searchTerm = ''">&times;</button>
+        </div>
+
+        <div class="tabs-wrap">
+          <app-tabs
+            [tabs]="[
+              { id: 'all', label: 'All Formats (15)' },
+              { id: 'pdf-to-format', label: 'PDF to Other Formats' },
+              { id: 'format-to-pdf', label: 'Documents to PDF' }
+            ]"
+            [selectedTab]="selectedCategory"
+            (tabChange)="selectedCategory = $any($event)">
+          </app-tabs>
+        </div>
+      </div>
+
+      <!-- SECTION 1: PDF TO OTHER FORMATS -->
+      <section *ngIf="(selectedCategory === 'all' || selectedCategory === 'pdf-to-format') && filteredPdfToFormat.length > 0" class="converter-group-section">
+        <div class="group-title-row">
+          <div class="group-title">
+            <span class="group-dot dot-convert"></span>
+            <h3>Convert PDF to Other Formats</h3>
+          </div>
+          <span class="group-desc">Extract native Word tables, Excel sheets, slides, and images</span>
+        </div>
+
+        <div class="converter-cards-grid">
+          <a
+            *ngFor="let item of filteredPdfToFormat"
+            [routerLink]="['/features/pdf/conversion', item.id]"
+            class="converter-card">
+            <div class="card-top">
+              <span class="format-badge-pair">
+                <span class="badge-src">PDF</span>
+                <span class="badge-arrow">&rarr;</span>
+                <span class="badge-dest">{{ item.targetFormat | uppercase }}</span>
+              </span>
+              <app-badge *ngIf="item.badge" variant="success" size="sm">{{ item.badge }}</app-badge>
+            </div>
+            <h4 class="card-title">{{ item.shortTitle }}</h4>
+            <p class="card-desc">{{ item.description }}</p>
+          </a>
+        </div>
+      </section>
+
+      <!-- SECTION 2: OTHER FORMATS TO PDF -->
+      <section *ngIf="(selectedCategory === 'all' || selectedCategory === 'format-to-pdf') && filteredFormatToPdf.length > 0" class="converter-group-section">
+        <div class="group-title-row">
+          <div class="group-title">
+            <span class="group-dot dot-primary"></span>
+            <h3>Convert Documents to PDF</h3>
+          </div>
+          <span class="group-desc">Compile Word documents, Excel tables, CSV, HTML, and ZIP archives to PDF</span>
+        </div>
+
+        <div class="converter-cards-grid">
+          <a
+            *ngFor="let item of filteredFormatToPdf"
+            [routerLink]="['/features/pdf/conversion', item.id]"
+            class="converter-card">
+            <div class="card-top">
+              <span class="format-badge-pair">
+                <span class="badge-src">{{ item.sourceFormats.join(', ') }}</span>
+                <span class="badge-arrow">&rarr;</span>
+                <span class="badge-dest">PDF</span>
+              </span>
+              <app-badge *ngIf="item.badge" variant="convert" size="sm">{{ item.badge }}</app-badge>
+            </div>
+            <h4 class="card-title">{{ item.shortTitle }}</h4>
+            <p class="card-desc">{{ item.description }}</p>
+          </a>
+        </div>
+      </section>
+
+      <!-- NO RESULTS -->
+      <div *ngIf="filteredPdfToFormat.length === 0 && filteredFormatToPdf.length === 0" class="no-results-wrap">
+        <app-empty-state
+          title="No conversion tools found"
+          [description]="'No conversion tools match &quot;' + searchTerm + '&quot;.'"
+          actionLabel="Clear Search"
+          (actionClicked)="searchTerm = ''">
+        </app-empty-state>
+      </div>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

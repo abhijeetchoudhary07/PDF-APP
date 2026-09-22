@@ -1,0 +1,253 @@
+<div
+  class="canvas-wrapper"
+  [style.width.px]="pageWidth * renderScale"
+  [style.height.px]="pageHeight * renderScale"
+>
+  <!-- Loading spinner for page rendering -->
+  <div class="canvas-loading" *ngIf="isLoadingPage">
+    <span class="app-inline-spinner" role="status" aria-label="Loading"></span>
+  </div>
+
+  <!-- Underlying PDF Page Canvas -->
+  <canvas #pdfCanvas class="pdf-canvas"></canvas>
+
+  <!-- Interactive Overlay Container -->
+  <div
+    #overlayContainer
+    class="interactive-overlay"
+    [class.cursor-crosshair]="state.activeTool !== 'select' && state.activeTool !== 'hand'"
+    (mousedown)="onPointerDown($event)"
+    (mousemove)="onPointerMove($event)"
+    (mouseup)="onPointerUp()"
+    (touchstart)="onPointerDown($event)"
+    (touchmove)="onPointerMove($event)"
+    (touchend)="onPointerUp()"
+  >
+    <!-- SVG Layer for Drawings & Connectors -->
+    <svg
+      class="drawing-svg-layer"
+      [attr.viewBox]="'0 0 ' + pageWidth + ' ' + pageHeight"
+      preserveAspectRatio="none"
+    >
+      <!-- Completed Drawings -->
+      <ng-container *ngFor="let el of state.currentPage?.elements">
+        <path
+          *ngIf="el.type === 'drawing'"
+          [attr.d]="getSvgPath($any(el).points)"
+          [attr.stroke]="$any(el).strokeColor"
+          [attr.stroke-width]="$any(el).strokeWidth"
+          [attr.opacity]="$any(el).opacity"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </ng-container>
+
+      <!-- Active In-Progress Drawing -->
+      <path
+        *ngIf="isDrawing && currentDrawPoints.length >= 2"
+        [attr.d]="getSvgPath(currentDrawPoints)"
+        [attr.stroke]="state.toolSettings.color"
+        [attr.stroke-width]="state.toolSettings.strokeWidth"
+        fill="none"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+
+    <!-- Overlay Elements (Text, Image, Shape, Annotations) -->
+    <ng-container *ngFor="let el of state.currentPage?.elements">
+      <!-- Skip drawing elements as they are rendered in SVG -->
+      <div
+        *ngIf="el.type !== 'drawing'"
+        class="interactive-element"
+        [class.selected]="el.id === state.selectedElementId"
+        [style.left.px]="el.x * renderScale"
+        [style.top.px]="el.y * renderScale"
+        [style.width.px]="el.width * renderScale"
+        [style.height.px]="el.height * renderScale"
+        [style.transform]="'rotate(' + (el.rotation || 0) + 'deg)'"
+        [style.opacity]="el.opacity || 1.0"
+        [style.z-index]="el.zIndex"
+        (mousedown)="selectElement($event, el)"
+        (touchstart)="selectElement($event, el)"
+      >
+        <!-- 1. TEXT ELEMENT -->
+        <div
+          *ngIf="el.type === 'text'"
+          class="text-content"
+          [style.color]="$any(el).color"
+          [style.background-color]="$any(el).backgroundColor || 'transparent'"
+          [style.font-size.px]="$any(el).fontSize * renderScale"
+          [style.font-family]="$any(el).fontFamily"
+          [style.font-weight]="$any(el).bold ? 'bold' : 'normal'"
+          [style.font-style]="$any(el).italic ? 'italic' : 'normal'"
+          [style.text-decoration]="$any(el).underline ? 'underline' : 'none'"
+          (dblclick)="onTextDoubleClick($any(el))"
+        >
+          <span *ngIf="editingElementId !== el.id">{{ $any(el).text }}</span>
+          <textarea
+            *ngIf="editingElementId === el.id"
+            [value]="$any(el).text"
+            (blur)="onTextBlur($any(el), $any($event.target).value)"
+            autofocus
+          ></textarea>
+        </div>
+
+        <!-- 2. IMAGE ELEMENT -->
+        <div *ngIf="el.type === 'image'" class="image-content">
+          <img [src]="$any(el).imageUrl" alt="Overlay Image" draggable="false" />
+        </div>
+
+        <!-- 3. SHAPE ELEMENT -->
+        <div *ngIf="el.type === 'shape'" class="shape-content">
+          <div
+            *ngIf="$any(el).shapeType === 'rectangle'"
+            class="rect-shape"
+            [style.border-color]="$any(el).strokeColor"
+            [style.border-width.px]="$any(el).strokeWidth * renderScale"
+            [style.border-style]="$any(el).strokeStyle"
+            [style.background-color]="$any(el).fillColor || 'transparent'"
+          ></div>
+          <div
+            *ngIf="$any(el).shapeType === 'circle'"
+            class="circle-shape"
+            [style.border-color]="$any(el).strokeColor"
+            [style.border-width.px]="$any(el).strokeWidth * renderScale"
+            [style.border-style]="$any(el).strokeStyle"
+            [style.background-color]="$any(el).fillColor || 'transparent'"
+          ></div>
+        </div>
+
+        <!-- 4. ANNOTATION ELEMENT -->
+        <div *ngIf="el.type === 'annotation'" class="annotation-content">
+          <!-- Highlight -->
+          <div
+            *ngIf="$any(el).annotationType === 'highlight'"
+            class="highlight-box"
+            [style.background-color]="$any(el).color"
+            [style.opacity]="$any(el).opacity || 0.35"
+          ></div>
+
+          <!-- Underline -->
+          <div
+            *ngIf="$any(el).annotationType === 'underline'"
+            class="underline-box"
+            [style.border-bottom-color]="$any(el).color"
+            [style.border-bottom-width.px]="$any(el).strokeWidth * renderScale"
+          ></div>
+
+          <!-- Strikethrough -->
+          <div
+            *ngIf="$any(el).annotationType === 'strikethrough'"
+            class="strikethrough-box"
+            [style.border-top-color]="$any(el).color"
+            [style.border-top-width.px]="$any(el).strokeWidth * renderScale"
+          ></div>
+
+          <!-- Note Pin -->
+          <div *ngIf="$any(el).annotationType === 'note'" class="note-pin" [title]="$any(el).text">
+            <app-icon name="chatbox-ellipses" [style.color]="$any(el).color"></app-icon>
+          </div>
+        </div>
+
+        <!-- SELECTION BOUNDING BOX & HANDLES -->
+        <ng-container *ngIf="el.id === state.selectedElementId">
+          <div class="selection-outline"></div>
+
+          <!-- 8 Resize Handles -->
+          <div class="transform-handle nw" (mousedown)="startResize($event, 'nw')" (touchstart)="startResize($event, 'nw')"></div>
+          <div class="transform-handle n" (mousedown)="startResize($event, 'n')" (touchstart)="startResize($event, 'n')"></div>
+          <div class="transform-handle ne" (mousedown)="startResize($event, 'ne')" (touchstart)="startResize($event, 'ne')"></div>
+          <div class="transform-handle e" (mousedown)="startResize($event, 'e')" (touchstart)="startResize($event, 'e')"></div>
+          <div class="transform-handle se" (mousedown)="startResize($event, 'se')" (touchstart)="startResize($event, 'se')"></div>
+          <div class="transform-handle s" (mousedown)="startResize($event, 's')" (touchstart)="startResize($event, 's')"></div>
+          <div class="transform-handle sw" (mousedown)="startResize($event, 'sw')" (touchstart)="startResize($event, 'sw')"></div>
+          <div class="transform-handle w" (mousedown)="startResize($event, 'w')" (touchstart)="startResize($event, 'w')"></div>
+
+          <!-- Rotation Handle -->
+          <div class="transform-handle rotate-handle" (mousedown)="startRotate($event)" (touchstart)="startRotate($event)">
+            <app-icon name="refresh-outline"></app-icon>
+          </div>
+
+          <!-- Floating Element Action Bubble -->
+          <div class="element-action-bubble">
+            <button class="bubble-btn delete" (click)="state.deleteSelectedElement()" title="Delete (Del)">
+              <app-icon name="trash-outline"></app-icon>
+            </button>
+          </div>
+        </ng-container>
+      </div>
+    </ng-container>
+
+    <!-- REDACTION OVERLAYS -->
+    <ng-container *ngFor="let red of state.currentPage?.redactions">
+      <div
+        class="redaction-overlay-box"
+        [class.applied]="red.isApplied || (state.redactionPreview$ | async)"
+        [style.left.px]="red.x * renderScale"
+        [style.top.px]="red.y * renderScale"
+        [style.width.px]="red.width * renderScale"
+        [style.height.px]="red.height * renderScale"
+      >
+        <span class="redaction-label" *ngIf="!red.isApplied && !(state.redactionPreview$ | async)">
+          PENDING REDACTION
+        </span>
+        <button
+          *ngIf="!red.isApplied && !(state.redactionPreview$ | async)"
+          class="redaction-delete-btn"
+          (click)="state.deleteRedaction(red.id)"
+          title="Cancel redaction"
+        >
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- ACTIVE DRAG CREATION PREVIEW RECTANGLE -->
+    <div
+      *ngIf="isDraggingNewElement && currentDragRect"
+      class="drag-preview-rect"
+      [class.redact-preview]="state.activeTool === 'redact'"
+      [style.left.px]="currentDragRect.x * renderScale"
+      [style.top.px]="currentDragRect.y * renderScale"
+      [style.width.px]="currentDragRect.width * renderScale"
+      [style.height.px]="currentDragRect.height * renderScale"
+    ></div>
+
+    <!-- WATERMARK PREVIEW OVERLAY -->
+    <div
+      *ngIf="state.document?.watermark as wm"
+      class="watermark-preview-overlay"
+      [style.opacity]="wm.opacity || 0.2"
+    >
+      <span
+        *ngIf="wm.type === 'text'"
+        class="watermark-text"
+        [style.color]="wm.color || '#000'"
+        [style.font-size.px]="(wm.fontSize || 48) * renderScale"
+        [style.transform]="'rotate(' + (wm.rotation || 45) + 'deg)'"
+      >
+        {{ wm.text }}
+      </span>
+      <img
+        *ngIf="wm.type === 'image' && wm.imageUrl"
+        [src]="wm.imageUrl"
+        class="watermark-img"
+        [style.transform]="'rotate(' + (wm.rotation || 0) + 'deg)'"
+      />
+    </div>
+
+    <!-- CROP BOX PREVIEW OUTLINE -->
+    <div
+      *ngIf="state.currentPage?.cropBox as cb"
+      class="crop-box-outline"
+      [style.left.px]="cb.x * renderScale"
+      [style.top.px]="cb.y * renderScale"
+      [style.width.px]="cb.width * renderScale"
+      [style.height.px]="cb.height * renderScale"
+    >
+      <span class="crop-tag">Crop Area</span>
+    </div>
+  </div>
+</div>

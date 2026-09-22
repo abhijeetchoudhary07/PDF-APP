@@ -1,0 +1,191 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        title="Flatten PDF"
+        subtitle="Convert interactive form fields, annotations, and signatures into permanent static graphics."
+        [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Flatten' }]"
+        badge="FLATTEN"
+        badgeVariant="pdf"
+        backUrl="/home">
+      </app-page-header>
+
+      <div class="flatten-content-container">
+        <!-- Upload State (Dropzone) -->
+        <div *ngIf="!pdfFile" class="upload-container">
+          <app-file-dropzone
+            accept="application/pdf"
+            icon="layers"
+            title="Select or Drop PDF to Flatten"
+            description="Convert interactive form fields, annotations, added signatures, and text overlays into permanent static PDF graphics."
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+
+        <!-- Active Inspection & Flattening Screen -->
+        <div *ngIf="pdfFile" class="workspace">
+          <!-- Reactive File Preview Component -->
+          <app-file-preview
+            [file]="pdfFile"
+            format="PDF"
+            [badgeText]="(inspection?.pageCount || 1) + ' Page(s)'"
+            (remove)="removePdf()"
+            (replace)="selectPdf()">
+          </app-file-preview>
+
+          <!-- Element Breakdown Chips -->
+          <div *ngIf="inspection" class="chips-container" style="margin-bottom: 16px;">
+            <div class="stat-chip" [class.highlight]="inspection.formFieldCount > 0">
+              <app-icon name="document-text-outline"></app-icon>
+              <span>{{ inspection.formFieldCount }} Form Fields</span>
+            </div>
+            <div class="stat-chip" [class.highlight]="inspection.annotationCount > 0">
+              <app-icon name="chatbox-outline"></app-icon>
+              <span>{{ inspection.annotationCount }} Annotations</span>
+            </div>
+            <div class="stat-chip">
+              <app-icon name="checkbox-outline"></app-icon>
+              <span>{{ inspection.hasInteractiveElements ? 'Interactive Elements Present' : 'Already Static' }}</span>
+            </div>
+          </div>
+
+          <!-- Processing State -->
+          <div *ngIf="workflowState === 'PROCESSING'" class="processing-status-card" style="margin-bottom: 16px;">
+            <app-progress
+              [value]="flattenProgress"
+              variant="warning"
+              [label]="stageLabels[currentStage] + ' (' + flattenProgress + '%)'">
+            </app-progress>
+          </div>
+
+          <!-- Error State -->
+          <div *ngIf="workflowState === 'ERROR'" class="error-status-card" style="margin-bottom: 16px; padding: 12px 16px; background: var(--color-danger-soft, #fef2f2); border: 1px solid var(--color-danger, #ef4444); border-radius: 8px; color: var(--color-danger, #ef4444); display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <app-icon name="alert-circle-outline"></app-icon>
+              <span>{{ errorMessage }}</span>
+            </div>
+            <app-button size="sm" variant="outline" (clicked)="executeFlatten()">Retry</app-button>
+          </div>
+
+          <!-- Mode Selector Card (Before Flattening) -->
+          <div *ngIf="!flattenResult" class="mode-card">
+            <div class="section-title">
+              <strong>Choose Flattening Technique</strong>
+              <p>Select how you want interactive elements to be converted.</p>
+            </div>
+
+            <div class="mode-selection-group">
+              <label class="mode-option" [class.selected]="mode === 'vector'" (click)="mode = 'vector'">
+                <input type="radio" name="flattenMode" [checked]="mode === 'vector'" />
+                <div class="mode-text">
+                  <h3>Standard Vector Flattening (Recommended)</h3>
+                  <p>Bakes all form appearances and annotations while keeping text sharp and selectable. Fast and lightweight.</p>
+                </div>
+              </label>
+
+              <label class="mode-option" [class.selected]="mode === 'raster'" (click)="mode = 'raster'">
+                <input type="radio" name="flattenMode" [checked]="mode === 'raster'" />
+                <div class="mode-text">
+                  <h3>Full Content Flattening (300 DPI Raster)</h3>
+                  <p>Renders all pages to high-resolution static images. Completely destroys all text streams and interactive structures for strict government submissions.</p>
+                </div>
+              </label>
+            </div>
+
+            <app-button
+              variant="warning"
+              size="lg"
+              [block]="true"
+              class="flatten-action-btn"
+              (clicked)="executeFlatten()"
+              [disabled]="isFlattening">
+              <app-icon name="hammer-outline" class="btn-icon"></app-icon>
+              {{ isFlattening ? 'Flattening Document (' + flattenProgress + '%)...' : 'Flatten PDF Now' }}
+            </app-button>
+          </div>
+
+          <!-- Flattened Comparison View (After Flattening) -->
+          <div *ngIf="flattenResult" class="comparison-section">
+            <div class="comparison-metrics-card">
+              <div class="metric-col">
+                <span class="metric-label">Original</span>
+                <strong class="count text-warning">{{ flattenResult.beforeInteractiveCount }}</strong>
+                <span class="subtext">Interactive Elements</span>
+                <span class="size">{{ (flattenResult.originalSizeBytes / 1024) | number:'1.0-1' }} KB</span>
+              </div>
+
+              <div class="metric-arrow">
+                <app-icon name="arrow-forward-outline"></app-icon>
+              </div>
+
+              <div class="metric-col">
+                <span class="metric-label">Flattened</span>
+                <strong class="count text-success">0</strong>
+                <span class="subtext">Interactive Elements (100% Static)</span>
+                <span class="size">{{ (flattenResult.flattenedSizeBytes / 1024) | number:'1.0-1' }} KB</span>
+              </div>
+            </div>
+
+            <!-- Comparison Visualizer -->
+            <div class="visualizer-card">
+              <div class="visualizer-header">
+                <strong>Visual Verification (Page {{ currentPage }})</strong>
+                <div class="comparison-toggle">
+                  <app-tabs
+                    [tabs]="comparisonTabs"
+                    [activeTab]="viewComparison"
+                    (tabChange)="viewComparison = $any($event)"
+                    variant="segment">
+                  </app-tabs>
+                </div>
+              </div>
+
+              <!-- SIDE-BY-SIDE MODE -->
+              <div *ngIf="viewComparison === 'side-by-side'" class="side-by-side-grid">
+                <div class="canvas-box">
+                  <span class="canvas-tag">Original (Interactive)</span>
+                  <canvas #originalCanvas></canvas>
+                </div>
+                <div class="canvas-box">
+                  <span class="canvas-tag static">Flattened (Static Graphics)</span>
+                  <canvas #flattenedCanvas></canvas>
+                </div>
+              </div>
+
+              <!-- TOGGLE MODE -->
+              <div *ngIf="viewComparison === 'toggle'" class="toggle-mode-container">
+                <div class="toggle-btns">
+                  <app-button size="sm" [variant]="toggleViewActive === 'original' ? 'primary' : 'outline'" (clicked)="toggleViewActive = 'original'">
+                    View Original
+                  </app-button>
+                  <app-button size="sm" [variant]="toggleViewActive === 'flattened' ? 'success' : 'outline'" (clicked)="toggleViewActive = 'flattened'">
+                    View Flattened
+                  </app-button>
+                </div>
+                <div class="canvas-box centered">
+                  <canvas [hidden]="toggleViewActive !== 'original'" #originalCanvas></canvas>
+                  <canvas [hidden]="toggleViewActive !== 'flattened'" #flattenedCanvas></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="export-actions">
+              <app-button variant="success" size="lg" [block]="true" (clicked)="saveFlattened()">
+                <app-icon name="checkmark-done-outline" class="btn-icon"></app-icon>
+                Save Flattened PDF
+              </app-button>
+              <app-button variant="ghost" size="sm" [block]="true" (clicked)="flattenResult = undefined" style="margin-top: 8px;">
+                Flatten Another Mode
+              </app-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

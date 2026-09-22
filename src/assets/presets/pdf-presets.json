@@ -1,0 +1,8 @@
+[
+  {
+    "id": "upsc",
+    "name": "UPSC Document",
+    "category": "Government Exams",
+    "pdf": { "minKb": 10, "maxKb": 2048, "format": "PDF" }
+  }
+]

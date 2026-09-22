@@ -1,0 +1,112 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      <app-page-header
+        title="Processing History"
+        subtitle="View, share, or delete your past processed documents and images."
+        [breadcrumbs]="[{ label: 'Processing History' }]"
+        badge="HISTORY"
+        badgeVariant="neutral"
+        backUrl="/home">
+    
+        <div actions class="header-action-group">
+          <app-button
+            *ngIf="!isLoading && history.length > 0"
+            variant="ghost"
+            size="sm"
+            (clicked)="clearHistory()">
+            <app-icon name="trash-outline" class="btn-icon"></app-icon>
+            Clear History
+          </app-button>
+        </div>
+      </app-page-header>
+
+      <!-- CATEGORY FILTER PILLS -->
+      <div class="filter-chips-scroll" *ngIf="!isLoading && history.length > 0">
+        <button
+          *ngFor="let f of filters"
+          class="filter-chip"
+          [class.active]="selectedFilter === f"
+          (click)="selectedFilter = f">
+          {{ f }}
+        </button>
+      </div>
+
+      <div class="history-content-container">
+        <!-- LOADING: skeleton rows shaped like the real history cards -->
+        <div *ngIf="isLoading" class="history-skeleton-list">
+          <app-skeleton variant="list-row" *ngFor="let s of [1,2,3,4]"></app-skeleton>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="empty-container" *ngIf="!isLoading && history.length === 0">
+          <div class="empty-icon-badge">
+            <app-icon name="time-outline"></app-icon>
+          </div>
+          <h3>No Processing History</h3>
+          <p>Your processed photos, signatures, PDFs, and conversions will appear here.</p>
+          <app-button routerLink="/home" size="md" variant="primary" style="margin-top: 16px;">
+            <app-icon name="compass-outline" class="btn-icon"></app-icon>
+            Explore Tools
+          </app-button>
+        </div>
+
+        <!-- NO RESULTS FOR FILTER -->
+        <div class="no-filter-results" *ngIf="!isLoading && history.length > 0 && filteredHistory.length === 0">
+          <p>No history items found for category "{{ selectedFilter }}".</p>
+        </div>
+
+        <!-- HISTORY ITEMS LIST -->
+        <div *ngIf="!isLoading && filteredHistory.length > 0" class="history-cards-list">
+          <div *ngFor="let item of filteredHistory" class="history-card">
+            <div class="card-left-section">
+              <div class="history-icon-circle" [class]="getOperationBadge(item.operation).color">
+                <app-icon
+                  [name]="item.operation.includes('pdf') ? 'document-text-outline' : (item.operation.includes('photo') ? 'camera-outline' : 'create-outline')">
+                </app-icon>
+              </div>
+
+              <div class="item-body">
+                <div class="item-top-row">
+                  <h4 class="item-filename">{{ item.outputFileName }}</h4>
+                  <app-badge variant="neutral" size="sm">
+                    {{ getOperationBadge(item.operation).label }}
+                  </app-badge>
+                </div>
+
+                <p class="date-row">
+                  {{ item.date | date:'medium' }}
+                </p>
+
+                <p class="size-row">
+                  Size: {{ (item.originalSizeBytes / 1024) | number:'1.0-1' }} KB &rarr;
+                  <strong class="text-success">{{ (item.outputSizeBytes / 1024) | number:'1.0-1' }} KB</strong>
+                  <span *ngIf="item.originalSizeBytes > item.outputSizeBytes" class="reduction-tag">
+                    (-{{ (100 - (item.outputSizeBytes / item.originalSizeBytes * 100)) | number:'1.0-0' }}%)
+                  </span>
+                </p>
+
+                <p *ngIf="item.outputDimensions" class="dims-row">
+                  Dimensions: {{ item.originalDimensions }} &rarr; {{ item.outputDimensions }}
+                </p>
+              </div>
+            </div>
+
+            <div class="card-actions-section">
+              <app-button variant="ghost" size="sm" (clicked)="shareItem(item)" title="Share">
+                <app-icon name="share-social-outline"></app-icon>
+              </app-button>
+              <app-button variant="danger" size="sm" (clicked)="deleteItem(item)" title="Delete">
+                <app-icon name="trash-outline"></app-icon>
+              </app-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

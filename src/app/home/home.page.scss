@@ -1,0 +1,611 @@
+.home-hero {
+  text-align: center;
+  /* Fluid vertical rhythm: generous on a desktop hero, tight on a phone. */
+  padding-block: clamp(var(--space-6), 6vw, var(--space-16)) clamp(var(--space-6), 4vw, var(--space-10));
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/*
+ * Ambient wash behind the hero. It sits in a pseudo-element that bleeds past the
+ * content column so the colour reads as page atmosphere rather than a panel,
+ * and it is pointer-events:none so it never intercepts the search field.
+ */
+.home-hero::before {
+  content: '';
+  position: absolute;
+  /*
+   * Only the vertical edges bleed. A horizontal bleed (inset: ... -50% ...)
+   * pushed the element 50% past each side and gave the page 147px of sideways
+   * scroll on a 375px screen — the radial stops already fade out well before
+   * the box edge, so the effect survives being contained.
+   */
+  inset: -30% 0 0;
+  background-image: var(--wash-hero);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.home-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-caption, 12px);
+  font-weight: var(--font-weight-semibold, 600);
+  margin-bottom: var(--space-4, 16px);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full, 9999px);
+  background-color: var(--color-success);
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.hero-title {
+  font-size: clamp(2rem, 1.2rem + 3vw, 3.25rem);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-3);
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+/* One gradient phrase in the headline; the rest stays solid so it still reads. */
+.hero-title .accent {
+  background-image: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-subtitle {
+  font-size: clamp(0.95rem, 0.9rem + 0.3vw, 1.0625rem);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal, 1.5);
+  margin: 0 0 var(--space-6, 24px);
+  max-width: 660px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* SEARCH BOX */
+.hero-search-box {
+  max-width: 560px;
+  margin: 0 auto var(--space-5, 20px);
+}
+
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full, 9999px);
+  padding: 0 var(--space-4, 16px);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast, 150ms);
+
+  &:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.search-icon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  margin-right: var(--space-2, 8px);
+}
+
+.search-input {
+  flex: 1;
+  height: 48px;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+  font-size: var(--font-body, 15px);
+  color: var(--color-text);
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+}
+
+.clear-search-btn {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+/* CATEGORY FILTER PILLS */
+/*
+ * Category filters.
+ *
+ * Wrapping eleven pills on a phone produced five stacked rows that pushed the
+ * tool grid below the fold. Below the wrap point they become one horizontally
+ * scrollable row instead; from tablet up there is room to centre and wrap them.
+ */
+.category-pills-scroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Bleed to the screen edges so the row visibly runs off, hinting it scrolls. */
+  margin-inline: calc(-1 * min(5vw, var(--space-8)));
+  padding-inline: min(5vw, var(--space-8));
+  padding-block: 4px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar { display: none; }
+
+  .cat-pill {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  @media (min-width: 768px) {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: visible;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+}
+
+.cat-pill {
+  padding: 6px 14px;
+  font-size: var(--font-small, 13px);
+  font-weight: var(--font-weight-medium, 500);
+  border-radius: var(--radius-full, 9999px);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast, 150ms);
+
+  &:hover {
+    color: var(--color-text);
+    border-color: var(--color-border-hover);
+    background-color: var(--color-surface-hover);
+  }
+
+  &.active {
+    background-color: var(--color-primary);
+    color: var(--color-primary-contrast);
+    border-color: var(--color-primary);
+    font-weight: var(--font-weight-semibold, 600);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+/* RECENT TOOLS BAR */
+.recent-tools-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-4, 16px);
+  padding: 8px 14px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full, 9999px);
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.bar-title {
+  font-size: 11px;
+  font-weight: var(--font-weight-bold, 700);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.recent-chips-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-recent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full, 9999px);
+  background-color: var(--color-background-subtle);
+  border: 1px solid var(--color-border);
+  font-size: var(--font-caption, 12px);
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--color-text);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all var(--transition-fast, 150ms);
+
+  &:hover {
+    background-color: var(--color-surface-hover);
+    border-color: var(--color-border-hover);
+    transform: translateY(-1px);
+  }
+}
+
+.chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.favorite-star-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast, 150ms);
+
+  &:hover {
+    color: #f59e0b;
+    background-color: var(--color-background-subtle);
+  }
+
+  &.is-fav {
+    color: #f59e0b;
+  }
+}
+
+/* TOOLS GRID */
+.tools-grid-section {
+  padding: var(--space-6, 24px) 0 var(--space-12, 48px);
+}
+
+/*
+ * `min()` in the track size is what keeps this from overflowing: a bare
+ * minmax(270px, 1fr) forces a 270px column even on a 320px screen once the
+ * gutters are taken out. Clamping the minimum to the available width lets the
+ * grid collapse to a single readable column instead.
+ */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr));
+  gap: clamp(var(--space-3), 1.5vw, var(--space-5));
+}
+
+.tool-tile {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+  /* Only transform/opacity/shadow animate, so hover stays off the layout path. */
+  transition:
+    transform var(--transition-normal),
+    box-shadow var(--transition-normal),
+    border-color var(--transition-normal);
+}
+
+/*
+ * The category glow. Each tile sets --tile-gradient below; this layer fades it
+ * in on hover instead of swapping background-image, which would not animate.
+ */
+.tool-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--tile-gradient, var(--gradient-brand));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  pointer-events: none;
+}
+
+.tool-tile:hover::before { opacity: 0.05; }
+
+.tool-tile:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-3px);
+  border-color: transparent;
+}
+
+.tool-tile:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring), var(--shadow-card-hover);
+}
+
+/* Hover lift is a pointer affordance; on touch it just delays the tap feedback. */
+@media (hover: none) {
+  .tool-tile:hover { transform: none; }
+  .tool-tile:active { transform: scale(0.985); }
+}
+
+.tile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3, 12px);
+}
+
+.tile-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background-image: var(--tile-gradient, var(--gradient-brand));
+  box-shadow: 0 4px 12px -4px var(--tile-shadow, rgba(99, 102, 241, 0.5));
+  transition: transform var(--transition-normal);
+  position: relative;
+  z-index: 1;
+}
+
+.tool-tile:hover .tile-icon-box {
+  transform: scale(1.06) rotate(-3deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-tile,
+  .tool-tile:hover,
+  .tool-tile:hover .tile-icon-box { transform: none; }
+}
+
+.tile-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.category-pill {
+  font-size: 10px;
+  font-weight: var(--font-weight-bold, 700);
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge-pill {
+  font-size: 10px;
+  font-weight: var(--font-weight-bold, 700);
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  background-color: rgba(16, 185, 129, 0.12);
+  color: var(--color-success);
+}
+
+.tile-body {
+  flex: 1;
+  margin-bottom: var(--space-4, 16px);
+}
+
+.tile-title {
+  font-size: var(--font-body, 15px);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text);
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.tile-desc {
+  font-size: var(--font-small, 13px);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal, 1.5);
+  margin: 0;
+}
+
+.tile-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-3, 12px);
+  border-top: 1px solid var(--color-divider);
+  font-size: var(--font-caption, 12px);
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+.launch-arrow {
+  transition: transform var(--transition-fast, 150ms);
+}
+
+.tool-tile:hover .launch-arrow {
+  transform: translateX(4px);
+}
+
+/* Category Semantic Theming */
+.category-photo {
+  --tile-gradient: var(--gradient-photo);
+  --tile-shadow: rgba(249, 115, 22, 0.45);
+  &:hover { border-color: var(--color-photo-border); }
+  .tile-icon-box { background-image: var(--gradient-photo); color: #ffffff; }
+  .category-pill { background-color: var(--color-photo-soft); color: var(--color-photo); }
+  .launch-text { color: var(--color-photo); }
+  .launch-arrow { color: var(--color-photo); }
+}
+
+.category-signature {
+  --tile-gradient: var(--gradient-signature);
+  --tile-shadow: rgba(236, 72, 153, 0.45);
+  &:hover { border-color: var(--color-signature-border); }
+  .tile-icon-box { background-image: var(--gradient-signature); color: #ffffff; }
+  .category-pill { background-color: var(--color-signature-soft); color: var(--color-signature); }
+  .launch-text { color: var(--color-signature); }
+  .launch-arrow { color: var(--color-signature); }
+}
+
+.category-pdf {
+  --tile-gradient: var(--gradient-pdf);
+  --tile-shadow: rgba(239, 68, 68, 0.45);
+  &:hover { border-color: var(--color-pdf-border); }
+  .tile-icon-box { background-image: var(--gradient-pdf); color: #ffffff; }
+  .category-pill { background-color: var(--color-pdf-soft); color: var(--color-pdf); }
+  .launch-text { color: var(--color-pdf); }
+  .launch-arrow { color: var(--color-pdf); }
+}
+
+.category-convert {
+  --tile-gradient: var(--gradient-convert);
+  --tile-shadow: rgba(2, 132, 199, 0.45);
+  &:hover { border-color: var(--color-convert-border); }
+  .tile-icon-box { background-image: var(--gradient-convert); color: #ffffff; }
+  .category-pill { background-color: var(--color-convert-soft); color: var(--color-convert); }
+  .launch-text { color: var(--color-convert); }
+  .launch-arrow { color: var(--color-convert); }
+}
+
+.category-organize {
+  --tile-gradient: var(--gradient-organize);
+  --tile-shadow: rgba(139, 92, 246, 0.45);
+  &:hover { border-color: var(--color-organize-border); }
+  .tile-icon-box { background-image: var(--gradient-organize); color: #ffffff; }
+  .category-pill { background-color: var(--color-organize-soft); color: var(--color-organize); }
+  .launch-text { color: var(--color-organize); }
+  .launch-arrow { color: var(--color-organize); }
+}
+
+.category-edit {
+  --tile-gradient: var(--gradient-edit);
+  --tile-shadow: rgba(13, 148, 136, 0.45);
+  &:hover { border-color: var(--color-edit-border); }
+  .tile-icon-box { background-image: var(--gradient-edit); color: #ffffff; }
+  .category-pill { background-color: var(--color-edit-soft); color: var(--color-edit); }
+  .launch-text { color: var(--color-edit); }
+  .launch-arrow { color: var(--color-edit); }
+}
+
+.category-sign {
+  --tile-gradient: var(--gradient-sign);
+  --tile-shadow: rgba(168, 85, 247, 0.45);
+  &:hover { border-color: var(--color-sign-border); }
+  .tile-icon-box { background-image: var(--gradient-sign); color: #ffffff; }
+  .category-pill { background-color: var(--color-sign-soft); color: var(--color-sign); }
+  .launch-text { color: var(--color-sign); }
+  .launch-arrow { color: var(--color-sign); }
+}
+
+.category-protect {
+  --tile-gradient: var(--gradient-security);
+  --tile-shadow: rgba(220, 38, 38, 0.45);
+  &:hover { border-color: var(--color-security-border); }
+  .tile-icon-box { background-image: var(--gradient-security); color: #ffffff; }
+  .category-pill { background-color: var(--color-security-soft); color: var(--color-security); }
+  .launch-text { color: var(--color-security); }
+  .launch-arrow { color: var(--color-security); }
+}
+
+.category-batch {
+  --tile-gradient: var(--gradient-batch);
+  --tile-shadow: rgba(5, 150, 105, 0.45);
+  &:hover { border-color: var(--color-batch-border); }
+  .tile-icon-box { background-image: var(--gradient-batch); color: #ffffff; }
+  .category-pill { background-color: var(--color-batch-soft); color: var(--color-batch); }
+  .launch-text { color: var(--color-batch); }
+  .launch-arrow { color: var(--color-batch); }
+}
+
+.category-presets {
+  --tile-gradient: var(--gradient-presets);
+  --tile-shadow: rgba(99, 102, 241, 0.45);
+  &:hover { border-color: var(--color-presets-border); }
+  .tile-icon-box { background-image: var(--gradient-presets); color: #ffffff; }
+  .category-pill { background-color: var(--color-presets-soft); color: var(--color-presets); }
+  .launch-text { color: var(--color-presets); }
+  .launch-arrow { color: var(--color-presets); }
+}
+
+/* FEATURE HIGHLIGHTS */
+.feature-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: clamp(var(--space-4), 2vw, var(--space-6));
+  padding-block: clamp(var(--space-6), 4vw, var(--space-10)) clamp(var(--space-8), 5vw, var(--space-12));
+  border-top: 1px solid var(--color-border);
+}
+
+.highlight-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 14px);
+  padding: var(--space-5, 20px);
+
+  .highlight-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-3, 12px);
+  }
+
+  h4 {
+    font-size: var(--font-body, 15px);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-text);
+    margin: 0 0 6px;
+  }
+
+  p {
+    font-size: var(--font-small, 13px);
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-normal, 1.5);
+    margin: 0;
+  }
+}
+
+/*
+ * No size-stepped overrides are needed here any more: the hero type uses
+ * clamp(), and both grids size themselves intrinsically, so the page reflows
+ * continuously rather than snapping at 768px.
+ */

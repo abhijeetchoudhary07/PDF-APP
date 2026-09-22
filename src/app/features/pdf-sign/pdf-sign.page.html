@@ -1,0 +1,212 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        title="Sign PDF"
+        subtitle="Place, resize, rotate and burn signatures into any PDF document offline."
+        [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Sign PDF' }]"
+        badge="SIGN"
+        badgeVariant="sign"
+        backUrl="/home">
+
+        <div actions class="header-action-group">
+          <app-button
+            variant="secondary"
+            size="sm"
+            (clicked)="openSignatureDialog()"
+            [disabled]="!pdfFile">
+            <app-icon name="create-outline" class="btn-icon"></app-icon>
+            + Signature
+          </app-button>
+          <app-button
+            variant="warning"
+            size="sm"
+            (clicked)="exportSignedPdf()"
+            [disabled]="!pdfFile || signatures.length === 0 || isProcessing">
+            <app-icon name="download-outline" class="btn-icon"></app-icon>
+            Export Signed
+          </app-button>
+        </div>
+      </app-page-header>
+
+      <div class="sign-content-container">
+        <!-- Upload State -->
+        <div *ngIf="!pdfFile" class="upload-container">
+          <div class="upload-card">
+            <div class="upload-icon-badge">
+              <app-icon name="pencil-outline"></app-icon>
+            </div>
+            <h2>Sign Any PDF Offline</h2>
+            <p>Draw, upload, or reuse your signature. Place multiple signatures on any page, resize, rotate, and export with zero data leaving your device.</p>
+            <app-button
+              variant="primary"
+              size="lg"
+              [block]="true"
+              (clicked)="selectPdf()"
+              [disabled]="isProcessing">
+              <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
+              Select PDF to Sign
+            </app-button>
+          </div>
+        </div>
+
+        <!-- Sign Workspace -->
+        <div *ngIf="pdfFile" class="sign-workspace">
+          <!-- Top Controls Bar -->
+          <div class="doc-bar">
+            <div class="doc-title-info">
+              <strong class="doc-name">{{ pdfFile.name }}</strong>
+              <app-badge variant="sign" size="sm">{{ signatures.length }} Signature(s) Placed</app-badge>
+            </div>
+            <div class="page-stepper">
+              <app-button variant="ghost" size="sm" (clicked)="prevPage()" [disabled]="currentPage <= 1">
+                <app-icon name="chevron-back"></app-icon>
+              </app-button>
+              <span class="page-counter">Page {{ currentPage }} / {{ totalPages }}</span>
+              <app-button variant="ghost" size="sm" (clicked)="nextPage()" [disabled]="currentPage >= totalPages">
+                <app-icon name="chevron-forward"></app-icon>
+              </app-button>
+            </div>
+          </div>
+
+          <!-- Selected Signature Controls Card -->
+          <div *ngIf="selectedSignature" class="sig-controls-card">
+            <div class="sig-controls-header">
+              <strong>Signature on Page {{ selectedSignature.pageNumber }}</strong>
+              <app-button size="sm" variant="danger" (clicked)="deleteSelected()">
+                <app-icon name="trash-outline" class="btn-icon"></app-icon> Remove
+              </app-button>
+            </div>
+
+            <div class="sig-controls-body">
+              <div class="control-group">
+                <label class="control-label">Size (W: {{ selectedSignature.width }}px, H: {{ selectedSignature.height }}px)</label>
+                <div class="range-container">
+                  <input
+                    type="range"
+                    [min]="60"
+                    [max]="300"
+                    [step]="5"
+                    [ngModel]="selectedSignature.width"
+                    (ngModelChange)="updateSignatureWidth($event)"
+                    class="custom-range" />
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label">Rotation: {{ selectedSignature.rotation }}°</label>
+                <div class="rotate-buttons">
+                  <app-button size="sm" variant="outline" (clicked)="rotateSelected(-90)">
+                    <app-icon name="refresh-outline" style="transform: scaleX(-1);"></app-icon>
+                  </app-button>
+                  <app-button size="sm" variant="outline" (clicked)="rotateSelected(90)">
+                    <app-icon name="refresh-outline"></app-icon>
+                  </app-button>
+                  <app-button size="sm" variant="outline" (clicked)="selectedSignature.rotation = 0">
+                    Reset 0°
+                  </app-button>
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label">Position</label>
+                <div class="pos-inputs">
+                  <span>X: <input type="number" [(ngModel)]="selectedSignature.x" class="coord-input" /></span>
+                  <span>Y: <input type="number" [(ngModel)]="selectedSignature.y" class="coord-input" /></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Document Viewer with Interactive Signature Overlay -->
+          <div class="canvas-viewport">
+            <div class="canvas-stage" [style.width.px]="pdfPageDimensions.width * viewportScale" [style.height.px]="pdfPageDimensions.height * viewportScale">
+              <canvas #pdfCanvas class="pdf-canvas"></canvas>
+
+              <!-- Placed Signatures on this page -->
+              <div *ngFor="let sig of currentSignatures"
+                   class="placed-sig-container"
+                   [class.selected]="sig.id === selectedSignatureId"
+                   [style.left.px]="sig.x * viewportScale"
+                   [style.top.px]="sig.y * viewportScale"
+                   [style.width.px]="sig.width * viewportScale"
+                   [style.height.px]="sig.height * viewportScale"
+                   [style.transform]="'rotate(' + sig.rotation + 'deg)'"
+                   (click)="selectSignature(sig.id)">
+                <img [src]="sig.dataUrl" alt="Signature" class="sig-image" />
+                <div *ngIf="sig.id === selectedSignatureId" class="sig-bounding-box">
+                  <span class="drag-handle">✥ Drag</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Signature Dialog Modal -->
+        <div *ngIf="showSignatureDialog" class="modal-backdrop" (click)="closeSignatureDialog()">
+          <div class="signature-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Create or Choose Signature</h3>
+              <button class="close-btn" (click)="closeSignatureDialog()">
+                <app-icon name="close"></app-icon>
+              </button>
+            </div>
+
+            <app-tabs
+              [tabs]="creationTabs"
+              [activeTab]="activeCreationMode"
+              (tabChange)="activeCreationMode = $any($event)"
+              variant="segment">
+            </app-tabs>
+
+            <!-- DRAW MODE -->
+            <div *ngIf="activeCreationMode === 'draw'" class="draw-panel">
+              <p class="panel-tip">Sign using your finger, stylus, or mouse:</p>
+              <div class="draw-canvas-box">
+                <canvas #drawCanvas
+                        (mousedown)="startDraw($event)"
+                        (mousemove)="drawMove($event)"
+                        (mouseup)="endDraw()"
+                        (touchstart)="startDraw($event)"
+                        (touchmove)="drawMove($event)"
+                        (touchend)="endDraw()">
+                </canvas>
+              </div>
+              <div class="draw-actions">
+                <app-button size="sm" variant="outline" (clicked)="clearDraw()">
+                  <app-icon name="trash-outline" class="btn-icon"></app-icon> Clear
+                </app-button>
+                <app-button size="sm" variant="primary" (clicked)="insertDrawnSignature()">
+                  <app-icon name="checkmark-outline" class="btn-icon"></app-icon> Insert Signature
+                </app-button>
+              </div>
+            </div>
+
+            <!-- UPLOAD MODE -->
+            <div *ngIf="activeCreationMode === 'upload'" class="upload-panel">
+              <p class="panel-tip">Upload a photo of your signature. Background is auto-cleaned and cropped:</p>
+              <label class="custom-file-upload">
+                <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onUploadSignature($event)" />
+                <app-icon name="cloud-upload-outline"></app-icon>
+                <span>Choose Signature Image</span>
+              </label>
+            </div>
+
+            <!-- RECENT MODE -->
+            <div *ngIf="activeCreationMode === 'recent'" class="recent-panel">
+              <div class="recent-grid">
+                <div *ngFor="let sig of recentSignatures" class="recent-sig-card" (click)="selectRecentSignature(sig)">
+                  <img [src]="sig" alt="Recent Signature" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

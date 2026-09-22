@@ -1,0 +1,390 @@
+<header class="editor-header-nav">
+  <!-- TOP TOOLBAR -->
+  <div class="top-nav-bar">
+    <div class="nav-left">
+      <a routerLink="/home" class="nav-back-link" title="Back to Home">
+        <app-icon name="arrow-back-outline"></app-icon>
+      </a>
+      <span class="editor-title">
+        {{ (state.document$ | async)?.name || 'PDF Editor & Reader' }}
+      </span>
+    </div>
+
+    <div class="nav-right">
+      <!-- Undo / Redo -->
+      <app-button
+        variant="ghost"
+        size="sm"
+        (clicked)="state.undo()"
+        [disabled]="!(state.canUndo$ | async)"
+        title="Undo (Ctrl+Z)">
+        <app-icon name="arrow-undo-outline"></app-icon>
+      </app-button>
+      <app-button
+        variant="ghost"
+        size="sm"
+        (clicked)="state.redo()"
+        [disabled]="!(state.canRedo$ | async)"
+        title="Redo (Ctrl+Y)">
+        <app-icon name="arrow-redo-outline"></app-icon>
+      </app-button>
+
+      <!-- Share Button -->
+      <app-button
+        variant="ghost"
+        size="sm"
+        (clicked)="sharePdf()"
+        [disabled]="!(state.document$ | async)"
+        title="Share PDF">
+        <app-icon name="share-social-outline"></app-icon>
+      </app-button>
+
+      <!-- Export Button -->
+      <app-button
+        variant="warning"
+        size="sm"
+        (clicked)="exportPdf()"
+        [disabled]="!(state.document$ | async)">
+        <app-icon name="download-outline" class="btn-icon"></app-icon>
+        Export
+      </app-button>
+    </div>
+  </div>
+
+  <!-- DESKTOP EXTENDED TOOLBAR (Hidden on mobile) -->
+  <div class="desktop-toolbar" *ngIf="state.document$ | async">
+    <!-- Tool Group: Mode / Selection -->
+    <div class="tool-group">
+      <button class="d-btn" [class.active]="state.activeTool === 'select'" (click)="setTool('select')" title="Select / Move Elements">
+        <app-icon name="hand-right-outline"></app-icon>
+        <span>Select</span>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Tool Group: Annotations -->
+    <div class="tool-group">
+      <button class="d-btn" [class.active]="state.activeTool === 'highlight'" (click)="setAnnotationTool('highlight')" title="Highlight Text">
+        <app-icon name="color-wand-outline"></app-icon>
+        <span>Highlight</span>
+      </button>
+      <button class="d-btn" [class.active]="state.activeTool === 'underline'" (click)="setAnnotationTool('underline')" title="Underline Text">
+        <app-icon name="remove-outline"></app-icon>
+        <span>Underline</span>
+      </button>
+      <button class="d-btn" [class.active]="state.activeTool === 'strikethrough'" (click)="setAnnotationTool('strikethrough')" title="Strikethrough">
+        <app-icon name="close-outline"></app-icon>
+        <span>Strike</span>
+      </button>
+      <button class="d-btn" [class.active]="state.activeTool === 'note'" (click)="setAnnotationTool('note')" title="Sticky Note">
+        <app-icon name="chatbox-ellipses-outline"></app-icon>
+        <span>Note</span>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Tool Group: Insert -->
+    <div class="tool-group">
+      <button class="d-btn" [class.active]="state.activeTool === 'text'" (click)="setTool('text')" title="Add Text Overlay">
+        <app-icon name="text-outline"></app-icon>
+        <span>Text</span>
+      </button>
+      <button class="d-btn" (click)="insertImage()" title="Insert Image">
+        <app-icon name="image-outline"></app-icon>
+        <span>Image</span>
+      </button>
+      <button class="d-btn" [class.active]="state.activeTool === 'draw'" (click)="setTool('draw')" title="Freehand Drawing">
+        <app-icon name="brush-outline"></app-icon>
+        <span>Draw</span>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Tool Group: Shapes -->
+    <div class="tool-group">
+      <button class="d-btn" [class.active]="state.activeTool === 'rectangle'" (click)="setShapeTool('rectangle')" title="Rectangle">
+        <app-icon name="square-outline"></app-icon>
+      </button>
+      <button class="d-btn" [class.active]="state.activeTool === 'circle'" (click)="setShapeTool('circle')" title="Circle">
+        <app-icon name="ellipse-outline"></app-icon>
+      </button>
+      <button class="d-btn" [class.active]="state.activeTool === 'line'" (click)="setShapeTool('line')" title="Line">
+        <app-icon name="remove-outline"></app-icon>
+      </button>
+      <button class="d-btn" [class.active]="state.activeTool === 'arrow'" (click)="setShapeTool('arrow')" title="Arrow">
+        <app-icon name="arrow-forward-outline"></app-icon>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Tool Group: Document Tools -->
+    <div class="tool-group">
+      <button class="d-btn" (click)="openCropModal()" title="Crop Pages">
+        <app-icon name="crop-outline"></app-icon>
+        <span>Crop</span>
+      </button>
+      <button class="d-btn" (click)="openWatermarkModal()" title="Add Watermark">
+        <app-icon name="water-outline"></app-icon>
+        <span>Watermark</span>
+      </button>
+      <button class="d-btn" (click)="openPageNumberModal()" title="Number Pages">
+        <app-icon name="list-number-outline"></app-icon>
+        <span>Page #</span>
+      </button>
+      <button class="d-btn redact-btn" [class.active]="state.activeTool === 'redact'" (click)="setTool('redact')" title="Redact Sensitive Info">
+        <app-icon name="shield-outline"></app-icon>
+        <span>Redact</span>
+      </button>
+      <button class="d-btn" (click)="openRedactionModal()" title="Manage Redactions">
+        <app-icon name="shield-checkmark-outline"></app-icon>
+      </button>
+    </div>
+
+    <!-- Contextual Quick Styling -->
+    <div class="divider"></div>
+    <div class="tool-group styling-controls">
+      <input
+        type="color"
+        [value]="state.toolSettings.color"
+        (change)="state.updateToolSettings({ color: $any($event.target).value })"
+        class="d-color-picker"
+        title="Stroke / Text Color"
+      />
+      <select
+        [value]="state.toolSettings.strokeWidth"
+        (change)="state.updateToolSettings({ strokeWidth: +$any($event.target).value })"
+        class="d-select"
+        title="Stroke Width"
+      >
+        <option [value]="1">1px</option>
+        <option [value]="2">2px</option>
+        <option [value]="4">4px</option>
+        <option [value]="6">6px</option>
+        <option [value]="10">10px</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<main class="editor-content-area">
+  <!-- EMPTY STATE: DRAG & DROP OR FILE PICKER -->
+  <div
+    *ngIf="!(state.document$ | async)"
+    class="upload-dropzone"
+    (dragover)="onDragOver($event)"
+    (drop)="onFileDropped($event)"
+  >
+    <div class="dropzone-card">
+      <app-icon name="document-attach-outline" class="dropzone-icon"></app-icon>
+      <h2>Open PDF Document</h2>
+      <p>Drag and drop a PDF file here, or click to browse from device</p>
+      <app-button variant="primary" size="lg" (clicked)="selectPdfFile()">
+        <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
+        Select PDF File
+      </app-button>
+    </div>
+  </div>
+
+  <!-- WORKSPACE: READER + CANVAS -->
+  <div *ngIf="state.document$ | async" class="editor-workspace">
+    <app-pdf-reader
+      [showThumbnails]="showThumbnails"
+      [showSearch]="showSearch"
+      (toggleThumbnailsEvent)="showThumbnails = !showThumbnails"
+      (toggleSearchEvent)="showSearch = !showSearch"
+    >
+      <app-pdf-canvas></app-pdf-canvas>
+    </app-pdf-reader>
+  </div>
+
+  <!-- FLOATING CONTEXTUAL BAR FOR SELECTED ELEMENT -->
+  <div class="selected-element-bar" *ngIf="state.selectedElement">
+    <span class="selected-type">{{ state.selectedElement.type | uppercase }}</span>
+
+    <!-- Color -->
+    <input
+      type="color"
+      [value]="$any(state.selectedElement).color || $any(state.selectedElement).strokeColor || '#000000'"
+      (change)="state.updateElement(state.selectedElement.id, { color: $any($event.target).value, strokeColor: $any($event.target).value })"
+      class="bar-color-input"
+    />
+
+    <!-- Font Size for Text -->
+    <input
+      *ngIf="state.selectedElement.type === 'text'"
+      type="number"
+      min="8"
+      max="72"
+      [value]="$any(state.selectedElement).fontSize || 16"
+      (change)="state.updateElement(state.selectedElement.id, { fontSize: +$any($event.target).value })"
+      class="bar-number-input"
+      title="Font Size"
+    />
+
+    <!-- Stroke width for shapes/drawings -->
+    <select
+      *ngIf="state.selectedElement.type === 'shape' || state.selectedElement.type === 'drawing'"
+      [value]="$any(state.selectedElement).strokeWidth || 2"
+      (change)="state.updateElement(state.selectedElement.id, { strokeWidth: +$any($event.target).value })"
+      class="bar-select"
+    >
+      <option [value]="1">1px</option>
+      <option [value]="2">2px</option>
+      <option [value]="4">4px</option>
+      <option [value]="8">8px</option>
+    </select>
+
+    <!-- Delete -->
+    <button class="bar-btn delete" (click)="state.deleteSelectedElement()" title="Delete">
+      <app-icon name="trash-outline"></app-icon>
+    </button>
+  </div>
+</main>
+
+<!-- MOBILE BOTTOM TOOLBAR (Visible only on mobile screens <= 768px) -->
+<footer *ngIf="state.document$ | async" class="mobile-footer">
+  <!-- Submenu for Active Mobile Group -->
+  <div class="mobile-submenu" *ngIf="mobileActiveGroup">
+    <!-- View Submenu -->
+    <div *ngIf="mobileActiveGroup === 'view'" class="sub-group">
+      <button class="m-sub-btn" [class.active]="showThumbnails" (click)="showThumbnails = !showThumbnails">
+        <app-icon name="grid-outline"></app-icon>
+        <span>Pages</span>
+      </button>
+      <button class="m-sub-btn" [class.active]="showSearch" (click)="showSearch = !showSearch">
+        <app-icon name="search-outline"></app-icon>
+        <span>Search</span>
+      </button>
+      <button class="m-sub-btn" (click)="state.zoomIn()">
+        <app-icon name="add-outline"></app-icon>
+        <span>Zoom +</span>
+      </button>
+      <button class="m-sub-btn" (click)="state.zoomOut()">
+        <app-icon name="remove-outline"></app-icon>
+        <span>Zoom -</span>
+      </button>
+    </div>
+
+    <!-- Annotate Submenu -->
+    <div *ngIf="mobileActiveGroup === 'annotate'" class="sub-group">
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'highlight'" (click)="setAnnotationTool('highlight')">
+        <app-icon name="color-wand-outline"></app-icon>
+        <span>Highlight</span>
+      </button>
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'underline'" (click)="setAnnotationTool('underline')">
+        <app-icon name="remove-outline"></app-icon>
+        <span>Underline</span>
+      </button>
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'strikethrough'" (click)="setAnnotationTool('strikethrough')">
+        <app-icon name="close-outline"></app-icon>
+        <span>Strike</span>
+      </button>
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'note'" (click)="setAnnotationTool('note')">
+        <app-icon name="chatbox-ellipses-outline"></app-icon>
+        <span>Note</span>
+      </button>
+    </div>
+
+    <!-- Shapes Submenu -->
+    <div *ngIf="mobileActiveGroup === 'shapes'" class="sub-group">
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'draw'" (click)="setTool('draw')">
+        <app-icon name="brush-outline"></app-icon>
+        <span>Freehand</span>
+      </button>
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'rectangle'" (click)="setShapeTool('rectangle')">
+        <app-icon name="square-outline"></app-icon>
+        <span>Box</span>
+      </button>
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'circle'" (click)="setShapeTool('circle')">
+        <app-icon name="ellipse-outline"></app-icon>
+        <span>Circle</span>
+      </button>
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'line'" (click)="setShapeTool('line')">
+        <app-icon name="remove-outline"></app-icon>
+        <span>Line</span>
+      </button>
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'arrow'" (click)="setShapeTool('arrow')">
+        <app-icon name="arrow-forward-outline"></app-icon>
+        <span>Arrow</span>
+      </button>
+    </div>
+
+    <!-- Insert Submenu -->
+    <div *ngIf="mobileActiveGroup === 'insert'" class="sub-group">
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'text'" (click)="setTool('text')">
+        <app-icon name="text-outline"></app-icon>
+        <span>Text Box</span>
+      </button>
+      <button class="m-sub-btn" (click)="insertImage()">
+        <app-icon name="image-outline"></app-icon>
+        <span>Image</span>
+      </button>
+    </div>
+
+    <!-- Tools Submenu -->
+    <div *ngIf="mobileActiveGroup === 'tools'" class="sub-group">
+      <button class="m-sub-btn" (click)="openCropModal()">
+        <app-icon name="crop-outline"></app-icon>
+        <span>Crop</span>
+      </button>
+      <button class="m-sub-btn" (click)="openWatermarkModal()">
+        <app-icon name="water-outline"></app-icon>
+        <span>Watermark</span>
+      </button>
+      <button class="m-sub-btn" (click)="openPageNumberModal()">
+        <app-icon name="list-number-outline"></app-icon>
+        <span>Page #</span>
+      </button>
+      <button class="m-sub-btn" [class.active]="state.activeTool === 'redact'" (click)="setTool('redact')">
+        <app-icon name="shield-outline"></app-icon>
+        <span>Redact</span>
+      </button>
+      <button class="m-sub-btn" (click)="openRedactionModal()">
+        <app-icon name="shield-checkmark-outline"></app-icon>
+        <span>Manager</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Primary Mobile Bottom Navigation Tabs -->
+  <div class="mobile-tabs-bar">
+    <div class="mobile-tabs-container">
+      <button class="m-tab" [class.active]="mobileActiveGroup === 'view'" (click)="mobileActiveGroup = 'view'">
+        <app-icon name="eye-outline"></app-icon>
+        <span>View</span>
+      </button>
+      <button class="m-tab" [class.active]="mobileActiveGroup === 'annotate'" (click)="mobileActiveGroup = 'annotate'">
+        <app-icon name="create-outline"></app-icon>
+        <span>Annotate</span>
+      </button>
+      <button class="m-tab" [class.active]="mobileActiveGroup === 'shapes'" (click)="mobileActiveGroup = 'shapes'">
+        <app-icon name="shapes-outline"></app-icon>
+        <span>Shapes</span>
+      </button>
+      <button class="m-tab" [class.active]="mobileActiveGroup === 'insert'" (click)="mobileActiveGroup = 'insert'">
+        <app-icon name="add-circle-outline"></app-icon>
+        <span>Insert</span>
+      </button>
+      <button class="m-tab" [class.active]="mobileActiveGroup === 'tools'" (click)="mobileActiveGroup = 'tools'">
+        <app-icon name="construct-outline"></app-icon>
+        <span>Tools</span>
+      </button>
+    </div>
+  </div>
+</footer>
+
+<!-- EXPORT PROGRESS OVERLAY MODAL -->
+<div class="export-overlay" *ngIf="isExporting">
+  <div class="export-dialog">
+    <div class="custom-spinner"></div>
+    <h3>{{ exportStage || 'Exporting PDF...' }}</h3>
+    <div class="progress-track">
+      <div class="progress-fill" [style.width.%]="exportProgress"></div>
+    </div>
+    <span>{{ exportProgress }}%</span>
+  </div>
+</div>
