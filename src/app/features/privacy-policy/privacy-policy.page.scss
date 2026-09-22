@@ -1,0 +1,179 @@
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4, 16px);
+  margin-bottom: var(--space-8, 32px);
+}
+
+.trust-card {
+  background-color: var(--color-surface, #1e293b);
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-5, 20px);
+  transition: transform var(--transition-fast, 150ms), border-color var(--transition-fast, 150ms);
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-primary, #6366f1);
+  }
+
+  .trust-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md, 10px);
+    margin-bottom: var(--space-3, 12px);
+
+    &.color-success {
+      background-color: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+    }
+    &.color-primary {
+      background-color: rgba(99, 102, 241, 0.12);
+      color: #6366f1;
+    }
+    &.color-warning {
+      background-color: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+    }
+    &.color-secondary {
+      background-color: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+    }
+  }
+
+  h4 {
+    margin: 0 0 var(--space-2, 8px);
+    font-size: var(--font-body, 15px);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--color-text, #f8fafc);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--font-small, 13px);
+    line-height: 1.5;
+    color: var(--color-text-secondary, #94a3b8);
+  }
+}
+
+.policy-article {
+  background-color: var(--color-surface, #1e293b);
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-xl, 16px);
+  padding: clamp(var(--space-5, 20px), 4vw, var(--space-10, 40px));
+  margin-bottom: var(--space-10, 40px);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
+}
+
+.policy-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4, 16px);
+  padding-bottom: var(--space-4, 16px);
+  margin-bottom: var(--space-6, 24px);
+  border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  font-size: var(--font-small, 13px);
+  color: var(--color-text-muted, #64748b);
+
+  strong {
+    color: var(--color-text, #f8fafc);
+  }
+
+  .policy-badge {
+    margin-left: auto;
+    background-color: rgba(99, 102, 241, 0.15);
+    color: var(--color-primary, #6366f1);
+    font-weight: var(--font-weight-semibold, 600);
+    padding: 3px 10px;
+    border-radius: var(--radius-full, 9999px);
+    font-size: 11px;
+  }
+}
+
+.policy-section {
+  margin-bottom: var(--space-8, 32px);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h2 {
+    font-size: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-text, #f8fafc);
+    margin: 0 0 var(--space-3, 12px);
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    font-size: var(--font-body, 14px);
+    line-height: 1.65;
+    color: var(--color-text-secondary, #94a3b8);
+    margin: 0 0 var(--space-3, 12px);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  ul {
+    margin: 0 0 var(--space-4, 16px);
+    padding-left: var(--space-5, 20px);
+
+    li {
+      font-size: var(--font-body, 14px);
+      line-height: 1.6;
+      color: var(--color-text-secondary, #94a3b8);
+      margin-bottom: var(--space-2, 8px);
+
+      strong {
+        color: var(--color-text, #f8fafc);
+      }
+    }
+  }
+
+  code {
+    background-color: rgba(0, 0, 0, 0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: var(--color-primary, #818cf8);
+  }
+
+  a {
+    color: var(--color-primary, #6366f1);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover {
+      color: #818cf8;
+    }
+  }
+}
+
+@media print {
+  app-header,
+  app-footer,
+  app-privacy-support-nav,
+  .header-actions,
+  .trust-grid {
+    display: none !important;
+  }
+
+  .policy-article {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+}

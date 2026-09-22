@@ -6,15 +6,44 @@
       
       <!-- Page Header with Breadcrumbs -->
       <app-page-header
-        title="Settings"
-        subtitle="Customize application preferences, appearance, privacy safeguards, and storage."
-        [breadcrumbs]="[{ label: 'Settings' }]"
+        [title]="'settings.title' | translate"
+        [subtitle]="'settings.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('settings.title' | translate) }]"
         [showBack]="true"
         backUrl="/home">
       </app-page-header>
 
+      <!-- UNIFIED PRIVACY & SUPPORT NAVIGATION TABS -->
+      <app-privacy-support-nav></app-privacy-support-nav>
+
       <div class="settings-sections-container">
         
+        <!-- 0. LANGUAGE SELECTOR -->
+        <section class="settings-group">
+          <div class="group-header">
+            <div class="group-icon color-primary">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <h3 class="group-title">{{ 'settings.languageSection.title' | translate }}</h3>
+          </div>
+
+          <div class="settings-card">
+            <div class="setting-row language-selector-row">
+              <div class="setting-text">
+                <span class="setting-label">{{ 'settings.languageSection.title' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.languageSection.subtitle' | translate }}</span>
+              </div>
+            </div>
+            <div class="setting-row" style="padding-top: 4px; border-top: none;">
+              <app-language-selector mode="segmented" style="width: 100%;"></app-language-selector>
+            </div>
+          </div>
+        </section>
+
         <!-- 1. GENERAL -->
         <section class="settings-group">
           <div class="group-header">
@@ -24,15 +53,15 @@
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
             </div>
-            <h3 class="group-title">General</h3>
+            <h3 class="group-title">{{ 'settings.general.title' | translate }}</h3>
           </div>
 
           <div class="settings-card">
             <!-- Default Prefix -->
             <div class="setting-row">
               <div class="setting-text">
-                <span class="setting-label">Default Filename Prefix</span>
-                <span class="setting-desc">Prefix added to saved files (e.g. "photo_50kb.jpg")</span>
+                <span class="setting-label">{{ 'settings.general.defaultPrefix' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.general.defaultPrefixDesc' | translate }}</span>
               </div>
               <div class="prefix-input-wrap">
                 <input
@@ -47,25 +76,25 @@
             <!-- Default Output Format -->
             <div class="setting-row">
               <div class="setting-text">
-                <span class="setting-label">Default Output Format</span>
-                <span class="setting-desc">Preferred file format when converting or processing documents</span>
+                <span class="setting-label">{{ 'settings.general.defaultFormat' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.general.defaultFormatDesc' | translate }}</span>
               </div>
               <select
                 [ngModel]="profile?.defaultOutputFormat"
                 (ngModelChange)="updateFormat($event)"
                 class="format-select">
-                <option value="original">Keep Original</option>
-                <option value="jpeg">JPG / JPEG</option>
-                <option value="png">PNG (Lossless)</option>
-                <option value="pdf">Standard PDF</option>
+                <option value="original">{{ 'settings.general.formatOriginal' | translate }}</option>
+                <option value="jpeg">{{ 'settings.general.formatJpeg' | translate }}</option>
+                <option value="png">{{ 'settings.general.formatPng' | translate }}</option>
+                <option value="pdf">{{ 'settings.general.formatPdf' | translate }}</option>
               </select>
             </div>
 
             <!-- Auto-Save to History -->
             <div class="setting-row">
               <div class="setting-text">
-                <span class="setting-label">Auto-save to History</span>
-                <span class="setting-desc">Log lightweight processing metadata locally for quick re-downloads</span>
+                <span class="setting-label">{{ 'settings.general.autoSave' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.general.autoSaveDesc' | translate }}</span>
               </div>
               <label class="switch">
                 <input
@@ -94,14 +123,14 @@
                 <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
               </svg>
             </div>
-            <h3 class="group-title">Appearance</h3>
+            <h3 class="group-title">{{ 'settings.appearance.title' | translate }}</h3>
           </div>
 
           <div class="settings-card">
             <div class="setting-row">
               <div class="setting-text">
-                <span class="setting-label">Theme Mode</span>
-                <span class="setting-desc">Select your preferred color scheme. Dark mode protects eye comfort during late-night form applications.</span>
+                <span class="setting-label">{{ 'settings.appearance.themeMode' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.appearance.themeModeDesc' | translate }}</span>
               </div>
 
               <div class="theme-options-grid">
@@ -111,7 +140,7 @@
                   [class.active]="(themeService.currentTheme$ | async) === 'light'"
                   (click)="setAppTheme('light')">
                   <div class="theme-preview preview-light"></div>
-                  <span class="theme-name">Light</span>
+                  <span class="theme-name">{{ 'settings.appearance.light' | translate }}</span>
                 </button>
 
                 <button
@@ -120,7 +149,7 @@
                   [class.active]="(themeService.currentTheme$ | async) === 'dark'"
                   (click)="setAppTheme('dark')">
                   <div class="theme-preview preview-dark"></div>
-                  <span class="theme-name">Dark</span>
+                  <span class="theme-name">{{ 'settings.appearance.dark' | translate }}</span>
                 </button>
 
                 <button
@@ -129,7 +158,7 @@
                   [class.active]="(themeService.currentTheme$ | async) === 'system'"
                   (click)="setAppTheme('system')">
                   <div class="theme-preview preview-system"></div>
-                  <span class="theme-name">System</span>
+                  <span class="theme-name">{{ 'settings.appearance.system' | translate }}</span>
                 </button>
               </div>
             </div>
@@ -144,27 +173,27 @@
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               </svg>
             </div>
-            <h3 class="group-title">Privacy & Local Processing</h3>
+            <h3 class="group-title">{{ 'settings.privacy.title' | translate }}</h3>
           </div>
 
           <div class="settings-card">
             <div class="setting-row">
               <div class="setting-text">
-                <span class="setting-label">Zero Document Uploads</span>
-                <span class="setting-desc">Your documents never leave your browser runtime. All processing occurs locally via WebAssembly.</span>
+                <span class="setting-label">{{ 'settings.privacy.zeroUploads' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.privacy.zeroUploadsDesc' | translate }}</span>
               </div>
               <div class="verified-badge">
                 <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                <span>Verified Offline</span>
+                <span>{{ 'settings.privacy.verifiedOffline' | translate }}</span>
               </div>
             </div>
 
-            <div class="setting-row clickable" (click)="isPrivacyPolicyModalOpen = true">
+            <div class="setting-row clickable" routerLink="/features/privacy-policy">
               <div class="setting-text">
-                <span class="setting-label">Privacy Policy</span>
-                <span class="setting-desc">Read our commitment to zero tracking, no telemetry of files, and full device sovereignty.</span>
+                <span class="setting-label">{{ 'settings.privacy.privacyPolicy' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.privacy.privacyPolicyDesc' | translate }}</span>
               </div>
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="arrow-icon">
                 <polyline points="9 18 15 12 9 6"></polyline>
@@ -173,55 +202,7 @@
           </div>
         </section>
 
-        <!-- 4. PREMIUM -->
-        <section class="settings-group">
-          <div class="group-header">
-            <div class="group-icon color-warning">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
-            </div>
-            <h3 class="group-title">Premium & Monetization</h3>
-          </div>
-
-          <div class="settings-card">
-            <div class="setting-row">
-              <div class="setting-text">
-                <span class="setting-label">Membership Status</span>
-                <span class="setting-desc">
-                  {{ (monetization.isPremium$ | async)
-                    ? 'PRO active — Unlimited batch operations and zero ads unlocked.'
-                    : 'Free Tier — Upgrade for unlimited bulk processing and ad-free experience.' }}
-                </span>
-              </div>
-              <span class="pro-status-badge" [class.is-pro]="monetization.isPremium$ | async">
-                {{ (monetization.isPremium$ | async) ? 'PRO' : 'Free' }}
-              </span>
-            </div>
-
-            <div class="setting-row">
-              <div class="setting-text">
-                <span class="setting-label">Restore Store Purchases</span>
-                <span class="setting-desc">Sync existing licenses from Google Play, Apple App Store, or web checkout</span>
-              </div>
-              <app-button variant="outline" size="sm" (clicked)="restorePurchases()">
-                Restore Purchases
-              </app-button>
-            </div>
-
-            <div *ngIf="!(monetization.isPremium$ | async)" class="setting-row clickable" routerLink="/features/premium">
-              <div class="setting-text">
-                <span class="setting-label pro-text-glow">Upgrade to PRO Lifetime</span>
-                <span class="setting-desc">One-time purchase, no recurring fees. 100% offline utilities forever.</span>
-              </div>
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="arrow-icon">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-        </section>
-
-        <!-- 5. STORAGE -->
+        <!-- 4. STORAGE -->
         <section class="settings-group">
           <div class="group-header">
             <div class="group-icon color-secondary">
@@ -231,39 +212,49 @@
                 <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
               </svg>
             </div>
-            <h3 class="group-title">Storage & History</h3>
+            <h3 class="group-title">{{ 'settings.storage.title' | translate }}</h3>
           </div>
 
           <div class="settings-card">
             <div class="setting-row">
               <div class="setting-text">
-                <span class="setting-label">History Log Count</span>
-                <span class="setting-desc">Total processed files stored in local metadata</span>
+                <span class="setting-label">{{ 'settings.storage.historyCount' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.storage.historyCountDesc' | translate }}</span>
               </div>
               <span class="stat-number">{{ historyCount }} items</span>
             </div>
 
             <div class="setting-row">
               <div class="setting-text">
-                <span class="setting-label">Estimated Cache Size</span>
-                <span class="setting-desc">Temporary files in device sandbox memory</span>
+                <span class="setting-label">{{ 'settings.storage.cacheSize' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.storage.cacheSizeDesc' | translate }}</span>
               </div>
               <span class="stat-number">{{ estimatedStorage }}</span>
             </div>
 
+            <div class="setting-row clickable" routerLink="/features/local-data-storage">
+              <div class="setting-text">
+                <span class="setting-label">{{ 'settings.storage.inspectStorage' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.storage.inspectStorageDesc' | translate }}</span>
+              </div>
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="arrow-icon">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+
             <div class="setting-row">
               <div class="setting-text">
-                <span class="setting-label">Clear Processing History</span>
-                <span class="setting-desc">Removes all history records and resets cache</span>
+                <span class="setting-label">{{ 'settings.storage.clearHistory' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.storage.clearHistoryDesc' | translate }}</span>
               </div>
               <app-button variant="danger" size="sm" (clicked)="isClearHistoryModalOpen = true">
-                Clear History
+                {{ 'settings.storage.clearHistoryBtn' | translate }}
               </app-button>
             </div>
           </div>
         </section>
 
-        <!-- 6. ABOUT -->
+        <!-- 5. ABOUT -->
         <section class="settings-group">
           <div class="group-header">
             <div class="group-icon color-edit">
@@ -273,22 +264,24 @@
                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
               </svg>
             </div>
-            <h3 class="group-title">About</h3>
+            <h3 class="group-title">{{ 'settings.about.title' | translate }}</h3>
           </div>
 
           <div class="settings-card">
-            <div class="setting-row">
+            <div class="setting-row clickable" routerLink="/features/about-engine">
               <div class="setting-text">
-                <span class="setting-label">Indian Form Helper</span>
-                <span class="setting-desc">Version 1.0.0 &bull; Client-Side WebAssembly Architecture</span>
+                <span class="setting-label">{{ 'settings.about.engineTitle' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.about.engineDesc' | translate }}</span>
               </div>
-              <span class="tech-chip">v1.0.0</span>
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="arrow-icon">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </div>
 
-            <div class="setting-row clickable" (click)="isTermsModalOpen = true">
+            <div class="setting-row clickable" routerLink="/features/terms-of-use">
               <div class="setting-text">
-                <span class="setting-label">Terms of Use</span>
-                <span class="setting-desc">Standard software license and fair use terms</span>
+                <span class="setting-label">{{ 'settings.about.terms' | translate }}</span>
+                <span class="setting-desc">{{ 'settings.about.termsDesc' | translate }}</span>
               </div>
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="arrow-icon">
                 <polyline points="9 18 15 12 9 6"></polyline>
@@ -299,67 +292,23 @@
 
       </div>
 
-      <!-- PRIVACY POLICY MODAL -->
-      <app-modal
-        [isOpen]="isPrivacyPolicyModalOpen"
-        title="Privacy Policy"
-        subtitle="100% Client-Side Privacy Guarantee"
-        [hasFooter]="true"
-        (closed)="isPrivacyPolicyModalOpen = false">
-        <div class="modal-text-content">
-          <h4>Zero Document Uploads</h4>
-          <p>
-            Indian Form Helper operates on a 100% client-side execution model. When you compress photos, edit PDFs, convert documents, or place signatures, all operations run inside your browser's local sandbox using WebAssembly and HTML5 APIs.
-          </p>
-          <h4>No Telemetry of Files</h4>
-          <p>
-            We do not log, transmit, inspect, or store your documents, photos, signatures, or metadata on any remote servers. Your data never leaves your device.
-          </p>
-          <h4>Local Preferences</h4>
-          <p>
-            Your display name, recent tools, and theme preferences are stored strictly in your device's local storage (Capacitor Preferences) and can be cleared at any time.
-          </p>
-        </div>
-        <div modal-footer>
-          <app-button variant="primary" size="md" (clicked)="isPrivacyPolicyModalOpen = false">Understood</app-button>
-        </div>
-      </app-modal>
-
-      <!-- TERMS OF USE MODAL -->
-      <app-modal
-        [isOpen]="isTermsModalOpen"
-        title="Terms of Use"
-        subtitle="Software License and Fair Use"
-        [hasFooter]="true"
-        (closed)="isTermsModalOpen = false">
-        <div class="modal-text-content">
-          <h4>Use at Your Own Discretion</h4>
-          <p>
-            Indian Form Helper is provided to assist candidates in preparing photos, signatures, and documents for government exams and job portals. Always verify that your exported documents comply with specific portal guidelines before final submission.
-          </p>
-          <h4>Client-Side Reliability</h4>
-          <p>
-            All document modifications are performed locally without warranty of server uptime. Keep original backup copies of your important files before applying destructive edits.
-          </p>
-        </div>
-        <div modal-footer>
-          <app-button variant="primary" size="md" (clicked)="isTermsModalOpen = false">Close</app-button>
-        </div>
-      </app-modal>
-
       <!-- CLEAR HISTORY CONFIRMATION MODAL -->
       <app-modal
         [isOpen]="isClearHistoryModalOpen"
-        title="Clear Processing History?"
-        subtitle="All historical log entries will be deleted"
+        [title]="'settings.storage.clearModalTitle' | translate"
+        [subtitle]="'settings.storage.clearModalDesc' | translate"
         [hasFooter]="true"
         (closed)="isClearHistoryModalOpen = false">
         <p class="reset-confirm-text">
-          This will permanently erase all {{ historyCount }} entries from your local processing history log. Your actual downloaded files on your device will remain untouched.
+          {{ 'settings.storage.clearModalDesc' | translate }}
         </p>
         <div modal-footer>
-          <app-button variant="outline" size="md" (clicked)="isClearHistoryModalOpen = false">Cancel</app-button>
-          <app-button variant="danger" size="md" (clicked)="confirmClearHistory()">Yes, Clear History</app-button>
+          <app-button variant="outline" size="md" (clicked)="isClearHistoryModalOpen = false">
+            {{ 'common.buttons.cancel' | translate }}
+          </app-button>
+          <app-button variant="danger" size="md" (clicked)="confirmClearHistory()">
+            {{ 'settings.storage.confirmClear' | translate }}
+          </app-button>
         </div>
       </app-modal>
 

@@ -1,0 +1,173 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      
+      <!-- Page Header with Breadcrumbs -->
+      <app-page-header
+        title="About the Engine"
+        subtitle="Deep dive into the 100% client-side WebAssembly, Canvas 2D, and PDF-Lib architecture."
+        [breadcrumbs]="[{ label: 'Privacy & Support' }, { label: 'About the Engine' }]"
+        badge="ENGINE"
+        badgeVariant="presets"
+        [showBack]="true"
+        backUrl="/features/settings">
+      </app-page-header>
+
+      <!-- UNIFIED PRIVACY & SUPPORT NAVIGATION TABS -->
+      <app-privacy-support-nav></app-privacy-support-nav>
+
+      <!-- ZERO-NETWORK PIPELINE DIAGRAM -->
+      <section class="pipeline-section">
+        <div class="section-badge">
+          <span class="pulse-dot"></span>
+          <span>Zero-Knowledge Execution Model</span>
+        </div>
+        <h2 class="section-title">How Your Documents Stay 100% Private</h2>
+        <p class="section-desc">
+          Traditional document websites upload your file to an AWS/cloud container, process it on their servers, and send it back. Indian Form Helper completely eliminates server-side hops:
+        </p>
+
+        <div class="pipeline-flow">
+          <div class="flow-step">
+            <div class="step-num">1</div>
+            <div class="step-icon color-primary">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+            </div>
+            <h4>Input File</h4>
+            <p>Read directly into device RAM via HTML5 <code>FileReader</code>. No network request is initiated.</p>
+          </div>
+
+          <div class="flow-arrow">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-num">2</div>
+            <div class="step-icon color-secondary">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+            </div>
+            <h4>Local WASM & Canvas</h4>
+            <p>Compiled WebAssembly bytecode and Canvas 2D execute compression, rotation, thresholding, and merging.</p>
+          </div>
+
+          <div class="flow-arrow">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+
+          <div class="flow-step">
+            <div class="step-num">3</div>
+            <div class="step-icon color-success">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </div>
+            <h4>Instant Download</h4>
+            <p>A local binary <code>Blob</code> is downloaded to your device storage. Total network transferred: <strong>0 bytes</strong>.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- BENCHMARKS TABLE -->
+      <section class="benchmarks-section">
+        <div class="section-header-row">
+          <div>
+            <h3>Engine Benchmarks & Performance</h3>
+            <p>Measured on typical mid-range mobile and desktop devices running modern Chrome/Safari/Firefox.</p>
+          </div>
+          <span class="engine-badge">Engine v{{ engineVersion }}</span>
+        </div>
+
+        <div class="table-container">
+          <table class="benchmarks-table">
+            <thead>
+              <tr>
+                <th>Operation</th>
+                <th>Avg. Execution Time</th>
+                <th>Peak Device Memory</th>
+                <th>Network Traffic</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of benchmarks">
+                <td><strong>{{ b.operation }}</strong></td>
+                <td><span class="badge-time">{{ b.avgTime }}</span></td>
+                <td><span class="badge-mem">{{ b.memory }}</span></td>
+                <td><span class="badge-zero">0 bytes (100% Offline)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- CORE TECHNOLOGIES & LIBRARIES -->
+      <section class="technologies-section">
+        <div class="section-header-row">
+          <div>
+            <h3>Core Libraries & Technologies</h3>
+            <p>The open-source standards powering our offline document processing stack.</p>
+          </div>
+        </div>
+
+        <div class="tech-grid">
+          <div *ngFor="let tech of technologies" class="tech-card">
+            <div class="tech-header">
+              <div class="tech-title-wrap">
+                <h4>{{ tech.name }}</h4>
+                <span class="tech-role">{{ tech.role }}</span>
+              </div>
+              <div class="tech-tags">
+                <span class="tag-version">v{{ tech.version }}</span>
+                <span class="tag-license">{{ tech.license }}</span>
+              </div>
+            </div>
+            <p class="tech-desc">{{ tech.description }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- BUILD & RUNTIME INFO -->
+      <div class="runtime-info-card">
+        <div class="runtime-row">
+          <div class="runtime-col">
+            <span class="info-label">Application Version</span>
+            <span class="info-val">v{{ appVersion }}</span>
+          </div>
+          <div class="runtime-col">
+            <span class="info-label">Engine Release</span>
+            <span class="info-val">WASM-{{ engineVersion }}</span>
+          </div>
+          <div class="runtime-col">
+            <span class="info-label">Framework</span>
+            <span class="info-val">Angular 22.1.7</span>
+          </div>
+          <div class="runtime-col">
+            <span class="info-label">Mobile Shell</span>
+            <span class="info-val">Capacitor 8.5.2</span>
+          </div>
+          <div class="runtime-col">
+            <span class="info-label">Security Model</span>
+            <span class="info-val text-success">Zero-Knowledge Sandbox</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

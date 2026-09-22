@@ -1,0 +1,236 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      
+      <!-- Page Header with Breadcrumbs -->
+      <app-page-header
+        title="Contact Support"
+        subtitle="Need assistance with an exam specification, found a bug, or have a suggestion? We're here to help."
+        [breadcrumbs]="[{ label: 'Privacy & Support' }, { label: 'Contact Support' }]"
+        badge="SUPPORT"
+        badgeVariant="presets"
+        [showBack]="true"
+        backUrl="/features/settings">
+      </app-page-header>
+
+      <!-- UNIFIED PRIVACY & SUPPORT NAVIGATION TABS -->
+      <app-privacy-support-nav></app-privacy-support-nav>
+
+      <!-- QUICK CONTACT CARDS -->
+      <div class="contact-channels-grid">
+        <div class="channel-card">
+          <div class="channel-icon color-primary">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+          </div>
+          <h4>Direct Email</h4>
+          <p>For official queries, bug reports, and general feedback.</p>
+          <a href="mailto:support@indianformhelper.in" class="channel-link">support&#64;indianformhelper.in &rarr;</a>
+        </div>
+
+        <div class="channel-card">
+          <div class="channel-icon color-secondary">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </div>
+          <h4>Engine Architecture</h4>
+          <p>Learn more about our zero-upload WebAssembly and Canvas pipelines.</p>
+          <a routerLink="/features/about-engine" class="channel-link">View Architecture &rarr;</a>
+        </div>
+
+        <div class="channel-card">
+          <div class="channel-icon color-success">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+          <h4>Frequently Asked Questions</h4>
+          <p>Check our FAQ database for instant answers to common issues.</p>
+          <a routerLink="/features/help-faq" class="channel-link">Browse FAQ &rarr;</a>
+        </div>
+      </div>
+
+      <div class="support-form-layout">
+        
+        <!-- MAIN SUPPORT FORM -->
+        <div class="form-container">
+          <div *ngIf="!submittedTicketId" class="form-inner">
+            <div class="form-header">
+              <h3>Submit a Support Inquiry</h3>
+              <p>Fill out the details below. We typically respond within 24 hours on business days.</p>
+            </div>
+
+            <form (ngSubmit)="onSubmit()" class="support-form">
+              <!-- Category -->
+              <div class="form-group">
+                <label for="category">Inquiry Topic</label>
+                <select id="category" [(ngModel)]="category" name="category" class="form-select">
+                  <option value="bug">Report a Bug / File Processing Error</option>
+                  <option value="preset">Request Exam Portal Specification (e.g. SSC, UPSC, NTA)</option>
+                  <option value="feature">Suggest a Feature / Tool Idea</option>
+                  <option value="billing">PRO License & Billing Inquiry</option>
+                  <option value="general">General Question / Feedback</option>
+                </select>
+              </div>
+
+              <!-- Name & Email Row -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="name">Your Name</label>
+                  <input
+                    type="text"
+                    id="name"
+                    [(ngModel)]="name"
+                    name="name"
+                    placeholder="Candidate name"
+                    class="form-input" />
+                </div>
+
+                <div class="form-group">
+                  <label for="email">Email Address <span class="req">*</span></label>
+                  <input
+                    type="email"
+                    id="email"
+                    [(ngModel)]="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                    class="form-input" />
+                </div>
+              </div>
+
+              <!-- Subject -->
+              <div class="form-group">
+                <label for="subject">Subject</label>
+                <input
+                  type="text"
+                  id="subject"
+                  [(ngModel)]="subject"
+                  name="subject"
+                  placeholder="Brief description of your query"
+                  class="form-input" />
+              </div>
+
+              <!-- Message -->
+              <div class="form-group">
+                <label for="message">Message / Details <span class="req">*</span></label>
+                <textarea
+                  id="message"
+                  [(ngModel)]="message"
+                  name="message"
+                  rows="5"
+                  placeholder="Describe your question, portal issue, or error message..."
+                  required
+                  class="form-textarea"></textarea>
+              </div>
+
+              <!-- Diagnostics Checkbox -->
+              <div class="form-group-checkbox">
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="includeDiagnostics"
+                    name="includeDiagnostics" />
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">
+                    <strong>Include anonymous system diagnostics</strong>
+                    <span class="checkbox-subtext">Attaches browser version, screen size, and engine status (zero personal or file data).</span>
+                  </span>
+                </label>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="form-actions">
+                <app-button
+                  variant="primary"
+                  size="md"
+                  [disabled]="isSubmitting || !email || !message">
+                  <span *ngIf="!isSubmitting">Send Support Message</span>
+                  <span *ngIf="isSubmitting">Generating Ticket...</span>
+                </app-button>
+              </div>
+            </form>
+          </div>
+
+          <!-- SUCCESS STATE -->
+          <div *ngIf="submittedTicketId" class="ticket-success-card">
+            <div class="success-icon">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <h3>Inquiry Ready! Reference #{{ submittedTicketId }}</h3>
+            <p>
+              Your default email client has been prepared with your inquiry details and system diagnostics. If your email client did not open automatically, you can email us directly at <strong>support&#64;indianformhelper.in</strong>.
+            </p>
+            <app-button variant="outline" size="sm" (clicked)="resetForm()">
+              Submit Another Inquiry
+            </app-button>
+          </div>
+        </div>
+
+        <!-- SIDEBAR: QUICK PORTAL REQUESTS & DIAGNOSTICS PREVIEW -->
+        <aside class="support-sidebar">
+          
+          <!-- QUICK PRESET REQUESTS -->
+          <div class="sidebar-card">
+            <h4>Frequently Requested Portals</h4>
+            <p class="sidebar-tip">Click any portal below to auto-fill a specification update request:</p>
+            <div class="quick-portals-list">
+              <button
+                *ngFor="let p of portalRequests"
+                type="button"
+                class="portal-req-btn"
+                (click)="quickRequestPortal(p.name)">
+                <span>+ {{ p.name }}</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- DIAGNOSTICS CARD -->
+          <div class="sidebar-card">
+            <h4>Client Environment</h4>
+            <ul class="diag-list">
+              <li>
+                <span class="diag-key">Engine:</span>
+                <span class="diag-val">WASM / 100% Offline</span>
+              </li>
+              <li>
+                <span class="diag-key">Version:</span>
+                <span class="diag-val">{{ diagnostics.appVersion }}</span>
+              </li>
+              <li>
+                <span class="diag-key">Screen:</span>
+                <span class="diag-val">{{ diagnostics.screenResolution }}</span>
+              </li>
+              <li>
+                <span class="diag-key">Network:</span>
+                <span class="diag-val" [class.text-success]="diagnostics.isOnline">
+                  {{ diagnostics.isOnline ? 'Online' : 'Offline Mode' }}
+                </span>
+              </li>
+            </ul>
+          </div>
+
+        </aside>
+
+      </div>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

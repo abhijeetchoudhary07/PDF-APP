@@ -6,9 +6,9 @@
 
       <!-- PAGE HEADER -->
       <app-page-header
-        title="PDF Tools Hub"
-        subtitle="Full suite of offline PDF utilities: compress to exact KB, compile images, extract pages, and edit."
-        [breadcrumbs]="[{ label: 'PDF Tools Hub' }]"
+        [title]="'pdfPage.title' | translate"
+        [subtitle]="'pdfPage.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('pdfPage.title' | translate) }]"
         backUrl="/home"
         badge="PDF SUITE"
         badgeVariant="pdf">
@@ -18,10 +18,10 @@
       <div class="mode-tabs-wrap">
         <app-tabs
           [tabs]="[
-            { id: 'dashboard', label: 'All Tools Hub' },
-            { id: 'compress', label: 'Compress to KB' },
-            { id: 'create', label: 'Images → PDF' },
-            { id: 'extract', label: 'PDF → JPG' }
+            { id: 'dashboard', label: ('tools.pdf_dashboard.title' | translate) },
+            { id: 'compress', label: ('pdfPage.tabCompress' | translate) },
+            { id: 'create', label: ('pdfPage.tabImagesToPdf' | translate) },
+            { id: 'extract', label: ('pdfPage.tabExtract' | translate) }
           ]"
           [selectedTab]="mode"
           [fullWidth]="true"
@@ -253,8 +253,8 @@
         <div *ngIf="workflowState === 'EMPTY' || (!originalFile && workflowState === 'ERROR')">
           <app-file-dropzone
             icon="document-text"
-            title="Select or Drag & Drop PDF Document"
-            description="Compress PDF documents to fit within strict portal limits (100 KB, 200 KB, 500 KB, 1 MB). 100% offline."
+            [title]="'dropzone.pdfTitle' | translate"
+            [description]="'dropzone.pdfDesc' | translate"
             accept="application/pdf"
             [errorMessage]="errorMessage"
             (fileSelected)="onCompressPdfSelected($event)">
@@ -272,7 +272,7 @@
           </app-file-preview>
 
           <div class="config-card">
-            <label class="control-label">Target Maximum Size</label>
+            <label class="control-label">{{ 'pdfPage.targetSizeLabel' | translate }}</label>
             <div class="preset-chips">
               <button
                 *ngFor="let size of targetSizes"
@@ -291,9 +291,9 @@
               </div>
               <div class="stage-info">
                 <strong>{{ stageText }}</strong>
-                <span>Optimizing PDF streams</span>
+                <span>{{ 'common.processing' | translate }}</span>
               </div>
-              <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">Cancel</button>
+              <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">{{ 'common.cancel' | translate }}</button>
             </div>
 
             <app-button
@@ -302,7 +302,7 @@
               [block]="true"
               [loading]="isProcessing"
               (clicked)="compressPdf()">
-              {{ isProcessing ? stageText : 'Compress to Exact Size (' + (selectedTargetKB >= 1024 ? (selectedTargetKB / 1024) + ' MB' : selectedTargetKB + ' KB') + ')' }}
+              {{ isProcessing ? stageText : ('pdfPage.compressPdfBtn' | translate:{ size: (selectedTargetKB >= 1024 ? (selectedTargetKB / 1024) + ' MB' : selectedTargetKB + ' KB') }) }}
             </app-button>
           </div>
         </div>
@@ -323,8 +323,8 @@
           <app-related-tools
             currentToolId="pdf_dashboard"
             category="PDF"
-            title="Next Steps & Connected Tools"
-            subtitle="Continue organizing, editing, or converting this PDF">
+            [title]="'results.relatedToolsTitle' | translate"
+            [subtitle]="'results.relatedToolsSubtitle' | translate">
           </app-related-tools>
         </div>
       </div>

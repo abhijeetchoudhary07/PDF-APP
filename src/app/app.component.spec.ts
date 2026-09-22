@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { resolveAngularResources } from '../test-setup';
 
 import { AppComponent } from './app.component';
@@ -18,6 +19,7 @@ describe('AppComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AppComponent],
+      providers: [provideRouter([])],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
     });
 

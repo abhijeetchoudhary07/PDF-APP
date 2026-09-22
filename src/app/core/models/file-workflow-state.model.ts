@@ -34,12 +34,21 @@ export interface StageInfo {
 export const PROCESSING_STAGE_LABELS: Record<ProcessingStage, string> = {
   idle: 'Ready',
   preparing: 'Preparing file...',
-  analyzing: 'Analyzing document...',
-  processing: 'Processing pages & elements...',
+  analyzing: 'Checking document...',
+  processing: 'Processing pages and content...',
   optimizing: 'Optimizing output...',
-  finalizing: 'Finalizing file...',
+  finalizing: 'Finishing up file...',
   complete: 'Processing complete!'
 };
+
+export function getProcessingStageLabel(stage: ProcessingStage, translator?: { translate: (k: string) => string }): string {
+  if (translator) {
+    const key = `stages.${stage}`;
+    const translated = translator.translate(key);
+    if (translated && translated !== key) return translated;
+  }
+  return PROCESSING_STAGE_LABELS[stage] ?? stage;
+}
 
 export interface FileItemMeta {
   id: string;

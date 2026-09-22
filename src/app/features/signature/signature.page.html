@@ -6,9 +6,9 @@
 
       <!-- PAGE HEADER -->
       <app-page-header
-        title="Signature Tools"
-        subtitle="Clean backgrounds, auto-crop signature bounds, and compress to exact government portal specs."
-        [breadcrumbs]="[{ label: 'Signature Tools' }]"
+        [title]="'signaturePage.title' | translate"
+        [subtitle]="'signaturePage.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('signaturePage.title' | translate) }]"
         backUrl="/home"
         badge="SIGNATURE"
         badgeVariant="signature">
@@ -18,8 +18,8 @@
       <div class="mode-tabs-wrap">
         <app-tabs
           [tabs]="[
-            { id: 'kb', label: 'Exact KB Compression' },
-            { id: 'pixels', label: 'Exact Pixel Resize' }
+            { id: 'kb', label: ('photoPage.tabKb' | translate) },
+            { id: 'pixels', label: ('photoPage.tabPixels' | translate) }
           ]"
           [selectedTab]="mode"
           [fullWidth]="true"
@@ -33,8 +33,8 @@
         <div *ngIf="workflowState === 'EMPTY' || (!originalFile && workflowState === 'ERROR')">
           <app-file-dropzone
             icon="document-text"
-            title="Select or Drag & Drop Signature"
-            description="Upload a photo or scan of your signature on white paper. Background will be cleaned automatically."
+            [title]="'dropzone.sigTitle' | translate"
+            [description]="'dropzone.sigDesc' | translate"
             accept="image/jpeg,image/png,image/webp"
             [errorMessage]="errorMessage"
             (fileSelected)="onFileSelected($event)">
@@ -56,8 +56,8 @@
           <!-- SIGNATURE VERIFICATION PREVIEW (INTERMEDIATE) -->
           <div *ngIf="originalPreviewUrl" class="signature-verify-box">
             <div class="verify-header">
-              <span class="verify-title">Visual Signature Verification</span>
-              <span *ngIf="cleanedPreviewUrl" class="cleaned-badge">Auto-Cropped & Cleaned</span>
+              <span class="verify-title">{{ 'results.visualInspection' | translate }}</span>
+              <span *ngIf="cleanedPreviewUrl" class="cleaned-badge">{{ 'common.ready' | translate }}</span>
             </div>
             <div class="verify-canvas-area">
               <img
@@ -71,26 +71,26 @@
                   <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"></path>
                   <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"></path>
                 </svg>
-                Manual Crop
+                {{ 'signaturePage.tabCrop' | translate }}
               </app-button>
               <app-button variant="secondary" size="sm" (clicked)="autoCrop()" [disabled]="isProcessing">
                 <svg icon-start viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 4px;">
                   <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
                 </svg>
-                Auto-Crop Bounds
+                {{ 'signaturePage.tabClean' | translate }}
               </app-button>
             </div>
           </div>
 
           <!-- AUTO-CROP PADDING SETTING -->
           <div class="padding-config-row">
-            <label class="padding-label">Auto-Crop Margin Padding: <strong>{{ autoCropPadding }}px</strong></label>
+            <label class="padding-label">{{ 'signaturePage.tabCrop' | translate }}: <strong>{{ autoCropPadding }}px</strong></label>
             <input type="range" min="0" max="30" [(ngModel)]="autoCropPadding" class="range-slider" />
           </div>
 
           <!-- CONFIGURATION: EXACT KB -->
           <div *ngIf="mode === 'kb'" class="config-card">
-            <label class="control-label">Select Target File Size</label>
+            <label class="control-label">{{ 'photoPage.targetSizeTitle' | translate }}</label>
             <div class="preset-chips">
               <button
                 *ngFor="let size of targetSizes"
@@ -101,12 +101,12 @@
                 {{ size }} KB
               </button>
             </div>
-            <p class="config-hint">Exam portals typically specify 10 KB to 50 KB limits for signatures.</p>
+            <p class="config-hint">{{ 'photoPage.targetSizeHint' | translate }}</p>
           </div>
 
           <!-- CONFIGURATION: EXACT PIXELS -->
           <div *ngIf="mode === 'pixels'" class="config-card">
-            <label class="control-label">Standard Portal Presets</label>
+            <label class="control-label">{{ 'photoPage.pixelPresetsTitle' | translate }}</label>
             <div class="preset-chips">
               <button
                 *ngFor="let p of pixelPresets"
@@ -120,7 +120,7 @@
 
             <div class="dims-grid">
               <div class="field-group">
-                <label class="field-label">Width (px)</label>
+                <label class="field-label">{{ 'photoPage.widthLabel' | translate }}</label>
                 <input
                   type="number"
                   [(ngModel)]="targetWidth"
@@ -129,7 +129,7 @@
               </div>
 
               <div class="field-group">
-                <label class="field-label">Height (px)</label>
+                <label class="field-label">{{ 'photoPage.heightLabel' | translate }}</label>
                 <input
                   type="number"
                   [(ngModel)]="targetHeight"
@@ -144,7 +144,7 @@
                 <span class="custom-toggle-track">
                   <span class="custom-toggle-thumb"></span>
                 </span>
-                <span>Lock Aspect Ratio</span>
+                <span>{{ 'photoPage.lockAspectRatio' | translate }}</span>
               </label>
             </div>
           </div>
@@ -156,9 +156,9 @@
             </div>
             <div class="stage-info">
               <strong>{{ stageText }}</strong>
-              <span>Optimizing signature offline</span>
+              <span>{{ 'common.processing' | translate }}</span>
             </div>
-            <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">Cancel</button>
+            <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">{{ 'common.cancel' | translate }}</button>
           </div>
 
           <!-- PRIMARY ACTION -->
@@ -169,7 +169,7 @@
               [block]="true"
               [loading]="isProcessing"
               (clicked)="compressSignature()">
-              {{ isProcessing ? stageText : (mode === 'kb' ? 'Compress to ' + selectedTargetKB + ' KB' : 'Resize to ' + targetWidth + ' × ' + targetHeight + ' px') }}
+              {{ isProcessing ? stageText : (mode === 'kb' ? ('photoPage.compressBtn' | translate:{ size: selectedTargetKB }) : ('photoPage.resizeBtn' | translate:{ width: targetWidth, height: targetHeight })) }}
             </app-button>
           </div>
         </div>
@@ -190,8 +190,8 @@
           <app-related-tools
             currentToolId="signature_tools"
             category="SIGNATURE"
-            title="Next Steps & Connected Tools"
-            subtitle="Apply your cleaned signature to PDF documents or job presets">
+            [title]="'results.relatedToolsTitle' | translate"
+            [subtitle]="'results.relatedToolsSubtitle' | translate">
           </app-related-tools>
         </div>
       </div>

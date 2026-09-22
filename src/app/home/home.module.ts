@@ -9,7 +9,8 @@ import {
   AppBadgeComponent,
   AppButtonComponent,
   AppEmptyStateComponent,
-  AppIconComponent
+  AppIconComponent,
+  TranslatePipe
 } from '../shared/components/ui';
 
 import { HomePageRoutingModule } from './home-routing.module';
@@ -26,7 +27,8 @@ import { HomePageRoutingModule } from './home-routing.module';
     AppBadgeComponent,
     AppButtonComponent,
     AppEmptyStateComponent,
-    AppIconComponent
+    AppIconComponent,
+    TranslatePipe
   ],
   declarations: [HomePage]
 })

@@ -4,9 +4,9 @@
   <main class="app-main-content">
     <div class="app-container">
       <app-page-header
-        title="Government & Exam Presets"
-        subtitle="Pre-configured specifications for official portals, exams, and government job applications."
-        [breadcrumbs]="[{ label: 'Exam & Job Presets' }]"
+        [title]="'presetsPage.title' | translate"
+        [subtitle]="'presetsPage.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('presetsPage.title' | translate) }]"
         badge="PRESETS"
         badgeVariant="presets"
         backUrl="/home">
@@ -17,7 +17,7 @@
             size="sm"
             (clicked)="openCreateModal()">
             <app-icon name="add-outline" class="btn-icon"></app-icon>
-            + Custom Preset
+            {{ 'presetsPage.customPresetBtn' | translate }}
           </app-button>
         </div>
       </app-page-header>
@@ -27,10 +27,10 @@
         <div class="disclaimer-banner">
           <div class="banner-header">
             <app-icon name="warning-outline" class="banner-icon"></app-icon>
-            <strong>Official Requirements Notice</strong>
+            <strong>{{ 'presetsPage.noticeTitle' | translate }}</strong>
           </div>
           <p>
-            Requirements may change over time. Verify current requirements on the official application website before submission. We claim no official affiliation with any government body.
+            {{ 'presetsPage.noticeDesc' | translate }}
           </p>
         </div>
 
@@ -59,13 +59,13 @@
                 <div *ngIf="preset.photo" class="req-section">
                   <div class="req-header">
                     <app-icon name="camera-outline" class="req-icon photo"></app-icon>
-                    <h4>Photo Requirements</h4>
+                    <h4>{{ 'presetsPage.photoReqs' | translate }}</h4>
                   </div>
                   <div class="req-details-grid">
-                    <p><strong>Size:</strong> {{ preset.photo.minKb }}KB - {{ preset.photo.maxKb }}KB</p>
-                    <p *ngIf="preset.photo.width"><strong>Dimensions:</strong> {{ preset.photo.width }} x {{ preset.photo.height }} px</p>
+                    <p><strong>{{ 'common.size' | translate }}:</strong> {{ preset.photo.minKb }}KB - {{ preset.photo.maxKb }}KB</p>
+                    <p *ngIf="preset.photo.width"><strong>{{ 'common.dimensions' | translate }}:</strong> {{ preset.photo.width }} x {{ preset.photo.height }} px</p>
                     <p *ngIf="preset.photo.aspectRatio"><strong>Aspect Ratio:</strong> {{ preset.photo.aspectRatio }}</p>
-                    <p><strong>Format:</strong> {{ preset.photo.format || 'JPEG' }}</p>
+                    <p><strong>{{ 'common.format' | translate }}:</strong> {{ preset.photo.format || 'JPEG' }}</p>
                     <p *ngIf="preset.photo.backgroundGuidance"><strong>Background:</strong> {{ preset.photo.backgroundGuidance }}</p>
                   </div>
 
@@ -79,7 +79,7 @@
                   </div>
 
                   <app-button size="sm" variant="outline" (clicked)="goToTool('photo', preset.id)" style="margin-top: 10px;">
-                    Process Photo
+                    {{ 'presetsPage.processPhoto' | translate }}
                   </app-button>
                 </div>
 
@@ -87,12 +87,12 @@
                 <div *ngIf="preset.signature" class="req-section">
                   <div class="req-header">
                     <app-icon name="create-outline" class="req-icon sig"></app-icon>
-                    <h4>Signature Requirements</h4>
+                    <h4>{{ 'presetsPage.sigReqs' | translate }}</h4>
                   </div>
                   <div class="req-details-grid">
-                    <p><strong>Size:</strong> {{ preset.signature.minKb }}KB - {{ preset.signature.maxKb }}KB</p>
-                    <p *ngIf="preset.signature.width"><strong>Dimensions:</strong> {{ preset.signature.width }} x {{ preset.signature.height }} px</p>
-                    <p><strong>Format:</strong> {{ preset.signature.format || 'JPEG' }}</p>
+                    <p><strong>{{ 'common.size' | translate }}:</strong> {{ preset.signature.minKb }}KB - {{ preset.signature.maxKb }}KB</p>
+                    <p *ngIf="preset.signature.width"><strong>{{ 'common.dimensions' | translate }}:</strong> {{ preset.signature.width }} x {{ preset.signature.height }} px</p>
+                    <p><strong>{{ 'common.format' | translate }}:</strong> {{ preset.signature.format || 'JPEG' }}</p>
                   </div>
 
                   <div class="source-badge-row">
@@ -105,7 +105,7 @@
                   </div>
 
                   <app-button size="sm" variant="outline" (clicked)="goToTool('signature', preset.id)" style="margin-top: 10px;">
-                    Process Signature
+                    {{ 'presetsPage.processSig' | translate }}
                   </app-button>
                 </div>
 
@@ -113,11 +113,11 @@
                 <div *ngIf="preset.pdf" class="req-section">
                   <div class="req-header">
                     <app-icon name="document-outline" class="req-icon pdf"></app-icon>
-                    <h4>PDF Requirements</h4>
+                    <h4>{{ 'presetsPage.docReqs' | translate }}</h4>
                   </div>
                   <div class="req-details-grid">
-                    <p><strong>Size:</strong> {{ preset.pdf.minKb }}KB - {{ preset.pdf.maxKb }}KB</p>
-                    <p><strong>Format:</strong> PDF</p>
+                    <p><strong>{{ 'common.size' | translate }}:</strong> {{ preset.pdf.minKb }}KB - {{ preset.pdf.maxKb }}KB</p>
+                    <p><strong>{{ 'common.format' | translate }}:</strong> PDF</p>
                   </div>
 
                   <div class="source-badge-row">
@@ -130,14 +130,14 @@
                   </div>
 
                   <app-button size="sm" variant="outline" (clicked)="goToTool('pdf', preset.id)" style="margin-top: 10px;">
-                    Process PDF
+                    {{ 'presetsPage.processDoc' | translate }}
                   </app-button>
                 </div>
 
                 <div *ngIf="preset.isCustom" class="custom-preset-actions">
-                  <app-button size="sm" variant="ghost" (clicked)="openEditModal(preset)">Edit</app-button>
+                  <app-button size="sm" variant="ghost" (clicked)="openEditModal(preset)">{{ 'common.edit' | translate }}</app-button>
                   <app-button size="sm" variant="ghost" (clicked)="duplicatePreset(preset)">Duplicate</app-button>
-                  <app-button size="sm" variant="danger" (clicked)="deletePreset(preset)">Delete</app-button>
+                  <app-button size="sm" variant="danger" (clicked)="deletePreset(preset)">{{ 'common.delete' | translate }}</app-button>
                 </div>
               </div>
             </div>
@@ -150,7 +150,7 @@
       <app-modal
         [isOpen]="showModal"
         (closeModal)="showModal = false"
-        [title]="editingPreset.id ? 'Edit Custom Preset' : 'New Custom Preset'"
+        [title]="'presetsPage.createModalTitle' | translate"
         size="md">
     
         <div class="preset-modal-content">
@@ -162,7 +162,7 @@
           <!-- PHOTO -->
           <div class="toggle-section">
             <div class="toggle-row">
-              <label class="toggle-label">Photo Requirements</label>
+              <label class="toggle-label">{{ 'presetsPage.photoReqs' | translate }}</label>
               <label class="switch">
                 <input type="checkbox" [(ngModel)]="enablePhoto" />
                 <span class="slider round"></span>
@@ -178,15 +178,15 @@
                 <input type="number" [(ngModel)]="editingPreset.photo!.maxKb" class="custom-input" />
               </div>
               <div class="form-group">
-                <label class="form-label">Width (px)</label>
+                <label class="form-label">{{ 'photoPage.widthLabel' | translate }}</label>
                 <input type="number" [(ngModel)]="editingPreset.photo!.width" class="custom-input" />
               </div>
               <div class="form-group">
-                <label class="form-label">Height (px)</label>
+                <label class="form-label">{{ 'photoPage.heightLabel' | translate }}</label>
                 <input type="number" [(ngModel)]="editingPreset.photo!.height" class="custom-input" />
               </div>
               <div class="form-group span-2">
-                <label class="form-label">Format</label>
+                <label class="form-label">{{ 'common.format' | translate }}</label>
                 <input type="text" [(ngModel)]="editingPreset.photo!.format" placeholder="e.g. JPEG" class="custom-input" />
               </div>
             </div>
@@ -195,7 +195,7 @@
           <!-- SIGNATURE -->
           <div class="toggle-section">
             <div class="toggle-row">
-              <label class="toggle-label">Signature Requirements</label>
+              <label class="toggle-label">{{ 'presetsPage.sigReqs' | translate }}</label>
               <label class="switch">
                 <input type="checkbox" [(ngModel)]="enableSig" />
                 <span class="slider round"></span>
@@ -211,15 +211,15 @@
                 <input type="number" [(ngModel)]="editingPreset.signature!.maxKb" class="custom-input" />
               </div>
               <div class="form-group">
-                <label class="form-label">Width (px)</label>
+                <label class="form-label">{{ 'photoPage.widthLabel' | translate }}</label>
                 <input type="number" [(ngModel)]="editingPreset.signature!.width" class="custom-input" />
               </div>
               <div class="form-group">
-                <label class="form-label">Height (px)</label>
+                <label class="form-label">{{ 'photoPage.heightLabel' | translate }}</label>
                 <input type="number" [(ngModel)]="editingPreset.signature!.height" class="custom-input" />
               </div>
               <div class="form-group span-2">
-                <label class="form-label">Format</label>
+                <label class="form-label">{{ 'common.format' | translate }}</label>
                 <input type="text" [(ngModel)]="editingPreset.signature!.format" placeholder="e.g. JPEG" class="custom-input" />
               </div>
             </div>
@@ -228,7 +228,7 @@
           <!-- PDF -->
           <div class="toggle-section">
             <div class="toggle-row">
-              <label class="toggle-label">PDF Requirements</label>
+              <label class="toggle-label">{{ 'presetsPage.docReqs' | translate }}</label>
               <label class="switch">
                 <input type="checkbox" [(ngModel)]="enablePdf" />
                 <span class="slider round"></span>
@@ -248,8 +248,8 @@
         </div>
 
         <div slot="footer" class="modal-footer-actions">
-          <app-button variant="ghost" size="sm" (clicked)="showModal = false">Cancel</app-button>
-          <app-button variant="primary" size="sm" (clicked)="saveModal()">Save Custom Preset</app-button>
+          <app-button variant="ghost" size="sm" (clicked)="showModal = false">{{ 'common.cancel' | translate }}</app-button>
+          <app-button variant="primary" size="sm" (clicked)="saveModal()">{{ 'presetsPage.saveBtn' | translate }}</app-button>
         </div>
       </app-modal>
     </div>

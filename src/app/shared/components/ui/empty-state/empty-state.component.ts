@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppButtonComponent } from '../button/button.component';
+import { TranslationService } from '../../../../core/services/translation.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -17,7 +18,7 @@ import { AppButtonComponent } from '../button/button.component';
         </svg>
       </div>
 
-      <h3 class="empty-title">{{ title }}</h3>
+      <h3 class="empty-title">{{ displayTitle }}</h3>
       <p *ngIf="description" class="empty-desc">{{ description }}</p>
 
       <div *ngIf="actionLabel" class="empty-action">
@@ -74,10 +75,17 @@ import { AppButtonComponent } from '../button/button.component';
   `]
 })
 export class AppEmptyStateComponent {
-  @Input() title = 'No items found';
+  @Input() title?: string;
   @Input() description?: string;
   @Input() actionLabel?: string;
   @Input() defaultIcon = true;
 
   @Output() actionClicked = new EventEmitter<void>();
+
+  constructor(private translationService: TranslationService) {}
+
+  get displayTitle(): string {
+    return this.title || this.translationService.translate('home.noToolsFound');
+  }
 }
+

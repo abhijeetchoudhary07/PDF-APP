@@ -12,7 +12,8 @@ import {
   AppBadgeComponent,
   AppModalComponent,
   AppIconComponent,
-  AppSkeletonComponent
+  AppSkeletonComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -32,7 +33,8 @@ import {
     AppFooterComponent,
     AppButtonComponent,
     AppBadgeComponent,
-    AppModalComponent
+    AppModalComponent,
+    TranslatePipe
   ]
 })
 export class PresetsPage implements OnInit {

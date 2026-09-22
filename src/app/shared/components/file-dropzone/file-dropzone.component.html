@@ -31,16 +31,16 @@
         <line x1="12" y1="3" x2="12" y2="15"></line>
       </svg>
     </div>
-    <h3 class="title">{{ title }}</h3>
-    <p class="description">{{ description }}</p>
+    <h3 class="title">{{ displayTitle }}</h3>
+    <p class="description">{{ displayDescription }}</p>
 
     <app-button variant="primary" size="md" (clicked)="fileInput.click()">
       <svg icon-start viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
       </svg>
-      {{ buttonText }}
+      {{ displayButtonText }}
     </app-button>
-    <span class="offline-note">100% Client-Side Processing</span>
+    <span class="offline-note">{{ 'common.offlineNote' | translate }}</span>
   </div>
 
   <!-- STATE 2: SELECTED -->
@@ -64,13 +64,13 @@
         <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path>
       </svg>
     </div>
-    <h4 class="stage-title">{{ stageText || loadingMessage }}</h4>
+    <h4 class="stage-title">{{ displayStageText || displayLoadingMessage }}</h4>
     <div *ngIf="progress > 0" class="progress-bar-container">
       <div class="progress-fill" [style.width.%]="progress"></div>
     </div>
     <span *ngIf="progress > 0" class="progress-percent">{{ progress }}%</span>
     <button *ngIf="cancel.observers.length > 0" type="button" class="cancel-link" (click)="cancel.emit()">
-      Cancel
+      {{ 'common.cancel' | translate }}
     </button>
   </div>
 
@@ -81,8 +81,8 @@
         <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
     </div>
-    <h3 class="title">Ready!</h3>
-    <p class="description">{{ successMessage || 'File successfully processed and ready for download.' }}</p>
+    <h3 class="title">{{ 'common.ready' | translate }}</h3>
+    <p class="description">{{ successMessage || ('dropzone.readyDesc' | translate) }}</p>
   </div>
 
   <!-- STATE 5: ERROR -->
@@ -94,11 +94,11 @@
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
     </div>
-    <h3 class="title">Upload Error</h3>
-    <p class="description error-text">{{ errorMessage || 'An unexpected error occurred while reading the file.' }}</p>
+    <h3 class="title">{{ 'dropzone.uploadErrorTitle' | translate }}</h3>
+    <p class="description error-text">{{ errorMessage || ('dropzone.uploadErrorDesc' | translate) }}</p>
     <div class="error-actions">
-      <app-button variant="danger" size="sm" (clicked)="retry.emit()">Retry</app-button>
-      <app-button variant="outline" size="sm" (clicked)="fileInput.click()">Choose Another</app-button>
+      <app-button variant="danger" size="sm" (clicked)="retry.emit()">{{ 'common.retry' | translate }}</app-button>
+      <app-button variant="outline" size="sm" (clicked)="fileInput.click()">{{ 'common.chooseAnother' | translate }}</app-button>
     </div>
   </div>
 </div>

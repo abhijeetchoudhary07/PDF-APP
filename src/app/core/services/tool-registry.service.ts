@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
 import { BehaviorSubject } from 'rxjs';
+import { TranslationService } from './translation.service';
 
 export interface ToolItem {
   id: string;
@@ -22,7 +23,7 @@ const FAVORITE_TOOLS_KEY = 'IFH_FAVORITE_TOOLS';
   providedIn: 'root'
 })
 export class ToolRegistryService {
-  readonly tools: ToolItem[] = [
+  private readonly rawTools: ToolItem[] = [
     {
       id: 'photo_tools',
       category: 'PHOTO',
@@ -196,9 +197,33 @@ export class ToolRegistryService {
 
   private recentIds: string[] = [];
   private favoriteIds: string[] = [];
+  private translationService: TranslationService;
 
-  constructor() {
+  constructor(translationService?: TranslationService) {
+    this.translationService = translationService || new TranslationService();
     this.initStoredLists();
+    this.translationService.currentLang$.subscribe(() => {
+      this.updateRecentToolsSubject();
+      this.updateFavoriteToolsSubject();
+    });
+  }
+
+  get tools(): ToolItem[] {
+    return this.rawTools.map(t => this.localizeTool(t));
+  }
+
+  private localizeTool(tool: ToolItem): ToolItem {
+    const titleKey = `tools.${tool.id}.title`;
+    const descKey = `tools.${tool.id}.description`;
+
+    const translatedTitle = this.translationService.translate(titleKey);
+    const translatedDesc = this.translationService.translate(descKey);
+
+    return {
+      ...tool,
+      title: translatedTitle !== titleKey ? translatedTitle : tool.title,
+      description: translatedDesc !== descKey ? translatedDesc : tool.description
+    };
   }
 
   private async initStoredLists() {

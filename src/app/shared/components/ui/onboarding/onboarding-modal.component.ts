@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Preferences } from '@capacitor/preferences';
 import { AppButtonComponent } from '../button/button.component';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 const ONBOARDING_KEY = 'IFH_ONBOARDING_COMPLETED_V1';
 
@@ -9,15 +10,15 @@ const ONBOARDING_KEY = 'IFH_ONBOARDING_COMPLETED_V1';
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-onboarding-modal',
   standalone: true,
-  imports: [CommonModule, AppButtonComponent],
+  imports: [CommonModule, AppButtonComponent, TranslatePipe],
   template: `
     <div *ngIf="isOpen" class="onboarding-backdrop" (click)="dismiss()">
       <div class="onboarding-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
         
         <!-- Top bar: Skip button -->
         <div class="dialog-top-bar">
-          <span class="step-indicator">Step {{ currentStep + 1 }} of {{ steps.length }}</span>
-          <button type="button" class="skip-btn" (click)="dismiss()">Skip</button>
+          <span class="step-indicator">{{ 'onboarding.stepIndicator' | translate:{ current: currentStep + 1, total: steps.length } }}</span>
+          <button type="button" class="skip-btn" (click)="dismiss()">{{ 'onboarding.skip' | translate }}</button>
         </div>
 
         <!-- Slide Content -->
@@ -46,16 +47,16 @@ const ONBOARDING_KEY = 'IFH_ONBOARDING_COMPLETED_V1';
             </svg>
           </div>
 
-          <h3 class="slide-title">{{ steps[currentStep].title }}</h3>
-          <p class="slide-desc">{{ steps[currentStep].desc }}</p>
+          <h3 class="slide-title">{{ steps[currentStep].titleKey | translate }}</h3>
+          <p class="slide-desc">{{ steps[currentStep].descKey | translate }}</p>
 
           <!-- Bullet Points -->
           <ul class="slide-bullets">
-            <li *ngFor="let point of steps[currentStep].bullets">
+            <li *ngFor="let pointKey of steps[currentStep].bulletKeys">
               <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" class="check-icon">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
-              <span>{{ point }}</span>
+              <span>{{ pointKey | translate }}</span>
             </li>
           </ul>
         </div>
@@ -78,7 +79,7 @@ const ONBOARDING_KEY = 'IFH_ONBOARDING_COMPLETED_V1';
               variant="primary"
               size="md"
               (clicked)="nextStep()">
-              {{ currentStep === steps.length - 1 ? 'Get Started' : 'Continue' }}
+              {{ currentStep === steps.length - 1 ? ('onboarding.getStarted' | translate) : ('onboarding.continue' | translate) }}
             </app-button>
           </div>
         </div>
@@ -248,33 +249,33 @@ export class AppOnboardingModalComponent implements OnInit {
 
   readonly steps = [
     {
-      title: '100% Client-Side Privacy',
-      desc: 'Your files never leave your device. All compression, OCR, conversion, and editing run entirely in your local browser memory.',
+      titleKey: 'onboarding.step0Title',
+      descKey: 'onboarding.step0Desc',
       color: 'privacy',
-      bullets: [
-        'Zero document uploads to external servers',
-        'Works completely offline without internet',
-        'Your sensitive personal documents stay private'
+      bulletKeys: [
+        'onboarding.step0Bullet1',
+        'onboarding.step0Bullet2',
+        'onboarding.step0Bullet3'
       ]
     },
     {
-      title: 'Exact KB & Dimension Precision',
-      desc: 'Built specifically to satisfy strict exam and government job portal upload rules (SSC, UPSC, IBPS, State PSCs).',
+      titleKey: 'onboarding.step1Title',
+      descKey: 'onboarding.step1Desc',
       color: 'precision',
-      bullets: [
-        'Iterative compression guarantees exact maximum KB limits',
-        'Automatic 3.5 x 4.5 cm passport photo aspect ratios',
-        'Instant signature background cleanup & enhancement'
+      bulletKeys: [
+        'onboarding.step1Bullet1',
+        'onboarding.step1Bullet2',
+        'onboarding.step1Bullet3'
       ]
     },
     {
-      title: 'Complete Document Suite',
-      desc: 'Everything you need to prepare, sign, and organize application packages in one unified place.',
+      titleKey: 'onboarding.step2Title',
+      descKey: 'onboarding.step2Desc',
       color: 'suite',
-      bullets: [
-        'Convert 15+ formats (Word, Excel, PPT, PNG, PDF/A)',
-        'Merge, split, rotate, and delete PDF pages visually',
-        'Fill forms, place signatures, and password-protect'
+      bulletKeys: [
+        'onboarding.step2Bullet1',
+        'onboarding.step2Bullet2',
+        'onboarding.step2Bullet3'
       ]
     }
   ];

@@ -9,11 +9,11 @@
       <section class="home-hero">
         <div class="hero-badge">
           <span class="pulse-dot"></span>
-          <span>100% Client-Side &bull; No Server Uploads</span>
+          <span>{{ 'home.heroBadge' | translate }}</span>
         </div>
-        <h1 class="hero-title">The Complete <span class="accent">Document Utility</span> Platform</h1>
+        <h1 class="hero-title" [innerHTML]="'home.heroTitle' | translate"></h1>
         <p class="hero-subtitle">
-          Compress photos, clean signatures, edit, merge, sign, convert, and protect PDF documents for exam and government job portals with pixel precision.
+          {{ 'home.heroSubtitle' | translate }}
         </p>
 
         <!-- SEARCH BAR -->
@@ -26,35 +26,52 @@
             <input
               type="text"
               [(ngModel)]="searchQuery"
-              placeholder="Search tools (e.g. photo compress, merge, word, sign, protect)..."
+              [placeholder]="'home.searchPlaceholder' | translate"
               class="search-input" />
             <button
               *ngIf="searchQuery"
               type="button"
               class="clear-search-btn"
               (click)="searchQuery = ''"
-              aria-label="Clear search">
+              [attr.aria-label]="'home.clearSearch' | translate">
               &times;
             </button>
           </div>
         </div>
 
-        <!-- CATEGORY FILTER PILLS -->
-        <div class="category-pills-scroll" role="tablist" aria-label="Tool Categories">
-          <button
-            *ngFor="let cat of categories"
-            type="button"
-            class="cat-pill"
-            [class.active]="selectedCategory === cat"
-            (click)="setCategory(cat)">
-            {{ cat }}
-          </button>
+        <!-- CATEGORY FILTER PILLS (AUTO-SCROLLING MARQUEE) -->
+        <div class="category-marquee-container" role="tablist" aria-label="Tool Categories">
+          <div class="category-marquee-track">
+            <!-- First loop group -->
+            <div class="category-marquee-group">
+              <button
+                *ngFor="let cat of marqueeCategories"
+                type="button"
+                class="cat-pill"
+                [class.active]="selectedCategory === cat"
+                (click)="setCategory(cat)">
+                {{ ('categories.' + cat) | translate }}
+              </button>
+            </div>
+            <!-- Second loop group (identical duplicate for seamless infinite right-to-left loop) -->
+            <div class="category-marquee-group" aria-hidden="true">
+              <button
+                *ngFor="let cat of marqueeCategories"
+                type="button"
+                tabindex="-1"
+                class="cat-pill"
+                [class.active]="selectedCategory === cat"
+                (click)="setCategory(cat)">
+                {{ ('categories.' + cat) | translate }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- RECENT TOOLS BAR -->
         <ng-container *ngIf="toolRegistry.recentTools$ | async as recents">
           <div *ngIf="recents.length > 0" class="recent-tools-bar">
-            <span class="bar-title">Recent Tools:</span>
+            <span class="bar-title">{{ 'home.recentTools' | translate }}</span>
             <div class="recent-chips-list">
               <a
                 *ngFor="let recent of recents"
@@ -72,9 +89,9 @@
       <!-- EMPTY SEARCH STATE -->
       <div *ngIf="filteredTools.length === 0" class="no-results-box">
         <app-empty-state
-          title="No tools found"
-          [description]="'No tools match &quot;' + searchQuery + '&quot;. Try searching for &quot;compress&quot;, &quot;merge&quot;, or &quot;word&quot;.'"
-          actionLabel="Reset Filters"
+          [title]="'home.noToolsFound' | translate"
+          [description]="'home.noToolsDesc' | translate:{ query: searchQuery }"
+          [actionLabel]="'home.resetFilters' | translate"
           (actionClicked)="clearFilters()">
         </app-empty-state>
       </div>
@@ -96,7 +113,7 @@
               </div>
 
               <div class="tile-tags">
-                <span class="category-pill">{{ tool.category }}</span>
+                <span class="category-pill">{{ ('categories.' + tool.category) | translate }}</span>
                 <span *ngIf="tool.badge" class="badge-pill">{{ tool.badge }}</span>
                 
                 <!-- Favorite Pin Button -->
@@ -119,7 +136,7 @@
             </div>
 
             <div class="tile-footer">
-              <span class="launch-text">Launch Tool</span>
+              <span class="launch-text">{{ 'home.launchTool' | translate }}</span>
               <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" class="launch-arrow">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
                 <polyline points="12 5 19 12 12 19"></polyline>
@@ -138,8 +155,8 @@
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
           </div>
-          <h4>Zero-Knowledge Privacy</h4>
-          <p>Files never leave your device. All compression, OCR, conversion, and editing run entirely in your local browser memory.</p>
+          <h4>{{ 'home.feature1Title' | translate }}</h4>
+          <p>{{ 'home.feature1Desc' | translate }}</p>
         </div>
 
         <div class="highlight-card">
@@ -148,8 +165,8 @@
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
             </svg>
           </div>
-          <h4>Exact KB Precision</h4>
-          <p>Strict government portal requirements (SSC, UPSC, IBPS, PSC) met with iterative compression that respects maximum size limits.</p>
+          <h4>{{ 'home.feature2Title' | translate }}</h4>
+          <p>{{ 'home.feature2Desc' | translate }}</p>
         </div>
 
         <div class="highlight-card">
@@ -161,8 +178,8 @@
               <line x1="16" y1="17" x2="8" y2="17"></line>
             </svg>
           </div>
-          <h4>Full PDF Suite</h4>
-          <p>Convert 15+ formats, merge, split, rotate, fill AcroForms, place multi-party signatures, and password-protect without subscriptions.</p>
+          <h4>{{ 'home.feature3Title' | translate }}</h4>
+          <p>{{ 'home.feature3Desc' | translate }}</p>
         </div>
       </section>
 

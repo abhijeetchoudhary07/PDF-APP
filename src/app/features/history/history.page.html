@@ -4,9 +4,9 @@
   <main class="app-main-content">
     <div class="app-container">
       <app-page-header
-        title="Processing History"
-        subtitle="View, share, or delete your past processed documents and images."
-        [breadcrumbs]="[{ label: 'Processing History' }]"
+        [title]="'historyPage.title' | translate"
+        [subtitle]="'historyPage.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('historyPage.title' | translate) }]"
         badge="HISTORY"
         badgeVariant="neutral"
         backUrl="/home">
@@ -18,7 +18,7 @@
             size="sm"
             (clicked)="clearHistory()">
             <app-icon name="trash-outline" class="btn-icon"></app-icon>
-            Clear History
+            {{ 'historyPage.clearBtn' | translate }}
           </app-button>
         </div>
       </app-page-header>
@@ -30,7 +30,7 @@
           class="filter-chip"
           [class.active]="selectedFilter === f"
           (click)="selectedFilter = f">
-          {{ f }}
+          {{ f === 'ALL' ? ('common.all' | translate) : f }}
         </button>
       </div>
 
@@ -45,17 +45,17 @@
           <div class="empty-icon-badge">
             <app-icon name="time-outline"></app-icon>
           </div>
-          <h3>No Processing History</h3>
-          <p>Your processed photos, signatures, PDFs, and conversions will appear here.</p>
+          <h3>{{ 'historyPage.emptyTitle' | translate }}</h3>
+          <p>{{ 'historyPage.emptyDesc' | translate }}</p>
           <app-button routerLink="/home" size="md" variant="primary" style="margin-top: 16px;">
             <app-icon name="compass-outline" class="btn-icon"></app-icon>
-            Explore Tools
+            {{ 'historyPage.exploreTools' | translate }}
           </app-button>
         </div>
 
         <!-- NO RESULTS FOR FILTER -->
         <div class="no-filter-results" *ngIf="!isLoading && history.length > 0 && filteredHistory.length === 0">
-          <p>No history items found for category "{{ selectedFilter }}".</p>
+          <p>{{ 'historyPage.noFilterMatches' | translate:{ filter: selectedFilter } }}</p>
         </div>
 
         <!-- HISTORY ITEMS LIST -->
@@ -81,7 +81,7 @@
                 </p>
 
                 <p class="size-row">
-                  Size: {{ (item.originalSizeBytes / 1024) | number:'1.0-1' }} KB &rarr;
+                  {{ 'common.size' | translate }}: {{ (item.originalSizeBytes / 1024) | number:'1.0-1' }} KB &rarr;
                   <strong class="text-success">{{ (item.outputSizeBytes / 1024) | number:'1.0-1' }} KB</strong>
                   <span *ngIf="item.originalSizeBytes > item.outputSizeBytes" class="reduction-tag">
                     (-{{ (100 - (item.outputSizeBytes / item.originalSizeBytes * 100)) | number:'1.0-0' }}%)
@@ -89,22 +89,29 @@
                 </p>
 
                 <p *ngIf="item.outputDimensions" class="dims-row">
-                  Dimensions: {{ item.originalDimensions }} &rarr; {{ item.outputDimensions }}
+                  {{ 'common.dimensions' | translate }}: {{ item.originalDimensions }} &rarr; {{ item.outputDimensions }}
                 </p>
               </div>
             </div>
 
             <div class="card-actions-section">
-              <app-button variant="ghost" size="sm" (clicked)="shareItem(item)" title="Share">
+              <app-button variant="ghost" size="sm" (clicked)="shareItem(item)" [title]="'common.share' | translate">
                 <app-icon name="share-social-outline"></app-icon>
               </app-button>
-              <app-button variant="danger" size="sm" (clicked)="deleteItem(item)" title="Delete">
+
+              <app-button
+                variant="ghost"
+                size="sm"
+                class="btn-delete"
+                (clicked)="deleteItem(item)"
+                [title]="'common.delete' | translate">
                 <app-icon name="trash-outline"></app-icon>
               </app-button>
             </div>
           </div>
         </div>
       </div>
+
     </div>
   </main>
 

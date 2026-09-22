@@ -14,12 +14,14 @@ import { MonetizationService } from '../../../../core/services/monetization.serv
 import { GlobalSearchService } from '../../../../core/services/global-search.service';
 import { ProfileService } from '../../../../core/services/profile.service';
 import { ThemeService, ThemeMode } from '../../../../core/services/theme.service';
+import { AppLanguageSelectorComponent } from '../language-selector/language-selector.component';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AppLanguageSelectorComponent, TranslatePipe],
   template: `
     <header class="app-header" [class.is-scrolled]="scrolled">
       <div class="header-inner">
@@ -48,7 +50,7 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
           </div>
           <div class="brand-text">
             <span class="brand-name">Form Helper</span>
-            <span class="brand-tag">100% Offline</span>
+            <span class="brand-tag">{{ 'common.brandTag' | translate }}</span>
           </div>
         </a>
 
@@ -63,7 +65,7 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
               (click)="toolsMenuOpen = !toolsMenuOpen"
               aria-haspopup="true"
               [attr.aria-expanded]="toolsMenuOpen">
-              <span>Tools</span>
+              <span>{{ 'header.tools' | translate }}</span>
               <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" class="dropdown-chevron">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
@@ -72,76 +74,76 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
             <!-- Tools Mega Dropdown Menu -->
             <div *ngIf="toolsMenuOpen" class="tools-dropdown-menu" (click)="toolsMenuOpen = false">
               <div class="dropdown-column">
-                <span class="column-title">Media & Signatures</span>
+                <span class="column-title">{{ 'header.columnMedia' | translate }}</span>
                 <a routerLink="/features/photo" class="dropdown-item">
                   <span class="item-dot color-photo"></span>
                   <div>
-                    <span class="item-name">Photo Tools</span>
-                    <span class="item-sub">Compress & Resize to KB</span>
+                    <span class="item-name">{{ 'tools.photo_tools.title' | translate }}</span>
+                    <span class="item-sub">{{ 'header.toolPhotoSub' | translate }}</span>
                   </div>
                 </a>
                 <a routerLink="/features/signature" class="dropdown-item">
                   <span class="item-dot color-signature"></span>
                   <div>
-                    <span class="item-name">Signature Tools</span>
-                    <span class="item-sub">Clean background & crop</span>
+                    <span class="item-name">{{ 'tools.signature_tools.title' | translate }}</span>
+                    <span class="item-sub">{{ 'header.toolSigSub' | translate }}</span>
                   </div>
                 </a>
                 <a routerLink="/features/batch" class="dropdown-item">
                   <span class="item-dot color-batch"></span>
                   <div>
-                    <span class="item-name">Batch Images</span>
-                    <span class="item-sub">Bulk photo compression</span>
+                    <span class="item-name">{{ 'tools.batch_images.title' | translate }}</span>
+                    <span class="item-sub">{{ 'header.toolBatchSub' | translate }}</span>
                   </div>
                 </a>
               </div>
 
               <div class="dropdown-column">
-                <span class="column-title">PDF Core Utilities</span>
+                <span class="column-title">{{ 'header.columnPdf' | translate }}</span>
                 <a routerLink="/features/pdf" class="dropdown-item">
                   <span class="item-dot color-pdf"></span>
                   <div>
-                    <span class="item-name">PDF Compress</span>
-                    <span class="item-sub">Shrink to exact target KB</span>
+                    <span class="item-name">{{ 'header.pdf' | translate }}</span>
+                    <span class="item-sub">{{ 'header.toolPdfSub' | translate }}</span>
                   </div>
                 </a>
                 <a routerLink="/features/pdf/conversion" class="dropdown-item">
                   <span class="item-dot color-convert"></span>
                   <div>
-                    <span class="item-name">Document Converter</span>
-                    <span class="item-sub">15+ formats (Word, Excel)</span>
+                    <span class="item-name">{{ 'tools.doc_converter.title' | translate }}</span>
+                    <span class="item-sub">{{ 'header.toolConvertSub' | translate }}</span>
                   </div>
                 </a>
                 <a routerLink="/features/pdf/organize" class="dropdown-item">
                   <span class="item-dot color-organize"></span>
                   <div>
-                    <span class="item-name">Organize & Merge</span>
-                    <span class="item-sub">Rearrange, split & rotate</span>
+                    <span class="item-name">{{ 'tools.pdf_organize.title' | translate }}</span>
+                    <span class="item-sub">{{ 'header.toolOrganizeSub' | translate }}</span>
                   </div>
                 </a>
               </div>
 
               <div class="dropdown-column">
-                <span class="column-title">Edit & Security</span>
+                <span class="column-title">{{ 'header.columnEdit' | translate }}</span>
                 <a routerLink="/features/pdf/editor" class="dropdown-item">
                   <span class="item-dot color-edit"></span>
                   <div>
-                    <span class="item-name">PDF Editor</span>
-                    <span class="item-sub">Annotate & watermark</span>
+                    <span class="item-name">{{ 'tools.pdf_editor.title' | translate }}</span>
+                    <span class="item-sub">{{ 'header.toolEditorSub' | translate }}</span>
                   </div>
                 </a>
                 <a routerLink="/features/pdf/sign" class="dropdown-item">
                   <span class="item-dot color-sign"></span>
                   <div>
-                    <span class="item-name">Sign PDF</span>
-                    <span class="item-sub">Interactive signing</span>
+                    <span class="item-name">{{ 'tools.sign_pdf.title' | translate }}</span>
+                    <span class="item-sub">{{ 'header.toolSignSub' | translate }}</span>
                   </div>
                 </a>
                 <a routerLink="/features/pdf/security" class="dropdown-item">
                   <span class="item-dot color-security"></span>
                   <div>
-                    <span class="item-name">PDF Security</span>
-                    <span class="item-sub">Lock & unlock password</span>
+                    <span class="item-name">{{ 'tools.pdf_protect.title' | translate }}</span>
+                    <span class="item-sub">{{ 'header.toolSecuritySub' | translate }}</span>
                   </div>
                 </a>
               </div>
@@ -149,19 +151,22 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
           </div>
 
           <!-- Direct Desktop Links -->
-          <a routerLink="/features/pdf" routerLinkActive="active" class="nav-item">PDF</a>
-          <a routerLink="/features/photo" routerLinkActive="active" class="nav-item">Photo</a>
-          <a routerLink="/features/signature" routerLinkActive="active" class="nav-item">Signature</a>
-          <a routerLink="/features/presets" routerLinkActive="active" class="nav-item">Presets</a>
-          <a routerLink="/features/history" routerLinkActive="active" class="nav-item">History</a>
+          <a routerLink="/features/pdf" routerLinkActive="active" class="nav-item">{{ 'header.pdf' | translate }}</a>
+          <a routerLink="/features/photo" routerLinkActive="active" class="nav-item">{{ 'header.photo' | translate }}</a>
+          <a routerLink="/features/signature" routerLinkActive="active" class="nav-item">{{ 'header.signature' | translate }}</a>
+          <a routerLink="/features/presets" routerLinkActive="active" class="nav-item">{{ 'header.presets' | translate }}</a>
+          <a routerLink="/features/history" routerLinkActive="active" class="nav-item">{{ 'header.history' | translate }}</a>
           <a routerLink="/features/premium" routerLinkActive="active" class="nav-item nav-item-pro">
             <span class="pro-sparkle">&starf;</span>
-            <span>Premium</span>
+            <span>{{ 'header.premium' | translate }}</span>
           </a>
         </nav>
 
         <!-- 3. Header Actions (Desktop & Mobile) -->
         <div class="header-actions">
+          <!-- Language Selector Dropdown -->
+          <app-language-selector mode="dropdown"></app-language-selector>
+
           <!-- Search Button (Both Desktop & Mobile) -->
           <button
             type="button"
@@ -172,7 +177,7 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <span class="search-btn-text">Search</span>
+            <span class="search-btn-text">{{ 'common.search' | translate }}</span>
             <kbd class="search-kbd">Ctrl+K</kbd>
           </button>
 
@@ -267,9 +272,15 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
           </button>
         </div>
 
+        <!-- Language switch -->
+        <div class="drawer-theme-row">
+          <span class="drawer-theme-label">{{ 'common.language' | translate }}</span>
+          <app-language-selector mode="dropdown"></app-language-selector>
+        </div>
+
         <!-- Appearance switch -->
         <div class="drawer-theme-row">
-          <span class="drawer-theme-label">Appearance</span>
+          <span class="drawer-theme-label">{{ 'common.appearance' | translate }}</span>
           <div class="theme-segmented" role="group" aria-label="Theme">
             <button
               *ngFor="let option of themeOptions"
@@ -277,7 +288,7 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
               class="theme-seg-btn"
               [class.active]="(themeService.currentTheme$ | async) === option.mode"
               (click)="setTheme(option.mode)">
-              {{ option.label }}
+              {{ ('common.' + option.mode) | translate }}
             </button>
           </div>
         </div>
@@ -292,7 +303,7 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
             class="drawer-link"
             [class.pro-link]="link.pro"
             [style.--stagger]="i">
-            <span class="link-bullet" [ngClass]="link.bullet"></span> {{ link.label }}
+            <span class="link-bullet" [ngClass]="link.bullet"></span> {{ link.labelKey | translate }}
           </a>
         </div>
 
@@ -302,7 +313,7 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            <span>Zero Uploads &bull; 100% Client-Side</span>
+            <span>{{ 'common.offlineBadge' | translate }}</span>
           </div>
         </div>
       </div>
@@ -1043,19 +1054,19 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
    * The drawer used to repeat the same anchor twelve times. Driving it from
    * data keeps the markup to one *ngFor and makes the stagger index free.
    */
-  readonly drawerLinks: { route: string; label: string; bullet: string; pro?: boolean }[] = [
-    { route: '/home', label: 'Home Dashboard', bullet: '' },
-    { route: '/features/pdf', label: 'PDF Tools Hub', bullet: 'bullet-pdf' },
-    { route: '/features/photo', label: 'Photo Tools (Compress & Resize)', bullet: 'bullet-photo' },
-    { route: '/features/signature', label: 'Signature Tools (Clean & Crop)', bullet: 'bullet-sig' },
-    { route: '/features/presets', label: 'Exam & Job Presets', bullet: 'bullet-presets' },
-    { route: '/features/pdf/conversion', label: 'Document Converter (15+ Formats)', bullet: 'bullet-convert' },
-    { route: '/features/pdf/organize', label: 'PDF Organizer & Merge', bullet: 'bullet-organize' },
-    { route: '/features/pdf/editor', label: 'PDF Editor & Annotator', bullet: 'bullet-edit' },
-    { route: '/features/history', label: 'Processing History', bullet: '' },
-    { route: '/features/premium', label: 'Go Premium', bullet: 'bullet-pro', pro: true },
-    { route: '/profile', label: 'My Profile', bullet: '' },
-    { route: '/features/settings', label: 'Settings & Preferences', bullet: '' }
+  readonly drawerLinks: { route: string; labelKey: string; bullet: string; pro?: boolean }[] = [
+    { route: '/home', labelKey: 'header.tools', bullet: '' },
+    { route: '/features/pdf', labelKey: 'tools.pdf_dashboard.title', bullet: 'bullet-pdf' },
+    { route: '/features/photo', labelKey: 'tools.photo_tools.title', bullet: 'bullet-photo' },
+    { route: '/features/signature', labelKey: 'tools.signature_tools.title', bullet: 'bullet-sig' },
+    { route: '/features/presets', labelKey: 'tools.presets.title', bullet: 'bullet-presets' },
+    { route: '/features/pdf/conversion', labelKey: 'tools.doc_converter.title', bullet: 'bullet-convert' },
+    { route: '/features/pdf/organize', labelKey: 'tools.pdf_organize.title', bullet: 'bullet-organize' },
+    { route: '/features/pdf/editor', labelKey: 'tools.pdf_editor.title', bullet: 'bullet-edit' },
+    { route: '/features/history', labelKey: 'header.history', bullet: '' },
+    { route: '/features/premium', labelKey: 'header.premium', bullet: 'bullet-pro', pro: true },
+    { route: '/profile', labelKey: 'common.profile', bullet: '' },
+    { route: '/features/settings', labelKey: 'settings.title', bullet: '' }
   ];
 
   private routerSub?: Subscription;

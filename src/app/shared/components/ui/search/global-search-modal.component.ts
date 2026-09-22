@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { GlobalSearchService } from '../../../../core/services/global-search.service';
 import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-registry.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-global-search-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   template: `
     <div
       *ngIf="searchService.isOpen$ | async"
@@ -20,7 +21,7 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
         (click)="$event.stopPropagation()"
         role="dialog"
         aria-modal="true"
-        aria-label="Search Tools">
+        [attr.aria-label]="'search.dialogLabel' | translate">
         
         <!-- Search Input Bar -->
         <div class="search-input-header">
@@ -28,7 +29,7 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
             type="button"
             class="search-back-btn"
             (click)="close()"
-            aria-label="Close search">
+            [attr.aria-label]="'search.closeSearch' | translate">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.4" fill="none">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
@@ -44,7 +45,7 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
             [(ngModel)]="searchQuery"
             (ngModelChange)="onQueryChange()"
             (keydown)="onKeyDown($event)"
-            placeholder="Search tools (e.g. compress, merge, pdf to jpg, passport, signature)..."
+            [placeholder]="'search.inputPlaceholder' | translate"
             class="search-modal-input"
             aria-autocomplete="list" />
           
@@ -54,15 +55,15 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
               type="button"
               class="close-text-btn"
               (click)="close()"
-              aria-label="Close search">
-              Close
+              [attr.aria-label]="'search.closeSearch' | translate">
+              {{ 'common.close' | translate }}
             </button>
             <button
               *ngIf="searchQuery"
               type="button"
               class="clear-btn"
               (click)="searchQuery = ''; onQueryChange()"
-              aria-label="Clear query">
+              [attr.aria-label]="'search.clearQuery' | translate">
               &times;
             </button>
           </div>
@@ -73,8 +74,8 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
           <!-- Active Search Results -->
           <div *ngIf="searchQuery.trim()" class="results-list" role="listbox">
             <div *ngIf="results.length === 0" class="no-match-box">
-              <p class="no-match-title">No tools found for "{{ searchQuery }}"</p>
-              <p class="no-match-sub">Try searching for keywords like "compress", "word", "sign", or "organize".</p>
+              <p class="no-match-title">{{ 'search.noMatchTitle' | translate:{ query: searchQuery } }}</p>
+              <p class="no-match-sub">{{ 'search.noMatchSub' | translate }}</p>
             </div>
 
             <div
@@ -101,13 +102,13 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
               <div class="result-details">
                 <div class="title-row">
                   <span class="tool-title">{{ tool.title }}</span>
-                  <span class="cat-badge" [ngClass]="'badge-' + tool.color">{{ tool.category }}</span>
+                  <span class="cat-badge" [ngClass]="'badge-' + tool.color">{{ ('categories.' + tool.category) | translate }}</span>
                 </div>
                 <p class="tool-desc">{{ tool.description }}</p>
               </div>
 
               <div class="action-hint">
-                <span>Jump to tool</span>
+                <span>{{ 'search.jumpToTool' | translate }}</span>
                 <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
@@ -118,7 +119,7 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
           <!-- Empty State: Quick Recents & Suggested -->
           <div *ngIf="!searchQuery.trim()" class="recents-section">
             <div *ngIf="(toolRegistry.recentTools$ | async)?.length" class="section-group">
-              <span class="group-title">Recently Used</span>
+              <span class="group-title">{{ 'search.recentlyUsed' | translate }}</span>
               <div class="recents-grid">
                 <button
                   *ngFor="let recent of toolRegistry.recentTools$ | async"
@@ -132,7 +133,7 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
             </div>
 
             <div class="section-group">
-              <span class="group-title">Popular Tools</span>
+              <span class="group-title">{{ 'search.popularTools' | translate }}</span>
               <div class="popular-list">
                 <div
                   *ngFor="let pop of popularTools"
@@ -146,7 +147,7 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
                   <div class="result-details">
                     <div class="title-row">
                       <span class="tool-title">{{ pop.title }}</span>
-                      <span class="cat-badge" [ngClass]="'badge-' + pop.color">{{ pop.category }}</span>
+                      <span class="cat-badge" [ngClass]="'badge-' + pop.color">{{ ('categories.' + pop.category) | translate }}</span>
                     </div>
                     <p class="tool-desc">{{ pop.description }}</p>
                   </div>

@@ -3,7 +3,10 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { resolveAngularResources } from '../../test-setup';
 
+import { FormsModule } from '@angular/forms';
+import { RouterModule, provideRouter } from '@angular/router';
 import { HomePage } from './home.page';
+import { TranslatePipe } from '../shared/components/ui';
 
 /*
  * HomePage is declared by HomePageModule rather than being standalone, so it
@@ -21,6 +24,8 @@ describe('HomePage', () => {
 
     TestBed.configureTestingModule({
       declarations: [HomePage],
+      imports: [FormsModule, RouterModule, TranslatePipe],
+      providers: [provideRouter([])],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
     });
 

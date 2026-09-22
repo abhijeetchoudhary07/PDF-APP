@@ -6,9 +6,9 @@
       
       <!-- PAGE HEADER -->
       <app-page-header
-        title="Photo Tools"
-        subtitle="Compress, resize, and crop passport photos to exact KB and dimensions for online forms."
-        [breadcrumbs]="[{ label: 'Photo Tools' }]"
+        [title]="'photoPage.title' | translate"
+        [subtitle]="'photoPage.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('photoPage.title' | translate) }]"
         backUrl="/home"
         badge="PHOTO"
         badgeVariant="photo">
@@ -18,8 +18,8 @@
       <div class="mode-tabs-wrap">
         <app-tabs
           [tabs]="[
-            { id: 'kb', label: 'Exact KB Compression' },
-            { id: 'pixels', label: 'Exact Pixel Resize' }
+            { id: 'kb', label: ('photoPage.tabKb' | translate) },
+            { id: 'pixels', label: ('photoPage.tabPixels' | translate) }
           ]"
           [selectedTab]="mode"
           [fullWidth]="true"
@@ -33,8 +33,8 @@
         <div *ngIf="workflowState === 'EMPTY' || (!originalFile && workflowState === 'ERROR')">
           <app-file-dropzone
             icon="camera"
-            title="Select or Drag & Drop Passport Photo"
-            description="Supports JPG, PNG, and WebP images. 100% offline & client-side."
+            [title]="'dropzone.photoTitle' | translate"
+            [description]="'dropzone.photoDesc' | translate"
             accept="image/jpeg,image/png,image/webp"
             [errorMessage]="errorMessage"
             (fileSelected)="onFileSelected($event)">
@@ -55,7 +55,7 @@
 
           <!-- SMART GOVERNMENT FORM PRESETS -->
           <div class="smart-presets-card">
-            <label class="control-label">Quick Presets for Indian Portals</label>
+            <label class="control-label">{{ 'photoPage.quickPresetsTitle' | translate }}</label>
             <div class="preset-cards-grid">
               <button
                 *ngFor="let preset of formPresets"
@@ -71,7 +71,7 @@
 
           <!-- CONFIGURATION: EXACT KB -->
           <div *ngIf="mode === 'kb'" class="config-card">
-            <label class="control-label">Select Target File Size</label>
+            <label class="control-label">{{ 'photoPage.targetSizeTitle' | translate }}</label>
             <div class="preset-chips">
               <button
                 *ngFor="let size of targetSizes"
@@ -82,12 +82,12 @@
                 {{ size }} KB
               </button>
             </div>
-            <p class="config-hint">The compression engine iteratively fine-tunes image quality to achieve an exact fit under this size.</p>
+            <p class="config-hint">{{ 'photoPage.targetSizeHint' | translate }}</p>
           </div>
 
           <!-- CONFIGURATION: EXACT PIXELS -->
           <div *ngIf="mode === 'pixels'" class="config-card">
-            <label class="control-label">Common Form Presets</label>
+            <label class="control-label">{{ 'photoPage.pixelPresetsTitle' | translate }}</label>
             <div class="preset-chips">
               <button
                 *ngFor="let p of pixelPresets"
@@ -101,7 +101,7 @@
 
             <div class="dims-grid">
               <div class="field-group">
-                <label class="field-label">Width (px)</label>
+                <label class="field-label">{{ 'photoPage.widthLabel' | translate }}</label>
                 <input
                   type="number"
                   [(ngModel)]="targetWidth"
@@ -110,7 +110,7 @@
               </div>
 
               <div class="field-group">
-                <label class="field-label">Height (px)</label>
+                <label class="field-label">{{ 'photoPage.heightLabel' | translate }}</label>
                 <input
                   type="number"
                   [(ngModel)]="targetHeight"
@@ -125,7 +125,7 @@
                 <span class="custom-toggle-track">
                   <span class="custom-toggle-thumb"></span>
                 </span>
-                <span>Lock Aspect Ratio</span>
+                <span>{{ 'photoPage.lockAspectRatio' | translate }}</span>
               </label>
             </div>
           </div>
@@ -137,9 +137,9 @@
             </div>
             <div class="stage-info">
               <strong>{{ stageText }}</strong>
-              <span>Compressing photo offline</span>
+              <span>{{ 'common.processing' | translate }}</span>
             </div>
-            <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">Cancel</button>
+            <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">{{ 'common.cancel' | translate }}</button>
           </div>
 
           <!-- PRIMARY ACTION -->
@@ -150,7 +150,7 @@
               [block]="true"
               [loading]="isProcessing"
               (clicked)="compressPhoto()">
-              {{ isProcessing ? stageText : (mode === 'kb' ? 'Compress to ' + selectedTargetKB + ' KB' : 'Resize to ' + targetWidth + ' × ' + targetHeight + ' px') }}
+              {{ isProcessing ? stageText : (mode === 'kb' ? ('photoPage.compressBtn' | translate:{ size: selectedTargetKB }) : ('photoPage.resizeBtn' | translate:{ width: targetWidth, height: targetHeight })) }}
             </app-button>
           </div>
         </div>
@@ -171,8 +171,8 @@
           <app-related-tools
             currentToolId="photo_tools"
             category="PHOTO"
-            title="Next Steps & Connected Tools"
-            subtitle="Continue preparing your documents with these related tools">
+            [title]="'results.relatedToolsTitle' | translate"
+            [subtitle]="'results.relatedToolsSubtitle' | translate">
           </app-related-tools>
         </div>
       </div>

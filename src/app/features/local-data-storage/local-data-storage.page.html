@@ -1,0 +1,209 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      
+      <!-- Page Header with Breadcrumbs -->
+      <app-page-header
+        title="Local Data Storage"
+        subtitle="Inspect, manage, and export your offline device storage, history logs, and cache."
+        [breadcrumbs]="[{ label: 'Privacy & Support' }, { label: 'Local Data Storage' }]"
+        badge="STORAGE"
+        badgeVariant="presets"
+        [showBack]="true"
+        backUrl="/features/settings">
+        
+        <div actions class="header-actions">
+          <app-button variant="outline" size="sm" (clicked)="exportBackup()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export Backup (JSON)
+          </app-button>
+        </div>
+      </app-page-header>
+
+      <!-- UNIFIED PRIVACY & SUPPORT NAVIGATION TABS -->
+      <app-privacy-support-nav></app-privacy-support-nav>
+
+      <!-- OVERVIEW CARDS -->
+      <div class="storage-overview-grid">
+        <div class="stat-card">
+          <div class="stat-icon color-primary">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Total App Storage</span>
+            <span class="stat-value">{{ totalStorageFormatted }}</span>
+            <span class="stat-sub">Across Preferences & Cache</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon color-secondary">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">History Log Records</span>
+            <span class="stat-value">{{ historyItemsCount }}</span>
+            <span class="stat-sub">Recent processing items</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon color-success">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Server Storage</span>
+            <span class="stat-value text-success">0 Bytes</span>
+            <span class="stat-sub">Zero remote footprint</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STORAGE INVENTORY TABLE -->
+      <div class="inventory-section">
+        <div class="section-title-row">
+          <div>
+            <h3>Device Storage Inventory</h3>
+            <p>Every piece of data stored by Indian Form Helper on your physical device.</p>
+          </div>
+          <app-button variant="outline" size="sm" (clicked)="refreshStorage()">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+          </app-button>
+        </div>
+
+        <div class="table-container">
+          <table class="inventory-table">
+            <thead>
+              <tr>
+                <th>Data Entity</th>
+                <th>Storage Engine</th>
+                <th>Purpose & Scope</th>
+                <th>Allocated Size</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of storageRecords">
+                <td>
+                  <strong>{{ r.name }}</strong>
+                  <code class="key-chip">{{ r.key }}</code>
+                </td>
+                <td>
+                  <span class="engine-badge">{{ r.type }}</span>
+                </td>
+                <td class="desc-cell">{{ r.purpose }}</td>
+                <td class="size-cell">
+                  <span class="size-val">{{ r.formattedSize }}</span>
+                  <span *ngIf="r.itemCount !== undefined" class="count-val">({{ r.itemCount }} items)</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MANAGEMENT ACTIONS -->
+      <div class="management-grid">
+        <div class="action-card">
+          <div class="card-icon color-warning">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </div>
+          <h4>Clear History Logs</h4>
+          <p>Remove all {{ historyItemsCount }} log records. Does not touch files already downloaded to your device.</p>
+          <app-button variant="outline" size="sm" (clicked)="isClearHistoryModalOpen = true">
+            Clear Logs
+          </app-button>
+        </div>
+
+        <div class="action-card">
+          <div class="card-icon color-secondary">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path>
+            </svg>
+          </div>
+          <h4>Flush Temporary Cache</h4>
+          <p>Frees memory used by Canvas rendering contexts, image decode buffers, and cached font glyphs.</p>
+          <app-button variant="outline" size="sm" (clicked)="clearCache()">
+            Flush Cache
+          </app-button>
+        </div>
+
+        <div class="action-card">
+          <div class="card-icon color-danger">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <h4>Factory Reset All Data</h4>
+          <p>Completely wipe preferences, history, custom presets, and local cache to return to first-install state.</p>
+          <app-button variant="danger" size="sm" (clicked)="isFactoryResetModalOpen = true">
+            Factory Reset
+          </app-button>
+        </div>
+      </div>
+
+      <!-- CLEAR HISTORY CONFIRMATION MODAL -->
+      <app-modal
+        [isOpen]="isClearHistoryModalOpen"
+        title="Clear Processing History?"
+        subtitle="Erase all historical log entries"
+        [hasFooter]="true"
+        (closed)="isClearHistoryModalOpen = false">
+        <p class="modal-body-text">
+          Are you sure you want to permanently delete all {{ historyItemsCount }} entries from your offline processing history? Downloaded files on your device will remain untouched.
+        </p>
+        <div modal-footer>
+          <app-button variant="outline" size="md" (clicked)="isClearHistoryModalOpen = false">Cancel</app-button>
+          <app-button variant="danger" size="md" (clicked)="confirmClearHistory()">Yes, Clear Logs</app-button>
+        </div>
+      </app-modal>
+
+      <!-- FACTORY RESET MODAL -->
+      <app-modal
+        [isOpen]="isFactoryResetModalOpen"
+        title="Factory Reset Application?"
+        subtitle="This action cannot be undone"
+        [hasFooter]="true"
+        (closed)="isFactoryResetModalOpen = false">
+        <p class="modal-body-text text-danger-notice">
+          <strong>Warning:</strong> This will erase all your custom exam presets, default filename prefixes, appearance preferences, and processing logs. The application will reboot to its initial state.
+        </p>
+        <div modal-footer>
+          <app-button variant="outline" size="md" (clicked)="isFactoryResetModalOpen = false">Cancel</app-button>
+          <app-button variant="danger" size="md" (clicked)="confirmFactoryReset()">Reset Everything</app-button>
+        </div>
+      </app-modal>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

@@ -1,12 +1,14 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AppLanguageSelectorComponent } from '../language-selector/language-selector.component';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-footer',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AppLanguageSelectorComponent, TranslatePipe],
   template: `
     <footer class="app-footer">
       <div class="footer-inner">
@@ -19,65 +21,73 @@ import { RouterModule } from '@angular/router';
                 <polyline points="14 2 14 8 20 8"></polyline>
               </svg>
             </div>
-            <span class="brand-title">Indian Form Helper</span>
+            <span class="brand-title">{{ 'common.appName' | translate }}</span>
           </div>
           <p class="brand-desc">
-            The private, client-side document workstation. Compress, convert, organize, sign, and fill exam and job applications with 100% offline security.
+            {{ 'footer.brandDesc' | translate }}
           </p>
           <div class="security-chip">
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            <span>Zero Document Uploads Guaranteed</span>
+            <span>{{ 'footer.securityChip' | translate }}</span>
+          </div>
+
+          <!-- Quick Language Selector in Footer -->
+          <div class="footer-lang-row">
+            <app-language-selector mode="compact"></app-language-selector>
           </div>
         </div>
 
-        <!-- Links Column 1: Tools & Presets -->
-        <div class="footer-col">
-          <span class="col-title">Document Tools</span>
-          <ul class="col-links">
-            <li><a routerLink="/features/photo">Photo Compress & Crop</a></li>
-            <li><a routerLink="/features/signature">Signature Cleanup</a></li>
-            <li><a routerLink="/features/pdf">PDF Compress to KB</a></li>
-            <li><a routerLink="/features/pdf/conversion">Document Converter</a></li>
-            <li><a routerLink="/features/pdf/organize">Page Organizer & Merge</a></li>
-            <li><a routerLink="/features/pdf/editor">PDF Editor & Reader</a></li>
-            <li><a routerLink="/features/presets">Government Exam Presets</a></li>
-          </ul>
-        </div>
+        <!-- Links Columns: Displayed side by side across all viewports -->
+        <div class="footer-links-wrapper">
+          <!-- Links Column 1: Tools & Presets -->
+          <div class="footer-col">
+            <span class="col-title">{{ 'footer.docTools' | translate }}</span>
+            <ul class="col-links">
+              <li><a routerLink="/features/photo">{{ 'footer.photoCompress' | translate }}</a></li>
+              <li><a routerLink="/features/signature">{{ 'footer.sigCleanup' | translate }}</a></li>
+              <li><a routerLink="/features/pdf">{{ 'footer.pdfCompress' | translate }}</a></li>
+              <li><a routerLink="/features/pdf/conversion">{{ 'footer.docConverter' | translate }}</a></li>
+              <li><a routerLink="/features/pdf/organize">{{ 'footer.pageOrganize' | translate }}</a></li>
+              <li><a routerLink="/features/pdf/editor">{{ 'footer.pdfEditor' | translate }}</a></li>
+              <li><a routerLink="/features/presets">{{ 'footer.examPresets' | translate }}</a></li>
+            </ul>
+          </div>
 
-        <!-- Links Column 2: Product & Pricing -->
-        <div class="footer-col">
-          <span class="col-title">Product & Pricing</span>
-          <ul class="col-links">
-            <li><a routerLink="/home">Product Overview</a></li>
-            <li><a routerLink="/features/premium">Go Premium (Ad-Free)</a></li>
-            <li><a routerLink="/features/batch">Batch Photo Tool</a></li>
-            <li><a routerLink="/features/batch-pdf">Batch PDF Tool</a></li>
-            <li><a routerLink="/features/history">Processing History</a></li>
-            <li><a routerLink="/profile">User Profile & Usage</a></li>
-          </ul>
-        </div>
+          <!-- Links Column 2: Product & Pricing -->
+          <div class="footer-col">
+            <span class="col-title">{{ 'footer.productPricing' | translate }}</span>
+            <ul class="col-links">
+              <li><a routerLink="/home">{{ 'footer.productOverview' | translate }}</a></li>
+              <li><a routerLink="/features/premium">{{ 'footer.goPremium' | translate }}</a></li>
+              <li><a routerLink="/features/batch">{{ 'footer.batchPhoto' | translate }}</a></li>
+              <li><a routerLink="/features/batch-pdf">{{ 'footer.batchPdf' | translate }}</a></li>
+              <li><a routerLink="/features/history">{{ 'footer.processHistory' | translate }}</a></li>
+              <li><a routerLink="/profile">{{ 'footer.userProfile' | translate }}</a></li>
+            </ul>
+          </div>
 
-        <!-- Links Column 3: Legal & Support -->
-        <div class="footer-col">
-          <span class="col-title">Privacy & Support</span>
-          <ul class="col-links">
-            <li><a routerLink="/features/settings">Settings & Preferences</a></li>
-            <li><a routerLink="/features/settings">Privacy Policy</a></li>
-            <li><a routerLink="/features/settings">Terms of Use</a></li>
-            <li><a routerLink="/features/settings">Local Data Storage</a></li>
-            <li><a routerLink="/features/settings">Help & FAQ</a></li>
-            <li><a routerLink="/features/settings">Contact Support</a></li>
-            <li><a routerLink="/features/settings">About the Engine</a></li>
-          </ul>
+          <!-- Links Column 3: Legal & Support -->
+          <div class="footer-col">
+            <span class="col-title">{{ 'footer.privacySupport' | translate }}</span>
+            <ul class="col-links">
+              <li><a routerLink="/features/settings">{{ 'footer.settingsPrefs' | translate }}</a></li>
+              <li><a routerLink="/features/privacy-policy">{{ 'footer.privacyPolicy' | translate }}</a></li>
+              <li><a routerLink="/features/terms-of-use">{{ 'footer.termsOfUse' | translate }}</a></li>
+              <li><a routerLink="/features/local-data-storage">{{ 'footer.localDataStorage' | translate }}</a></li>
+              <li><a routerLink="/features/help-faq">{{ 'footer.helpFaq' | translate }}</a></li>
+              <li><a routerLink="/features/contact-support">{{ 'footer.contactSupport' | translate }}</a></li>
+              <li><a routerLink="/features/about-engine">{{ 'footer.aboutEngine' | translate }}</a></li>
+            </ul>
+          </div>
         </div>
       </div>
 
       <!-- Bottom Bar -->
       <div class="footer-bottom">
         <div class="bottom-inner">
-          <span class="copyright">&copy; 2026 Indian Form Helper. All operations run 100% in your device runtime.</span>
+          <span class="copyright">{{ 'footer.copyright' | translate }}</span>
           <div class="badge-list">
             <span class="tech-tag">Angular 22</span>
             <span class="tech-tag">WebAssembly</span>
@@ -101,8 +111,9 @@ import { RouterModule } from '@angular/router';
       margin: 0 auto;
       padding: var(--space-12, 48px) var(--space-4, 16px) var(--space-8, 32px);
       display: grid;
-      grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr;
-      gap: var(--space-8, 32px);
+      grid-template-columns: 1.4fr 3fr;
+      gap: var(--space-10, 40px);
+      align-items: start;
     }
 
     .footer-brand {
@@ -155,6 +166,17 @@ import { RouterModule } from '@angular/router';
       width: fit-content;
     }
 
+    /* Links columns side by side */
+    .footer-links-wrapper {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-8, 32px);
+    }
+
+    .footer-col {
+      min-width: 0;
+    }
+
     .col-title {
       display: block;
       font-size: var(--font-label, 14px);
@@ -177,6 +199,7 @@ import { RouterModule } from '@angular/router';
       color: var(--color-text-secondary);
       text-decoration: none;
       transition: color var(--transition-fast, 150ms);
+      line-height: 1.4;
     }
 
     .col-links a:hover {
@@ -221,20 +244,47 @@ import { RouterModule } from '@angular/router';
 
     @media (max-width: 900px) {
       .footer-inner {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
+        gap: var(--space-8, 32px);
       }
+
       .footer-brand {
-        grid-column: span 2;
+        max-width: 480px;
+      }
+
+      .footer-links-wrapper {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-5, 20px);
       }
     }
 
     @media (max-width: 600px) {
       .footer-inner {
-        grid-template-columns: 1fr;
         padding: var(--space-8, 32px) var(--space-4, 16px);
+        gap: var(--space-6, 24px);
       }
-      .footer-brand {
-        grid-column: span 1;
+
+      .footer-links-wrapper {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-3, 12px);
+      }
+
+      .col-title {
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .col-links {
+        gap: 6px;
+
+        a {
+          font-size: 11px;
+          line-height: 1.35;
+          word-break: break-word;
+        }
       }
     }
   `]

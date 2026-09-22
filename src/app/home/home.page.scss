@@ -151,44 +151,57 @@
   }
 }
 
-/* CATEGORY FILTER PILLS */
-/*
- * Category filters.
- *
- * Wrapping eleven pills on a phone produced five stacked rows that pushed the
- * tool grid below the fold. Below the wrap point they become one horizontally
- * scrollable row instead; from tablet up there is room to centre and wrap them.
- */
-.category-pills-scroll {
+/* CATEGORY FILTER PILLS (AUTO-SCROLLING MARQUEE) */
+.category-marquee-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding-block: 6px;
+  /* Smooth edge fade out masks so pills gently emerge and vanish at container bounds */
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 4%,
+    black 96%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 4%,
+    black 96%,
+    transparent 100%
+  );
+}
+
+.category-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  /* Continuously scrolls from right to left in an infinite, uninterrupted loop */
+  animation: category-marquee-scroll 38s linear infinite;
+}
+
+.category-marquee-group {
   display: flex;
   align-items: center;
   gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  /* Bleed to the screen edges so the row visibly runs off, hinting it scrolls. */
-  margin-inline: calc(-1 * min(5vw, var(--space-8)));
-  padding-inline: min(5vw, var(--space-8));
-  padding-block: 4px;
-  scroll-snap-type: x proximity;
-  -webkit-overflow-scrolling: touch;
+  padding-right: 8px; /* Matches gap to ensure 100% seamless transition */
+  flex-shrink: 0;
+}
 
-  &::-webkit-scrollbar { display: none; }
-
-  .cat-pill {
-    flex: 0 0 auto;
-    scroll-snap-align: start;
+@keyframes category-marquee-scroll {
+  0% {
+    transform: translateX(0);
   }
-
-  @media (min-width: 768px) {
-    flex-wrap: wrap;
-    justify-content: center;
-    overflow-x: visible;
-    margin-inline: 0;
-    padding-inline: 0;
+  100% {
+    transform: translateX(-50%);
   }
 }
 
 .cat-pill {
+  flex-shrink: 0;
+  user-select: none;
   padding: 6px 14px;
   font-size: var(--font-small, 13px);
   font-weight: var(--font-weight-medium, 500);
@@ -198,12 +211,21 @@
   border: 1px solid var(--color-border);
   cursor: pointer;
   white-space: nowrap;
-  transition: all var(--transition-fast, 150ms);
+  transition: background-color var(--transition-fast, 150ms),
+              border-color var(--transition-fast, 150ms),
+              color var(--transition-fast, 150ms),
+              box-shadow var(--transition-fast, 150ms),
+              transform var(--transition-fast, 150ms);
 
   &:hover {
     color: var(--color-text);
     border-color: var(--color-border-hover);
     background-color: var(--color-surface-hover);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &.active {

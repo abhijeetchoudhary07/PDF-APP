@@ -104,6 +104,60 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./features/settings/settings.page').then(m => m.SettingsPage)
   },
   {
+    path: 'features/privacy-policy',
+    loadComponent: () => import('./features/privacy-policy/privacy-policy.page').then(m => m.PrivacyPolicyPage)
+  },
+  {
+    path: 'features/terms-of-use',
+    loadComponent: () => import('./features/terms-of-use/terms-of-use.page').then(m => m.TermsOfUsePage)
+  },
+  {
+    path: 'features/local-data-storage',
+    loadComponent: () => import('./features/local-data-storage/local-data-storage.page').then(m => m.LocalDataStoragePage)
+  },
+  {
+    path: 'features/help-faq',
+    loadComponent: () => import('./features/help-faq/help-faq.page').then(m => m.HelpFaqPage)
+  },
+  {
+    path: 'features/contact-support',
+    loadComponent: () => import('./features/contact-support/contact-support.page').then(m => m.ContactSupportPage)
+  },
+  {
+    path: 'features/about-engine',
+    loadComponent: () => import('./features/about-engine/about-engine.page').then(m => m.AboutEnginePage)
+  },
+  {
+    path: 'privacy-policy',
+    redirectTo: 'features/privacy-policy',
+    pathMatch: 'full'
+  },
+  {
+    path: 'terms-of-use',
+    redirectTo: 'features/terms-of-use',
+    pathMatch: 'full'
+  },
+  {
+    path: 'local-data-storage',
+    redirectTo: 'features/local-data-storage',
+    pathMatch: 'full'
+  },
+  {
+    path: 'help-faq',
+    redirectTo: 'features/help-faq',
+    pathMatch: 'full'
+  },
+  {
+    path: 'contact-support',
+    redirectTo: 'features/contact-support',
+    pathMatch: 'full'
+  },
+  {
+    path: 'about-engine',
+    redirectTo: 'features/about-engine',
+    pathMatch: 'full'
+  },
+  {
     path: 'features/premium',
     loadComponent: () => import('./features/premium/premium.page').then(m => m.PremiumPage)
   },

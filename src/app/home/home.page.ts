@@ -12,7 +12,7 @@ export class HomePage {
   searchQuery = '';
   selectedCategory: string = 'ALL';
 
-  categories = [
+  static readonly CATEGORY_LIST = [
     'ALL',
     'PHOTO',
     'SIGNATURE',
@@ -25,6 +25,9 @@ export class HomePage {
     'BATCH',
     'PRESETS'
   ];
+
+  categories = HomePage.CATEGORY_LIST;
+  marqueeCategories = [...HomePage.CATEGORY_LIST, ...HomePage.CATEGORY_LIST];
 
   /*
    * Category -> icon name. The template previously carried eleven *ngIf'd inline

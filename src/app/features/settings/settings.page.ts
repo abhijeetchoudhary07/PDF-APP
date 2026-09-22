@@ -13,7 +13,10 @@ import {
   AppPageHeaderComponent,
   AppFooterComponent,
   AppButtonComponent,
-  AppModalComponent
+  AppModalComponent,
+  PrivacySupportNavComponent,
+  AppLanguageSelectorComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -29,8 +32,11 @@ import {
     AppHeaderComponent,
     AppPageHeaderComponent,
     AppFooterComponent,
+    PrivacySupportNavComponent,
     AppButtonComponent,
-    AppModalComponent
+    AppModalComponent,
+    AppLanguageSelectorComponent,
+    TranslatePipe
   ]
 })
 export class SettingsPage implements OnInit {

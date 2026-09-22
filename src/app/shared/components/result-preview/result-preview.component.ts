@@ -3,6 +3,7 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 import { AppButtonComponent } from '../ui/button/button.component';
 import { AppBadgeComponent } from '../ui/badge/badge.component';
 import { BeforeAfterPreviewComponent } from '../before-after-preview/before-after-preview.component';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 export interface PreviewData {
   name: string;
@@ -19,7 +20,7 @@ export interface PreviewData {
   templateUrl: './result-preview.component.html',
   styleUrls: ['./result-preview.component.scss'],
   standalone: true,
-  imports: [CommonModule, AppButtonComponent, BeforeAfterPreviewComponent],
+  imports: [CommonModule, AppButtonComponent, BeforeAfterPreviewComponent, TranslatePipe],
   providers: [DecimalPipe]
 })
 export class ResultPreviewComponent implements OnInit, OnChanges {

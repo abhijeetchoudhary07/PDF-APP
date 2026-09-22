@@ -11,7 +11,8 @@ import { HistoryService } from '../../core/services/history.service';
 import { ProcessingResult } from '../../core/models/processing-result.model';
 import { CompressionConfig } from '../../core/models/compression-config.model';
 import { ImageService } from '../../core/services/image.service';
-import { SingleFileWorkflowState, ProcessingStage, PROCESSING_STAGE_LABELS } from '../../core/models/file-workflow-state.model';
+import { SingleFileWorkflowState, ProcessingStage, getProcessingStageLabel } from '../../core/models/file-workflow-state.model';
+import { TranslationService } from '../../core/services/translation.service';
 import { ImageCropperComponent } from '../../shared/components/image-cropper/image-cropper.component';
 import { ResultPreviewComponent, PreviewData } from '../../shared/components/result-preview/result-preview.component';
 import {
@@ -23,7 +24,8 @@ import {
   AppRelatedToolsComponent,
   FileDropzoneComponent,
   FilePreviewComponent,
-  BeforeAfterPreviewComponent
+  BeforeAfterPreviewComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -43,7 +45,8 @@ import {
     AppTabsComponent,
     AppRelatedToolsComponent,
     FileDropzoneComponent,
-    FilePreviewComponent
+    FilePreviewComponent,
+    TranslatePipe
   ],
   providers: [DecimalPipe]
 })
@@ -116,7 +119,8 @@ export class SignaturePage implements OnDestroy {
     private shareService: ShareService,
     private historyService: HistoryService,
     private modalCtrl: ModalController,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public translationService: TranslationService
   ) {}
 
   ngOnDestroy(): void {
@@ -182,8 +186,6 @@ export class SignaturePage implements OnDestroy {
       const dims = await this.imageService.getImageDimensions(file);
       this.originalWidth = dims.width;
       this.originalHeight = dims.height;
-      this.targetWidth = dims.width;
-      this.targetHeight = dims.height;
       this.cdr.detectChanges();
     } catch {
       // ignore
@@ -191,19 +193,16 @@ export class SignaturePage implements OnDestroy {
   }
 
   async openCropper(): Promise<void> {
-    if (!this.originalFile) return;
-
-    const imageUrl = this.fileService.createObjectUrl(this.originalFile);
+    const sourceUrl = this.cleanedPreviewUrl || this.originalPreviewUrl;
+    if (!sourceUrl || !this.originalFile) return;
 
     const modal = await this.modalCtrl.create({
       component: ImageCropperComponent,
-      componentProps: { imageSrc: imageUrl }
+      componentProps: { imageSrc: sourceUrl }
     });
 
     await modal.present();
-
     const { data } = await modal.onWillDismiss();
-    this.fileService.revokeObjectUrl(imageUrl);
 
     if (data) {
       const newFile = new File([data], this.originalFile.name, { type: 'image/jpeg' });
@@ -213,22 +212,27 @@ export class SignaturePage implements OnDestroy {
 
   async autoCrop(): Promise<void> {
     if (!this.originalFile) return;
+
     this.isProcessing = true;
-    this.stageText = 'Detecting signature bounds...';
+    this.stageText = getProcessingStageLabel('analyzing', this.translationService);
     this.cdr.detectChanges();
 
     try {
-      const croppedFile = await this.imageService.autoCropSignature(
+      const croppedBlob = await this.imageService.autoCropSignature(
         this.originalFile,
-        this.autoCropPadding,
-        this.autoCropThreshold
+        this.autoCropThreshold,
+        this.autoCropPadding
       );
-      this.cleanedPreviewUrl = this.fileService.createObjectUrl(croppedFile);
-      this.originalFile = croppedFile;
-      await this.updateDimensions(this.originalFile);
-      this.processedResult = undefined;
+
+      if (this.cleanedPreviewUrl) {
+        this.fileService.revokeObjectUrl(this.cleanedPreviewUrl);
+      }
+
+      this.cleanedPreviewUrl = this.fileService.createObjectUrl(croppedBlob);
+      const newFile = new File([croppedBlob], this.originalFile.name, { type: 'image/jpeg' });
+      await this.updateDimensions(newFile);
     } catch (e: any) {
-      alert('Auto-crop failed: ' + e);
+      console.warn('Auto crop signature failed:', e);
     } finally {
       this.isProcessing = false;
       this.cdr.detectChanges();
@@ -260,7 +264,7 @@ export class SignaturePage implements OnDestroy {
     this.isProcessing = true;
     this.workflowState = 'PROCESSING';
     this.processingStage = 'analyzing';
-    this.stageText = 'Analyzing signature contours...';
+    this.stageText = getProcessingStageLabel('analyzing', this.translationService);
     this.cdr.detectChanges();
 
     if (this.mode === 'kb') {
@@ -269,7 +273,7 @@ export class SignaturePage implements OnDestroy {
         outputFormat: 'image/jpeg'
       };
       this.processingStage = 'optimizing';
-      this.stageText = 'Optimizing contrast and size...';
+      this.stageText = getProcessingStageLabel('optimizing', this.translationService);
       this.cdr.detectChanges();
 
       this.processedResult = await this.compressionService.compressToExactKB(this.originalFile, config);
@@ -277,7 +281,7 @@ export class SignaturePage implements OnDestroy {
       // Pixels Mode
       try {
         this.processingStage = 'processing';
-        this.stageText = 'Resizing signature...';
+        this.stageText = getProcessingStageLabel('processing', this.translationService);
         this.cdr.detectChanges();
 
         const outputFormat = 'image/jpeg';

@@ -10,7 +10,8 @@ import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
 import { ProcessingResult } from '../../core/models/processing-result.model';
-import { SingleFileWorkflowState, ProcessingStage, PROCESSING_STAGE_LABELS } from '../../core/models/file-workflow-state.model';
+import { SingleFileWorkflowState, ProcessingStage, getProcessingStageLabel } from '../../core/models/file-workflow-state.model';
+import { TranslationService } from '../../core/services/translation.service';
 import { ResultPreviewComponent, PreviewData } from '../../shared/components/result-preview/result-preview.component';
 import {
   AppHeaderComponent,
@@ -23,7 +24,8 @@ import {
   FileDropzoneComponent,
   FilePreviewComponent,
   PdfPageThumbnailComponent,
-  BeforeAfterPreviewComponent
+  BeforeAfterPreviewComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 import { RouterModule } from '@angular/router';
@@ -47,7 +49,8 @@ import { RouterModule } from '@angular/router';
     AppRelatedToolsComponent,
     FileDropzoneComponent,
     FilePreviewComponent,
-    PdfPageThumbnailComponent
+    PdfPageThumbnailComponent,
+    TranslatePipe
   ],
   providers: [DecimalPipe]
 })
@@ -95,7 +98,8 @@ export class PdfPage implements OnDestroy {
     private storageService: StorageService,
     private shareService: ShareService,
     private historyService: HistoryService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public translationService: TranslationService
   ) {}
 
   ngOnDestroy(): void {
@@ -186,10 +190,11 @@ export class PdfPage implements OnDestroy {
   }
 
   removeCompressPdf(): void {
+    this.cleanupUrls();
     this.originalFile = undefined;
     this.processedResult = undefined;
-    this.originalPdfThumbnailUrl = undefined;
     this.originalPdfPageCount = undefined;
+    this.errorMessage = undefined;
     this.workflowState = 'EMPTY';
     this.cdr.detectChanges();
   }
@@ -200,13 +205,13 @@ export class PdfPage implements OnDestroy {
     this.isProcessing = true;
     this.workflowState = 'PROCESSING';
     this.processingStage = 'analyzing';
-    this.stageText = 'Analyzing PDF document...';
+    this.stageText = getProcessingStageLabel('analyzing', this.translationService);
     this.cdr.detectChanges();
 
     setTimeout(() => {
       if (this.isProcessing) {
         this.processingStage = 'optimizing';
-        this.stageText = 'Optimizing and compressing streams...';
+        this.stageText = getProcessingStageLabel('optimizing', this.translationService);
         this.cdr.detectChanges();
       }
     }, 400);

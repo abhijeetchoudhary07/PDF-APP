@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { AppButtonComponent } from '../ui/button/button.component';
 import { AppBadgeComponent } from '../ui/badge/badge.component';
 import { FilePreviewComponent } from '../file-preview/file-preview.component';
+import { TranslationService } from '../../../core/services/translation.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 export type DropzoneState = 'empty' | 'selected' | 'processing' | 'success' | 'error';
 
@@ -12,17 +14,17 @@ export type DropzoneState = 'empty' | 'selected' | 'processing' | 'success' | 'e
   templateUrl: './file-dropzone.component.html',
   styleUrls: ['./file-dropzone.component.scss'],
   standalone: true,
-  imports: [CommonModule, AppButtonComponent, FilePreviewComponent]
+  imports: [CommonModule, AppButtonComponent, FilePreviewComponent, TranslatePipe]
 })
 export class FileDropzoneComponent {
   @Input() icon = 'cloud-upload';
-  @Input() title = 'Select or Drag & Drop Document';
-  @Input() description = 'Supports PDF, JPG, and PNG files up to 50MB. 100% offline & secure.';
+  @Input() title?: string;
+  @Input() description?: string;
   @Input() accept = '*/*';
   @Input() multiple = false;
   @Input() isLoading = false;
-  @Input() loadingMessage = 'Reading file...';
-  @Input() buttonText = 'Browse Files';
+  @Input() loadingMessage?: string;
+  @Input() buttonText?: string;
 
   // Rich State Support
   @Input() state: DropzoneState = 'empty';
@@ -30,7 +32,7 @@ export class FileDropzoneComponent {
   @Input() dimensions?: { width: number; height: number };
   @Input() pageCount?: number;
   @Input() progress = 0;
-  @Input() stageText = 'Processing...';
+  @Input() stageText?: string;
   @Input() errorMessage?: string;
   @Input() successMessage?: string;
   @Input() previewUrl?: string;
@@ -41,6 +43,28 @@ export class FileDropzoneComponent {
   @Output() preview = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
   @Output() retry = new EventEmitter<void>();
+
+  constructor(private translationService: TranslationService) {}
+
+  get displayTitle(): string {
+    return this.title || this.translationService.translate('dropzone.defaultTitle');
+  }
+
+  get displayDescription(): string {
+    return this.description || this.translationService.translate('dropzone.defaultDesc');
+  }
+
+  get displayButtonText(): string {
+    return this.buttonText || this.translationService.translate('dropzone.browseFiles');
+  }
+
+  get displayLoadingMessage(): string {
+    return this.loadingMessage || this.translationService.translate('dropzone.readingFile');
+  }
+
+  get displayStageText(): string {
+    return this.stageText || this.translationService.translate('dropzone.processing');
+  }
 
   isDragging = false;
   isDragRejected = false;

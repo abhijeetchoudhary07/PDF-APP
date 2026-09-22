@@ -10,7 +10,8 @@ import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
 import { ProcessingResult } from '../../core/models/processing-result.model';
-import { SingleFileWorkflowState, ProcessingStage, PROCESSING_STAGE_LABELS } from '../../core/models/file-workflow-state.model';
+import { SingleFileWorkflowState, ProcessingStage, getProcessingStageLabel } from '../../core/models/file-workflow-state.model';
+import { TranslationService } from '../../core/services/translation.service';
 import { ImageCropperComponent } from '../../shared/components/image-cropper/image-cropper.component';
 import { ResultPreviewComponent, PreviewData } from '../../shared/components/result-preview/result-preview.component';
 import {
@@ -21,7 +22,8 @@ import {
   AppTabsComponent,
   AppRelatedToolsComponent,
   FileDropzoneComponent,
-  FilePreviewComponent
+  FilePreviewComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 export interface FormPreset {
@@ -50,7 +52,8 @@ export interface FormPreset {
     AppRelatedToolsComponent,
     FileDropzoneComponent,
     FilePreviewComponent,
-    ResultPreviewComponent
+    ResultPreviewComponent,
+    TranslatePipe
   ],
   providers: [DecimalPipe]
 })
@@ -147,7 +150,8 @@ export class PhotoPage implements OnDestroy {
     private shareService: ShareService,
     private historyService: HistoryService,
     private modalCtrl: ModalController,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public translationService: TranslationService
   ) {}
 
   ngOnDestroy(): void {
@@ -272,7 +276,7 @@ export class PhotoPage implements OnDestroy {
     this.isProcessing = true;
     this.workflowState = 'PROCESSING';
     this.processingStage = 'analyzing';
-    this.stageText = PROCESSING_STAGE_LABELS['analyzing'];
+    this.stageText = getProcessingStageLabel('analyzing', this.translationService);
     this.cdr.detectChanges();
 
     if (this.mode === 'kb') {
@@ -281,7 +285,7 @@ export class PhotoPage implements OnDestroy {
         outputFormat: 'image/jpeg'
       };
       this.processingStage = 'optimizing';
-      this.stageText = PROCESSING_STAGE_LABELS['optimizing'];
+      this.stageText = getProcessingStageLabel('optimizing', this.translationService);
       this.cdr.detectChanges();
 
       this.processedResult = await this.compressionService.compressToExactKB(this.originalFile, config);
@@ -289,7 +293,7 @@ export class PhotoPage implements OnDestroy {
       // Pixels Mode
       try {
         this.processingStage = 'processing';
-        this.stageText = 'Resizing image pixels...';
+        this.stageText = getProcessingStageLabel('processing', this.translationService);
         this.cdr.detectChanges();
 
         const outputFormat = 'image/jpeg';

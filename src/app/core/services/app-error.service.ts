@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AlertController, ToastController } from '@ionic/angular/lazy';
+import { TranslationService } from './translation.service';
 
 export type AppErrorCode =
   | 'INVALID_FILE'
@@ -26,13 +27,18 @@ export interface UserFriendlyError {
   providedIn: 'root'
 })
 export class AppErrorService {
+  private translationService: TranslationService;
+
   constructor(
     private alertCtrl: AlertController,
-    private toastCtrl: ToastController
-  ) {}
+    private toastCtrl: ToastController,
+    translationService?: TranslationService
+  ) {
+    this.translationService = translationService || new TranslationService();
+  }
 
   /**
-   * Translates any thrown exception or error into a user-friendly error object.
+   * Translates any thrown exception or error into a user-friendly, localized error object.
    */
   classifyError(error: any): UserFriendlyError {
     const errStr = String(error?.message || error || '').toLowerCase();
@@ -41,51 +47,51 @@ export class AppErrorService {
       if (errStr.includes('incorrect') || error?.code === 2) {
         return {
           code: 'INCORRECT_PASSWORD',
-          title: 'Incorrect Password',
-          message: 'The password entered does not match the document credentials.',
-          recoverySuggestion: 'Please verify the password and try again.'
+          title: this.translationService.translate('errors.incorrectPasswordTitle'),
+          message: this.translationService.translate('errors.incorrectPasswordMessage'),
+          recoverySuggestion: this.translationService.translate('errors.incorrectPasswordTip')
         };
       }
       return {
         code: 'PASSWORD_REQUIRED',
-        title: 'Password Protected Document',
-        message: 'This PDF document is encrypted and requires an authorized password to open.',
-        recoverySuggestion: 'Enter the document open password to proceed.'
+        title: this.translationService.translate('errors.passwordRequiredTitle'),
+        message: this.translationService.translate('errors.passwordRequiredMessage'),
+        recoverySuggestion: this.translationService.translate('errors.passwordRequiredTip')
       };
     }
 
     if (errStr.includes('corrupt') || errStr.includes('invalid pdf') || errStr.includes('unexpected header')) {
       return {
         code: 'CORRUPTED_FILE',
-        title: 'Damaged or Corrupted File',
-        message: 'The selected file appears to be incomplete or damaged.',
-        recoverySuggestion: 'Try downloading or obtaining a fresh copy of this file.'
+        title: this.translationService.translate('errors.corruptedFileTitle'),
+        message: this.translationService.translate('errors.corruptedFileMessage'),
+        recoverySuggestion: this.translationService.translate('errors.corruptedFileTip')
       };
     }
 
     if (errStr.includes('format') || errStr.includes('unsupported') || errStr.includes('not supported')) {
       return {
         code: 'UNSUPPORTED_FORMAT',
-        title: 'Unsupported File Format',
-        message: 'This document format or encryption method cannot be processed by the offline engine.',
-        recoverySuggestion: 'Please convert the file to a standard PDF, JPG, or PNG before processing.'
+        title: this.translationService.translate('errors.unsupportedFormatTitle'),
+        message: this.translationService.translate('errors.unsupportedFormatMessage'),
+        recoverySuggestion: this.translationService.translate('errors.unsupportedFormatTip')
       };
     }
 
     if (errStr.includes('memory') || errStr.includes('out of memory') || errStr.includes('allocation failed')) {
       return {
         code: 'MEMORY_LIMIT_EXCEEDED',
-        title: 'Document Too Large for Memory',
-        message: 'Processing this large document exceeded available browser memory.',
-        recoverySuggestion: 'Try processing fewer pages at a time or compressing the PDF first.'
+        title: this.translationService.translate('errors.memoryLimitTitle'),
+        message: this.translationService.translate('errors.memoryLimitMessage'),
+        recoverySuggestion: this.translationService.translate('errors.memoryLimitTip')
       };
     }
 
     if (errStr.includes('cancel') || errStr.includes('abort')) {
       return {
         code: 'CANCELLED_OPERATION',
-        title: 'Operation Cancelled',
-        message: 'The operation was cancelled by the user.',
+        title: this.translationService.translate('errors.cancelledTitle'),
+        message: this.translationService.translate('errors.cancelledMessage'),
         recoverySuggestion: undefined
       };
     }
@@ -93,18 +99,18 @@ export class AppErrorService {
     if (errStr.includes('export') || errStr.includes('save')) {
       return {
         code: 'EXPORT_FAILED',
-        title: 'Export Failed',
-        message: 'Could not write or download the exported file.',
-        recoverySuggestion: 'Check your device storage space and permissions.'
+        title: this.translationService.translate('errors.exportFailedTitle'),
+        message: this.translationService.translate('errors.exportFailedMessage'),
+        recoverySuggestion: this.translationService.translate('errors.exportFailedTip')
       };
     }
 
     // Default Fallback
     return {
       code: 'UNKNOWN_ERROR',
-      title: 'Processing Error',
-      message: 'An unexpected issue occurred while processing your document.',
-      recoverySuggestion: 'Please verify the file format and try again.',
+      title: this.translationService.translate('errors.unknownTitle'),
+      message: this.translationService.translate('errors.unknownMessage'),
+      recoverySuggestion: this.translationService.translate('errors.unknownTip'),
       rawDetails: error?.message || String(error)
     };
   }
@@ -123,7 +129,7 @@ export class AppErrorService {
     const alert = await this.alertCtrl.create({
       header: userError.title,
       message: fullMessage,
-      buttons: ['OK']
+      buttons: [this.translationService.translate('common.close')]
     });
 
     await alert.present();

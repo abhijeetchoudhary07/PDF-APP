@@ -1,0 +1,131 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      
+      <!-- Page Header with Breadcrumbs -->
+      <app-page-header
+        title="Terms of Use"
+        subtitle="Software License, Fair Use Guidelines, and Candidate Compliance Notice"
+        [breadcrumbs]="[{ label: 'Privacy & Support' }, { label: 'Terms of Use' }]"
+        badge="LEGAL"
+        badgeVariant="presets"
+        [showBack]="true"
+        backUrl="/features/settings">
+        
+        <div actions class="header-actions">
+          <app-button variant="outline" size="sm" (clicked)="printPage()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Print Terms
+          </app-button>
+        </div>
+      </app-page-header>
+
+      <!-- UNIFIED PRIVACY & SUPPORT NAVIGATION TABS -->
+      <app-privacy-support-nav></app-privacy-support-nav>
+
+      <!-- DISCLAIMER BANNER -->
+      <div class="legal-notice-banner">
+        <div class="notice-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="notice-content">
+          <strong>Important Government Exam Disclaimer</strong>
+          <p>
+            Indian Form Helper is an independent document preparation utility. We are <strong>not affiliated with, endorsed by, or representing any government body</strong> including UPSC, SSC, IBPS, NTA, Railway Recruitment Boards, or State Public Service Commissions. You are solely responsible for ensuring your final uploaded documents comply with the official notification of your examination.
+          </p>
+        </div>
+      </div>
+
+      <!-- TERMS DOCUMENT CONTENT -->
+      <article class="terms-article">
+        <div class="terms-meta">
+          <span>Effective Date: <strong>September 1, 2026</strong></span>
+          <span>Last Updated: <strong>{{ lastUpdated }}</strong></span>
+          <span class="terms-badge">Terms v2.1</span>
+        </div>
+
+        <section class="terms-section">
+          <h2>1. Acceptance of Terms</h2>
+          <p>
+            By accessing, browsing, or using the <strong>Indian Form Helper</strong> web application or mobile software, you agree to be bound by these Terms of Use ("Terms"). If you do not agree to these Terms, please do not use the application.
+          </p>
+        </section>
+
+        <section class="terms-section">
+          <h2>2. License & Nature of the Service</h2>
+          <p>
+            Subject to your compliance with these Terms, we grant you a personal, non-exclusive, non-transferable, revocable license to use Indian Form Helper for lawful document preparation and manipulation purposes.
+          </p>
+          <p>
+            The service is provided on an "as-is" and "as-available" client-side execution model. All operations run directly in your local device environment without server-side processing.
+          </p>
+        </section>
+
+        <section class="terms-section">
+          <h2>3. Candidate & User Responsibilities</h2>
+          <p>When using this application for official portal submissions:</p>
+          <ul>
+            <li><strong>Specification Verification:</strong> Recruitment notification requirements (e.g. minimum/maximum KB, DPI, pixel width and height, background color) frequently change. You must verify that your compressed photo, signature, or PDF meets the specific requirements of the portal you are applying to.</li>
+            <li><strong>Inspection of Output:</strong> Always inspect the generated photo or document preview before submission. Ensure names, dates, text, and details remain legible.</li>
+            <li><strong>Backup of Original Files:</strong> Maintain safe backup copies of all original certificates, photos, and documents before applying destructive modifications (such as page deletion, redaction, or flattening).</li>
+          </ul>
+        </section>
+
+        <section class="terms-section">
+          <h2>4. Prohibited Uses</h2>
+          <p>You agree not to use Indian Form Helper to:</p>
+          <ul>
+            <li>Forge, alter, or falsify signatures, official seals, educational degrees, or government credentials without legal authority.</li>
+            <li>Violate the intellectual property, copyright, or privacy rights of any third party.</li>
+            <li>Distribute malware, tamper with client-side code, or reverse engineer proprietary WebAssembly modules for unlawful distribution.</li>
+            <li>Bypass or attempt to circumvent monetization locks, purchase validations, or license systems.</li>
+          </ul>
+        </section>
+
+        <section class="terms-section">
+          <h2>5. Intellectual Property & Open Source Libraries</h2>
+          <p>
+            The user interface, branding, custom algorithms, and compilation of Indian Form Helper are owned by the developers. The application incorporates open-source libraries (including <code>pdf-lib</code>, <code>pdfjs-dist</code>, <code>mammoth</code>, and <code>cropperjs</code>) under their respective MIT, Apache 2.0, and BSD licenses.
+          </p>
+        </section>
+
+        <section class="terms-section">
+          <h2>6. Disclaimer of Warranties & Limitation of Liability</h2>
+          <p>
+            TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE FUNCTIONS WILL BE UNINTERRUPTED, ERROR-FREE, OR COMPATIBLE WITH EVERY ARCHAIC GOVERNMENT UPLOAD PORTAL.
+          </p>
+          <p>
+            UNDER NO CIRCUMSTANCES SHALL THE DEVELOPERS OF INDIAN FORM HELPER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, CONSEQUENTIAL, OR SPECIAL DAMAGES (INCLUDING BUT NOT LIMITED TO MISSED APPLICATION DEADLINES, REJECTION OF APPLICATION FORMS, OR DATA LOSS) ARISING FROM THE USE OF OR INABILITY TO USE THIS APPLICATION.
+          </p>
+        </section>
+
+        <section class="terms-section">
+          <h2>7. Updates & Changes to Terms</h2>
+          <p>
+            We may revise these Terms of Use at any time. Any changes will be posted here with an updated "Last Updated" date. Continued use of the service following such changes constitutes your acceptance of the revised Terms.
+          </p>
+        </section>
+
+        <section class="terms-section">
+          <h2>8. Governing Law & Contact</h2>
+          <p>
+            These Terms shall be governed by and construed in accordance with the laws of India. For questions regarding these Terms, please reach out via our <a routerLink="/features/contact-support">Contact Support</a> page.
+          </p>
+        </section>
+      </article>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

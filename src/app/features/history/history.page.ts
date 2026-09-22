@@ -13,7 +13,8 @@ import {
   AppButtonComponent,
   AppBadgeComponent,
   AppIconComponent,
-  AppSkeletonComponent
+  AppSkeletonComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -33,7 +34,8 @@ import {
     AppPageHeaderComponent,
     AppFooterComponent,
     AppButtonComponent,
-    AppBadgeComponent
+    AppBadgeComponent,
+    TranslatePipe
   ],
   providers: [DatePipe, DecimalPipe]
 })
