@@ -1,0 +1,407 @@
+<app-header></app-header>
+
+<main class="validator-container">
+  <app-page-header
+    [title]="'validator.title' | translate"
+    [subtitle]="'validator.subtitle' | translate"
+    [badge]="'validator.badge' | translate"
+  ></app-page-header>
+
+  <!-- PRESET SELECTION & SOURCE TRANSPARENCY CARD -->
+  <section class="validator-card preset-selection-card">
+    <div class="preset-selector-row">
+      <div class="selector-field">
+        <label class="field-label">{{ 'validator.selectPresetLabel' | translate }}</label>
+        <div class="search-select-wrapper">
+          <input
+            type="text"
+            class="preset-search-input"
+            [placeholder]="'validator.searchPresetsPlaceholder' | translate"
+            [(ngModel)]="presetSearchQuery"
+          />
+          <div class="preset-pills-scroll">
+            <ng-container *ngFor="let group of filteredPresetGroups">
+              <button
+                type="button"
+                class="preset-pill"
+                *ngFor="let p of group.presets"
+                [class.active]="selectedPreset?.id === p.id"
+                (click)="selectPreset(p)"
+              >
+                <span class="p-name">{{ p.name }}</span>
+                <span class="p-cat">{{ p.category }}</span>
+              </button>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Source Transparency Card -->
+    <div class="transparency-banner" *ngIf="selectedPreset">
+      <div class="transparency-icon">🏛️</div>
+      <div class="transparency-details">
+        <div class="preset-title-row">
+          <h3>{{ selectedPreset.name }}</h3>
+          <app-badge color="primary">{{ selectedPreset.category }}</app-badge>
+          <app-badge color="success" *ngIf="selectedPreset.photo?.verifiedSource">
+            {{ 'validator.officialVerified' | translate }}: {{ selectedPreset.photo?.verifiedSource }}
+          </app-badge>
+        </div>
+
+        <div class="applicable-docs-row">
+          <span class="label">{{ 'validator.requiredDocuments' | translate }}:</span>
+          <span class="doc-chip" *ngIf="selectedPreset.photo">📷 {{ 'common.photo' | translate }}</span>
+          <span class="doc-chip" *ngIf="selectedPreset.signature">✍️ {{ 'common.signature' | translate }}</span>
+          <span class="doc-chip" *ngIf="selectedPreset.pdf">📄 {{ 'common.pdf' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OVERALL STATUS BANNER -->
+  <section
+    class="overall-status-banner"
+    *ngIf="hasValidated"
+    [class.passed]="allPassed"
+    [class.failed]="!allPassed"
+  >
+    <div class="banner-icon">{{ allPassed ? '🎉' : '⚠️' }}</div>
+    <div class="banner-text">
+      <h4>{{ allPassed ? ('validator.readyForSubmission' | translate) : ('validator.issuesDetected' | translate) }}</h4>
+      <p>
+        {{ allPassed
+          ? ('validator.readySubtext' | translate)
+          : ('validator.issuesSubtext' | translate:{ errors: totalErrors, warnings: totalWarnings })
+        }}
+      </p>
+    </div>
+  </section>
+
+  <!-- SLOTS GRID -->
+  <section class="slots-grid" *ngIf="selectedPreset">
+    <!-- SLOT 1: PHOTO -->
+    <div class="slot-card" *ngIf="selectedPreset.photo">
+      <div class="slot-header">
+        <div class="header-info">
+          <h3>📷 {{ 'validator.slotPhoto' | translate }}</h3>
+          <span class="req-summary">
+            {{ selectedPreset.photo.minKb }}–{{ selectedPreset.photo.maxKb }} KB •
+            {{ selectedPreset.photo.width }}×{{ selectedPreset.photo.height }} px
+          </span>
+        </div>
+        <app-badge
+          *ngIf="validationResults.has('photo')"
+          [variant]="validationResults.get('photo')!.passed ? 'success' : 'warning'"
+        >
+          {{ validationResults.get('photo')!.passed ? ('common.ready' | translate) : ('validator.needsFix' | translate) }}
+        </app-badge>
+      </div>
+
+      <!-- Dropzone if not selected -->
+      <app-file-dropzone
+        *ngIf="!photoFile"
+        [title]="'validator.dropPhoto' | translate"
+        [description]="'validator.dropPhotoDesc' | translate"
+        accept="image/jpeg,image/png,image/webp"
+        (fileSelected)="onSlotFileSelected('photo', $event)"
+      ></app-file-dropzone>
+
+      <!-- Preview & Validation Report -->
+      <div class="slot-content" *ngIf="photoFile && validationResults.has('photo')">
+        <div class="file-info-bar">
+          <img [src]="photoPreviewUrl" alt="Photo" class="slot-thumb" />
+          <div class="file-meta">
+            <span class="name">{{ photoFile.name }}</span>
+            <span class="specs">
+              {{ (photoFile.size / 1024) | number:'1.0-1' }} KB •
+              {{ validationResults.get('photo')!.metadata.dimensions?.width }}×{{ validationResults.get('photo')!.metadata.dimensions?.height }} px
+            </span>
+          </div>
+          <button type="button" class="remove-btn" (click)="removeSlotFile('photo')">✕</button>
+        </div>
+
+        <!-- Rules Report -->
+        <div class="rules-list">
+          <div
+            class="rule-row"
+            *ngFor="let rule of validationResults.get('photo')!.rules"
+            [class.passed]="rule.passed"
+            [class.failed]="!rule.passed"
+          >
+            <div class="rule-status-icon">{{ rule.passed ? '✓' : '✕' }}</div>
+            <div class="rule-details">
+              <div class="rule-name">{{ rule.name }}</div>
+              <div class="rule-values">
+                <span class="actual">{{ 'validator.actual' | translate }}: <strong>{{ rule.actualValue }}</strong></span>
+                <span class="expected">{{ 'validator.required' | translate }}: <strong>{{ rule.expectedValue }}</strong></span>
+              </div>
+              <div class="suggested-fix" *ngIf="!rule.passed && rule.suggestedFix">
+                💡 {{ rule.suggestedFix }}
+              </div>
+            </div>
+
+            <!-- Auto-fix Action Button -->
+            <div class="rule-action" *ngIf="!rule.passed && rule.fixAction">
+              <app-button
+                variant="primary"
+                size="sm"
+                [loading]="isFixing && fixingRuleId === rule.id"
+                (clicked)="autoFixRule('photo', rule)"
+              >
+                ⚡ {{ 'validator.fixAuto' | translate }}
+              </app-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slot Footer Actions -->
+        <div class="slot-footer">
+          <app-button
+            *ngIf="!validationResults.get('photo')!.passed"
+            variant="primary"
+            size="sm"
+            [loading]="isFixing && fixingSlot === 'photo'"
+            (clicked)="autoFixAllSlotIssues('photo')"
+          >
+            ⚡ {{ 'validator.fixAllPhoto' | translate }}
+          </app-button>
+
+          <app-button
+            *ngIf="validationResults.get('photo')!.passed"
+            variant="secondary"
+            size="sm"
+            (btnClick)="downloadSlotFile('photo')"
+          >
+            📥 {{ 'common.download' | translate }}
+          </app-button>
+
+          <app-button
+            variant="ghost"
+            size="sm"
+            (btnClick)="shareSlotFile('photo')"
+          >
+            📤 {{ 'common.share' | translate }}
+          </app-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLOT 2: SIGNATURE -->
+    <div class="slot-card" *ngIf="selectedPreset.signature">
+      <div class="slot-header">
+        <div class="header-info">
+          <h3>✍️ {{ 'validator.slotSignature' | translate }}</h3>
+          <span class="req-summary">
+            {{ selectedPreset.signature.minKb }}–{{ selectedPreset.signature.maxKb }} KB •
+            {{ selectedPreset.signature.width }}×{{ selectedPreset.signature.height }} px
+          </span>
+        </div>
+        <app-badge
+          *ngIf="validationResults.has('signature')"
+          [variant]="validationResults.get('signature')!.passed ? 'success' : 'warning'"
+        >
+          {{ validationResults.get('signature')!.passed ? ('common.ready' | translate) : ('validator.needsFix' | translate) }}
+        </app-badge>
+      </div>
+
+      <!-- Dropzone if not selected -->
+      <app-file-dropzone
+        *ngIf="!signatureFile"
+        [title]="'validator.dropSignature' | translate"
+        [description]="'validator.dropSignatureDesc' | translate"
+        accept="image/jpeg,image/png"
+        (fileSelected)="onSlotFileSelected('signature', $event)"
+      ></app-file-dropzone>
+
+      <!-- Preview & Validation Report -->
+      <div class="slot-content" *ngIf="signatureFile && validationResults.has('signature')">
+        <div class="file-info-bar">
+          <img [src]="signaturePreviewUrl" alt="Signature" class="slot-thumb signature-thumb" />
+          <div class="file-meta">
+            <span class="name">{{ signatureFile.name }}</span>
+            <span class="specs">
+              {{ (signatureFile.size / 1024) | number:'1.0-1' }} KB •
+              {{ validationResults.get('signature')!.metadata.dimensions?.width }}×{{ validationResults.get('signature')!.metadata.dimensions?.height }} px
+            </span>
+          </div>
+          <button type="button" class="remove-btn" (click)="removeSlotFile('signature')">✕</button>
+        </div>
+
+        <!-- Rules Report -->
+        <div class="rules-list">
+          <div
+            class="rule-row"
+            *ngFor="let rule of validationResults.get('signature')!.rules"
+            [class.passed]="rule.passed"
+            [class.failed]="!rule.passed"
+          >
+            <div class="rule-status-icon">{{ rule.passed ? '✓' : '✕' }}</div>
+            <div class="rule-details">
+              <div class="rule-name">{{ rule.name }}</div>
+              <div class="rule-values">
+                <span class="actual">{{ 'validator.actual' | translate }}: <strong>{{ rule.actualValue }}</strong></span>
+                <span class="expected">{{ 'validator.required' | translate }}: <strong>{{ rule.expectedValue }}</strong></span>
+              </div>
+              <div class="suggested-fix" *ngIf="!rule.passed && rule.suggestedFix">
+                💡 {{ rule.suggestedFix }}
+              </div>
+            </div>
+
+            <!-- Auto-fix Action Button -->
+            <div class="rule-action" *ngIf="!rule.passed && rule.fixAction">
+              <app-button
+                variant="primary"
+                size="sm"
+                [loading]="isFixing && fixingRuleId === rule.id"
+                (clicked)="autoFixRule('signature', rule)"
+              >
+                ⚡ {{ 'validator.fixAuto' | translate }}
+              </app-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slot Footer Actions -->
+        <div class="slot-footer">
+          <app-button
+            *ngIf="!validationResults.get('signature')!.passed"
+            variant="primary"
+            size="sm"
+            [loading]="isFixing && fixingSlot === 'signature'"
+            (clicked)="autoFixAllSlotIssues('signature')"
+          >
+            ⚡ {{ 'validator.fixAllSignature' | translate }}
+          </app-button>
+
+          <app-button
+            *ngIf="validationResults.get('signature')!.passed"
+            variant="secondary"
+            size="sm"
+            (btnClick)="downloadSlotFile('signature')"
+          >
+            📥 {{ 'common.download' | translate }}
+          </app-button>
+
+          <app-button
+            variant="ghost"
+            size="sm"
+            (btnClick)="shareSlotFile('signature')"
+          >
+            📤 {{ 'common.share' | translate }}
+          </app-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLOT 3: PDF -->
+    <div class="slot-card" *ngIf="selectedPreset.pdf">
+      <div class="slot-header">
+        <div class="header-info">
+          <h3>📄 {{ 'validator.slotPdf' | translate }}</h3>
+          <span class="req-summary">
+            {{ selectedPreset.pdf.minKb }}–{{ selectedPreset.pdf.maxKb }} KB • {{ selectedPreset.pdf.format }}
+          </span>
+        </div>
+        <app-badge
+          *ngIf="validationResults.has('pdf')"
+          [variant]="validationResults.get('pdf')!.passed ? 'success' : 'warning'"
+        >
+          {{ validationResults.get('pdf')!.passed ? ('common.ready' | translate) : ('validator.needsFix' | translate) }}
+        </app-badge>
+      </div>
+
+      <!-- Dropzone if not selected -->
+      <app-file-dropzone
+        *ngIf="!pdfFile"
+        [title]="'validator.dropPdf' | translate"
+        [description]="'validator.dropPdfDesc' | translate"
+        accept="application/pdf"
+        (fileSelected)="onSlotFileSelected('pdf', $event)"
+      ></app-file-dropzone>
+
+      <!-- Preview & Validation Report -->
+      <div class="slot-content" *ngIf="pdfFile && validationResults.has('pdf')">
+        <div class="file-info-bar">
+          <div class="pdf-icon-box">📄</div>
+          <div class="file-meta">
+            <span class="name">{{ pdfFile.name }}</span>
+            <span class="specs">
+              {{ (pdfFile.size / 1024) | number:'1.0-1' }} KB •
+              {{ validationResults.get('pdf')!.metadata.pageCount }} {{ 'common.pages' | translate }}
+            </span>
+          </div>
+          <button type="button" class="remove-btn" (click)="removeSlotFile('pdf')">✕</button>
+        </div>
+
+        <!-- Rules Report -->
+        <div class="rules-list">
+          <div
+            class="rule-row"
+            *ngFor="let rule of validationResults.get('pdf')!.rules"
+            [class.passed]="rule.passed"
+            [class.failed]="!rule.passed"
+          >
+            <div class="rule-status-icon">{{ rule.passed ? '✓' : '✕' }}</div>
+            <div class="rule-details">
+              <div class="rule-name">{{ rule.name }}</div>
+              <div class="rule-values">
+                <span class="actual">{{ 'validator.actual' | translate }}: <strong>{{ rule.actualValue }}</strong></span>
+                <span class="expected">{{ 'validator.required' | translate }}: <strong>{{ rule.expectedValue }}</strong></span>
+              </div>
+              <div class="suggested-fix" *ngIf="!rule.passed && rule.suggestedFix">
+                💡 {{ rule.suggestedFix }}
+              </div>
+            </div>
+
+            <!-- Auto-fix Action Button -->
+            <div class="rule-action" *ngIf="!rule.passed && rule.fixAction">
+              <app-button
+                variant="primary"
+                size="sm"
+                [loading]="isFixing && fixingRuleId === rule.id"
+                (clicked)="autoFixRule('pdf', rule)"
+              >
+                ⚡ {{ 'validator.fixAuto' | translate }}
+              </app-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slot Footer Actions -->
+        <div class="slot-footer">
+          <app-button
+            *ngIf="!validationResults.get('pdf')!.passed"
+            variant="primary"
+            size="sm"
+            [loading]="isFixing && fixingSlot === 'pdf'"
+            (clicked)="autoFixAllSlotIssues('pdf')"
+          >
+            ⚡ {{ 'validator.fixAllPdf' | translate }}
+          </app-button>
+
+          <app-button
+            *ngIf="validationResults.get('pdf')!.passed"
+            variant="secondary"
+            size="sm"
+            (btnClick)="downloadSlotFile('pdf')"
+          >
+            📥 {{ 'common.download' | translate }}
+          </app-button>
+
+          <app-button
+            variant="ghost"
+            size="sm"
+            (btnClick)="shareSlotFile('pdf')"
+          >
+            📤 {{ 'common.share' | translate }}
+          </app-button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <app-related-tools currentToolId="document_validator"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

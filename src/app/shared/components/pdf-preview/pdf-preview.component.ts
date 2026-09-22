@@ -22,6 +22,26 @@ export interface OverlayConfig {
   signatureRect?: { x: number; y: number; width: number; height: number };
   cropRect?: { x: number; y: number; width: number; height: number };
   redactions?: { x: number; y: number; width: number; height: number }[];
+
+  // Header & Footer Live Preview
+  headerLeft?: string;
+  headerCenter?: string;
+  headerRight?: string;
+  footerLeft?: string;
+  footerCenter?: string;
+  footerRight?: string;
+  headerFooterFontSize?: number;
+  headerFooterColor?: string;
+  headerFooterFontFamily?: string;
+  topMargin?: number;
+  bottomMargin?: number;
+  leftMargin?: number;
+  rightMargin?: number;
+  firstPageMode?: 'include' | 'skip' | 'different';
+  firstPageHeaderCenter?: string;
+  firstPageFooterCenter?: string;
+  docTitle?: string;
+  docFileName?: string;
 }
 
 @Component({
@@ -170,6 +190,83 @@ export class PdfPreviewComponent implements OnChanges, OnDestroy {
         ctx.textAlign = 'right';
         ctx.fillText(text, canvas.width - margin, margin + 14 * scale);
       }
+      ctx.restore();
+    }
+
+    // 4. Header & Footer Live Preview
+    const isFirstPage = this.currentPage === 1;
+    const skipFirstPage = isFirstPage && this.overlays.firstPageMode === 'skip';
+
+    if (!skipFirstPage && (this.overlays.headerLeft || this.overlays.headerCenter || this.overlays.headerRight ||
+        this.overlays.footerLeft || this.overlays.footerCenter || this.overlays.footerRight)) {
+      ctx.save();
+      const fontSize = (this.overlays.headerFooterFontSize || 10) * scale;
+      const fontColor = this.overlays.headerFooterColor || '#333333';
+      const fontFamily = this.overlays.headerFooterFontFamily || 'Helvetica, Arial, sans-serif';
+      ctx.fillStyle = fontColor;
+      ctx.font = `${fontSize}px ${fontFamily}`;
+
+      const topMargin = (this.overlays.topMargin || 36) * scale;
+      const bottomMargin = (this.overlays.bottomMargin || 36) * scale;
+      const leftMargin = (this.overlays.leftMargin || 40) * scale;
+      const rightMargin = (this.overlays.rightMargin || 40) * scale;
+
+      const resolveText = (tmpl?: string): string => {
+        if (!tmpl) return '';
+        const todayStr = new Date().toLocaleDateString();
+        return tmpl
+          .replace(/\{page\}/gi, String(this.currentPage))
+          .replace(/\{totalPages\}/gi, String(this.totalPages))
+          .replace(/\{total\}/gi, String(this.totalPages))
+          .replace(/\{date\}/gi, todayStr)
+          .replace(/\{filename\}/gi, this.overlays?.docFileName || '')
+          .replace(/\{title\}/gi, this.overlays?.docTitle || '');
+      };
+
+      // Header
+      const headerCenter = (isFirstPage && this.overlays.firstPageMode === 'different' && this.overlays.firstPageHeaderCenter)
+        ? this.overlays.firstPageHeaderCenter
+        : this.overlays.headerCenter;
+
+      const hLeft = resolveText(this.overlays.headerLeft);
+      const hCenter = resolveText(headerCenter);
+      const hRight = resolveText(this.overlays.headerRight);
+
+      if (hLeft) {
+        ctx.textAlign = 'left';
+        ctx.fillText(hLeft, leftMargin, topMargin);
+      }
+      if (hCenter) {
+        ctx.textAlign = 'center';
+        ctx.fillText(hCenter, canvas.width / 2, topMargin);
+      }
+      if (hRight) {
+        ctx.textAlign = 'right';
+        ctx.fillText(hRight, canvas.width - rightMargin, topMargin);
+      }
+
+      // Footer
+      const footerCenter = (isFirstPage && this.overlays.firstPageMode === 'different' && this.overlays.firstPageFooterCenter)
+        ? this.overlays.firstPageFooterCenter
+        : this.overlays.footerCenter;
+
+      const fLeft = resolveText(this.overlays.footerLeft);
+      const fCenter = resolveText(footerCenter);
+      const fRight = resolveText(this.overlays.footerRight);
+
+      if (fLeft) {
+        ctx.textAlign = 'left';
+        ctx.fillText(fLeft, leftMargin, canvas.height - bottomMargin);
+      }
+      if (fCenter) {
+        ctx.textAlign = 'center';
+        ctx.fillText(fCenter, canvas.width / 2, canvas.height - bottomMargin);
+      }
+      if (fRight) {
+        ctx.textAlign = 'right';
+        ctx.fillText(fRight, canvas.width - rightMargin, canvas.height - bottomMargin);
+      }
+
       ctx.restore();
     }
   }

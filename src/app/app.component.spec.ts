@@ -5,6 +5,9 @@ import { provideRouter } from '@angular/router';
 import { resolveAngularResources } from '../test-setup';
 
 import { AppComponent } from './app.component';
+import { ThemeService } from './core/services/theme.service';
+import { ToastService } from './core/services/toast.service';
+import { TranslationService } from './core/services/translation.service';
 
 /*
  * AppComponent is standalone since the app moved to `bootstrapApplication`, so
@@ -19,7 +22,7 @@ describe('AppComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), ThemeService, ToastService, TranslationService],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
     });
 

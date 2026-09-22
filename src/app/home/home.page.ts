@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { ToolRegistryService, ToolItem } from '../core/services/tool-registry.service';
 
 @Component({
@@ -9,6 +9,7 @@ import { ToolRegistryService, ToolItem } from '../core/services/tool-registry.se
   standalone: false
 })
 export class HomePage {
+  public toolRegistry = inject(ToolRegistryService);
   searchQuery = '';
   selectedCategory: string = 'ALL';
 
@@ -48,7 +49,7 @@ export class HomePage {
     PRESETS: 'shield-checkmark'
   };
 
-  constructor(public toolRegistry: ToolRegistryService) {}
+  constructor() {}
 
   categoryIcon(category: string): string {
     return HomePage.CATEGORY_ICONS[category] ?? 'document';

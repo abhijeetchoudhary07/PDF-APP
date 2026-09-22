@@ -1,0 +1,380 @@
+<app-header></app-header>
+
+<main class="ocr-container">
+  <app-page-header
+    [title]="'ocr.title' | translate"
+    [subtitle]="'ocr.subtitle' | translate"
+    [badge]="'ocr.badge' | translate"
+  ></app-page-header>
+
+  <!-- STEP 1: SELECT FILE -->
+  <section class="workflow-card" *ngIf="currentStep === 'select'">
+    <app-file-dropzone
+      [title]="'ocr.dropzoneTitle' | translate"
+      [description]="'ocr.dropzoneDesc' | translate"
+      accept="application/pdf,image/jpeg,image/png,image/webp"
+      (fileSelected)="onFileSelected($event)"
+    ></app-file-dropzone>
+
+    <div class="features-hint-grid">
+      <div class="hint-card">
+        <div class="hint-icon">🔍</div>
+        <div class="hint-title">{{ 'ocr.hint1Title' | translate }}</div>
+        <div class="hint-desc">{{ 'ocr.hint1Desc' | translate }}</div>
+      </div>
+      <div class="hint-card">
+        <div class="hint-icon">🌐</div>
+        <div class="hint-title">{{ 'ocr.hint2Title' | translate }}</div>
+        <div class="hint-desc">{{ 'ocr.hint2Desc' | translate }}</div>
+      </div>
+      <div class="hint-card">
+        <div class="hint-icon">📄</div>
+        <div class="hint-title">{{ 'ocr.hint3Title' | translate }}</div>
+        <div class="hint-desc">{{ 'ocr.hint3Desc' | translate }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2: SELECTABLE TEXT DETECTION -->
+  <section class="workflow-card" *ngIf="currentStep === 'detect'">
+    <div class="card-header">
+      <h2>{{ 'ocr.detectionTitle' | translate }}</h2>
+      <app-badge [variant]="hasSelectableText ? 'success' : 'primary'">
+        {{ hasSelectableText ? ('ocr.selectableFound' | translate) : ('ocr.scannedDocument' | translate) }}
+      </app-badge>
+    </div>
+
+    <div class="detection-body">
+      <div class="detection-info-box" [class.highlight]="hasSelectableText">
+        <div class="icon">{{ hasSelectableText ? 'ℹ️' : '📷' }}</div>
+        <div class="text">
+          <p class="headline" *ngIf="hasSelectableText">
+            {{ 'ocr.textDetectedMsg' | translate:{ count: pagesWithText.length, total: totalPages } }}
+          </p>
+          <p class="headline" *ngIf="!hasSelectableText">
+            {{ 'ocr.noTextDetectedMsg' | translate }}
+          </p>
+          <p class="subtext">
+            {{ hasSelectableText ? ('ocr.textDetectedSubtext' | translate) : ('ocr.noTextDetectedSubtext' | translate) }}
+          </p>
+        </div>
+      </div>
+
+      <div class="text-sample-box" *ngIf="hasSelectableText && textSample">
+        <div class="sample-label">{{ 'ocr.textPreview' | translate }}:</div>
+        <div class="sample-content">"{{ textSample }}"</div>
+      </div>
+
+      <div class="action-buttons-row">
+        <app-button
+          *ngIf="hasSelectableText"
+          variant="secondary"
+          (btnClick)="extractExistingDigitalText()"
+        >
+          ⚡ {{ 'ocr.extractDigitalDirect' | translate }}
+        </app-button>
+        <app-button
+          variant="primary"
+          (btnClick)="proceedToOcrConfig()"
+        >
+          {{ hasSelectableText ? ('ocr.runFullOcr' | translate) : ('ocr.configureOcr' | translate) }} →
+        </app-button>
+        <app-button
+          variant="ghost"
+          (btnClick)="resetAll()"
+        >
+          {{ 'common.cancel' | translate }}
+        </app-button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3: CONFIGURE OCR -->
+  <section class="workflow-card" *ngIf="currentStep === 'configure'">
+    <div class="card-header">
+      <h2>{{ 'ocr.configureTitle' | translate }}</h2>
+      <span class="file-name">{{ selectedFile?.name }}</span>
+    </div>
+
+    <div class="config-grid">
+      <!-- Primary Language -->
+      <div class="config-group">
+        <label class="config-label">{{ 'ocr.primaryLanguage' | translate }}</label>
+        <div class="lang-selector-grid">
+          <button
+            type="button"
+            class="lang-pill"
+            *ngFor="let lang of availableLanguages"
+            [class.active]="selectedLanguage === lang.code"
+            (click)="selectedLanguage = lang.code"
+          >
+            <span class="native">{{ lang.nativeName }}</span>
+            <span class="name">{{ lang.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Secondary Language (Optional) -->
+      <div class="config-group">
+        <label class="config-label">{{ 'ocr.secondaryLanguage' | translate }} ({{ 'ocr.optional' | translate }})</label>
+        <select class="form-select" [(ngModel)]="selectedSecondaryLang">
+          <option value="none">-- {{ 'ocr.noneSingleLang' | translate }} --</option>
+          <option
+            *ngFor="let lang of availableLanguages"
+            [value]="lang.code"
+            [disabled]="lang.code === selectedLanguage"
+          >
+            {{ lang.name }} ({{ lang.nativeName }})
+          </option>
+        </select>
+        <small class="helper-text">{{ 'ocr.multiLangHint' | translate }}</small>
+      </div>
+
+      <!-- Page Selection (for multi-page PDF) -->
+      <div class="config-group" *ngIf="isPdf && totalPages > 1">
+        <label class="config-label">{{ 'ocr.selectPages' | translate }}</label>
+        <div class="page-modes-row">
+          <button
+            type="button"
+            class="mode-btn"
+            [class.active]="pageSelectionMode === 'all'"
+            (click)="onPageSelectionModeChange('all')"
+          >
+            {{ 'ocr.allPages' | translate:{ count: totalPages } }}
+          </button>
+          <button
+            type="button"
+            class="mode-btn"
+            *ngIf="scannedPages.length > 0 && scannedPages.length < totalPages"
+            [class.active]="pageSelectionMode === 'scanned_only'"
+            (click)="onPageSelectionModeChange('scanned_only')"
+          >
+            {{ 'ocr.scannedOnly' | translate:{ count: scannedPages.length } }}
+          </button>
+          <button
+            type="button"
+            class="mode-btn"
+            [class.active]="pageSelectionMode === 'custom'"
+            (click)="onPageSelectionModeChange('custom')"
+          >
+            {{ 'ocr.customSelection' | translate }}
+          </button>
+        </div>
+
+        <div class="page-checkboxes-grid" *ngIf="pageSelectionMode === 'custom'">
+          <label
+            class="page-chip"
+            *ngFor="let p of [].constructor(totalPages); let i = index"
+            [class.selected]="isPageSelected(i + 1)"
+          >
+            <input
+              type="checkbox"
+              [checked]="isPageSelected(i + 1)"
+              (change)="togglePageNumber(i + 1)"
+            />
+            <span>Page {{ i + 1 }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy Notice -->
+    <div class="privacy-banner">
+      <span class="shield-icon">🛡️</span>
+      <div class="privacy-text">
+        <strong>{{ 'ocr.privacyTitle' | translate }}:</strong>
+        {{ 'ocr.privacyDesc' | translate }}
+      </div>
+    </div>
+
+    <div class="action-buttons-row">
+      <app-button
+        variant="primary"
+        size="lg"
+        [disabled]="selectedPageNumbers.length === 0"
+        (btnClick)="startOcr()"
+      >
+        🚀 {{ 'ocr.startOcrBtn' | translate }}
+      </app-button>
+      <app-button
+        variant="ghost"
+        (btnClick)="resetAll()"
+      >
+        {{ 'common.back' | translate }}
+      </app-button>
+    </div>
+  </section>
+
+  <!-- STEP 4: PROCESSING -->
+  <section class="workflow-card processing-card" *ngIf="currentStep === 'processing'">
+    <div class="processing-spinner"></div>
+    <h3 class="stage-title">{{ progressMessage }}</h3>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" [style.width.%]="progressPercent"></div>
+    </div>
+    <div class="progress-meta">
+      <span>{{ progressPercent }}%</span>
+      <span *ngIf="totalPages > 1">Page {{ currentPageProcessing }} of {{ selectedPageNumbers.length }}</span>
+    </div>
+
+    <div class="processing-actions">
+      <app-button
+        variant="ghost"
+        (btnClick)="cancelOcr()"
+      >
+        {{ 'common.cancel' | translate }}
+      </app-button>
+    </div>
+  </section>
+
+  <!-- STEP 5: OCR RESULTS -->
+  <section class="workflow-card result-card" *ngIf="currentStep === 'result' && ocrResult">
+    <div class="result-header">
+      <div>
+        <h2>{{ 'ocr.resultTitle' | translate }}</h2>
+        <div class="result-badges">
+          <app-badge color="success">
+            {{ 'ocr.confidence' | translate }}: {{ ocrResult.averageConfidence }}%
+          </app-badge>
+          <app-badge color="primary">
+            {{ ocrResult.totalPages }} {{ ocrResult.totalPages > 1 ? 'Pages' : 'Page' }}
+          </app-badge>
+          <app-badge color="secondary">
+            {{ ocrResult.languages.join(', ') }}
+          </app-badge>
+        </div>
+      </div>
+
+      <div class="header-export-actions">
+        <app-button
+          variant="primary"
+          [loading]="isExporting"
+          (clicked)="downloadSearchablePdf()"
+        >
+          📥 {{ 'ocr.downloadSearchablePdf' | translate }}
+        </app-button>
+        <app-button
+          variant="outline"
+          (clicked)="analyzeWithIntelligence()"
+        >
+          ✨ {{ 'pdfIntelligence.title' | translate }} →
+        </app-button>
+      </div>
+    </div>
+
+    <!-- Page Navigation & Search Toolbar -->
+    <div class="toolbar-row">
+      <div class="pagination-controls" *ngIf="ocrResult.totalPages > 1">
+        <button
+          type="button"
+          class="nav-btn"
+          [disabled]="activePageIndex === 0"
+          (click)="prevPage()"
+        >
+          ‹ {{ 'common.back' | translate }}
+        </button>
+        <span class="page-indicator">
+          {{ 'common.pages' | translate }} {{ activePageIndex + 1 }} / {{ ocrResult.totalPages }}
+        </span>
+        <button
+          type="button"
+          class="nav-btn"
+          [disabled]="activePageIndex >= ocrResult.totalPages - 1"
+          (click)="nextPage()"
+        >
+          {{ 'common.next' | translate }} ›
+        </button>
+      </div>
+
+      <div class="search-box">
+        <input
+          type="text"
+          class="search-input"
+          [placeholder]="'ocr.searchTextPlaceholder' | translate"
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="quick-actions">
+        <app-button
+          variant="secondary"
+          size="sm"
+          (btnClick)="copyText()"
+        >
+          {{ isCopied ? ('common.completed' | translate) : ('ocr.copyPage' | translate) }}
+        </app-button>
+        <app-button
+          variant="ghost"
+          size="sm"
+          (btnClick)="copyAllText()"
+        >
+          {{ 'ocr.copyAll' | translate }}
+        </app-button>
+      </div>
+    </div>
+
+    <!-- Main Content Area: Recognized Text Preview -->
+    <div class="result-content-view">
+      <div class="text-editor-container">
+        <div class="editor-header">
+          <span>Page {{ activePageIndex + 1 }} Recognized Text</span>
+          <span class="conf-pill" *ngIf="activePage">Confidence: {{ activePage.confidence }}%</span>
+        </div>
+        <textarea
+          class="recognized-textarea"
+          rows="14"
+          [ngModel]="filteredPageText"
+          readonly
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Export Actions Grid -->
+    <div class="export-options-grid">
+      <button type="button" class="export-tile" (click)="downloadSearchablePdf()">
+        <div class="tile-icon">📑</div>
+        <div class="tile-text">
+          <div class="tile-title">{{ 'ocr.searchablePdfTitle' | translate }}</div>
+          <div class="tile-desc">{{ 'ocr.searchablePdfDesc' | translate }}</div>
+        </div>
+      </button>
+
+      <button type="button" class="export-tile" (click)="downloadTextFile()">
+        <div class="tile-icon">📝</div>
+        <div class="tile-text">
+          <div class="tile-title">{{ 'ocr.textFileTitle' | translate }}</div>
+          <div class="tile-desc">{{ 'ocr.textFileDesc' | translate }}</div>
+        </div>
+      </button>
+
+      <button type="button" class="export-tile" (click)="downloadStructuredJson()">
+        <div class="tile-icon">⚙️</div>
+        <div class="tile-text">
+          <div class="tile-title">{{ 'ocr.jsonFileTitle' | translate }}</div>
+          <div class="tile-desc">{{ 'ocr.jsonFileDesc' | translate }}</div>
+        </div>
+      </button>
+
+      <button type="button" class="export-tile" (click)="shareResult()">
+        <div class="tile-icon">📤</div>
+        <div class="tile-text">
+          <div class="tile-title">{{ 'common.share' | translate }}</div>
+          <div class="tile-desc">{{ 'ocr.shareDesc' | translate }}</div>
+        </div>
+      </button>
+    </div>
+
+    <div class="card-footer-actions">
+      <app-button
+        variant="ghost"
+        (btnClick)="resetAll()"
+      >
+        🔄 {{ 'common.chooseAnother' | translate }}
+      </app-button>
+    </div>
+  </section>
+
+  <app-related-tools currentToolId="pdf_ocr"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

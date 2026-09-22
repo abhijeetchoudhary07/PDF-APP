@@ -21,7 +21,7 @@ export class AdService {
       await AdMob.initialize({
         requestTrackingAuthorization: true,
         initializeForTesting: true, // Set to false in production
-      });
+      } as any);
       this.isAdMobInitialized = true;
     }
   }

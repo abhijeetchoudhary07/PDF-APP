@@ -8,6 +8,9 @@ import { RouterModule, provideRouter } from '@angular/router';
 import { HomePage } from './home.page';
 import { TranslatePipe } from '../shared/components/ui';
 
+import { ToolRegistryService } from '../core/services/tool-registry.service';
+import { TranslationService } from '../core/services/translation.service';
+
 /*
  * HomePage is declared by HomePageModule rather than being standalone, so it
  * goes in `declarations`. CUSTOM_ELEMENTS_SCHEMA covers the child components
@@ -25,7 +28,7 @@ describe('HomePage', () => {
     TestBed.configureTestingModule({
       declarations: [HomePage],
       imports: [FormsModule, RouterModule, TranslatePipe],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), ToolRegistryService, TranslationService],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
     });
 

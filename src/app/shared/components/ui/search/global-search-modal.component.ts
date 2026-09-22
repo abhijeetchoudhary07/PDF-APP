@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, ViewChild, AfterViewChecked, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, AfterViewChecked, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -567,11 +567,11 @@ export class AppGlobalSearchModalComponent implements AfterViewChecked {
 
   popularTools: ToolItem[] = [];
 
-  constructor(
-    public searchService: GlobalSearchService,
-    public toolRegistry: ToolRegistryService,
-    private router: Router
-  ) {
+  public searchService = inject(GlobalSearchService);
+  public toolRegistry = inject(ToolRegistryService);
+  private router = inject(Router);
+
+  constructor() {
     this.popularTools = [
       this.toolRegistry.getToolById('photo_tools')!,
       this.toolRegistry.getToolById('pdf_dashboard')!,

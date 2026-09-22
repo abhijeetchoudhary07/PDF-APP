@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastService, ToastMessage } from '../../../../core/services/toast.service';
 
@@ -44,19 +44,22 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
           </svg>
         </div>
 
-        <!-- Text Content -->
+        <!-- Content -->
         <div class="toast-content">
-          <span *ngIf="toast.title" class="toast-title">{{ toast.title }}</span>
-          <span class="toast-message">{{ toast.message }}</span>
+          <div class="toast-title" *ngIf="toast.title">{{ toast.title }}</div>
+          <div class="toast-message">{{ toast.message }}</div>
         </div>
 
-        <!-- Dismiss Button -->
+        <!-- Close Button -->
         <button
           type="button"
-          class="toast-dismiss-btn"
+          class="toast-close-btn"
           (click)="toastService.dismiss(toast.id)"
-          aria-label="Dismiss notification">
-          &times;
+          aria-label="Close notification">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
       </div>
     </div>
@@ -64,44 +67,77 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
   styles: [`
     .toast-container {
       position: fixed;
-      bottom: var(--space-6, 24px);
-      right: var(--space-6, 24px);
-      z-index: 5000;
+      top: env(safe-area-inset-top, 16px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 440px;
+      z-index: 99999;
+      pointer-events: none;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      max-width: 380px;
-      width: calc(100% - 32px);
-      pointer-events: none;
+      margin-top: 12px;
     }
 
     .toast-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-radius: var(--radius-lg, 12px);
-      background-color: var(--color-surface);
-      border: 1px solid var(--color-border);
-      box-shadow: var(--shadow-lg);
       pointer-events: auto;
-      animation: toastSlideIn var(--transition-fast, 150ms) ease-out;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--ion-background-color, #ffffff);
+      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.16), 0 2px 6px -1px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--ion-border-color, rgba(0, 0, 0, 0.08));
+      animation: toastSlideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+    }
+
+    @keyframes toastSlideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Toast Variants */
+    .toast-success {
+      border-left: 4px solid var(--ion-color-success, #2dd36f);
+      .toast-icon-box { color: var(--ion-color-success, #2dd36f); }
+    }
+
+    .toast-warning {
+      border-left: 4px solid var(--ion-color-warning, #ffc409);
+      .toast-icon-box { color: var(--ion-color-warning, #e0a800); }
+    }
+
+    .toast-error {
+      border-left: 4px solid var(--ion-color-danger, #eb445a);
+      .toast-icon-box { color: var(--ion-color-danger, #eb445a); }
+    }
+
+    .toast-info {
+      border-left: 4px solid var(--ion-color-primary, #3880ff);
+      .toast-icon-box { color: var(--ion-color-primary, #3880ff); }
     }
 
     .toast-icon-box {
-      width: 28px;
-      height: 28px;
-      border-radius: var(--radius-full, 9999px);
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
+      margin-top: 1px;
     }
 
     .toast-content {
       flex: 1;
-      display: flex;
-      flex-direction: column;
       gap: 2px;
       min-width: 0;
     }
@@ -178,5 +214,5 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
   `]
 })
 export class AppToastContainerComponent {
-  constructor(public toastService: ToastService) {}
+  public toastService = inject(ToastService);
 }

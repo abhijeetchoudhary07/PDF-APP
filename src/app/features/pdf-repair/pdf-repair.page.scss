@@ -1,0 +1,444 @@
+.repair-page {
+  padding: 1.5rem 1rem 3rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.dropzone-wrapper {
+  margin-bottom: 2.5rem;
+}
+
+.capabilities-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .cap-card {
+    background: var(--surface-color, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+
+    .cap-icon {
+      font-size: 2rem;
+      display: inline-block;
+      margin-bottom: 0.75rem;
+    }
+
+    h4 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary, #0f172a);
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      font-size: 0.85rem;
+      color: var(--text-secondary, #64748b);
+      line-height: 1.5;
+    }
+  }
+}
+
+/* Processing State */
+.processing-section {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 1rem;
+
+  .proc-card {
+    background: var(--surface-color, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 1.25rem;
+    padding: 3rem 2rem;
+    text-align: center;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border-color, #e2e8f0);
+      border-top-color: var(--primary-color, #2563eb);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary, #0f172a);
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      font-size: 0.9rem;
+      color: var(--text-secondary, #64748b);
+      margin-bottom: 1.5rem;
+    }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: var(--surface-variant, #f1f5f9);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary-color, #2563eb);
+      transition: width 0.2s ease;
+    }
+
+    .progress-pct {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--primary-color, #2563eb);
+    }
+  }
+}
+
+/* Diagnostic Section (Stage 1) */
+.diagnostic-section {
+  .health-card {
+    background: var(--surface-color, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 1rem;
+    padding: 1.75rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    margin-bottom: 2rem;
+  }
+
+  .health-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+
+    .health-title-group {
+      h3 {
+        margin: 0 0 0.25rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary, #0f172a);
+      }
+
+      .file-name {
+        font-size: 0.85rem;
+        color: var(--text-secondary, #64748b);
+      }
+    }
+
+    .health-badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.35rem 0.85rem;
+      border-radius: 2rem;
+
+      &.badge-healthy { background: #dcfce7; color: #15803d; }
+      &.badge-warning { background: #fef3c7; color: #b45309; }
+      &.badge-error { background: #fee2e2; color: #b91c1c; }
+    }
+  }
+
+  .health-stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    @media (min-width: 640px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .stat-item {
+      background: var(--surface-variant, #f8fafc);
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+
+      .stat-num {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary, #0f172a);
+      }
+
+      .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary, #64748b);
+      }
+
+      &.valid .stat-num { color: #16a34a; }
+      &.corrupt .stat-num { color: #dc2626; }
+    }
+  }
+
+  .checks-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+
+    @media (min-width: 640px) {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: 0.75rem;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+
+      .check-icon {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #dc2626;
+      }
+
+      .check-text {
+        display: flex;
+        flex-direction: column;
+
+        strong {
+          font-size: 0.9rem;
+          color: #991b1b;
+        }
+
+        span {
+          font-size: 0.8rem;
+          color: #b91c1c;
+        }
+      }
+
+      &.passed {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+
+        .check-icon { color: #16a34a; }
+        .check-text strong { color: #166534; }
+        .check-text span { color: #15803d; }
+      }
+    }
+  }
+
+  .issues-list {
+    background: var(--surface-variant, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+
+    h4 {
+      margin: 0 0 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary, #0f172a);
+    }
+
+    .issue-item {
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      background: #ffffff;
+      border: 1px solid var(--border-color, #e2e8f0);
+      margin-bottom: 0.75rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .issue-head {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+
+        .issue-title {
+          font-weight: 600;
+          font-size: 0.85rem;
+          color: var(--text-primary, #0f172a);
+        }
+
+        .issue-code {
+          font-size: 0.7rem;
+          font-family: monospace;
+          background: #e2e8f0;
+          padding: 0.1rem 0.35rem;
+          border-radius: 0.25rem;
+          color: #475569;
+        }
+      }
+
+      .issue-desc {
+        font-size: 0.8rem;
+        color: var(--text-secondary, #64748b);
+        margin: 0 0 0.25rem;
+      }
+
+      .issue-location {
+        font-size: 0.75rem;
+        color: #94a3b8;
+      }
+
+      &.level-error { border-left: 4px solid #dc2626; }
+      &.level-warning { border-left: 4px solid #f59e0b; }
+      &.level-info { border-left: 4px solid #3b82f6; }
+    }
+  }
+
+  .diagnostic-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+}
+
+/* Recovery Report (Stage 2) */
+.recovery-report-section {
+  .recovery-card {
+    background: var(--surface-color, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  }
+
+  .recovery-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+
+    .check-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #16a34a;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.3rem;
+    }
+
+    .recovery-title-group {
+      h3 {
+        margin: 0 0 0.25rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary, #0f172a);
+      }
+
+      .page-counts-summary {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--text-secondary, #64748b);
+
+        strong {
+          color: #16a34a;
+        }
+
+        .failed-badge {
+          color: #dc2626;
+          font-weight: 600;
+          margin-left: 0.35rem;
+        }
+      }
+    }
+  }
+
+  .recovery-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+
+    .page-detail-card {
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      background: var(--surface-variant, #f8fafc);
+      border: 1px solid var(--border-color, #e2e8f0);
+      display: flex;
+      flex-direction: column;
+
+      .page-num {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--text-primary, #0f172a);
+        margin-bottom: 0.2rem;
+      }
+
+      .page-strategy {
+        font-size: 0.75rem;
+        color: var(--text-secondary, #64748b);
+      }
+
+      &.status-recovered_vector { border-left: 3px solid #16a34a; }
+      &.status-recovered_raster { border-left: 3px solid #2563eb; }
+      &.status-failed { border-left: 3px solid #dc2626; background: #fef2f2; }
+    }
+  }
+
+  .recovery-log-box {
+    background: var(--surface-variant, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+
+    h4 {
+      margin: 0 0 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary, #0f172a);
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary, #475569);
+      line-height: 1.6;
+    }
+  }
+
+  .recovered-preview-box {
+    margin-bottom: 1.5rem;
+
+    h4 {
+      margin: 0 0 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+  }
+
+  .result-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

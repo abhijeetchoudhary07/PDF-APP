@@ -8,6 +8,14 @@ export interface RangeParseResult {
 
 export class PdfRangeParserUtil {
   /**
+   * Shorthand to parse a range string into an array of page numbers.
+   */
+  static parse(input: string, maxPages: number): number[] {
+    const result = this.parseRange(input, maxPages);
+    return result.valid ? result.pages : [];
+  }
+
+  /**
    * Parses a range string like "1-3, 5, 8-10" into an array of 1-indexed page numbers.
    * Validates syntax and page bounds (1 <= page <= maxPages).
    */

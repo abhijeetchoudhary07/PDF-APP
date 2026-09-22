@@ -35,3 +35,8 @@ Thumbs.db
 
 # AI assistant artifacts / chats
 .claude/
+
+# Test output
+playwright-report/
+test-results/
+

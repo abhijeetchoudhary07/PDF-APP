@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { IonicModule } from '@ionic/angular/lazy';
 import { ThemeService } from './core/services/theme.service';
 import {
@@ -21,5 +21,6 @@ import {
   ],
 })
 export class AppComponent {
-  constructor(private themeService: ThemeService) {}
+  private themeService = inject(ThemeService);
+  constructor() {}
 }

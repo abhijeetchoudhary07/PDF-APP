@@ -43,7 +43,7 @@ export class HistoryPage implements OnInit {
   history: HistoryItem[] = [];
   selectedFilter = 'ALL';
 
-  filters = ['ALL', 'PHOTO', 'SIGNATURE', 'PDF', 'CONVERT', 'FORMS', 'SECURITY'];
+  filters = ['ALL', 'PHOTO', 'SIGNATURE', 'PDF', 'CONVERT', 'FORMS', 'SECURITY', 'OCR', 'SCAN', 'VALIDATE', 'COMPARE', 'QR', 'AI'];
 
   constructor(
     private historyService: HistoryService,
@@ -85,13 +85,25 @@ export class HistoryPage implements OnInit {
         case 'SIGNATURE':
           return op.includes('signature') && !op.includes('pdf');
         case 'PDF':
-          return op.includes('pdf') && !op.includes('form') && !op.includes('sign') && !op.includes('protect') && !op.includes('unlock') && !op.includes('flatten');
+          return op.includes('pdf') && !op.includes('form') && !op.includes('sign') && !op.includes('protect') && !op.includes('unlock') && !op.includes('flatten') && !op.includes('compare') && !op.includes('repair') && !op.includes('ocr') && !op.includes('intelligence');
         case 'CONVERT':
           return op.includes('conversion') || op.includes('convert');
         case 'FORMS':
           return op.includes('form');
         case 'SECURITY':
           return op.includes('protect') || op.includes('unlock') || op.includes('flatten');
+        case 'OCR':
+          return op.includes('ocr');
+        case 'SCAN':
+          return op.includes('scan') && !op.includes('qr');
+        case 'VALIDATE':
+          return op.includes('validate') || op.includes('validator');
+        case 'COMPARE':
+          return op.includes('compare');
+        case 'QR':
+          return op.includes('qr') || op.includes('barcode');
+        case 'AI':
+          return op.includes('intelligence') || op.includes('summarize') || op.includes('translate');
         default:
           return true;
       }
@@ -108,6 +120,16 @@ export class HistoryPage implements OnInit {
     if (op.includes('photo')) return { label: 'PHOTO', color: 'primary' };
     if (op.includes('signature')) return { label: 'SIGNATURE', color: 'secondary' };
     if (op.includes('conversion')) return { label: 'CONVERTED', color: 'tertiary' };
+    if (op.includes('ocr')) return { label: 'OCR', color: 'primary' };
+    if (op.includes('scan') && !op.includes('qr')) return { label: 'SCANNER', color: 'success' };
+    if (op.includes('validate')) return { label: 'VALIDATED', color: 'warning' };
+    if (op.includes('compare')) return { label: 'COMPARE', color: 'secondary' };
+    if (op.includes('sanitizer')) return { label: 'SANITIZED', color: 'dark' };
+    if (op.includes('header-footer')) return { label: 'HEADER/FOOTER', color: 'tertiary' };
+    if (op.includes('repair')) return { label: 'REPAIRED', color: 'warning' };
+    if (op.includes('extract')) return { label: 'EXTRACTED', color: 'primary' };
+    if (op.includes('qr') || op.includes('barcode')) return { label: 'QR / BARCODE', color: 'success' };
+    if (op.includes('intelligence')) return { label: 'AI INTELLIGENCE', color: 'tertiary' };
     return { label: op.toUpperCase(), color: 'medium' };
   }
 

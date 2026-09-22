@@ -88,6 +88,156 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./features/presets/presets.page').then(m => m.PresetsPage)
   },
   {
+    path: 'features/pdf-ocr',
+    loadComponent: () => import('./features/pdf-ocr/pdf-ocr.page').then(m => m.PdfOcrPage)
+  },
+  {
+    path: 'features/document-scanner',
+    loadComponent: () => import('./features/document-scanner/document-scanner.page').then(m => m.DocumentScannerPage)
+  },
+  {
+    path: 'features/document-validator',
+    loadComponent: () => import('./features/document-validator/document-validator.page').then(m => m.DocumentValidatorPage)
+  },
+  {
+    path: 'features/pdf-compare',
+    loadComponent: () => import('./features/pdf-compare/pdf-compare.page').then(m => m.PdfComparePage)
+  },
+  {
+    path: 'features/pdf-privacy-sanitizer',
+    loadComponent: () => import('./features/pdf-privacy-sanitizer/pdf-privacy-sanitizer.page').then(m => m.PdfPrivacySanitizerPage)
+  },
+  {
+    path: 'features/pdf-header-footer',
+    loadComponent: () => import('./features/pdf-header-footer/pdf-header-footer.page').then(m => m.PdfHeaderFooterPage)
+  },
+  {
+    path: 'features/pdf-repair',
+    loadComponent: () => import('./features/pdf-repair/pdf-repair.page').then(m => m.PdfRepairPage)
+  },
+  {
+    path: 'features/pdf-extractor',
+    loadComponent: () => import('./features/pdf-extractor/pdf-extractor.page').then(m => m.PdfExtractorPage)
+  },
+  {
+    path: 'features/qr-barcode',
+    loadComponent: () => import('./features/qr-barcode/qr-barcode.page').then(m => m.QrBarcodePage)
+  },
+  {
+    path: 'features/pdf-intelligence',
+    loadComponent: () => import('./features/pdf-intelligence/pdf-intelligence.page').then(m => m.PdfIntelligencePage)
+  },
+  {
+    path: 'qr-barcode',
+    redirectTo: 'features/qr-barcode',
+    pathMatch: 'full'
+  },
+  {
+    path: 'qr',
+    redirectTo: 'features/qr-barcode',
+    pathMatch: 'full'
+  },
+  {
+    path: 'barcode',
+    redirectTo: 'features/qr-barcode',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-intelligence',
+    redirectTo: 'features/pdf-intelligence',
+    pathMatch: 'full'
+  },
+  {
+    path: 'intelligence',
+    redirectTo: 'features/pdf-intelligence',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-compare',
+    redirectTo: 'features/pdf-compare',
+    pathMatch: 'full'
+  },
+  {
+    path: 'compare',
+    redirectTo: 'features/pdf-compare',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-privacy-sanitizer',
+    redirectTo: 'features/pdf-privacy-sanitizer',
+    pathMatch: 'full'
+  },
+  {
+    path: 'privacy-sanitizer',
+    redirectTo: 'features/pdf-privacy-sanitizer',
+    pathMatch: 'full'
+  },
+  {
+    path: 'sanitizer',
+    redirectTo: 'features/pdf-privacy-sanitizer',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-header-footer',
+    redirectTo: 'features/pdf-header-footer',
+    pathMatch: 'full'
+  },
+  {
+    path: 'header-footer',
+    redirectTo: 'features/pdf-header-footer',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-repair',
+    redirectTo: 'features/pdf-repair',
+    pathMatch: 'full'
+  },
+  {
+    path: 'repair',
+    redirectTo: 'features/pdf-repair',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-extractor',
+    redirectTo: 'features/pdf-extractor',
+    pathMatch: 'full'
+  },
+  {
+    path: 'extractor',
+    redirectTo: 'features/pdf-extractor',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-ocr',
+    redirectTo: 'features/pdf-ocr',
+    pathMatch: 'full'
+  },
+  {
+    path: 'ocr',
+    redirectTo: 'features/pdf-ocr',
+    pathMatch: 'full'
+  },
+  {
+    path: 'document-scanner',
+    redirectTo: 'features/document-scanner',
+    pathMatch: 'full'
+  },
+  {
+    path: 'scanner',
+    redirectTo: 'features/document-scanner',
+    pathMatch: 'full'
+  },
+  {
+    path: 'document-validator',
+    redirectTo: 'features/document-validator',
+    pathMatch: 'full'
+  },
+  {
+    path: 'validator',
+    redirectTo: 'features/document-validator',
+    pathMatch: 'full'
+  },
+  {
     path: 'features/history',
     loadComponent: () => import('./features/history/history.page').then(m => m.HistoryPage)
   },

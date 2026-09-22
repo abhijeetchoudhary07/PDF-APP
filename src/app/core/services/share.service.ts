@@ -9,6 +9,38 @@ export class ShareService {
   constructor() {}
 
   /**
+   * Shares text, URL, or general content via Capacitor Share or Web Share API.
+   */
+  async share(options: { title?: string; text?: string; url?: string }): Promise<boolean> {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await Share.share({
+          title: options.title,
+          text: options.text,
+          url: options.url,
+          dialogTitle: 'Share via...'
+        });
+        return true;
+      }
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share(options);
+        return true;
+      }
+      if (options.text || options.url) {
+        await navigator.clipboard.writeText(options.url || options.text || '');
+        return true;
+      }
+      return false;
+    } catch (e: any) {
+      if (e.name === 'AbortError' || e.message === 'Share canceled') {
+        return false;
+      }
+      console.warn('Share error', e);
+      return false;
+    }
+  }
+
+  /**
    * Shares a file by URI or File object.
    * On mobile, delegates to Capacitor Share.
    * On web, uses Web Share API if available, or falls back to direct download.

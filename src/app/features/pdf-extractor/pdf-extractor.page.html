@@ -1,0 +1,358 @@
+<app-header></app-header>
+
+<main class="page-container extractor-page">
+  <app-page-header
+    [title]="'extractor.title' | translate"
+    [subtitle]="'extractor.subtitle' | translate"
+    [badge]="'extractor.badge' | translate"
+    [badgeVariant]="'primary'"
+    [showBack]="true"
+    [backUrl]="'/home'"
+  ></app-page-header>
+
+  <!-- STEP 1: SELECT FILE & CONTENT TYPES -->
+  <section *ngIf="currentStep === 'select'" class="select-step-section">
+    <div class="dropzone-wrapper">
+      <app-file-dropzone
+        [accept]="'.pdf,application/pdf'"
+        [title]="'extractor.selectPrompt' | translate"
+        [description]="'extractor.dropPrompt' | translate"
+        (fileSelected)="onFileSelected($event)"
+      ></app-file-dropzone>
+    </div>
+
+    <!-- Extraction Options Checklist -->
+    <div *ngIf="selectedFile" class="options-checklist-card">
+      <div class="selected-file-banner">
+        <span class="file-icon">📄</span>
+        <div class="file-details">
+          <span class="file-name">{{ selectedFile.name }}</span>
+          <span class="file-meta">{{ (selectedFile.size / 1024) | number:'1.1-2' }} KB</span>
+        </div>
+      </div>
+
+      <h3>{{ 'extractor.chooseContentTitle' | translate }}</h3>
+      <p class="checklist-desc">{{ 'extractor.chooseContentDesc' | translate }}</p>
+
+      <div class="checklist-grid">
+        <label class="check-box-item">
+          <input type="checkbox" [(ngModel)]="options.extractText" />
+          <div class="check-info">
+            <span class="check-title">📝 {{ 'extractor.typeText' | translate }}</span>
+            <span class="check-desc">{{ 'extractor.typeTextDesc' | translate }}</span>
+          </div>
+        </label>
+
+        <label class="check-box-item">
+          <input type="checkbox" [(ngModel)]="options.extractImages" />
+          <div class="check-info">
+            <span class="check-title">🖼️ {{ 'extractor.typeImages' | translate }}</span>
+            <span class="check-desc">{{ 'extractor.typeImagesDesc' | translate }}</span>
+          </div>
+        </label>
+
+        <label class="check-box-item">
+          <input type="checkbox" [(ngModel)]="options.extractTables" />
+          <div class="check-info">
+            <span class="check-title">📊 {{ 'extractor.typeTables' | translate }}</span>
+            <span class="check-desc">{{ 'extractor.typeTablesDesc' | translate }}</span>
+          </div>
+        </label>
+
+        <label class="check-box-item">
+          <input type="checkbox" [(ngModel)]="extractPagesSelected" />
+          <div class="check-info">
+            <span class="check-title">📑 {{ 'extractor.typePages' | translate }}</span>
+            <span class="check-desc">{{ 'extractor.typePagesDesc' | translate }}</span>
+          </div>
+        </label>
+
+        <label class="check-box-item">
+          <input type="checkbox" [(ngModel)]="options.extractAttachments" />
+          <div class="check-info">
+            <span class="check-title">📎 {{ 'extractor.typeAttachments' | translate }}</span>
+            <span class="check-desc">{{ 'extractor.typeAttachmentsDesc' | translate }}</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="action-bar-center">
+        <app-button
+          variant="primary"
+          size="lg"
+          (clicked)="startExtraction()"
+        >{{ 'extractor.startExtractBtn' | translate }}</app-button>
+        <app-button
+          variant="outline"
+          size="md"
+          (clicked)="selectedFile = undefined"
+        >{{ 'common.chooseAnother' | translate }}</app-button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2: PROCESSING STATE -->
+  <section *ngIf="currentStep === 'processing'" class="processing-section">
+    <div class="proc-card">
+      <div class="spinner"></div>
+      <h3>{{ 'common.processing' | translate }}</h3>
+      <p>{{ progressMessage }}</p>
+
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" [style.width.%]="progressPercent"></div>
+      </div>
+      <span class="progress-pct">{{ progressPercent }}%</span>
+    </div>
+  </section>
+
+  <!-- STEP 3: RESULTS STUDIO -->
+  <section *ngIf="currentStep === 'result' && extractedContent" class="result-section">
+    <!-- Results Metrics Row -->
+    <div class="metrics-row">
+      <div class="metric-box">
+        <span class="num">{{ extractedContent.totalPages }}</span>
+        <span class="label">{{ 'common.pages' | translate }}</span>
+      </div>
+      <div class="metric-box" *ngIf="options.extractText">
+        <span class="num">{{ extractedContent.pageTexts.length }}</span>
+        <span class="label">{{ 'extractor.pagesWithText' | translate }}</span>
+      </div>
+      <div class="metric-box" *ngIf="options.extractImages">
+        <span class="num">{{ extractedContent.images.length }}</span>
+        <span class="label">{{ 'extractor.typeImages' | translate }}</span>
+      </div>
+      <div class="metric-box" *ngIf="options.extractTables">
+        <span class="num">{{ extractedContent.tables.length }}</span>
+        <span class="label">{{ 'extractor.typeTables' | translate }}</span>
+      </div>
+      <div class="metric-box" *ngIf="options.extractAttachments">
+        <span class="num">{{ extractedContent.attachments.length }}</span>
+        <span class="label">{{ 'extractor.typeAttachments' | translate }}</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-wrapper">
+      <app-tabs
+        [tabs]="tabs"
+        [selectedTab]="activeTab"
+        (tabChange)="activeTab = $any($event)"
+      ></app-tabs>
+    </div>
+
+    <!-- TAB 1: TEXT EXTRACTION -->
+    <div *ngIf="activeTab === 'text'" class="tab-panel text-panel">
+      <div class="panel-header">
+        <h4>{{ 'extractor.extractedTextTitle' | translate }}</h4>
+        <div class="header-actions">
+          <app-button
+            variant="outline"
+            size="sm"
+            (clicked)="copyText()"
+          >{{ isCopied ? ('common.completed' | translate) : ('extractor.copyToClipboard' | translate) }}</app-button>
+          <app-button
+            variant="primary"
+            size="sm"
+            (clicked)="downloadTxt()"
+          >{{ 'extractor.downloadTxt' | translate }}</app-button>
+          <app-button
+            variant="outline"
+            size="sm"
+            (clicked)="downloadJson()"
+          >{{ 'extractor.downloadJson' | translate }}</app-button>
+          <app-button
+            variant="ghost"
+            size="sm"
+            (clicked)="handoffToIntelligence()"
+          >✨ {{ 'pdfIntelligence.title' | translate }}</app-button>
+        </div>
+      </div>
+
+      <div class="text-display-box">
+        <pre>{{ extractedContent.fullText || ('extractor.noTextFound' | translate) }}</pre>
+      </div>
+    </div>
+
+    <!-- TAB 2: IMAGES EXTRACTION -->
+    <div *ngIf="activeTab === 'images'" class="tab-panel images-panel">
+      <div class="panel-header">
+        <h4>{{ 'extractor.extractedImagesTitle' | translate }} ({{ extractedContent.images.length }})</h4>
+        <div class="header-actions">
+          <app-button
+            variant="outline"
+            size="sm"
+            (clicked)="toggleSelectAllImages()"
+          >{{ 'extractor.toggleSelectAll' | translate }}</app-button>
+          <app-button
+            variant="primary"
+            size="sm"
+            [disabled]="selectedImagesCount === 0 || isExportingZip"
+            (clicked)="downloadImagesZip()"
+          >{{ ('extractor.downloadZipBtn' | translate) + ' (' + selectedImagesCount + ')' }}</app-button>
+        </div>
+      </div>
+
+      <div *ngIf="extractedContent.images.length === 0" class="empty-state">
+        <p>{{ 'extractor.noImagesFound' | translate }}</p>
+      </div>
+
+      <div *ngIf="extractedContent.images.length > 0" class="image-gallery-grid">
+        <div *ngFor="let img of extractedContent.images" class="image-card" [class.selected]="img.selected">
+          <label class="img-select-overlay">
+            <input type="checkbox" [(ngModel)]="img.selected" />
+          </label>
+
+          <div class="img-thumb-wrapper">
+            <img [src]="img.dataUrl" [alt]="img.name" class="img-thumb" />
+          </div>
+
+          <div class="img-meta">
+            <span class="img-name">{{ img.name }}</span>
+            <span class="img-specs">{{ img.width }}x{{ img.height }} • {{ (img.sizeBytes / 1024) | number:'1.1-1' }} KB</span>
+          </div>
+
+          <app-button
+            variant="ghost"
+            size="sm"
+            (clicked)="downloadSingleImage(img)"
+          >{{ 'common.download' | translate }}</app-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: TABLES EXTRACTION -->
+    <div *ngIf="activeTab === 'tables'" class="tab-panel tables-panel">
+      <div class="limitation-notice">
+        ⚠️ {{ 'extractor.tableLimitationNotice' | translate }}
+      </div>
+
+      <div *ngIf="extractedContent.tables.length === 0" class="empty-state">
+        <p>{{ 'extractor.noTablesDetected' | translate }}</p>
+      </div>
+
+      <div *ngFor="let table of extractedContent.tables" class="table-card">
+        <div class="table-card-header">
+          <h4>{{ 'common.pages' | translate }} {{ table.pageNumber }} • {{ 'extractor.detectedTable' | translate }}</h4>
+          <div class="table-actions">
+            <app-button
+              variant="outline"
+              size="sm"
+              (clicked)="downloadTableCsv(table)"
+            >{{ 'extractor.exportCsv' | translate }}</app-button>
+            <app-button
+              variant="primary"
+              size="sm"
+              (clicked)="downloadTableXlsx(table)"
+            >{{ 'extractor.exportXlsx' | translate }}</app-button>
+          </div>
+        </div>
+
+        <div class="table-preview-scroll">
+          <table class="extracted-table">
+            <thead>
+              <tr>
+                <th *ngFor="let h of table.headers">{{ h }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of table.rows">
+                <td *ngFor="let cell of row">{{ cell }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: PAGES EXTRACTION (REUSING ENGINE) -->
+    <div *ngIf="activeTab === 'pages'" class="tab-panel pages-panel">
+      <div class="panel-header">
+        <h4>{{ 'extractor.selectPagesToExport' | translate }} ({{ selectedPageNumbers.size }} / {{ extractedContent.totalPages }})</h4>
+        <div class="header-actions">
+          <app-button
+            variant="outline"
+            size="sm"
+            (clicked)="selectAllPages()"
+          >{{ 'common.all' | translate }}</app-button>
+          <app-button
+            variant="ghost"
+            size="sm"
+            (clicked)="deselectAllPages()"
+          >{{ 'common.clear' | translate }}</app-button>
+          <app-button
+            variant="primary"
+            size="sm"
+            [disabled]="selectedPageNumbers.size === 0 || isExportingPages"
+            (clicked)="exportSelectedPages()"
+          >{{ 'extractor.exportSelectedPagesBtn' | translate }}</app-button>
+        </div>
+      </div>
+
+      <div class="pages-selector-grid">
+        <div
+          *ngFor="let page of (extractorService.pageManager.pages.length > 0 ? extractorService.pageManager.pages : [].constructor(extractedContent.totalPages)); let idx = index"
+          class="page-box-card"
+          [class.selected]="selectedPageNumbers.has(idx + 1)"
+          (click)="togglePageSelection(idx + 1)"
+        >
+          <label class="page-select-checkbox">
+            <input
+              type="checkbox"
+              [checked]="selectedPageNumbers.has(idx + 1)"
+              (click)="$event.stopPropagation()"
+              (change)="togglePageSelection(idx + 1)"
+            />
+          </label>
+          <div class="page-thumb-container">
+            <img *ngIf="page?.thumbnailDataUrl" [src]="page.thumbnailDataUrl" [alt]="'Page ' + (idx + 1)" class="page-thumb-img" />
+            <div *ngIf="!page?.thumbnailDataUrl" class="page-thumb-placeholder">
+              <span class="placeholder-icon">📄</span>
+            </div>
+          </div>
+          <span class="page-title">{{ 'common.pages' | translate }} {{ idx + 1 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: ATTACHMENTS EXTRACTION -->
+    <div *ngIf="activeTab === 'attachments'" class="tab-panel attachments-panel">
+      <div class="panel-header">
+        <h4>{{ 'extractor.embeddedAttachments' | translate }} ({{ extractedContent.attachments.length }})</h4>
+      </div>
+
+      <div *ngIf="extractedContent.attachments.length === 0" class="empty-state">
+        <p>{{ 'extractor.noAttachmentsFound' | translate }}</p>
+      </div>
+
+      <div *ngIf="extractedContent.attachments.length > 0" class="attachments-list">
+        <div *ngFor="let att of extractedContent.attachments" class="attachment-row">
+          <div class="att-info">
+            <span class="att-icon">📎</span>
+            <div class="att-details">
+              <span class="att-name">{{ att.name }}</span>
+              <span class="att-meta">{{ (att.sizeBytes / 1024) | number:'1.1-2' }} KB</span>
+            </div>
+          </div>
+          <app-button
+            variant="outline"
+            size="sm"
+            (clicked)="downloadAttachment(att)"
+          >{{ 'common.download' | translate }}</app-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar-center">
+      <app-button
+        variant="outline"
+        size="md"
+        (clicked)="reset()"
+      >{{ 'common.chooseAnother' | translate }}</app-button>
+    </div>
+  </section>
+
+  <!-- Related Tools -->
+  <app-related-tools [currentToolId]="'pdf_extractor'"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

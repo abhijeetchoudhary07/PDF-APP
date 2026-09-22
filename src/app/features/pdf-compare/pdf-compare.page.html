@@ -1,0 +1,335 @@
+<app-header></app-header>
+
+<main class="page-container compare-page">
+  <app-page-header
+    [title]="'compare.title' | translate"
+    [subtitle]="'compare.subtitle' | translate"
+    [badge]="'compare.badge' | translate"
+    [badgeVariant]="'primary'"
+    [showBack]="true"
+    [backUrl]="'/home'"
+  ></app-page-header>
+
+  <!-- STEP 1: SELECT ORIGINAL AND MODIFIED PDFS -->
+  <section *ngIf="currentStep === 'select'" class="select-step-section">
+    <div class="dropzones-container">
+      <!-- Original PDF Dropzone -->
+      <div class="dropzone-card">
+        <div class="dropzone-header">
+          <app-badge variant="neutral">{{ 'compare.originalDoc' | translate }}</app-badge>
+          <span *ngIf="originalFile" class="file-size-badge">{{ originalFile.size | number }} bytes</span>
+        </div>
+
+        <app-file-dropzone
+          *ngIf="!originalFile"
+          [accept]="'.pdf,application/pdf'"
+          [title]="'compare.selectOriginal' | translate"
+          [description]="'compare.dropOriginalPrompt' | translate"
+          (fileSelected)="onOriginalSelected($event)"
+        ></app-file-dropzone>
+
+        <div *ngIf="originalFile" class="selected-file-card">
+          <div class="file-info">
+            <span class="file-icon">📄</span>
+            <div class="file-details">
+              <span class="file-name">{{ originalFile.name }}</span>
+              <span class="file-meta">{{ (originalFile.size / 1024) | number:'1.1-2' }} KB</span>
+            </div>
+          </div>
+          <app-button
+            variant="outline"
+            size="sm"
+            (clicked)="originalFile = undefined"
+          >{{ 'common.chooseAnother' | translate }}</app-button>
+        </div>
+      </div>
+
+      <!-- Modified PDF Dropzone -->
+      <div class="dropzone-card">
+        <div class="dropzone-header">
+          <app-badge variant="primary">{{ 'compare.modifiedDoc' | translate }}</app-badge>
+          <span *ngIf="modifiedFile" class="file-size-badge">{{ modifiedFile.size | number }} bytes</span>
+        </div>
+
+        <app-file-dropzone
+          *ngIf="!modifiedFile"
+          [accept]="'.pdf,application/pdf'"
+          [title]="'compare.selectModified' | translate"
+          [description]="'compare.dropModifiedPrompt' | translate"
+          (fileSelected)="onModifiedSelected($event)"
+        ></app-file-dropzone>
+
+        <div *ngIf="modifiedFile" class="selected-file-card">
+          <div class="file-info">
+            <span class="file-icon">📝</span>
+            <div class="file-details">
+              <span class="file-name">{{ modifiedFile.name }}</span>
+              <span class="file-meta">{{ (modifiedFile.size / 1024) | number:'1.1-2' }} KB</span>
+            </div>
+          </div>
+          <app-button
+            variant="outline"
+            size="sm"
+            (clicked)="modifiedFile = undefined"
+          >{{ 'common.chooseAnother' | translate }}</app-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar-center">
+      <app-button
+        variant="primary"
+        size="lg"
+        [disabled]="!canStartCompare()"
+        (clicked)="startComparison()"
+      >{{ 'compare.startCompareBtn' | translate }}</app-button>
+    </div>
+  </section>
+
+  <!-- STEP 2: PROCESSING STATE -->
+  <section *ngIf="currentStep === 'processing'" class="processing-section">
+    <div class="progress-card">
+      <div class="spinner-container">
+        <div class="spinner"></div>
+      </div>
+      <h3 class="processing-title">{{ 'common.processing' | translate }}</h3>
+      <p class="processing-message">{{ progressMessage }}</p>
+
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" [style.width.%]="progressPercent"></div>
+      </div>
+      <span class="progress-pct">{{ progressPercent }}%</span>
+    </div>
+  </section>
+
+  <!-- STEP 3: RESULT VIEW -->
+  <section *ngIf="currentStep === 'result' && summary" class="result-section">
+    <!-- Comparison Summary Metrics -->
+    <div class="summary-metrics-grid">
+      <div class="metric-card">
+        <span class="metric-num">{{ summary.pagesCompared }}</span>
+        <span class="metric-label">{{ 'compare.pagesCompared' | translate }}</span>
+      </div>
+      <div class="metric-card modified">
+        <span class="metric-num">{{ summary.pagesChanged }}</span>
+        <span class="metric-label">{{ 'compare.pagesChanged' | translate }}</span>
+      </div>
+      <div class="metric-card added">
+        <span class="metric-num">+{{ summary.totalAddedWords }}</span>
+        <span class="metric-label">{{ 'compare.wordsAdded' | translate }}</span>
+      </div>
+      <div class="metric-card removed">
+        <span class="metric-num">-{{ summary.totalRemovedWords }}</span>
+        <span class="metric-label">{{ 'compare.wordsRemoved' | translate }}</span>
+      </div>
+    </div>
+
+    <!-- Change Step Navigator Toolbar -->
+    <div *ngIf="totalChanges > 0" class="change-navigator-bar">
+      <div class="change-counts-info">
+        <span class="change-badge added">+{{ summary.totalAddedWords }} {{ 'compare.wordsAdded' | translate }}</span>
+        <span class="change-badge removed">-{{ summary.totalRemovedWords }} {{ 'compare.wordsRemoved' | translate }}</span>
+        <span class="change-badge changed">~{{ summary.totalChangedWords }} {{ 'compare.wordsChanged' | translate }}</span>
+        <span class="total-change-count">{{ 'compare.totalChanges' | translate }}: {{ totalChanges }}</span>
+      </div>
+      <div class="change-stepper">
+        <app-button
+          variant="outline"
+          size="sm"
+          [disabled]="currentChangeIndex <= 0"
+          (clicked)="prevChange()"
+        >← {{ 'compare.prevChange' | translate }}</app-button>
+        <span class="current-change-tag">
+          {{ 'compare.changeItem' | translate }} {{ currentChangeIndex + 1 }} / {{ totalChanges }}
+          <span *ngIf="currentChange" [class]="'token-pill pill-' + currentChange.type">
+            {{ currentChange.type }}: "{{ currentChange.value }}" ({{ currentChange.pageLabel }})
+          </span>
+        </span>
+        <app-button
+          variant="outline"
+          size="sm"
+          [disabled]="currentChangeIndex >= totalChanges - 1"
+          (clicked)="nextChange()"
+        >{{ 'compare.nextChange' | translate }} →</app-button>
+      </div>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <div class="mode-tabs-wrapper">
+      <app-tabs
+        [tabs]="modeTabs"
+        [selectedTab]="selectedMode"
+        (tabChange)="setMode($event)"
+      ></app-tabs>
+    </div>
+
+    <!-- Page Matching Navigation Bar -->
+    <div class="page-nav-bar">
+      <div class="nav-controls">
+        <app-button
+          variant="outline"
+          size="sm"
+          [disabled]="activeMatchIndex === 0"
+          (clicked)="prevMatch()"
+        >← {{ 'common.back' | translate }}</app-button>
+
+        <span class="match-indicator">
+          {{ 'compare.matchItem' | translate }}: {{ activeMatchIndex + 1 }} / {{ totalMatches }}
+          <span *ngIf="currentMatch" [class]="'status-pill status-' + currentMatch.status">
+            {{ currentMatch.status }}
+          </span>
+        </span>
+
+        <app-button
+          variant="outline"
+          size="sm"
+          [disabled]="activeMatchIndex === totalMatches - 1"
+          (clicked)="nextMatch()"
+        >{{ 'common.next' | translate }} →</app-button>
+      </div>
+
+      <!-- Quick page jump pills -->
+      <div class="page-pills-row">
+        <button
+          *ngFor="let m of summary.pageMatches; let idx = index"
+          type="button"
+          class="page-pill"
+          [class.active]="idx === activeMatchIndex"
+          [class.pill-modified]="m.status === 'modified'"
+          [class.pill-added]="m.status === 'inserted'"
+          [class.pill-removed]="m.status === 'deleted'"
+          (click)="selectMatch(idx)"
+        >
+          <span *ngIf="m.originalPageNumber && m.modifiedPageNumber">
+            P{{ m.originalPageNumber }} ↔ P{{ m.modifiedPageNumber }}
+          </span>
+          <span *ngIf="!m.originalPageNumber && m.modifiedPageNumber">+P{{ m.modifiedPageNumber }}</span>
+          <span *ngIf="m.originalPageNumber && !m.modifiedPageNumber">-P{{ m.originalPageNumber }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 1: SIDE-BY-SIDE -->
+    <div *ngIf="selectedMode === 'side-by-side' && currentMatch" class="diff-view-side-by-side">
+      <div class="diff-column left-col">
+        <div class="col-header">
+          <h4>{{ 'compare.originalDoc' | translate }} ({{ currentMatch.originalPageNumber ? ('common.pages' | translate) + ' ' + currentMatch.originalPageNumber : 'None' }})</h4>
+          <span class="change-tag removed">-{{ currentMatch.removedCount }} words</span>
+        </div>
+        <div class="text-content-box">
+          <p *ngIf="currentMatch.status === 'inserted'" class="empty-state-notice">
+            {{ 'compare.pageInsertedNotice' | translate }}
+          </p>
+          <div *ngIf="currentMatch.status !== 'inserted'" class="token-flow">
+            <ng-container *ngFor="let token of currentTokens; let tIdx = index">
+              <span *ngIf="token.type === 'unchanged'" class="token-unchanged">{{ token.value }} </span>
+              <span *ngIf="token.type === 'removed'" class="token-removed" [class.active-change]="isTokenActiveChange(tIdx)">{{ token.value }} </span>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <div class="diff-column right-col">
+        <div class="col-header">
+          <h4>{{ 'compare.modifiedDoc' | translate }} ({{ currentMatch.modifiedPageNumber ? ('common.pages' | translate) + ' ' + currentMatch.modifiedPageNumber : 'None' }})</h4>
+          <span class="change-tag added">+{{ currentMatch.addedCount }} words</span>
+        </div>
+        <div class="text-content-box">
+          <p *ngIf="currentMatch.status === 'deleted'" class="empty-state-notice">
+            {{ 'compare.pageDeletedNotice' | translate }}
+          </p>
+          <div *ngIf="currentMatch.status !== 'deleted'" class="token-flow">
+            <ng-container *ngFor="let token of currentTokens; let tIdx = index">
+              <span *ngIf="token.type === 'unchanged'" class="token-unchanged">{{ token.value }} </span>
+              <span *ngIf="token.type === 'added'" class="token-added" [class.active-change]="isTokenActiveChange(tIdx)">{{ token.value }} </span>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: PAGE-BY-PAGE -->
+    <div *ngIf="selectedMode === 'page-by-page' && currentMatch" class="diff-view-page-by-page">
+      <div class="page-card">
+        <div class="page-card-header">
+          <h3>
+            {{ 'common.pages' | translate }}
+            {{ currentMatch.originalPageNumber ? currentMatch.originalPageNumber : '(None)' }}
+            →
+            {{ currentMatch.modifiedPageNumber ? currentMatch.modifiedPageNumber : '(None)' }}
+          </h3>
+          <div class="change-badges">
+            <span class="badge added">+{{ currentMatch.addedCount }}</span>
+            <span class="badge removed">-{{ currentMatch.removedCount }}</span>
+            <span class="badge changed">~{{ currentMatch.changedCount }}</span>
+          </div>
+        </div>
+
+        <div class="unified-diff-box">
+          <div class="token-flow">
+            <ng-container *ngFor="let token of currentTokens; let tIdx = index">
+              <span *ngIf="token.type === 'unchanged'" class="token-unchanged">{{ token.value }} </span>
+              <span *ngIf="token.type === 'removed'" class="token-removed" [class.active-change]="isTokenActiveChange(tIdx)" title="Removed">{{ token.value }} </span>
+              <span *ngIf="token.type === 'added'" class="token-added" [class.active-change]="isTokenActiveChange(tIdx)" title="Added">{{ token.value }} </span>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: TEXT-ONLY -->
+    <div *ngIf="selectedMode === 'text-only' && currentMatch" class="diff-view-text-only">
+      <div class="text-diff-container">
+        <div class="text-diff-legend">
+          <span class="legend-item"><span class="legend-box removed"></span> {{ 'compare.legendRemoved' | translate }}</span>
+          <span class="legend-item"><span class="legend-box added"></span> {{ 'compare.legendAdded' | translate }}</span>
+          <span class="legend-item"><span class="legend-box unchanged"></span> {{ 'compare.legendUnchanged' | translate }}</span>
+        </div>
+
+        <div class="token-flow text-only-flow">
+          <ng-container *ngFor="let token of currentTokens; let tIdx = index">
+            <span *ngIf="token.type === 'unchanged'" class="token-unchanged">{{ token.value }} </span>
+            <span *ngIf="token.type === 'removed'" class="token-removed" [class.active-change]="isTokenActiveChange(tIdx)">{{ token.value }} </span>
+            <span *ngIf="token.type === 'added'" class="token-added" [class.active-change]="isTokenActiveChange(tIdx)">{{ token.value }} </span>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: VISUAL DIFF -->
+    <div *ngIf="selectedMode === 'visual' && currentMatch" class="diff-view-visual">
+      <div *ngIf="isRenderingVisual" class="visual-loading">
+        <div class="spinner"></div>
+        <p>{{ 'compare.renderingVisualDiff' | translate }}</p>
+      </div>
+
+      <div *ngIf="!isRenderingVisual && visualDiffUrl" class="visual-diff-display">
+        <img [src]="visualDiffUrl" alt="Visual Diff" class="visual-diff-img" />
+        <p class="visual-hint">{{ 'compare.visualDiffHint' | translate }}</p>
+      </div>
+
+      <div *ngIf="!isRenderingVisual && !visualDiffUrl" class="visual-empty">
+        <p>{{ 'compare.visualDiffUnavailable' | translate }}</p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="result-actions-bar">
+      <app-button
+        variant="primary"
+        size="md"
+        (clicked)="downloadReport()"
+      >{{ 'compare.downloadReportBtn' | translate }}</app-button>
+      <app-button
+        variant="outline"
+        size="md"
+        (clicked)="reset()"
+      >{{ 'common.chooseAnother' | translate }}</app-button>
+    </div>
+  </section>
+
+  <!-- Related Tools -->
+  <app-related-tools [currentToolId]="'pdf_compare'"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

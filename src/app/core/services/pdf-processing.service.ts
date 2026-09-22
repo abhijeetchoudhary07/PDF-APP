@@ -90,7 +90,7 @@ export class PdfProcessingService {
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       
-      await page.render({ canvasContext: ctx, viewport }).promise;
+      await (page.render({ canvasContext: ctx, viewport, canvas } as any)).promise;
       
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
       images.push(imgData);
