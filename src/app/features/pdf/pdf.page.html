@@ -310,6 +310,7 @@
         <!-- SUCCESS / RESULT STATE -->
         <div *ngIf="workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData" class="result-section">
           <app-result-preview
+            [file]="processedResult?.file"
             [beforeData]="beforePreviewData"
             [afterData]="afterPreviewData"
             [beforeUrl]="originalPdfThumbnailUrl"
@@ -408,6 +409,7 @@
 
         <div *ngIf="workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData" class="result-section">
           <app-result-preview
+            [file]="processedResult?.file"
             [beforeData]="beforePreviewData"
             [afterData]="afterPreviewData"
             [outputFilename]="processedResult?.file?.name"

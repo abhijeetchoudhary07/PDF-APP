@@ -1003,13 +1003,15 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
     @media (max-width: 960px) {
       .desktop-nav, .search-kbd, .search-btn-text, .profile-btn-name {
-        display: none;
+        display: none !important;
       }
       .back-btn {
         display: inline-flex;
       }
       .mobile-menu-btn {
-        display: block;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
       }
       .search-trigger-btn {
         width: 36px;
@@ -1026,10 +1028,69 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       }
     }
 
-    /* Below this the brand wordmark loses to the action row; the logo carries it. */
-    @media (max-width: 420px) {
-      .brand-text {
+    @media (max-width: 768px) {
+      /* Theme toggle and Profile button are redundant in top bar because both
+         are prominently featured at the very top of the mobile drawer */
+      .theme-toggle-btn {
+        display: none !important;
+      }
+      .profile-btn {
+        display: none !important;
+      }
+      .brand-tag {
         display: none;
+      }
+      .header-inner {
+        padding: 0 12px;
+        gap: 8px;
+      }
+      .mobile-menu-btn {
+        display: inline-flex !important;
+        flex-shrink: 0 !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-inner {
+        padding: 0 8px;
+        gap: 6px;
+      }
+      .brand-link {
+        gap: 6px;
+      }
+      .brand-icon {
+        width: 32px;
+        height: 32px;
+      }
+      .brand-icon svg {
+        width: 18px;
+        height: 18px;
+      }
+      .brand-name {
+        font-size: 15px;
+      }
+      .back-btn,
+      .search-trigger-btn,
+      .mobile-menu-btn {
+        width: 34px;
+        height: 34px;
+      }
+      .burger-bar {
+        left: 8px;
+        width: 16px;
+      }
+      .bar-top { top: 11px; }
+      .bar-mid { top: 16px; }
+      .bar-bot { top: 21px; }
+    }
+
+    @media (max-width: 360px) {
+      .brand-name {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13.5px;
       }
     }
   `]

@@ -18,6 +18,116 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./features/pdf/pdf.page').then(m => m.PdfPage)
   },
   {
+    path: 'features/pdf-compress',
+    loadComponent: () => import('./features/pdf/pdf.page').then(m => m.PdfPage),
+    data: { mode: 'compress' }
+  },
+  {
+    path: 'features/images-to-pdf',
+    loadComponent: () => import('./features/pdf/pdf.page').then(m => m.PdfPage),
+    data: { mode: 'create' }
+  },
+  {
+    path: 'features/pdf-dashboard',
+    redirectTo: 'features/pdf',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-extract',
+    redirectTo: 'features/pdf/extract',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-merge',
+    redirectTo: 'features/pdf/merge',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-split',
+    redirectTo: 'features/pdf/split',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-organize',
+    redirectTo: 'features/pdf/organize',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-rotate',
+    redirectTo: 'features/pdf/rotate',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-delete',
+    redirectTo: 'features/pdf/delete',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-reader',
+    redirectTo: 'features/pdf/editor',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-editor',
+    redirectTo: 'features/pdf/editor',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-annotations',
+    redirectTo: 'features/pdf/editor',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-signing',
+    redirectTo: 'features/pdf/sign',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-sign',
+    redirectTo: 'features/pdf/sign',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-forms',
+    redirectTo: 'features/pdf/forms',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-security',
+    redirectTo: 'features/pdf/security',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-protect',
+    redirectTo: 'features/pdf/protect',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-unlock',
+    redirectTo: 'features/pdf/unlock',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/converter',
+    redirectTo: 'features/pdf/conversion',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/converter/:converterId',
+    redirectTo: 'features/pdf/conversion/:converterId',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/conversion',
+    redirectTo: 'features/pdf/conversion',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-conversion',
+    redirectTo: 'features/pdf/conversion',
+    pathMatch: 'full'
+  },
+  {
     path: 'features/pdf/editor',
     loadComponent: () => import('./features/pdf-editor/pdf-editor.page').then(m => m.PdfEditorPage)
   },
@@ -246,6 +356,15 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./features/batch/batch.page').then(m => m.BatchPage)
   },
   {
+    path: 'features/batch-images',
+    loadComponent: () => import('./features/batch/batch.page').then(m => m.BatchPage)
+  },
+  {
+    path: 'batch-images',
+    redirectTo: 'features/batch-images',
+    pathMatch: 'full'
+  },
+  {
     path: 'features/batch-pdf',
     loadComponent: () => import('./features/batch-pdf/batch-pdf.page').then(m => m.BatchPdfPage)
   },
@@ -332,8 +451,162 @@ export const APP_ROUTES: Routes = [
     pathMatch: 'full'
   },
   {
+    path: 'photo',
+    redirectTo: 'features/photo',
+    pathMatch: 'full'
+  },
+  {
+    path: 'signature',
+    redirectTo: 'features/signature',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf',
+    redirectTo: 'features/pdf',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-compress',
+    redirectTo: 'features/pdf-compress',
+    pathMatch: 'full'
+  },
+  {
+    path: 'compress',
+    redirectTo: 'features/pdf-compress',
+    pathMatch: 'full'
+  },
+  {
+    path: 'images-to-pdf',
+    redirectTo: 'features/images-to-pdf',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-dashboard',
+    redirectTo: 'features/pdf',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-merge',
+    redirectTo: 'features/pdf/merge',
+    pathMatch: 'full'
+  },
+  {
+    path: 'merge',
+    redirectTo: 'features/pdf/merge',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-split',
+    redirectTo: 'features/pdf/split',
+    pathMatch: 'full'
+  },
+  {
+    path: 'split',
+    redirectTo: 'features/pdf/split',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-organize',
+    redirectTo: 'features/pdf/organize',
+    pathMatch: 'full'
+  },
+  {
+    path: 'organize',
+    redirectTo: 'features/pdf/organize',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-reader',
+    redirectTo: 'features/pdf/editor',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-editor',
+    redirectTo: 'features/pdf/editor',
+    pathMatch: 'full'
+  },
+  {
+    path: 'editor',
+    redirectTo: 'features/pdf/editor',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-signing',
+    redirectTo: 'features/pdf/sign',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-sign',
+    redirectTo: 'features/pdf/sign',
+    pathMatch: 'full'
+  },
+  {
+    path: 'sign',
+    redirectTo: 'features/pdf/sign',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-forms',
+    redirectTo: 'features/pdf/forms',
+    pathMatch: 'full'
+  },
+  {
+    path: 'forms',
+    redirectTo: 'features/pdf/forms',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-security',
+    redirectTo: 'features/pdf/security',
+    pathMatch: 'full'
+  },
+  {
+    path: 'converter',
+    redirectTo: 'features/pdf/conversion',
+    pathMatch: 'full'
+  },
+  {
+    path: 'conversion',
+    redirectTo: 'features/pdf/conversion',
+    pathMatch: 'full'
+  },
+  {
+    path: 'batch',
+    redirectTo: 'features/batch',
+    pathMatch: 'full'
+  },
+  {
+    path: 'batch-pdf',
+    redirectTo: 'features/batch-pdf',
+    pathMatch: 'full'
+  },
+  {
+    path: 'presets',
+    redirectTo: 'features/presets',
+    pathMatch: 'full'
+  },
+  {
+    path: 'history',
+    redirectTo: 'features/history',
+    pathMatch: 'full'
+  },
+  {
+    path: 'settings',
+    redirectTo: 'features/settings',
+    pathMatch: 'full'
+  },
+  {
+    path: 'premium',
+    redirectTo: 'features/premium',
+    pathMatch: 'full'
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full'
   },
+  {
+    path: '**',
+    redirectTo: 'home'
+  }
 ];

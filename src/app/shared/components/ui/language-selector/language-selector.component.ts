@@ -158,6 +158,20 @@ import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.ty
       transform: rotate(180deg);
     }
 
+    @media (max-width: 480px) {
+      .lang-trigger-btn {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        justify-content: center;
+        gap: 0;
+      }
+      .lang-name,
+      .chevron-icon {
+        display: none;
+      }
+    }
+
     .lang-dropdown-menu {
       position: absolute;
       top: calc(100% + 6px);

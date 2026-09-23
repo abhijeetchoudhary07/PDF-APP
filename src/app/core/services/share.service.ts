@@ -93,6 +93,31 @@ export class ShareService {
     }
   }
 
+  /**
+   * Generates URLs for sharing across major social platforms.
+   */
+  getSocialShareUrls(params: { title?: string; text?: string; url?: string }): {
+    whatsapp: string;
+    telegram: string;
+    twitter: string;
+    facebook: string;
+    linkedin: string;
+    email: string;
+  } {
+    const currentUrl = params.url || (typeof window !== 'undefined' ? window.location.href : 'https://indianformhelper.com');
+    const shareText = params.text ? `${params.text} - ${currentUrl}` : `Check out this document prepared with Indian Form Helper: ${currentUrl}`;
+    const shareTitle = params.title || 'Document from Indian Form Helper';
+
+    return {
+      whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`,
+      telegram: `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(shareTitle)}`,
+      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(currentUrl)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
+      email: `mailto:?subject=${encodeURIComponent(shareTitle)}&body=${encodeURIComponent(shareText)}`
+    };
+  }
+
   private triggerBrowserDownload(uriOrFile: string | File, defaultName: string) {
     if (typeof document === 'undefined') {
       return;

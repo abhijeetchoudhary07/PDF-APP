@@ -99,17 +99,27 @@
 
   <!-- Action Buttons -->
   <div class="result-actions">
-    <app-button variant="success" size="lg" (clicked)="handleSave()" class="action-btn primary-save-btn">
-      <svg icon-start viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">
+    <app-button
+      variant="success"
+      size="lg"
+      [block]="true"
+      (clicked)="handleSave()"
+      class="action-btn primary-save-btn">
+      <svg icon-start viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.3" fill="none" style="margin-right: 8px;">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="7 10 12 15 17 10"></polyline>
-        <line x1="12" y1="15" x2="12" y2="15"></line>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
       </svg>
       {{ 'results.saveFile' | translate }}
     </app-button>
 
-    <app-button variant="outline" size="lg" (clicked)="handleShare()" class="action-btn">
-      <svg icon-start viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">
+    <app-button
+      variant="outline"
+      size="lg"
+      [block]="true"
+      (clicked)="handleShare()"
+      class="action-btn secondary-share-btn">
+      <svg icon-start viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" style="margin-right: 8px;">
         <circle cx="18" cy="5" r="3"></circle>
         <circle cx="6" cy="12" r="3"></circle>
         <circle cx="18" cy="19" r="3"></circle>
@@ -125,4 +135,156 @@
       {{ 'results.changeSettings' | translate }}
     </button>
   </div>
+
+  <!-- SOCIAL MEDIA SHARE MODAL -->
+  <app-modal
+    [isOpen]="isShareModalOpen"
+    title="Share Document"
+    subtitle="Choose a platform to share this file"
+    [hasFooter]="true"
+    size="md"
+    (closed)="closeShareModal()">
+
+    <div class="share-modal-container">
+      <!-- File metadata pill card -->
+      <div class="share-file-meta-card">
+        <div class="share-icon-wrap">
+          <svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </div>
+        <div class="share-meta-info">
+          <strong class="share-filename" [title]="outputFilename || afterData?.name">{{ outputFilename || afterData?.name }}</strong>
+          <span class="share-filesize">
+            {{ ((afterData?.sizeBytes || 0) / 1024) | number:'1.0-1' }} KB &bull; Optimized & Ready
+          </span>
+        </div>
+        <span class="share-badge-tag">Ready</span>
+      </div>
+
+      <!-- Social Media Platform Grid -->
+      <div class="social-channels-header">
+        <h4>Share directly via</h4>
+      </div>
+
+      <div class="social-channels-grid">
+        <!-- WhatsApp -->
+        <a [href]="shareUrls.whatsapp" target="_blank" rel="noopener noreferrer" class="social-channel-card whatsapp-channel" (click)="closeShareModal()">
+          <div class="channel-icon-box whatsapp-box">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+            </svg>
+          </div>
+          <span class="channel-title">WhatsApp</span>
+        </a>
+
+        <!-- Telegram -->
+        <a [href]="shareUrls.telegram" target="_blank" rel="noopener noreferrer" class="social-channel-card telegram-channel" (click)="closeShareModal()">
+          <div class="channel-icon-box telegram-box">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.832.942z"/>
+            </svg>
+          </div>
+          <span class="channel-title">Telegram</span>
+        </a>
+
+        <!-- X (Twitter) -->
+        <a [href]="shareUrls.twitter" target="_blank" rel="noopener noreferrer" class="social-channel-card twitter-channel" (click)="closeShareModal()">
+          <div class="channel-icon-box twitter-box">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </div>
+          <span class="channel-title">X / Twitter</span>
+        </a>
+
+        <!-- Facebook -->
+        <a [href]="shareUrls.facebook" target="_blank" rel="noopener noreferrer" class="social-channel-card facebook-channel" (click)="closeShareModal()">
+          <div class="channel-icon-box facebook-box">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </div>
+          <span class="channel-title">Facebook</span>
+        </a>
+
+        <!-- LinkedIn -->
+        <a [href]="shareUrls.linkedin" target="_blank" rel="noopener noreferrer" class="social-channel-card linkedin-channel" (click)="closeShareModal()">
+          <div class="channel-icon-box linkedin-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+            </svg>
+          </div>
+          <span class="channel-title">LinkedIn</span>
+        </a>
+
+        <!-- Email -->
+        <a [href]="shareUrls.email" class="social-channel-card email-channel" (click)="closeShareModal()">
+          <div class="channel-icon-box email-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+          </div>
+          <span class="channel-title">Email</span>
+        </a>
+
+        <!-- Copy Info/Link -->
+        <button type="button" class="social-channel-card copy-channel" (click)="copyShareLink()">
+          <div class="channel-icon-box copy-box">
+            <svg *ngIf="!copiedToast" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <svg *ngIf="copiedToast" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" style="color: #10b981;">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span class="channel-title">{{ copiedToast ? 'Copied!' : 'Copy Link' }}</span>
+        </button>
+
+        <!-- Device Share (Native Web Share API) -->
+        <button *ngIf="canNativeShare" type="button" class="social-channel-card device-channel" (click)="shareNative(); closeShareModal()">
+          <div class="channel-icon-box device-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </div>
+          <span class="channel-title">Device Share</span>
+        </button>
+      </div>
+
+      <!-- Quick Guidance Tip -->
+      <div class="share-help-tip">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="tip-icon">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span>To attach the file directly in web chats, download the file or use Device Share on your phone.</span>
+      </div>
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div modal-footer class="share-footer-actions">
+      <app-button variant="outline" size="md" (clicked)="closeShareModal()">
+        Close
+      </app-button>
+      <app-button variant="success" size="md" (clicked)="handleSave(); closeShareModal()">
+        <svg icon-start viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download File
+      </app-button>
+    </div>
+  </app-modal>
 </div>

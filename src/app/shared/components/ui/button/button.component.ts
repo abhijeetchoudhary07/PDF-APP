@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostBinding, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
@@ -227,6 +227,10 @@ export class AppButtonComponent {
   @Input() block = false;
   @Input() icon = false;
   @Input() iconPosition: 'start' | 'end' = 'start';
+
+  @HostBinding('class.block') get isBlock() {
+    return this.block;
+  }
 
   @Output() clicked = new EventEmitter<MouseEvent>();
 

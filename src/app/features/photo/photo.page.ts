@@ -78,6 +78,13 @@ export class PhotoPage implements OnDestroy {
   // Exact KB state
   targetSizes = [20, 50, 100, 200, 300];
   selectedTargetKB = 50;
+  isCustomKB = false;
+  showCustomStyleOptions = false;
+  photoBorderStyle: 'none' | 'thin-black' | 'passport-white' = 'none';
+  addDateAndNameStamp = false;
+  candidateName = '';
+  photoDate = '';
+  compressionQualityPref: 'balanced' | 'clarity' | 'max_compression' = 'balanced';
 
   // Exact Pixels state
   pixelPresets = [
@@ -270,6 +277,118 @@ export class PhotoPage implements OnDestroy {
     }
   }
 
+  selectPresetSize(size: number): void {
+    this.selectedTargetKB = size;
+    this.isCustomKB = false;
+    this.selectedPresetId = undefined;
+    this.cdr.detectChanges();
+  }
+
+  enableCustomSize(): void {
+    this.isCustomKB = true;
+    this.selectedPresetId = undefined;
+    this.cdr.detectChanges();
+  }
+
+  onCustomKBInput(): void {
+    if (this.selectedTargetKB < 5) this.selectedTargetKB = 5;
+    if (this.selectedTargetKB > 10000) this.selectedTargetKB = 10000;
+  }
+
+  onCustomKBSlider(): void {
+    this.cdr.detectChanges();
+  }
+
+  adjustTargetKB(delta: number): void {
+    this.isCustomKB = true;
+    this.selectedPresetId = undefined;
+    const next = (this.selectedTargetKB || 50) + delta;
+    this.selectedTargetKB = Math.max(5, Math.min(10000, next));
+    this.cdr.detectChanges();
+  }
+
+  private async applyPhotoCustomizations(sourceFile: File): Promise<File> {
+    if (this.photoBorderStyle === 'none' && !this.addDateAndNameStamp) {
+      return sourceFile;
+    }
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(sourceFile);
+
+        // Fill background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw source image
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Name & Date of Photo (DOP) Strip
+        if (this.addDateAndNameStamp) {
+          const stripHeight = Math.max(38, Math.round(canvas.height * 0.16));
+          const stripY = canvas.height - stripHeight;
+
+          // White strip background
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, stripY, canvas.width, stripHeight);
+
+          // Top border of strip
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, stripY, canvas.width, Math.max(1, Math.round(canvas.height * 0.005)));
+
+          // Text styling
+          ctx.fillStyle = '#000000';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          const name = (this.candidateName.trim() || 'NAME: CANDIDATE NAME').toUpperCase();
+          const d = new Date();
+          const defaultDate = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+          const dateText = this.photoDate.trim() ? `DOP: ${this.photoDate.trim()}` : `DOP: ${defaultDate}`;
+
+          const fontSize = Math.max(11, Math.round(stripHeight * 0.32));
+          ctx.font = `bold ${fontSize}px sans-serif`;
+          ctx.fillText(name.startsWith('NAME:') ? name : `NAME: ${name}`, canvas.width / 2, stripY + stripHeight * 0.32);
+
+          ctx.font = `600 ${Math.max(10, Math.round(fontSize * 0.88))}px sans-serif`;
+          ctx.fillText(dateText, canvas.width / 2, stripY + stripHeight * 0.72);
+        }
+
+        // Border styling
+        if (this.photoBorderStyle === 'thin-black') {
+          const borderWidth = Math.max(1, Math.round(canvas.width * 0.006));
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = borderWidth;
+          ctx.strokeRect(borderWidth / 2, borderWidth / 2, canvas.width - borderWidth, canvas.height - borderWidth);
+        } else if (this.photoBorderStyle === 'passport-white') {
+          const borderWidth = Math.max(4, Math.round(canvas.width * 0.025));
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = borderWidth;
+          ctx.strokeRect(borderWidth / 2, borderWidth / 2, canvas.width - borderWidth, canvas.height - borderWidth);
+          ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1);
+        }
+
+        const outFormat = this.targetFormat || 'image/jpeg';
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], sourceFile.name, { type: outFormat }));
+          } else {
+            resolve(sourceFile);
+          }
+        }, outFormat, 0.96);
+      };
+      img.onerror = () => resolve(sourceFile);
+      img.src = URL.createObjectURL(sourceFile);
+    });
+  }
+
   async compressPhoto(): Promise<void> {
     if (!this.originalFile) return;
 
@@ -279,16 +398,18 @@ export class PhotoPage implements OnDestroy {
     this.stageText = getProcessingStageLabel('analyzing', this.translationService);
     this.cdr.detectChanges();
 
+    const fileToProcess = await this.applyPhotoCustomizations(this.originalFile);
+
     if (this.mode === 'kb') {
       const config: CompressionConfig = {
         targetKB: this.selectedTargetKB,
-        outputFormat: 'image/jpeg'
+        outputFormat: this.targetFormat || 'image/jpeg'
       };
       this.processingStage = 'optimizing';
       this.stageText = getProcessingStageLabel('optimizing', this.translationService);
       this.cdr.detectChanges();
 
-      this.processedResult = await this.compressionService.compressToExactKB(this.originalFile, config);
+      this.processedResult = await this.compressionService.compressToExactKB(fileToProcess, config);
     } else {
       // Pixels Mode
       try {
@@ -296,9 +417,9 @@ export class PhotoPage implements OnDestroy {
         this.stageText = getProcessingStageLabel('processing', this.translationService);
         this.cdr.detectChanges();
 
-        const outputFormat = 'image/jpeg';
+        const outputFormat = this.targetFormat || 'image/jpeg';
         const blob = await this.imageService.resizeToCanvasBlob(
-          this.originalFile,
+          fileToProcess,
           this.targetWidth,
           this.targetHeight,
           outputFormat,
@@ -315,7 +436,7 @@ export class PhotoPage implements OnDestroy {
             type: newFile.type,
             sizeBytes: newFile.size,
             lastModified: newFile.lastModified,
-            extension: 'jpeg'
+            extension: outputFormat.split('/')[1] || 'jpeg'
           }
         };
       } catch (e: any) {
@@ -362,11 +483,8 @@ export class PhotoPage implements OnDestroy {
   }
 
   async sharePhoto(): Promise<void> {
-    if (!this.processedResult?.file) return;
-    const uri = await this.storageService.saveFile(this.processedResult.file, 'photo_share');
-    if (uri && uri !== 'web-download') {
-      await this.shareService.shareFile(uri, 'Form Photo');
-    }
+    // Sharing is handled via the Social Media Share modal inside app-result-preview.
+    // Automatic browser download is avoided.
   }
 }
 

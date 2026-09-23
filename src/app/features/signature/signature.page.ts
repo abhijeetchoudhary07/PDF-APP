@@ -350,11 +350,8 @@ export class SignaturePage implements OnDestroy {
   }
 
   async shareSignature(): Promise<void> {
-    if (!this.processedResult?.file) return;
-    const uri = await this.storageService.saveFile(this.processedResult.file, 'signature_share');
-    if (uri && uri !== 'web-download') {
-      await this.shareService.shareFile(uri, 'Form Signature');
-    }
+    // Sharing is handled via the Social Media Share modal inside app-result-preview.
+    // Avoid triggering storageService.saveFile() which downloads the file on web.
   }
 }
 

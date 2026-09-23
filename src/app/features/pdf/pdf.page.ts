@@ -1,7 +1,8 @@
-import { Component, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { IonicModule } from '@ionic/angular/lazy';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FileService } from '../../core/services/file.service';
 import { PdfService, PdfCreationConfig } from '../../core/services/pdf.service';
 import { PdfRenderService } from '../../core/services/pdf-render.service';
@@ -28,8 +29,6 @@ import {
   TranslatePipe
 } from '../../shared/components/ui';
 
-import { RouterModule } from '@angular/router';
-
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-pdf',
@@ -54,7 +53,7 @@ import { RouterModule } from '@angular/router';
   ],
   providers: [DecimalPipe]
 })
-export class PdfPage implements OnDestroy {
+export class PdfPage implements OnInit, OnDestroy {
   mode: 'dashboard' | 'compress' | 'create' | 'extract' = 'dashboard';
   workflowState: SingleFileWorkflowState = 'EMPTY';
 
@@ -99,8 +98,28 @@ export class PdfPage implements OnDestroy {
     private shareService: ShareService,
     private historyService: HistoryService,
     private cdr: ChangeDetectorRef,
-    public translationService: TranslationService
+    public translationService: TranslationService,
+    private route: ActivatedRoute
   ) {}
+
+  ngOnInit(): void {
+    const routeMode = this.route.snapshot.data['mode'] || this.route.snapshot.queryParams['mode'];
+    if (routeMode && ['dashboard', 'compress', 'create', 'extract'].includes(routeMode)) {
+      this.mode = routeMode;
+    }
+    this.route.data.subscribe(data => {
+      if (data['mode'] && ['dashboard', 'compress', 'create', 'extract'].includes(data['mode'])) {
+        this.mode = data['mode'];
+        this.cdr.markForCheck();
+      }
+    });
+    this.route.queryParams.subscribe(params => {
+      if (params['mode'] && ['dashboard', 'compress', 'create', 'extract'].includes(params['mode'])) {
+        this.mode = params['mode'];
+        this.cdr.markForCheck();
+      }
+    });
+  }
 
   ngOnDestroy(): void {
     this.cleanupUrls();
@@ -398,11 +417,8 @@ export class PdfPage implements OnDestroy {
   }
 
   async sharePdf(): Promise<void> {
-    if (!this.processedResult?.file) return;
-    const uri = await this.storageService.saveFile(this.processedResult.file, 'document_share');
-    if (uri && uri !== 'web-download') {
-      await this.shareService.shareFile(uri, 'Form PDF');
-    }
+    // Sharing is handled via the Social Media Share modal inside app-result-preview.
+    // Avoid triggering storageService.saveFile() which downloads the file on web.
   }
 
   async saveCompressedPdf(): Promise<void> {

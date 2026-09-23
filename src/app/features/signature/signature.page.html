@@ -177,6 +177,7 @@
         <!-- 3. SUCCESS / RESULTS PREVIEW -->
         <div *ngIf="workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData" class="result-section">
           <app-result-preview
+            [file]="processedResult?.file"
             [beforeData]="beforePreviewData"
             [afterData]="afterPreviewData"
             [beforeUrl]="originalPreviewUrl"
