@@ -3,7 +3,18 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+
+  /*
+   * Backend for accounts and premium entitlements, shared with the ContentFlow
+   * platform. Empty means "same origin", which is what `ionic serve` wants with
+   * a dev proxy; a Capacitor build has no origin of its own, so this must be an
+   * absolute URL there.
+   *
+   * Everything else in this app stays on the device: no document, image or PDF
+   * is ever sent to this server.
+   */
+  apiBaseUrl: 'http://localhost:3001'
 };
 
 /*

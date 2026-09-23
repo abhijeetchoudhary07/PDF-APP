@@ -603,3 +603,47 @@ input:checked + .slider:before {
     flex-direction: column;
   }
 }
+
+/* --- Account row (optional sign-in) -------------------------------------- */
+.account-row-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4, 16px);
+  flex-wrap: wrap;
+  padding: var(--space-4, 16px);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+.account-row-info {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.account-row-label {
+  display: block;
+  font-size: var(--font-xs, 12px);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.account-row-value {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-base, 16px);
+  font-weight: 600;
+  color: var(--color-text, #0f172a);
+  overflow-wrap: anywhere;
+}
+
+.account-row-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--font-xs, 12px);
+  line-height: 1.5;
+  color: var(--color-text-secondary, #475569);
+}

@@ -1,4 +1,5 @@
 import { enableProdMode, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { bootstrapApplication } from '@angular/platform-browser';
 import {
   PreloadAllModules,
@@ -10,6 +11,7 @@ import { IonicModule, IonicRouteStrategy } from '@ionic/angular/lazy';
 
 import { AppComponent } from './app/app.component';
 import { APP_ROUTES } from './app/app.routes';
+import { authInterceptor } from './app/core/api/auth.interceptor';
 import { environment } from './environments/environment';
 
 if (environment.production) {
@@ -32,6 +34,15 @@ bootstrapApplication(AppComponent, {
      */
     provideZoneChangeDetection({ eventCoalescing: true, runCoalescing: true }),
     importProvidersFrom(IonicModule.forRoot()),
+
+    /*
+     * HttpClient reaches exactly two things: bundled JSON under `assets/`
+     * (PresetService, which until now had no provider at all and would have
+     * thrown on first use) and the accounts/entitlements backend. The
+     * interceptor only touches the latter — it attaches the access token and
+     * renews it once on a 401. No document ever goes over this client.
+     */
+    provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter(APP_ROUTES, withPreloading(PreloadAllModules)),
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
   ],

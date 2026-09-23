@@ -52,6 +52,7 @@ Tools are categorized into 10 cohesive functional groups:
    - Object URLs generated for previews are revoked immediately upon component destruction (`URL.revokeObjectURL`).
    - HTML5 Canvas elements have their dimensions set to 0 on teardown to release GPU/RAM allocations.
 3. **No Password Persistence**: Passwords entered during Unlock or Protect workflows are never stored in `Preferences`, `localStorage`, analytics payloads, or `HistoryItem` records.
+4. **The One Network Path**: The optional account (§5.3) sends an email address, a password hash request, and nothing else. It is opt-in, every tool works without it, and no document, image, filename or page count is ever transmitted. A signed-out launch makes zero requests to the backend.
 
 ### 4.2 Standard PDF Encryption (`PdfSecurityService`)
 - Implements ISO 32000-1 / Adobe PDF Standard Encryption (128-bit, V=2, R=3).
@@ -69,15 +70,94 @@ Tools are categorized into 10 cohesive functional groups:
 
 ## 5. Premium & Monetization Architecture
 
-### 5.1 RevenueCat Integration (`MonetizationService`)
-- Centralized entitlement verification via `@revenuecat/purchases-capacitor`.
-- Single source of truth: `isPremium$` (RxJS `BehaviorSubject<boolean>`) and `isUserPremium` getter.
-- Entitlement identifier: `'premium'`.
+### 5.1 Two Sources of Entitlement (`MonetizationService`)
+Premium is the **union** of two independent signals:
+
+| Source | Knows about | Reached via |
+|---|---|---|
+| **Store** | What this device's Play/App Store account bought | `@revenuecat/purchases-capacitor`, entitlement id `'premium'` |
+| **Account** | What the signed-in user is entitled to, including grants made by support | `GET /api/v1/pdf-app/auth/me` |
+
+`isPremium$` (RxJS `BehaviorSubject<boolean>`) and the `isUserPremium` getter are
+unchanged, and remain the single thing every consumer reads — `AdService`,
+`BatchProcessingService`, `ConversionService`, the profile page and the header.
+
+The union, rather than the intersection, is deliberate:
+- **Store-only entitled** must stay premium when the network is down, or a
+  paying customer hits the paywall on a train.
+- **Account-only entitled** must become premium with no purchase on this
+  device, because that is what a manual grant from support *is*.
+
+`premiumSource` reports which one is currently responsible, for the account screen.
 
 ### 5.2 AdMob Lifecycle (`AdService`)
 - Free users: Non-intrusive banner ads displayed on non-sensitive dashboard screens.
 - Premium users: Banner ads and interstitials are completely suppressed when `isUserPremium === true`.
 - Sensitive Workflows: Ads are suppressed during active editing, signing, and security sessions to prevent distraction.
+
+### 5.3 Account & Entitlement Backend
+
+Accounts live on the shared ContentFlow backend under `/api/v1/pdf-app`
+(`environment.apiBaseUrl`). Sign-in is **optional**; it buys two things:
+premium that survives a reinstall or a new phone, and premium that support can
+grant without a store purchase.
+
+| File | Responsibility |
+|---|---|
+| `core/api/pdf-api.types.ts` | Hand-maintained copy of the server's wire contract. The server is a separate repository, so there is no package to import — keep it narrow, and look here first when a response "isn't what it should be". |
+| `core/api/auth.service.ts` | Register / sign in / sign out / refresh, plus `syncProfile()`. Owns the tokens. |
+| `core/api/auth-session.store.ts` | Persists the session in `@capacitor/preferences` under `IFH_PDF_ACCOUNT_SESSION_V1`. |
+| `core/api/auth.interceptor.ts` | Attaches the bearer token and renews it once on a 401. Scoped to `API_ROOT`, so bundled `assets/` JSON never carries a token. |
+| `core/api/pdf-api.service.ts` | Plan catalogue and store-purchase verification. |
+| `features/account/` | The sign-in screen and entitlement detail. |
+
+**Tokens.** Access tokens are 15-minute JWTs; refresh tokens are opaque and
+**rotate on every use**. Rotation is why `AuthService.refreshSession()`
+single-flights: two parallel exchanges would present the same token twice and
+the loser would be signed out mid-session. That is a correctness requirement,
+not an optimisation, and it is covered by `auth.service.spec.ts`.
+
+**Offline.** The last entitlement the server reported is cached alongside the
+session and republished at launch, so a premium user opening the app with no
+network sees premium rather than the paywall. It is replaced the moment
+`/auth/me` answers, so a revocation lands on the next successful call.
+
+**Storage caveat.** `Preferences` is the app's private sandbox
+(SharedPreferences / UserDefaults), not a keystore — this app ships no
+secure-storage plugin. The residual exposure is a rooted or jailbroken device,
+and it is bounded server-side: short access tokens, rotating refresh tokens,
+and revocation of every refresh token the moment an account is suspended.
+
+### 5.4 Purchase Flow
+
+1. `PremiumPage` lists plans from `GET /subscription/plans`, so pricing and
+   feature copy change without shipping a build. A bundled fallback keeps the
+   paywall rendering when the server is unreachable; the store quotes the real
+   local price at checkout regardless.
+2. A plan is matched to a store package by product id suffix — the same
+   convention the server uses when verifying.
+3. On success the receipt goes to `POST /subscription/verify`, which confirms
+   it with Google Play / RevenueCat **server-side** before recording anything.
+   That call is idempotent, so restores and relaunches are safe.
+4. `Purchases.logIn({ appUserID })` binds the RevenueCat subscriber to the
+   `pdf_users` row on sign-in. Without it the server has nothing to look up.
+
+### 5.5 Tests
+
+- `src/app/core/api/*.spec.ts` and `core/services/monetization.spec.ts` — 19
+  unit specs over the interceptor's retry, the single-flight rotation, and the
+  store/account entitlement union. `npx vitest run --dir src`.
+- `e2e/account/` — 22 Playwright specs over the real API: sign-in, session
+  persistence, silent token renewal, and an admin grant reaching a running app.
+  They need the backend up (`DATABASE_URL= npm run dev:api` in the
+  `linkedin AUTO` repository) and fail with that instruction if it is not.
+
+### 5.6 How a Support Grant Reaches the Device
+
+An admin grants premium in the ContentFlow admin portal → the entitlement is
+written against the account → the app picks it up on the next `/auth/me`, which
+runs at launch, on Capacitor `resume` (`AppComponent`), and from **Refresh
+status** on the account screen. No reinstall, no store involvement.
 
 ---
 
