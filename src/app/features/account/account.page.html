@@ -1,0 +1,184 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        title="Account"
+        subtitle="Optional. Sign in only if you want premium to follow you to a new phone."
+        [breadcrumbs]="[{ label: 'Account' }]"
+        backUrl="/profile">
+      </app-page-header>
+
+      <div class="account-container">
+        <!-- Privacy note: this app's whole promise is local processing, so the
+             boundary is stated on the screen that appears to contradict it. -->
+        <div class="privacy-note">
+          <app-icon name="shield-checkmark"></app-icon>
+          <p>
+            Only your email and premium status are stored on our server.
+            <strong>Your documents never leave this device</strong> — every tool
+            here runs offline, with or without an account.
+          </p>
+        </div>
+
+        <ng-container *ngIf="auth.ready$ | async; else loadingBlock">
+          <ng-container *ngIf="auth.user$ | async as user; else signedOutBlock">
+            <!-- ================= SIGNED IN ================= -->
+            <section class="account-card">
+              <div class="account-identity">
+                <div class="account-avatar">{{ user.email.charAt(0).toUpperCase() }}</div>
+                <div>
+                  <h3 class="account-email">{{ user.email }}</h3>
+                  <p class="account-meta" *ngIf="user.displayName">{{ user.displayName }}</p>
+                </div>
+              </div>
+
+              <ng-container *ngIf="auth.entitlement$ | async as entitlement">
+                <div class="plan-row" [class.is-pro]="entitlement.isPremium">
+                  <div>
+                    <span class="plan-label">Current plan</span>
+                    <span class="plan-value">
+                      {{ entitlement.isPremium ? planLabel(entitlement.planId) : 'Free' }}
+                    </span>
+                  </div>
+                  <span class="plan-chip" [class.is-pro]="entitlement.isPremium">
+                    {{ entitlement.isPremium ? 'PRO' : 'FREE' }}
+                  </span>
+                </div>
+
+                <dl class="plan-details">
+                  <div>
+                    <dt>Expires</dt>
+                    <dd>{{ formatExpiry(entitlement.validUntil, entitlement.isPremium) }}</dd>
+                  </div>
+                  <div *ngIf="entitlement.isPremium && entitlement.daysRemaining !== null">
+                    <dt>Days left</dt>
+                    <dd>{{ entitlement.daysRemaining }}</dd>
+                  </div>
+                  <div *ngIf="entitlement.isPremium">
+                    <dt>Source</dt>
+                    <dd>
+                      {{ entitlement.platform === 'manual_admin'
+                          ? 'Granted by support'
+                          : (entitlement.platform === 'promotional' ? 'Promotional' : 'Store purchase') }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Status checked</dt>
+                    <dd>{{ lastSyncedLabel() }}</dd>
+                  </div>
+                </dl>
+
+                <app-button
+                  *ngIf="!entitlement.isPremium"
+                  variant="primary"
+                  size="md"
+                  [block]="true"
+                  (clicked)="goPremium()">
+                  See premium plans
+                </app-button>
+              </ng-container>
+
+              <div class="account-actions">
+                <app-button variant="outline" size="md" [loading]="busy" (clicked)="refresh()">
+                  Refresh status
+                </app-button>
+                <app-button variant="outline" size="md" [loading]="busy" (clicked)="restorePurchases()">
+                  Restore purchases
+                </app-button>
+                <app-button variant="ghost" size="md" (clicked)="signOut()">
+                  Sign out
+                </app-button>
+              </div>
+
+              <p class="account-hint">
+                Premium granted by support appears here after a refresh. Signing out
+                leaves every tool working — it only stops premium from syncing.
+              </p>
+            </section>
+          </ng-container>
+
+          <!-- ================= SIGNED OUT ================= -->
+          <ng-template #signedOutBlock>
+            <section class="account-card">
+              <div class="mode-switch" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  [attr.aria-selected]="mode === 'signIn'"
+                  [class.is-active]="mode === 'signIn'"
+                  (click)="setMode('signIn')">
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  [attr.aria-selected]="mode === 'register'"
+                  [class.is-active]="mode === 'register'"
+                  (click)="setMode('register')">
+                  Create account
+                </button>
+              </div>
+
+              <form class="account-form" (ngSubmit)="submit()">
+                <app-input
+                  *ngIf="mode === 'register'"
+                  label="Name"
+                  placeholder="Optional"
+                  [(ngModel)]="displayName"
+                  name="displayName">
+                </app-input>
+
+                <app-input
+                  label="Email"
+                  type="email"
+                  placeholder="you@example.com"
+                  [required]="true"
+                  [error]="emailError"
+                  [(ngModel)]="email"
+                  name="email">
+                </app-input>
+
+                <app-input
+                  label="Password"
+                  type="password"
+                  placeholder="At least 8 characters"
+                  [required]="true"
+                  [error]="passwordError"
+                  [hint]="mode === 'register' ? 'Eight characters or more. Nothing else is required.' : ''"
+                  [(ngModel)]="password"
+                  name="password">
+                </app-input>
+
+                <app-button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  [block]="true"
+                  [loading]="busy"
+                  (clicked)="submit()">
+                  {{ mode === 'register' ? 'Create account' : 'Sign in' }}
+                </app-button>
+              </form>
+
+              <p class="account-hint">
+                {{ mode === 'register'
+                    ? 'Already bought premium on this phone? Create an account and it will be linked automatically.'
+                    : 'No account yet? Creating one takes a moment and keeps your premium if you switch phones.' }}
+              </p>
+            </section>
+          </ng-template>
+        </ng-container>
+
+        <ng-template #loadingBlock>
+          <section class="account-card account-card--loading">
+            <p>Checking your account…</p>
+          </section>
+        </ng-template>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

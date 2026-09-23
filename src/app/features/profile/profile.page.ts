@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../../core/api/auth.service';
 import { ProfileService, UserProfile, UsageStats } from '../../core/services/profile.service';
 import { MonetizationService } from '../../core/services/monetization.service';
 import { ThemeService, ThemeMode } from '../../core/services/theme.service';
@@ -46,6 +47,7 @@ export class ProfilePage implements OnInit {
   constructor(
     public profileService: ProfileService,
     public monetization: MonetizationService,
+    public auth: AuthService,
     public themeService: ThemeService,
     private toastService: ToastService
   ) {}

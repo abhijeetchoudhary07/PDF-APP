@@ -59,25 +59,65 @@
           </div>
         </div>
 
-        <!-- PRICING CARDS -->
-        <div class="pricing-cards-grid">
-          <div *ngFor="let pkg of packages" class="pricing-card" [class.featured]="pkg.id === 'yearly'">
-            <div class="popular-badge" *ngIf="pkg.id === 'yearly'">Most Popular</div>
-            <h4 class="package-title">{{ pkg.title }}</h4>
-            <div class="package-price">{{ pkg.priceString }}</div>
-            <p class="package-desc">
-              {{ pkg.id === 'monthly' ? 'Billed monthly. Cancel anytime.' : (pkg.id === 'yearly' ? 'Billed annually. Save over 58%.' : 'One-time payment. Lifetime access.') }}
+        <!-- ALREADY PREMIUM -->
+        <div class="already-premium" *ngIf="monetization.isPremium$ | async">
+          <app-icon name="checkmark-circle"></app-icon>
+          <div>
+            <h4>Premium is already active</h4>
+            <p>
+              Everything below is unlocked.
+              <ng-container *ngIf="!auth.isSignedIn">
+                <button type="button" class="inline-link" (click)="goToAccount()">
+                  Create an account
+                </button>
+                to keep it if you change phones.
+              </ng-container>
             </p>
+          </div>
+        </div>
+
+        <!-- PRICING CARDS -->
+        <p class="pricing-offline-note" *ngIf="offlinePricing">
+          Showing last known pricing — we could not reach the server. The store
+          confirms the exact price before you pay.
+        </p>
+
+        <div class="pricing-cards-grid" *ngIf="!loadingPlans; else pricingSkeleton">
+          <div
+            *ngFor="let plan of plans"
+            class="pricing-card"
+            [class.featured]="isFeatured(plan)">
+            <div class="popular-badge" *ngIf="isFeatured(plan)">Most Popular</div>
+            <h4 class="package-title">{{ plan.name }}</h4>
+            <div class="package-price">{{ priceLabel(plan) }}</div>
+            <p class="package-desc">{{ billingNote(plan) }}</p>
+
+            <ul class="package-features" *ngIf="plan.features.length">
+              <li *ngFor="let feature of plan.features">{{ feature }}</li>
+            </ul>
 
             <app-button
-              [variant]="pkg.id === 'yearly' ? 'primary' : 'outline'"
+              [variant]="isFeatured(plan) ? 'primary' : 'outline'"
               size="md"
               [block]="true"
-              (clicked)="buy(pkg)">
-              Choose {{ pkg.title }}
+              [loading]="purchasingPlanId === plan.planId"
+              (clicked)="buy(plan)">
+              Choose {{ plan.name }}
             </app-button>
           </div>
         </div>
+
+        <ng-template #pricingSkeleton>
+          <p class="pricing-loading">Loading plans…</p>
+        </ng-template>
+
+        <p class="pricing-account-note">
+          Premium is tied to your account when you are signed in, so it survives a
+          reinstall or a new phone.
+          <button type="button" class="inline-link" (click)="goToAccount()">
+            {{ auth.isSignedIn ? 'Manage account' : 'Sign in or create an account' }}
+          </button>
+        </p>
       </div>
     </div>
   </main>

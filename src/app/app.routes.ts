@@ -308,6 +308,17 @@ export const APP_ROUTES: Routes = [
     pathMatch: 'full'
   },
   {
+    // Optional sign-in. Premium that follows the person rather than the phone,
+    // and the route support points someone at when a store purchase goes wrong.
+    path: 'account',
+    loadComponent: () => import('./features/account/account.page').then(m => m.AccountPage)
+  },
+  {
+    path: 'features/account',
+    redirectTo: 'account',
+    pathMatch: 'full'
+  },
+  {
     path: 'features/premium',
     loadComponent: () => import('./features/premium/premium.page').then(m => m.PremiumPage)
   },

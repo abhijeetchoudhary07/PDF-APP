@@ -199,6 +199,44 @@
           </div>
         </section>
 
+        <!-- 3b. ACCOUNT (optional sign-in) -->
+        <section class="profile-section">
+          <div class="section-title-wrap">
+            <h3 class="section-title">Account</h3>
+            <span class="section-badge">Optional</span>
+          </div>
+
+          <div class="account-row-card">
+            <ng-container *ngIf="auth.user$ | async as account; else signedOutRow">
+              <div class="account-row-info">
+                <span class="account-row-label">Signed in</span>
+                <span class="account-row-value">{{ account.email }}</span>
+                <span class="account-row-sub" *ngIf="auth.entitlement$ | async as ent">
+                  {{ ent.isPremium
+                      ? 'Premium on this account' + (ent.validUntil ? ' · renews ' + (ent.validUntil | date:'mediumDate') : ' · never expires')
+                      : 'Free tier on this account' }}
+                </span>
+              </div>
+              <app-button variant="outline" size="md" routerLink="/account">
+                Manage
+              </app-button>
+            </ng-container>
+
+            <ng-template #signedOutRow>
+              <div class="account-row-info">
+                <span class="account-row-label">Not signed in</span>
+                <span class="account-row-sub">
+                  Sign in to keep premium if you reinstall or change phones. Your
+                  documents stay on this device either way.
+                </span>
+              </div>
+              <app-button variant="primary" size="md" routerLink="/account">
+                Sign in
+              </app-button>
+            </ng-template>
+          </div>
+        </section>
+
         <!-- 4. PREFERENCES -->
         <section class="profile-section">
           <div class="section-title-wrap">
