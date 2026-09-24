@@ -158,9 +158,18 @@ export class BatchPage {
     const successItems = this.items.filter(i => i.status === 'done' && i.result?.file);
     if (successItems.length === 0) return;
     
+    // One batch is one operation against the free tier's daily allowance, no
+    // matter how many files it produced — so every save in this loop carries
+    // the same id and only the first is counted.
+    const operationId = `batch_photo_${Date.now()}`;
+
     let savedCount = 0;
     for (const item of successItems) {
-      const uri = await this.storageService.saveFile(item.result!.file!, 'batch_photo');
+      const uri = await this.storageService.saveFile(
+        item.result!.file!,
+        'batch_photo',
+        operationId,
+      );
       if (uri) {
         savedCount++;
         await this.historyService.addHistoryItem({

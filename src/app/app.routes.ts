@@ -606,7 +606,16 @@ export const APP_ROUTES: Routes = [
     pathMatch: 'full'
   },
   {
+    path: '404',
+    loadComponent: () => import('./features/not-found/not-found.page').then(m => m.NotFoundPage)
+  },
+  {
+    /*
+     * An unmatched URL lands on a real page rather than bouncing to the
+     * dashboard. Redirecting to home hid the mistake: a stale bookmark or a
+     * typo looked like the app had simply reset itself.
+     */
     path: '**',
-    redirectTo: 'home'
+    redirectTo: '404'
   }
 ];

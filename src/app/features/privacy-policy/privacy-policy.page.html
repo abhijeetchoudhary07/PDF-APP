@@ -162,8 +162,119 @@
           </p>
         </section>
 
+        <!--
+          Mirrors the Google Play Console Data Safety form one row at a time, so
+          the answers a reviewer sees in the listing and the answers this page
+          gives can be checked against each other. Update both together.
+        -->
+        <section class="policy-section" id="data-safety">
+          <h2>8. Google Play Data Safety Disclosure</h2>
+          <p>
+            Google Play asks every app to declare what it collects and shares. This
+            is that declaration in full, written out so you can check it against the
+            Data Safety label on our Play Store listing.
+          </p>
+
+          <h3>Your documents are never collected</h3>
+          <p>
+            <strong>Photos, signatures, PDFs, scans and every other file you open in
+            this app are processed entirely on your device and are never uploaded,
+            transmitted, or seen by us or by anyone else.</strong> Compression,
+            resizing, cropping, conversion, merging, splitting, OCR, redaction and
+            signing all run inside the app's own sandbox using WebAssembly and your
+            device's processor. There is no server-side rendering step, no
+            "temporary upload for processing", and no background sync of your
+            files. Turning off the network does not stop any document tool from
+            working — that is the simplest way to verify this for yourself.
+          </p>
+
+          <h3>What is collected, and only when you opt in</h3>
+          <div class="data-safety-table-wrap">
+            <table class="data-safety-table">
+              <thead>
+                <tr>
+                  <th scope="col">Data type</th>
+                  <th scope="col">Collected?</th>
+                  <th scope="col">Shared?</th>
+                  <th scope="col">Why, and what triggers it</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Files &amp; documents (photos, signatures, PDFs)</th>
+                  <td>No</td>
+                  <td>No</td>
+                  <td>Processed on device only. Never leaves the device.</td>
+                </tr>
+                <tr>
+                  <th scope="row">Photos &amp; videos from the camera or gallery</th>
+                  <td>No</td>
+                  <td>No</td>
+                  <td>Read into memory when you pick them, processed, then discarded.</td>
+                </tr>
+                <tr>
+                  <th scope="row">Email address and display name</th>
+                  <td>Yes — optional</td>
+                  <td>No</td>
+                  <td>
+                    Only if you choose to create an account. Used for account
+                    management and to keep Premium when you change phones. The app
+                    is fully usable without ever signing in.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Purchase history</th>
+                  <td>Yes — if you buy Premium</td>
+                  <td>No</td>
+                  <td>
+                    Handled by Google Play and RevenueCat to verify and restore your
+                    subscription. We never receive card or payment details.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Device or advertising identifiers</th>
+                  <td>Yes — free tier only</td>
+                  <td>Yes — with Google AdMob</td>
+                  <td>
+                    Used by AdMob to serve non-personalized ads. Premium removes ads
+                    and this collection with them. Ad SDKs have no access to your
+                    documents.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">App activity &amp; crash logs</th>
+                  <td>Yes — anonymous</td>
+                  <td>Yes — with Google Firebase</td>
+                  <td>
+                    Which tools are opened and diagnostic crash reports, for app
+                    stability and analytics. Never includes file names or file
+                    contents.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Processing history, presets and settings</th>
+                  <td>No — stored on device</td>
+                  <td>No</td>
+                  <td>
+                    Kept in your device's own storage so the app remembers your
+                    preferences. Clearable at any time from Local Data Storage.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Security and your choices</h3>
+          <ul>
+            <li>All data in transit, on the optional account endpoints, is encrypted with HTTPS.</li>
+            <li>You can use every document tool without an account, without a network connection, and without granting any permission you would rather not grant.</li>
+            <li>You can request deletion of an account and its data at any time from the <a routerLink="/account">Account</a> screen or by emailing us.</li>
+            <li>On-device data can be wiped from <a routerLink="/features/local-data-storage">Local Data Storage</a>.</li>
+          </ul>
+        </section>
+
         <section class="policy-section">
-          <h2>8. Questions & Contact</h2>
+          <h2>9. Questions & Contact</h2>
           <p>
             If you have questions regarding this Privacy Policy or our client-side architecture, please visit our <a routerLink="/features/contact-support">Contact Support</a> page or email us at <a href="mailto:privacy@indianformhelper.in">privacy@indianformhelper.in</a>.
           </p>

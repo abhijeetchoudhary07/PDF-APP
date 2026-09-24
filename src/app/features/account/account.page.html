@@ -151,13 +151,20 @@
                   name="password">
                 </app-input>
 
+                <!--
+                  No (clicked) handler: the button is a real type="submit"
+                  inside the form, so a click already reaches submit() through
+                  (ngSubmit). Binding both meant every click called submit()
+                  twice — harmless only because of the `busy` guard, and one
+                  refactor away from firing two registrations.
+                -->
                 <app-button
                   type="submit"
                   variant="primary"
                   size="lg"
                   [block]="true"
                   [loading]="busy"
-                  (clicked)="submit()">
+                  [disabled]="busy">
                   {{ mode === 'register' ? 'Create account' : 'Sign in' }}
                 </app-button>
               </form>

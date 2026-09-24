@@ -84,6 +84,21 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
         </div>
       </div>
 
+      <!--
+        Google Play requires an app themed around government forms to say
+        plainly that it is not a government product. It has to be reachable
+        without hunting, so it sits on every page that renders the footer as
+        well as in Settings and on the About page.
+      -->
+      <div class="footer-disclaimer" role="note">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <p>{{ 'footer.govDisclaimer' | translate }}</p>
+      </div>
+
       <!-- Bottom Bar -->
       <div class="footer-bottom">
         <div class="bottom-inner">
@@ -206,16 +221,44 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       color: var(--color-primary);
     }
 
+    .footer-disclaimer {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: var(--space-4, 16px);
+      padding-inline: calc(var(--space-4, 16px) + env(safe-area-inset-left, 0px))
+                      calc(var(--space-4, 16px) + env(safe-area-inset-right, 0px));
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      border-top: 1px solid var(--color-divider);
+      color: var(--color-text-secondary);
+    }
+
+    .footer-disclaimer svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+      color: var(--color-warning);
+    }
+
+    .footer-disclaimer p {
+      margin: 0;
+      font-size: var(--font-caption, 12px);
+      line-height: var(--line-height-normal, 1.5);
+    }
+
     .footer-bottom {
       border-top: 1px solid var(--color-divider);
       padding: var(--space-4, 16px) 0;
+      /* Keeps the last line of the page above Android's gesture pill. */
+      padding-bottom: calc(var(--space-4, 16px) + env(safe-area-inset-bottom, 0px));
       background-color: var(--color-background-subtle);
     }
 
     .bottom-inner {
       max-width: 1240px;
       margin: 0 auto;
-      padding: 0 var(--space-4, 16px);
+      padding-inline: calc(var(--space-4, 16px) + env(safe-area-inset-left, 0px))
+                      calc(var(--space-4, 16px) + env(safe-area-inset-right, 0px));
       display: flex;
       align-items: center;
       justify-content: space-between;

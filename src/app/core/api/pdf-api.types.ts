@@ -112,3 +112,76 @@ export const FREE_ENTITLEMENT: PdfEntitlement = {
   platform: null,
   daysRemaining: null,
 };
+
+/* ---------------------------------------------------------------------------
+ * Manual payments (UPI / QR / bank transfer)
+ *
+ * The app does not sell through Google Play Billing. Someone pays by UPI in
+ * their own bank app, submits the reference here, and an admin approves it —
+ * which produces an ordinary subscription with `platform: 'manual_admin'`, so
+ * nothing about how premium is *read* changes.
+ * ------------------------------------------------------------------------ */
+
+export type PdfPaymentMethod = 'UPI' | 'QR_CODE' | 'BANK_TRANSFER';
+
+export type PdfManualPaymentStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+/** The payee details the paywall shows. Bank fields are optional. */
+export interface PdfPaymentSettings {
+  upiId: string;
+  upiName: string;
+  /** A stored QR image (data URI). Null means the app renders one from `upiId`. */
+  qrCodeData: string | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  bankAccountName: string | null;
+  bankIfsc: string | null;
+  bankBranch: string | null;
+  instructions: string;
+  /** How long to tell the user review takes. */
+  reviewHours: number;
+  isActive: boolean;
+}
+
+export interface PdfPaymentSettingsResponse {
+  settings: PdfPaymentSettings;
+}
+
+export interface PdfManualPayment {
+  id: string;
+  userId: string;
+  planId: string;
+  amount: number;
+  currency: string;
+  durationDays: number | null;
+  paymentMethod: PdfPaymentMethod;
+  utrNumber: string;
+  senderName: string | null;
+  senderUpiId: string | null;
+  contactNote: string | null;
+  status: PdfManualPaymentStatus;
+  adminNotes: string | null;
+  rejectionReason: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PdfSubmitManualPaymentRequest {
+  planId: string;
+  utrNumber: string;
+  paymentMethod?: PdfPaymentMethod;
+  senderName?: string;
+  senderUpiId?: string;
+  contactNote?: string;
+}
+
+export interface PdfManualPaymentResponse {
+  request: PdfManualPayment;
+}
+
+export interface PdfMyManualPaymentsResponse {
+  requests: PdfManualPayment[];
+  pending: PdfManualPayment | null;
+  entitlement: PdfEntitlement;
+}

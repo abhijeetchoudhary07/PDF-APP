@@ -16,6 +16,36 @@
           {{ 'home.heroSubtitle' | translate }}
         </p>
 
+        <!--
+          The free tier's daily allowance, on the screen people start from.
+          The header carries the same number, but that chip lives in the desktop
+          nav — on a phone it is behind the hamburger, which is no use as a
+          warning. Zero is rendered, not hidden, so "none left" is visible.
+        -->
+        <ng-container *ngIf="{ remaining: quota.remaining$ | async } as q">
+          <a
+            *ngIf="q.remaining !== null"
+            routerLink="/features/premium"
+            class="hero-quota"
+            [class.is-spent]="q.remaining === 0"
+            data-testid="hero-quota">
+            <!--
+              One number, not two.
+              The sentence is translated whole rather than assembled from a
+              count badge plus an "of N free operations left today" fragment,
+              because Hindi, Marathi, Bengali and Punjabi all place the number
+              differently than English does and the fragment version read as
+              broken grammar in four of the five languages. The pill's own
+              colour — see .hero-quota.is-spent — is what marks the exhausted
+              state now that the badge is gone.
+            -->
+            <span>
+              {{ 'quota.fullLabel' | translate: { remaining: q.remaining, limit: quota.limit } }} —
+              <strong>{{ 'quota.upsell' | translate }}</strong>
+            </span>
+          </a>
+        </ng-container>
+
         <!-- SEARCH BAR -->
         <div class="hero-search-box">
           <div class="search-input-wrap">

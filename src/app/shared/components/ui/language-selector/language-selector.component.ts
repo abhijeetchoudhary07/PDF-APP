@@ -158,10 +158,24 @@ import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.ty
       transform: rotate(180deg);
     }
 
+    /*
+     * On a phone the trigger collapses to the globe alone, but it stays a full
+     * 44px touch target — it sits shoulder to shoulder with the search and menu
+     * buttons in the header, and a 34px control next to 44px neighbours is both
+     * a miss-tap risk and an accessibility finding.
+     */
+    @media (max-width: 960px) {
+      /* Height only — the label still fits at tablet widths and in the drawer. */
+      .lang-trigger-btn {
+        height: var(--min-touch-target, 44px);
+        min-height: var(--min-touch-target, 44px);
+      }
+    }
+
     @media (max-width: 480px) {
       .lang-trigger-btn {
-        width: 34px;
-        height: 34px;
+        width: var(--min-touch-target, 44px);
+        min-width: var(--min-touch-target, 44px);
         padding: 0;
         justify-content: center;
         gap: 0;

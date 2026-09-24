@@ -164,8 +164,7 @@
   }
 }
 
-.pricing-offline-note,
-.pricing-loading {
+.pricing-offline-note {
   margin: 0 0 var(--space-4, 16px);
   font-size: var(--font-sm, 14px);
   color: var(--color-text-muted, #94a3b8);
@@ -214,4 +213,437 @@
   color: var(--color-primary, #4f46e5);
   cursor: pointer;
   text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+ * Restore + Google Play Billing disclosure
+ * ----------------------------------------------------------------------- */
+.restore-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4, 16px);
+  margin-top: var(--space-6, 24px);
+  padding: var(--space-4, 16px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 14px);
+  background-color: var(--color-surface);
+}
+
+.restore-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.restore-title {
+  font-size: var(--font-label, 14px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text);
+}
+
+.restore-desc {
+  font-size: var(--font-caption, 12px);
+  color: var(--color-text-secondary);
+}
+
+.billing-terms {
+  margin-top: var(--space-5, 20px);
+  padding: var(--space-5, 20px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 14px);
+  background-color: var(--color-background-subtle);
+
+  h4 {
+    margin: 0 0 var(--space-3, 12px);
+    font-size: var(--font-label, 14px);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  li {
+    font-size: var(--font-caption, 12px);
+    /* Play's reviewers read this block; it has to be legible, not fine print. */
+    line-height: var(--line-height-loose, 1.625);
+    color: var(--color-text-secondary);
+  }
+
+  strong {
+    color: var(--color-text);
+    font-weight: var(--font-weight-semibold, 600);
+  }
+}
+
+.terms-links {
+  margin: var(--space-4, 16px) 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-caption, 12px);
+  color: var(--color-text-muted);
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    /* Comfortable to tap between two adjacent links on a phone. */
+    padding: 6px 0;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}
+
+@media (max-width: 600px) {
+  .restore-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Persistent explanation of why checkout cannot open. Deliberately above the
+   cards and not a toast: it has to survive long enough to be read. */
+.store-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: var(--space-4, 16px);
+  padding: var(--space-4, 16px);
+  border: 1px solid var(--color-info);
+  border-radius: var(--radius-md, 10px);
+  background-color: var(--color-info-soft);
+
+  app-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--color-info);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--font-caption, 12px);
+    line-height: var(--line-height-normal, 1.5);
+    color: var(--color-text);
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Manual (UPI) payment flow
+ * ----------------------------------------------------------------------- */
+
+/* A submitted or rejected claim. Sits above the cards so it is read first. */
+.claim-card {
+  margin-bottom: var(--space-5, 20px);
+  padding: var(--space-5, 20px);
+  border-radius: var(--radius-lg, 14px);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+
+  p {
+    margin: 0 0 var(--space-4, 16px);
+    font-size: var(--font-small, 13px);
+    line-height: var(--line-height-loose, 1.625);
+    color: var(--color-text-secondary);
+  }
+
+  a {
+    color: var(--color-primary);
+  }
+}
+
+.claim-card.is-pending {
+  border-color: var(--color-info);
+  background-color: var(--color-info-soft);
+}
+
+.claim-card.is-rejected {
+  border-color: var(--color-error);
+  background-color: var(--color-error-soft);
+}
+
+.claim-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: var(--space-2, 8px);
+
+  h4 {
+    margin: 0;
+    font-size: var(--font-label, 14px);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--color-text);
+  }
+}
+
+.claim-card.is-pending .claim-head app-icon { color: var(--color-info); }
+.claim-card.is-rejected .claim-head app-icon { color: var(--color-error); }
+
+/* The card currently being paid for. */
+.pricing-card.is-selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+/* --- The pay panel ------------------------------------------------------ */
+.pay-panel {
+  margin-top: var(--space-5, 20px);
+  padding: var(--space-5, 20px);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-lg, 14px);
+  background-color: var(--color-surface);
+}
+
+.pay-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  margin-bottom: var(--space-5, 20px);
+
+  h3 {
+    margin: 0 0 4px;
+    font-size: var(--font-h3, 18px);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-text);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--font-caption, 12px);
+    color: var(--color-text-secondary);
+  }
+}
+
+.pay-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  /* Material's minimum touch target. */
+  width: var(--min-touch-target, 44px);
+  height: var(--min-touch-target, 44px);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md, 10px);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.pay-close:hover {
+  background-color: var(--color-background-subtle);
+  color: var(--color-text);
+}
+
+.pay-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 24px);
+}
+
+.step-label {
+  display: block;
+  margin-bottom: var(--space-3, 12px);
+  font-size: var(--font-caption, 12px);
+  font-weight: var(--font-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+/* --- Payee details ------------------------------------------------------ */
+.upi-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  padding: var(--space-3, 12px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 10px);
+  background-color: var(--color-background-subtle);
+  margin-bottom: var(--space-4, 16px);
+}
+
+.upi-id-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.upi-caption {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.upi-id {
+  font-family: var(--font-family-mono, monospace);
+  font-size: var(--font-label, 14px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text);
+  /* A long handle must wrap rather than widen the page. */
+  word-break: break-all;
+  /* Selectable, so a denied clipboard permission is not a dead end. */
+  user-select: all;
+}
+
+.upi-name {
+  font-size: var(--font-caption, 12px);
+  color: var(--color-text-secondary);
+}
+
+.qr-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-4, 16px);
+}
+
+.qr-img {
+  width: 200px;
+  max-width: 60vw;
+  height: auto;
+  padding: 10px;
+  border-radius: var(--radius-md, 10px);
+  /* White stays white in dark mode: a scanner needs the contrast. */
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+}
+
+.qr-caption {
+  font-size: var(--font-caption, 12px);
+  color: var(--color-text-muted);
+}
+
+.bank-box {
+  margin-top: var(--space-4, 16px);
+  padding: var(--space-4, 16px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 10px);
+
+  dl {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+  }
+
+  dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+    font-size: var(--font-caption, 12px);
+  }
+
+  dt { color: var(--color-text-muted); }
+
+  dd {
+    margin: 0;
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--color-text);
+    text-align: right;
+    word-break: break-all;
+  }
+}
+
+.bank-title {
+  display: block;
+  margin-bottom: var(--space-3, 12px);
+  font-size: var(--font-caption, 12px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text);
+}
+
+.pay-instructions {
+  margin: var(--space-4, 16px) 0 0;
+  font-size: var(--font-caption, 12px);
+  line-height: var(--line-height-loose, 1.625);
+  color: var(--color-text-secondary);
+}
+
+/* --- The reference form ------------------------------------------------- */
+.field {
+  display: block;
+  margin-bottom: var(--space-4, 16px);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--font-caption, 12px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text);
+
+  em {
+    font-style: normal;
+    color: var(--color-error);
+  }
+}
+
+.field-input {
+  width: 100%;
+  /* Comfortable to tap, and 16px stops iOS zooming the page on focus. */
+  min-height: var(--min-touch-target, 44px);
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 10px);
+  transition: border-color var(--transition-fast, 150ms), box-shadow var(--transition-fast, 150ms);
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.field-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--font-caption, 12px);
+  color: var(--color-text-secondary);
+}
+
+.pay-footnote {
+  margin: var(--space-3, 12px) 0 0;
+  font-size: var(--font-caption, 12px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 480px) {
+  .upi-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pay-panel {
+    padding: var(--space-4, 16px);
+  }
 }

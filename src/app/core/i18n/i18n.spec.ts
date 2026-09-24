@@ -7,6 +7,7 @@ import { mr } from './translations/mr';
 import { bn } from './translations/bn';
 import { pa } from './translations/pa';
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from './i18n.types';
+import { TOOL_IDS } from '../services/tool-registry.service';
 
 describe('Internationalization (i18n) System', () => {
   let service: TranslationService;
@@ -180,5 +181,33 @@ describe('Internationalization (i18n) System', () => {
       const missingInPa = enKeys.filter(k => !paKeys.has(k));
       expect(missingInPa).toEqual([]);
     });
+  });
+
+  /**
+   * Parity between the five dictionaries is not the same thing as coverage.
+   *
+   * Nine of the twenty-seven tools — Compress PDF, Merge, Split, Extract,
+   * Images to PDF, Reader, Annotate, Sign and Protect among them — had no
+   * `tools.<id>` block in *any* language, so the registry's English fallback
+   * kicked in and those cards stayed in English on every locale. Every parity
+   * test above passed the whole time, because all five were equally empty.
+   *
+   * This checks the registry's ids against the dictionary instead of the
+   * dictionaries against each other, which is the comparison that catches it.
+   */
+  describe('Tool catalogue coverage', () => {
+    it('the registry exposes the tools this test knows about', () => {
+      expect(TOOL_IDS.length).toBeGreaterThan(20);
+    });
+
+    for (const [name, dict] of Object.entries({ en, hi, mr, bn, pa })) {
+      it(`${name} has a title and description for every registered tool`, () => {
+        const tools = (dict as Record<string, any>)['tools'] ?? {};
+        const incomplete = TOOL_IDS.filter(
+          (id: string) => !tools[id] || !tools[id].title || !tools[id].description,
+        );
+        expect(incomplete).toEqual([]);
+      });
+    }
   });
 });

@@ -87,9 +87,16 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
       gap: 12px;
       padding: 12px 14px;
       border-radius: 12px;
-      background: var(--ion-background-color, #ffffff);
-      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.16), 0 2px 6px -1px rgba(0, 0, 0, 0.08);
-      border: 1px solid var(--ion-border-color, rgba(0, 0, 0, 0.08));
+      /*
+       * These used to read --ion-background-color / --ion-border-color, which
+       * this app never sets -- it has its own token system. So the fallbacks
+       * applied and the card was hard-coded white, while the text inside kept
+       * using --color-text. In dark mode that put near-white text (#f8fafc) on
+       * a white card: about 1.1:1, effectively invisible.
+       */
+      background: var(--color-surface);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--color-border);
       animation: toastSlideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
@@ -138,6 +145,8 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
 
     .toast-content {
       flex: 1;
+      display: flex;
+      flex-direction: column;
       gap: 2px;
       min-width: 0;
     }
@@ -154,19 +163,32 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
       line-height: 1.35;
     }
 
-    .toast-dismiss-btn {
+    /*
+     * The template renders .toast-close-btn; the rules here were written for a
+     * .toast-dismiss-btn that no longer exists, so the control fell back to the
+     * browser's default button chrome -- a grey box with an icon in it.
+     */
+    .toast-close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      /* Comfortable to hit without crowding the message beside it. */
+      width: 28px;
+      height: 28px;
+      margin: -4px -4px 0 0;
       background: transparent;
       border: none;
-      font-size: 20px;
-      line-height: 1;
+      border-radius: var(--radius-sm, 6px);
       color: var(--color-text-muted);
       cursor: pointer;
-      padding: 0 4px;
-      transition: color var(--transition-fast, 150ms);
+      padding: 0;
+      transition: color var(--transition-fast, 150ms), background-color var(--transition-fast, 150ms);
     }
 
-    .toast-dismiss-btn:hover {
+    .toast-close-btn:hover {
       color: var(--color-text);
+      background-color: var(--color-background-subtle);
     }
 
     /* Colors */

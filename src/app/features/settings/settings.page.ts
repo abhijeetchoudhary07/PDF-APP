@@ -16,6 +16,7 @@ import {
   AppModalComponent,
   PrivacySupportNavComponent,
   AppLanguageSelectorComponent,
+  AppGovDisclaimerComponent,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -36,6 +37,7 @@ import {
     AppButtonComponent,
     AppModalComponent,
     AppLanguageSelectorComponent,
+    AppGovDisclaimerComponent,
     TranslatePipe
   ]
 })

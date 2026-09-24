@@ -124,11 +124,29 @@ ion-router-outlet > .ion-page:not(.is-workspace) > * {
   display: flex;
   flex-direction: column;
   background-color: var(--color-background);
+  /*
+   * A single wide child (a table, an over-long filename, a grid that does not
+   * wrap) used to drag the whole page sideways. `html, body` already carry the
+   * same guard, but the routed host is its own scroll container, so it has to
+   * be repeated on the shell that lives inside it.
+   *
+   * `clip`, not `hidden`. CSS resolves the other axis to `auto` the moment one
+   * axis is `hidden`, which would quietly make this wrapper a vertical scroll
+   * container — and the sticky header inside it sticks to whichever scrollport
+   * contains it, so the bar would have come unpinned from the page's own
+   * scrolling. `clip` leaves overflow-y: visible alone.
+   */
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .app-main-content {
   flex: 1 0 auto;
-  padding: var(--space-6) 0 var(--space-12);
+  /*
+   * The trailing inset keeps the last row of content — usually a primary
+   * action — above Android's gesture pill on a page that has no footer.
+   */
+  padding: var(--space-6) 0 calc(var(--space-12) + env(safe-area-inset-bottom, 0px));
 }
 
 /* Common Page Structure Container */

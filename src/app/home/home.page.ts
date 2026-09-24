@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { ToolRegistryService, ToolItem } from '../core/services/tool-registry.service';
+import { UsageQuotaService } from '../core/services/usage-quota.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -9,6 +10,9 @@ import { ToolRegistryService, ToolItem } from '../core/services/tool-registry.se
   standalone: false
 })
 export class HomePage {
+  /** Free-tier allowance, shown in the hero so it is not a surprise later. */
+  readonly quota = inject(UsageQuotaService);
+
   public toolRegistry = inject(ToolRegistryService);
   searchQuery = '';
   selectedCategory: string = 'ALL';

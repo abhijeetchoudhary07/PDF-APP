@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import type { Subscription } from 'rxjs';
 import { AuthError, AuthService } from '../../core/api/auth.service';
+import { emailProblem, normalizeEmail, passwordProblem } from '../../core/api/credential-rules';
 import { PdfApiService } from '../../core/api/pdf-api.service';
 import type { PdfPlan } from '../../core/api/pdf-api.types';
 import { MonetizationService } from '../../core/services/monetization.service';
@@ -135,13 +136,16 @@ export class AccountPage implements OnInit, OnDestroy {
     this.emailError = '';
     this.passwordError = '';
 
-    const email = this.email.trim();
-    if (!email) {
-      this.emailError = 'Enter your email address.';
-      return;
-    }
-    if (this.password.length < 8) {
-      this.passwordError = 'Use at least 8 characters.';
+    /*
+     * Both fields are checked before either is reported, so someone with a bad
+     * address *and* a short password fixes them in one pass instead of two.
+     * The rules themselves are the server's, imported rather than restated —
+     * see credential-rules.ts for why that matters.
+     */
+    const email = normalizeEmail(this.email);
+    this.emailError = emailProblem(this.email) ?? '';
+    this.passwordError = passwordProblem(this.password) ?? '';
+    if (this.emailError || this.passwordError) {
       return;
     }
 

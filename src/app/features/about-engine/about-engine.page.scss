@@ -352,3 +352,9 @@
     }
   }
 }
+
+/* Play Store policy notice — closes the page, after the runtime details. */
+.about-gov-notice {
+  display: block;
+  margin-top: var(--space-6, 24px);
+}

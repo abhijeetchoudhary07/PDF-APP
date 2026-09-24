@@ -38,6 +38,23 @@ export const API_DOWN_MESSAGE =
   `The PDF App backend is not answering at ${API_BASE}. ` +
   'Start it with `DATABASE_URL= npm run dev:api` in the linkedin AUTO repository.';
 
+/**
+ * Whether the app under test is wired to the local backend.
+ *
+ * `E2E_TARGET=prod` serves the production bundle, and that bundle's
+ * `environment.prod.ts` points at the live accounts server. Everything that
+ * runs on the device is identical either way, so the rest of the suite is
+ * happy there — but these tests register accounts, sign in and ask an admin
+ * endpoint to grant premium, and none of that belongs on the production
+ * backend. They skip rather than fail, because a skip says "wrong target" and
+ * a failure says "broken app".
+ */
+export const TARGETS_LOCAL_API = process.env['E2E_TARGET'] !== 'prod';
+
+export const WRONG_TARGET_MESSAGE =
+  'Account tests need the local backend. The production bundle talks to the live ' +
+  'server, so run these without E2E_TARGET=prod.';
+
 export async function adminToken(request: APIRequestContext): Promise<string> {
   const response = await request.post(`${API_BASE}/auth/login`, {
     data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },

@@ -11,6 +11,7 @@ import { CommonModule, Location } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { MonetizationService } from '../../../../core/services/monetization.service';
+import { UsageQuotaService } from '../../../../core/services/usage-quota.service';
 import { GlobalSearchService } from '../../../../core/services/global-search.service';
 import { ProfileService } from '../../../../core/services/profile.service';
 import { ThemeService, ThemeMode } from '../../../../core/services/theme.service';
@@ -152,14 +153,35 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
           <!-- Direct Desktop Links -->
           <a routerLink="/features/pdf" routerLinkActive="active" class="nav-item">{{ 'header.pdf' | translate }}</a>
-          <a routerLink="/features/photo" routerLinkActive="active" class="nav-item">{{ 'header.photo' | translate }}</a>
-          <a routerLink="/features/signature" routerLinkActive="active" class="nav-item">{{ 'header.signature' | translate }}</a>
-          <a routerLink="/features/presets" routerLinkActive="active" class="nav-item">{{ 'header.presets' | translate }}</a>
-          <a routerLink="/features/history" routerLinkActive="active" class="nav-item">{{ 'header.history' | translate }}</a>
+          <a routerLink="/features/photo" routerLinkActive="active" class="nav-item nav-item-secondary">{{ 'header.photo' | translate }}</a>
+          <a routerLink="/features/signature" routerLinkActive="active" class="nav-item nav-item-secondary">{{ 'header.signature' | translate }}</a>
+          <a routerLink="/features/presets" routerLinkActive="active" class="nav-item nav-item-secondary">{{ 'header.presets' | translate }}</a>
+          <a routerLink="/features/history" routerLinkActive="active" class="nav-item nav-item-secondary">{{ 'header.history' | translate }}</a>
           <a routerLink="/features/premium" routerLinkActive="active" class="nav-item nav-item-pro">
             <span class="pro-sparkle">&starf;</span>
             <span>{{ 'header.premium' | translate }}</span>
           </a>
+          <!--
+            The free tier's remaining operations, shown before they run out
+            rather than at the moment a save is refused. Null means premium,
+            and then nothing is rendered at all.
+
+            The value is unwrapped through a wrapper object because zero is
+            falsy, and the plain *ngIf-as form hid the chip at exactly the
+            moment it had something worth saying.
+          -->
+          <ng-container *ngIf="{ remaining: quota.remaining$ | async } as q">
+            <a
+              *ngIf="q.remaining !== null"
+              routerLink="/features/premium"
+              class="quota-chip"
+              [class.is-low]="q.remaining! <= 2"
+              [attr.title]="'quota.fullLabel' | translate: { remaining: q.remaining, limit: quota.limit }"
+              data-testid="quota-chip">
+              <span class="quota-count">{{ q.remaining }}</span>
+              <span class="quota-label">{{ 'quota.leftToday' | translate }}</span>
+            </a>
+          </ng-container>
         </nav>
 
         <!-- 3. Header Actions (Desktop & Mobile) -->
@@ -265,6 +287,11 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
               <span class="drawer-membership-tag" [class.is-pro]="monetization.isPremium$ | async">
                 {{ (monetization.isPremium$ | async) ? 'PRO Member' : 'Free Tier' }}
               </span>
+              <ng-container *ngIf="{ remaining: quota.remaining$ | async } as q">
+                <span class="drawer-quota" *ngIf="q.remaining !== null" data-testid="drawer-quota">
+                  {{ 'quota.fullLabel' | translate: { remaining: q.remaining, limit: quota.limit } }}
+                </span>
+              </ng-container>
             </div>
           </a>
           <button class="drawer-close" (click)="closeMobileMenu()" aria-label="Close menu">
@@ -339,6 +366,16 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
      */
     :host {
       --header-height: 60px;
+      /*
+       * Android draws the status bar (and any punch-hole camera) over the
+       * webview because the app is laid out edge-to-edge and index.html asks
+       * for viewport-fit=cover. The bar's own box therefore has to start below
+       * that inset, and everything that positions against the header — the
+       * drawer, most obviously — has to measure the padded height, not the
+       * 60px content height.
+       */
+      --header-inset-top: env(safe-area-inset-top, 0px);
+      --header-total-height: calc(var(--header-height) + var(--header-inset-top));
       display: block;
       position: sticky;
       top: 0;
@@ -351,6 +388,22 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       backdrop-filter: saturate(180%) blur(12px);
       -webkit-backdrop-filter: saturate(180%) blur(12px);
       transition: box-shadow var(--transition-normal), background-color var(--transition-normal);
+      /* The status-bar strip is painted in the header's own colour. */
+      padding-top: var(--header-inset-top);
+      /*
+       * A long brand name or a wide language label must never push the page
+       * into a horizontal scroll — but the language and Tools menus hang out of
+       * the bar's bottom edge, and overflow-x: hidden clipped them away
+       * entirely: CSS computes the other axis to auto whenever one axis is
+       * hidden, so the bar silently became a scroll container in both
+       * directions and the open menu was rendered where nobody could see it.
+       *
+       * clip is the one value that does not do that — overflow-y: visible
+       * survives next to it — so the sideways guard stays and the menus drop
+       * over the page as they were drawn to.
+       */
+      overflow-x: clip;
+      overflow-y: visible;
     }
 
     .app-header.is-scrolled {
@@ -360,7 +413,10 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
     .header-inner {
       max-width: 1240px;
       margin: 0 auto;
-      padding: 0 var(--space-4, 16px);
+      /* Landscape on a notched phone puts the cutout on one side; the extra
+         inset keeps the back button and the burger out from under it. */
+      padding-left: calc(var(--space-4, 16px) + env(safe-area-inset-left, 0px));
+      padding-right: calc(var(--space-4, 16px) + env(safe-area-inset-right, 0px));
       height: var(--header-height);
       display: flex;
       align-items: center;
@@ -445,10 +501,17 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       display: flex;
       align-items: center;
       gap: 2px;
+      /* Lets the bar's three sections negotiate over a narrow viewport instead
+         of the nav pinning the row wider than the screen. */
+      min-width: 0;
     }
 
     .nav-item {
       position: relative;
+      /* Hindi, Bengali and Punjabi labels are longer than their English
+         counterparts; without this they wrapped onto a second line and pushed
+         the 60px bar out of shape. */
+      white-space: nowrap;
       padding: 6px 11px;
       font-size: var(--font-small, 13px);
       font-weight: var(--font-weight-medium, 500);
@@ -500,6 +563,50 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
     .nav-item-pro {
       color: var(--color-warning);
       font-weight: var(--font-weight-semibold, 600);
+    }
+
+    .quota-chip {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-left: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full, 9999px);
+      border: 1px solid var(--color-border);
+      background-color: var(--color-background-subtle);
+      color: var(--color-text-secondary);
+      font-size: 11px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: border-color var(--transition-fast, 150ms), color var(--transition-fast, 150ms);
+    }
+
+    .quota-chip:hover {
+      border-color: var(--color-primary);
+      color: var(--color-text);
+    }
+
+    /* The last couple are the ones worth noticing before they are gone. */
+    .quota-chip.is-low {
+      border-color: var(--color-warning);
+      background-color: var(--color-warning-soft);
+      color: var(--color-warning);
+    }
+
+    .quota-count {
+      font-size: 13px;
+      font-weight: var(--font-weight-bold, 700);
+      color: var(--color-text);
+    }
+
+    .quota-chip.is-low .quota-count {
+      color: var(--color-warning);
+    }
+
+    .drawer-quota {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
     }
     .pro-sparkle {
       font-size: 14px;
@@ -780,7 +887,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
     /* Mobile Drawer */
     .mobile-drawer {
       position: fixed;
-      top: var(--header-height);
+      top: var(--header-total-height);
       left: 0;
       right: 0;
       bottom: 0;
@@ -874,6 +981,12 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
     }
 
     .drawer-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--min-touch-target, 44px);
+      height: var(--min-touch-target, 44px);
+      flex-shrink: 0;
       background: transparent;
       border: none;
       font-size: 24px;
@@ -888,10 +1001,14 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       display: flex;
       align-items: center;
       justify-content: space-between;
+      /* Wraps onto a second line rather than pushing the control off the edge
+         when a translated label runs long. */
+      flex-wrap: wrap;
       gap: var(--space-3, 12px);
     }
 
     .drawer-theme-label {
+      flex-shrink: 0;
       font-size: var(--font-caption, 12px);
       font-weight: var(--font-weight-semibold, 600);
       text-transform: uppercase;
@@ -901,6 +1018,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
     .theme-segmented {
       display: inline-flex;
+      max-width: 100%;
       padding: 2px;
       gap: 2px;
       border-radius: var(--radius-full, 9999px);
@@ -915,7 +1033,10 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       font-size: 11px;
       font-weight: var(--font-weight-semibold, 600);
       font-family: inherit;
-      padding: 5px 10px;
+      min-height: 36px;
+      min-width: 44px;
+      padding: 5px 8px;
+      white-space: nowrap;
       border-radius: var(--radius-full, 9999px);
       cursor: pointer;
       transition: all var(--transition-fast, 150ms);
@@ -938,6 +1059,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       display: flex;
       align-items: center;
       gap: 12px;
+      min-height: var(--min-touch-target, 44px);
       padding: 10px 14px;
       font-size: var(--font-body, 14px);
       color: var(--color-text);
@@ -987,7 +1109,9 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
     .bullet-pro { background: var(--gradient-premium); }
 
     .drawer-footer {
+      /* Clears the Android gesture pill so the badge is never half-hidden. */
       padding: var(--space-4, 16px);
+      padding-bottom: calc(var(--space-4, 16px) + env(safe-area-inset-bottom, 0px));
       border-top: 1px solid var(--color-divider);
       background-color: var(--color-background-subtle);
     }
@@ -1001,6 +1125,47 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       color: var(--color-success);
     }
 
+    /*
+     * Laptop widths — the tier between "everything fits" and "show the burger".
+     *
+     * The full bar wants roughly 1240px: brand 148, nav 597, actions 437, plus
+     * gaps and padding. The burger does not appear until 960px, so on every
+     * 1024–1180px screen the row was ~200px wider than the viewport and the
+     * right-hand end of it — the language selector included — sat off-screen.
+     * Longer Hindi and Bengali labels make the gap wider still.
+     *
+     * Nothing is lost here: the four links that give way are all present in the
+     * Tools menu beside them, and the search and profile buttons keep their
+     * icons and their labels in the tooltip.
+     */
+    @media (max-width: 1180px) {
+      .nav-item-secondary,
+      .search-btn-text,
+      .search-kbd,
+      .profile-btn-name {
+        display: none;
+      }
+      .search-trigger-btn {
+        width: 36px;
+        padding: 0;
+        justify-content: center;
+      }
+      .profile-btn {
+        padding: 0;
+        justify-content: center;
+      }
+    }
+
+    /*
+     * Touch sizing.
+     *
+     * Below 960px every control in the bar is driven by a pointer, so each one
+     * is squared off at --min-touch-target (44px) rather than the 36px the
+     * desktop bar uses. Google's accessibility review measures the whole
+     * touchable box, so these are real widths and heights, not padding around a
+     * smaller hit area. The glyphs inside stay at their original size — only
+     * the box around them grows.
+     */
     @media (max-width: 960px) {
       .desktop-nav, .search-kbd, .search-btn-text, .profile-btn-name {
         display: none !important;
@@ -1013,16 +1178,26 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
         align-items: center;
         justify-content: center;
       }
-      .search-trigger-btn {
-        width: 36px;
+      .back-btn,
+      .search-trigger-btn,
+      .theme-toggle-btn,
+      .profile-btn,
+      .mobile-menu-btn {
+        width: var(--min-touch-target, 44px);
+        height: var(--min-touch-target, 44px);
+        min-width: var(--min-touch-target, 44px);
         padding: 0;
         justify-content: center;
       }
-      .profile-btn {
-        width: 36px;
-        padding: 0;
-        justify-content: center;
+      /* The burger bars are absolutely positioned, so they are re-centred
+         against the larger button rather than left where 36px put them. */
+      .burger-bar {
+        left: 14px;
+        width: 16px;
       }
+      .bar-top { top: 16px; }
+      .bar-mid { top: 21px; }
+      .bar-bot { top: 26px; }
       .header-actions {
         gap: 6px;
       }
@@ -1041,7 +1216,8 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
         display: none;
       }
       .header-inner {
-        padding: 0 12px;
+        padding-left: calc(12px + env(safe-area-inset-left, 0px));
+        padding-right: calc(12px + env(safe-area-inset-right, 0px));
         gap: 8px;
       }
       .mobile-menu-btn {
@@ -1050,13 +1226,23 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       }
     }
 
+    /*
+     * 360-430px is the whole Android phone range (360, 390, 412, 430). Four
+     * 44px controls plus the brand do not fit at 360 unless the brand is
+     * allowed to give way, so the text truncates and the icon shrinks while
+     * every tap target keeps its size.
+     */
     @media (max-width: 480px) {
       .header-inner {
-        padding: 0 8px;
-        gap: 6px;
+        padding-left: calc(8px + env(safe-area-inset-left, 0px));
+        padding-right: calc(8px + env(safe-area-inset-right, 0px));
+        gap: 4px;
       }
       .brand-link {
         gap: 6px;
+        /* Yields first when the actions need the width. */
+        flex-shrink: 1;
+        overflow: hidden;
       }
       .brand-icon {
         width: 32px;
@@ -1068,25 +1254,17 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       }
       .brand-name {
         font-size: 15px;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
-      .back-btn,
-      .search-trigger-btn,
-      .mobile-menu-btn {
-        width: 34px;
-        height: 34px;
+      .header-actions {
+        gap: 2px;
       }
-      .burger-bar {
-        left: 8px;
-        width: 16px;
-      }
-      .bar-top { top: 11px; }
-      .bar-mid { top: 16px; }
-      .bar-bot { top: 21px; }
     }
 
     @media (max-width: 360px) {
       .brand-name {
-        max-width: 80px;
+        max-width: 78px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -1134,6 +1312,7 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
 
   constructor(
     public monetization: MonetizationService,
+    public quota: UsageQuotaService,
     public globalSearch: GlobalSearchService,
     public profileService: ProfileService,
     public themeService: ThemeService,

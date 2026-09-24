@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { setupCapacitorMocks } from '../fixtures/mocks';
 import {
   API_DOWN_MESSAGE,
+  TARGETS_LOCAL_API,
+  WRONG_TARGET_MESSAGE,
   adminToken,
   apiIsReachable,
   fillCredentials,
@@ -25,6 +27,7 @@ import {
  */
 test.describe('Account — entitlements @account @premium', () => {
   test.beforeEach(async ({ page, request }) => {
+    test.skip(!TARGETS_LOCAL_API, WRONG_TARGET_MESSAGE);
     expect(await apiIsReachable(request), API_DOWN_MESSAGE).toBe(true);
     await setupCapacitorMocks(page);
   });

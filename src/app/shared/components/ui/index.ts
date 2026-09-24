@@ -21,6 +21,7 @@ export * from './action-result/action-result.component';
 export * from './onboarding/onboarding-modal.component';
 export * from './toast/toast-container.component';
 export * from './privacy-support-nav/privacy-support-nav.component';
+export * from './gov-disclaimer/gov-disclaimer.component';
 export * from './language-selector/language-selector.component';
 export * from '../../../core/i18n/translate.pipe';
 

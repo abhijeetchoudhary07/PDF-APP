@@ -623,6 +623,25 @@ export class AppGlobalSearchModalComponent implements AfterViewChecked {
     this.router.navigateByUrl(tool.route);
   }
 
+  /**
+   * Escape closes the dialog from anywhere inside it, not only from the field.
+   *
+   * The dialog renders an "ESC" hint next to the close button, but the only
+   * handler was `(keydown)` on the input — so the moment focus moved anywhere
+   * else (clicking a result, tabbing to Close, or simply scrolling the list on
+   * a touch device) the key the dialog was advertising stopped working and the
+   * backdrop had to be found instead.
+   *
+   * Guarded on the open state because the listener is on `document` and the
+   * component outlives any one opening of the dialog.
+   */
+  @HostListener('document:keydown.escape')
+  onDocumentEscape(): void {
+    if (this.searchService.isOpen$.value) {
+      this.close();
+    }
+  }
+
   close() {
     this.searchService.close();
     this.searchQuery = '';

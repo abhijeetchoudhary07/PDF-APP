@@ -6,7 +6,8 @@ import {
   AppHeaderComponent,
   AppPageHeaderComponent,
   AppFooterComponent,
-  PrivacySupportNavComponent
+  PrivacySupportNavComponent,
+  AppGovDisclaimerComponent
 } from '../../shared/components/ui';
 
 export interface TechModule {
@@ -30,7 +31,8 @@ export interface TechModule {
     AppHeaderComponent,
     AppPageHeaderComponent,
     AppFooterComponent,
-    PrivacySupportNavComponent
+    PrivacySupportNavComponent,
+    AppGovDisclaimerComponent
   ]
 })
 export class AboutEnginePage {

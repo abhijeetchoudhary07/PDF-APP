@@ -3,8 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_ROOT, toAuthError } from './auth.service';
 import type {
+  PdfManualPayment,
+  PdfManualPaymentResponse,
+  PdfMyManualPaymentsResponse,
+  PdfPaymentSettings,
+  PdfPaymentSettingsResponse,
   PdfPlan,
   PdfPlansResponse,
+  PdfSubmitManualPaymentRequest,
   PdfVerifyPurchaseResponse,
 } from './pdf-api.types';
 
@@ -43,6 +49,53 @@ export class PdfApiService {
     try {
       return await firstValueFrom(
         this.http.post<PdfVerifyPurchaseResponse>(`${API_ROOT}/subscription/verify`, input),
+      );
+    } catch (error) {
+      throw toAuthError(error);
+    }
+  }
+
+  /**
+   * The payee details for a manual (UPI) payment.
+   *
+   * Public, like the plan list: the app shows *how* to pay before anyone signs
+   * in, and only the submission afterwards needs an account.
+   */
+  async paymentSettings(): Promise<PdfPaymentSettings> {
+    const response = await firstValueFrom(
+      this.http.get<PdfPaymentSettingsResponse>(`${API_ROOT}/subscription/payment-settings`),
+    );
+    return response.settings;
+  }
+
+  /**
+   * Submits a payment reference for review.
+   *
+   * This grants nothing. It records that someone says they have paid; premium
+   * arrives when an admin confirms the transfer, which is why the app has to
+   * show a pending state rather than an unlock.
+   */
+  async submitManualPayment(
+    input: PdfSubmitManualPaymentRequest,
+  ): Promise<PdfManualPayment> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<PdfManualPaymentResponse>(
+          `${API_ROOT}/subscription/manual-payment`,
+          input,
+        ),
+      );
+      return response.request;
+    } catch (error) {
+      throw toAuthError(error);
+    }
+  }
+
+  /** This account's payment claims, newest first, plus its live entitlement. */
+  async myManualPayments(): Promise<PdfMyManualPaymentsResponse> {
+    try {
+      return await firstValueFrom(
+        this.http.get<PdfMyManualPaymentsResponse>(`${API_ROOT}/subscription/manual-payment`),
       );
     } catch (error) {
       throw toAuthError(error);

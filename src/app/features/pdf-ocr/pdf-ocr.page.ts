@@ -225,6 +225,7 @@ export class PdfOcrPage implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     try {
+      this.ocrOperationId = `ocr_${Date.now()}`;
       this.ocrResult = await this.ocrService.extractExistingText(
         this.selectedFile,
         this.selectedPageNumbers
@@ -282,6 +283,7 @@ export class PdfOcrPage implements OnInit, OnDestroy {
     }
 
     try {
+      this.ocrOperationId = `ocr_${Date.now()}`;
       this.ocrResult = await this.ocrService.performOcr(
         this.selectedFile,
         languages,
@@ -357,10 +359,19 @@ export class PdfOcrPage implements OnInit, OnDestroy {
     await this.copyText(this.ocrResult.fullText);
   }
 
+  /**
+   * One OCR run is one operation, however many ways its output is exported.
+   *
+   * Set when the text is produced and passed to every save below, so taking the
+   * text, the searchable PDF and the JSON from a single run costs one of the
+   * free tier's daily operations rather than three.
+   */
+  private ocrOperationId: string | null = null;
+
   async downloadTextFile(): Promise<void> {
     if (!this.ocrResult || !this.selectedFile) return;
     const txtFile = this.ocrService.generateTextFile(this.ocrResult, this.selectedFile.name);
-    await this.storageService.saveFile(txtFile);
+    await this.storageService.saveFile(txtFile, 'file', this.ocrOperationId ?? undefined);
     this.toastService.show('success', 'Extracted text saved!');
   }
 
@@ -375,7 +386,7 @@ export class PdfOcrPage implements OnInit, OnDestroy {
         this.selectedFile,
         this.ocrResult
       );
-      await this.storageService.saveFile(searchablePdf);
+      await this.storageService.saveFile(searchablePdf, 'file', this.ocrOperationId ?? undefined);
       this.toastService.show('success', 'Searchable PDF saved with invisible text layer!');
     } catch (err: any) {
       this.toastService.show('error', err?.message || 'Failed to generate searchable PDF.');
@@ -388,7 +399,7 @@ export class PdfOcrPage implements OnInit, OnDestroy {
   async downloadStructuredJson(): Promise<void> {
     if (!this.ocrResult || !this.selectedFile) return;
     const jsonFile = this.ocrService.generateJsonFile(this.ocrResult, this.selectedFile.name);
-    await this.storageService.saveFile(jsonFile);
+    await this.storageService.saveFile(jsonFile, 'file', this.ocrOperationId ?? undefined);
     this.toastService.show('success', 'Structured OCR JSON saved!');
   }
 
@@ -403,6 +414,7 @@ export class PdfOcrPage implements OnInit, OnDestroy {
     this.clearPreviewUrl();
     this.selectedFile = undefined;
     this.ocrResult = undefined;
+    this.ocrOperationId = null;
     this.hasSelectableText = false;
     this.textSample = '';
     this.totalPages = 0;

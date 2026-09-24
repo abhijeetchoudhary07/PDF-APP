@@ -61,12 +61,20 @@ export const en = {
     light: 'Light',
     dark: 'Dark',
     auto: 'Auto',
+    system: 'Auto',
     appearance: 'Appearance',
     preferences: 'Preferences',
     profile: 'Profile',
     proMember: 'PRO Member',
     freeTier: 'Free Tier',
-    goPro: 'Go Premium'
+    goPro: 'Go Premium',
+    buttons: {
+      cancel: 'Cancel'
+    },
+    copy: 'Copy',
+    photo: 'Photo',
+    signature: 'Signature',
+    pdf: 'PDF'
   },
   header: {
     tools: 'Tools',
@@ -94,6 +102,13 @@ export const en = {
     toolSignSub: 'Add your signature to any PDF',
     toolSecuritySub: 'Add or remove password'
   },
+  quota: {
+    leftToday: 'left today',
+    fullLabel: '{{remaining}} of {{limit}} free operations left today',
+    upsell: 'go Premium for unlimited',
+    exhausted: "Today's free operations are used up.",
+    resetsAt: 'Your free operations reset at midnight.'
+  },
   footer: {
     brandDesc: 'Your private document helper. Shrink photos, clean signatures, convert, combine, and sign documents for government exams and job forms — 100% safe on your device.',
     securityChip: 'Files Never Leave Your Device',
@@ -120,7 +135,15 @@ export const en = {
     helpFaq: 'Help & FAQ',
     contactSupport: 'Contact Support',
     aboutEngine: 'How It Works',
-    copyright: '© 2026 Indian Form Helper. All tools run 100% inside your browser.'
+    copyright: '© 2026 Indian Form Helper. All tools run 100% inside your browser.',
+    /*
+     * Google Play's "Government apps" policy: an app themed around official
+     * forms must state that it is independent. Kept verbatim across the footer,
+     * Settings and the About page — the other locales fall back to this string
+     * rather than risk a paraphrase of a legal notice.
+     */
+    govDisclaimer: 'This application is an independent utility tool and is NOT affiliated with, authorized, endorsed by, or in any way officially connected with any government agency or department. All trademarks, exam names and portal names belong to their respective owners.',
+    govDisclaimerTitle: 'Independent app — not a government service'
   },
   home: {
     heroBadge: '100% On Your Device • No Server Uploads',
@@ -154,6 +177,42 @@ export const en = {
     PRESETS: 'Presets'
   },
   tools: {
+    pdf_compress: {
+      title: 'Compress PDF',
+      description: 'Reduce PDF file size while maintaining readability.'
+    },
+    images_to_pdf: {
+      title: 'Images to PDF',
+      description: 'Convert JPG, PNG, and WebP images into a single PDF document.'
+    },
+    pdf_extract: {
+      title: 'Extract Pages',
+      description: 'Extract specific pages or page ranges from a PDF document.'
+    },
+    pdf_merge: {
+      title: 'Merge PDF',
+      description: 'Combine multiple PDF documents into a single organized file.'
+    },
+    pdf_split: {
+      title: 'Split PDF',
+      description: 'Split a PDF into multiple separate files by page ranges.'
+    },
+    pdf_reader: {
+      title: 'PDF Reader & Editor',
+      description: 'View and edit PDFs with zoom, thumbnails, text, and freehand tools.'
+    },
+    pdf_annotations: {
+      title: 'Annotate PDF',
+      description: 'Add text notes, highlights, freehand drawings, stamps, and shapes.'
+    },
+    pdf_signing: {
+      title: 'Sign PDF',
+      description: 'Add digital drawn signatures or signature images to your PDF pages.'
+    },
+    pdf_security: {
+      title: 'Protect & Unlock PDF',
+      description: 'Encrypt with password, set permissions, unlock, or sanitize metadata.'
+    },
     photo_tools: {
       title: 'Photo Tools',
       description: 'Resize, compress, and crop passport photos to fit exact KB and dimension limits.'
@@ -398,7 +457,62 @@ export const en = {
     clearHistoryModalDesc: 'This will remove all recent file records from your device. Your original files will not be touched.',
     clearHistoryConfirm: 'Yes, Clear History',
     restorePurchases: 'Restore Purchases',
-    membership: 'Membership'
+    membership: 'Membership',
+    languageSection: {
+      title: 'Language / भाषा',
+      subtitle: 'Choose your preferred language for the entire application.'
+    },
+    general: {
+      title: 'General',
+      defaultPrefix: 'Default Filename Prefix',
+      defaultPrefixDesc: 'Added to the start of downloaded files (e.g. "photo_50kb.jpg")',
+      defaultFormat: 'Default Output Format',
+      defaultFormatDesc: 'Preferred file format when converting or saving documents',
+      formatOriginal: 'Keep Original',
+      formatJpeg: 'JPG / JPEG',
+      formatPng: 'PNG (Clear / Lossless)',
+      formatPdf: 'Standard PDF',
+      autoSave: 'Auto-save to History',
+      autoSaveDesc: 'Save a temporary record of your processed files for easy re-downloading'
+    },
+    appearance: {
+      title: 'Appearance',
+      themeMode: 'Color Theme',
+      themeModeDesc: 'Select your preferred theme. Dark mode is gentle on your eyes during night study.',
+      light: 'Light',
+      dark: 'Dark',
+      system: 'Auto'
+    },
+    privacy: {
+      title: 'Privacy & Local Processing',
+      zeroUploads: 'Zero Uploads',
+      zeroUploadsDesc: 'All file processing runs 100% inside your browser memory. No documents are ever uploaded to any server.',
+      verifiedOffline: 'Verified Offline',
+      privacyPolicy: 'Privacy Policy',
+      privacyPolicyDesc: 'Read how your data is handled on this device.'
+    },
+    storage: {
+      title: 'Device Storage & History',
+      historyCount: 'History Records:',
+      historyCountDesc: 'How many processed files are recorded on this device.',
+      cacheSize: 'Estimated Storage Used:',
+      cacheSizeDesc: 'View and manage metadata stored by this application on your device.',
+      inspectStorage: 'Your Data & Storage',
+      inspectStorageDesc: 'See exactly what is stored and remove any of it.',
+      clearHistory: 'Clear Processing History',
+      clearHistoryDesc: 'Remove every processing record. Your original files are untouched.',
+      clearHistoryBtn: 'Clear',
+      clearModalTitle: 'Clear Processing History?',
+      clearModalDesc: 'This will remove all recent file records from your device. Your original files will not be touched.',
+      confirmClear: 'Yes, Clear History'
+    },
+    about: {
+      title: 'About',
+      engineTitle: 'How It Works',
+      engineDesc: 'Libraries, versions, and how processing runs on your device.',
+      terms: 'Terms of Use',
+      termsDesc: 'Rules for using this app, and the government disclaimer.'
+    }
   },
   photoPage: {
     title: 'Photo Tools',

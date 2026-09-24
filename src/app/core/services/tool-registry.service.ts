@@ -19,11 +19,16 @@ export interface ToolItem {
 const RECENT_TOOLS_KEY = 'IFH_RECENT_TOOLS';
 const FAVORITE_TOOLS_KEY = 'IFH_FAVORITE_TOOLS';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class ToolRegistryService {
-  private readonly rawTools: ToolItem[] = [
+/**
+ * The tool catalogue.
+ *
+ * Module-level rather than a class field so that the i18n suite can check
+ * every id against the translation dictionaries without constructing the
+ * service — which needs an Angular injection context and Capacitor storage
+ * for what is a question about a static list. Nine tools shipped
+ * untranslated in all five languages because nothing compared the two.
+ */
+const TOOL_CATALOGUE: ToolItem[] = [
     {
       id: 'photo_tools',
       category: 'PHOTO',
@@ -334,7 +339,29 @@ export class ToolRegistryService {
       keywords: ['intelligence', 'summarize', 'summary', 'translate', 'qa', 'question answering', 'citations', 'hindi', 'marathi', 'bengali', 'punjabi', 'ai'],
       relatedIds: ['pdf_ocr', 'pdf_extractor', 'qr_barcode', 'pdf_compare']
     }
-  ];
+];
+
+/** Every registered tool id, for coverage checks over `tools.<id>` keys. */
+export const TOOL_IDS: readonly string[] = TOOL_CATALOGUE.map(tool => tool.id);
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ToolRegistryService {
+  private readonly rawTools: ToolItem[] = TOOL_CATALOGUE;
+
+  /**
+   * The catalogue's ids, as a plain array.
+   *
+   * Exposed so the i18n suite can check that every tool has a `tools.<id>`
+   * entry without constructing the service — which would pull in Capacitor
+   * Preferences and an Angular injector for what is a question about a static
+   * list. Nine tools shipped untranslated in every language because nothing
+   * compared these two things.
+   */
+  get toolIds(): string[] {
+    return this.rawTools.map(tool => tool.id);
+  }
 
   public recentTools$ = new BehaviorSubject<ToolItem[]>([]);
   public favoriteTools$ = new BehaviorSubject<ToolItem[]>([]);

@@ -631,3 +631,42 @@
  * clamp(), and both grids size themselves intrinsically, so the page reflows
  * continuously rather than snapping at 768px.
  */
+/* --------------------------------------------------------------------------
+ * Free-tier allowance
+ * ----------------------------------------------------------------------- */
+.hero-quota {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--space-4, 16px);
+  padding: 8px 14px;
+  border-radius: var(--radius-full, 9999px);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-caption, 12px);
+  text-decoration: none;
+  /* Wraps rather than overflowing on a 360px phone. */
+  max-width: 100%;
+  text-align: left;
+  transition: border-color var(--transition-fast, 150ms);
+
+  strong {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold, 600);
+  }
+
+  &:hover {
+    border-color: var(--color-primary);
+  }
+}
+
+/* Nothing left today: this is the one state worth colouring. */
+.hero-quota.is-spent {
+  border-color: var(--color-warning);
+  background-color: var(--color-warning-soft);
+
+  strong {
+    color: var(--color-warning);
+  }
+}

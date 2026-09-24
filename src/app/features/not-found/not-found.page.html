@@ -1,0 +1,68 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <section class="not-found-card" role="alert" aria-labelledby="not-found-title">
+        <!-- Illustration: a document that could not be found, with the code on it. -->
+        <div class="nf-illustration" aria-hidden="true">
+          <svg viewBox="0 0 220 180" class="nf-art" role="presentation">
+            <!-- Back sheet -->
+            <rect class="nf-sheet nf-sheet-back" x="46" y="26" width="104" height="132" rx="10" />
+            <!-- Front sheet with a folded corner -->
+            <path class="nf-sheet nf-sheet-front"
+              d="M62 14h58l30 30v104a10 10 0 0 1-10 10H62a10 10 0 0 1-10-10V24a10 10 0 0 1 10-10z" />
+            <path class="nf-fold" d="M120 14l30 30h-26a4 4 0 0 1-4-4z" />
+            <!-- Ruled lines -->
+            <line class="nf-rule" x1="68" y1="72" x2="134" y2="72" />
+            <line class="nf-rule" x1="68" y1="88" x2="134" y2="88" />
+            <line class="nf-rule" x1="68" y1="104" x2="112" y2="104" />
+            <!-- Magnifier searching the page -->
+            <circle class="nf-lens" cx="146" cy="116" r="30" />
+            <line class="nf-handle" x1="167" y1="137" x2="190" y2="160" />
+            <text class="nf-code" x="146" y="126">404</text>
+          </svg>
+
+          <span class="nf-badge">
+            <app-icon name="alert-circle" [size]="16"></app-icon>
+            <span>Error 404</span>
+          </span>
+        </div>
+
+        <h1 id="not-found-title" class="nf-title">Page Not Found</h1>
+
+        <p class="nf-text">
+          The page you were looking for does not exist, or it may have been moved
+          or renamed. Nothing has happened to your files — every document you work
+          on stays on this device.
+        </p>
+
+        <div class="nf-actions">
+          <a routerLink="/home" class="nf-btn nf-btn-primary">
+            <app-icon name="arrow-back" [size]="18"></app-icon>
+            <span>Back to Home</span>
+          </a>
+          <a routerLink="/features/pdf" class="nf-btn nf-btn-secondary">
+            <app-icon name="grid" [size]="18"></app-icon>
+            <span>Browse All Tools</span>
+          </a>
+        </div>
+
+        <!-- The handful of destinations someone who mistypes a URL usually wants. -->
+        <div class="nf-suggestions">
+          <span class="nf-suggestions-title">Popular tools</span>
+          <div class="nf-chips">
+            <a
+              *ngFor="let shortcut of shortcuts"
+              [routerLink]="shortcut.route"
+              class="nf-chip">
+              {{ shortcut.label }}
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

@@ -144,9 +144,16 @@ export class BatchPdfPage {
     const successItems = this.items.filter(i => i.status === 'done' && i.result?.file);
     if (successItems.length === 0) return;
     
+    // One batch is one operation against the free tier's daily allowance.
+    const operationId = `batch_pdf_${Date.now()}`;
+
     let savedCount = 0;
     for (const item of successItems) {
-      const uri = await this.storageService.saveFile(item.result!.file!, 'batch_document');
+      const uri = await this.storageService.saveFile(
+        item.result!.file!,
+        'batch_document',
+        operationId,
+      );
       if (uri) {
         savedCount++;
         await this.historyService.addHistoryItem({

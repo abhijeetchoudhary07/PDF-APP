@@ -294,3 +294,10 @@ input:checked + .slider:before {
     flex: 1;
   }
 }
+
+/* Play Store policy notice — sits above the settings groups so it is on screen
+   without scrolling on a phone. */
+.settings-gov-notice {
+  display: block;
+  margin-bottom: var(--space-5, 20px);
+}

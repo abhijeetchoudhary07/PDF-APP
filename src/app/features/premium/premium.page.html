@@ -18,9 +18,7 @@
           <h3 class="benefits-title">Premium Benefits</h3>
           <div class="benefits-grid">
             <div class="benefit-item">
-              <div class="benefit-icon-box">
-                <app-icon name="checkmark-circle"></app-icon>
-              </div>
+              <div class="benefit-icon-box"><app-icon name="checkmark-circle"></app-icon></div>
               <div>
                 <h4>100% Ad-Free</h4>
                 <p>Work without any banner or interstitial interruptions.</p>
@@ -28,9 +26,7 @@
             </div>
 
             <div class="benefit-item">
-              <div class="benefit-icon-box">
-                <app-icon name="checkmark-circle"></app-icon>
-              </div>
+              <div class="benefit-icon-box"><app-icon name="checkmark-circle"></app-icon></div>
               <div>
                 <h4>Batch Processing</h4>
                 <p>Compress up to 50 photos or PDFs simultaneously.</p>
@@ -38,9 +34,7 @@
             </div>
 
             <div class="benefit-item">
-              <div class="benefit-icon-box">
-                <app-icon name="checkmark-circle"></app-icon>
-              </div>
+              <div class="benefit-icon-box"><app-icon name="checkmark-circle"></app-icon></div>
               <div>
                 <h4>Unlimited Custom Presets</h4>
                 <p>Create and save bespoke configurations for any exam or portal.</p>
@@ -48,9 +42,7 @@
             </div>
 
             <div class="benefit-item">
-              <div class="benefit-icon-box">
-                <app-icon name="checkmark-circle"></app-icon>
-              </div>
+              <div class="benefit-icon-box"><app-icon name="checkmark-circle"></app-icon></div>
               <div>
                 <h4>Advanced Canvas Filters</h4>
                 <p>High-contrast signature extraction and document enhancements.</p>
@@ -76,17 +68,73 @@
           </div>
         </div>
 
+        <!--
+          A submitted payment is not an entitlement: it waits for an admin to
+          confirm the transfer. Saying so plainly, with the reference on screen,
+          is what stops a second payment being sent an hour later.
+        -->
+        <div class="claim-card is-pending" *ngIf="pending" data-testid="pending-claim">
+          <div class="claim-head">
+            <app-icon name="time" [size]="20"></app-icon>
+            <h4>Payment under review</h4>
+          </div>
+          <p>
+            We have your payment of <strong>{{ claimAmountLabel(pending) }}</strong>
+            for <strong>{{ claimPlanName(pending) }}</strong>, reference
+            <strong>{{ pending.utrNumber }}</strong>.
+            Premium usually activates within {{ reviewHours }} hours of the transfer clearing.
+            There is nothing else to do — please do not pay again.
+          </p>
+          <app-button
+            variant="outline"
+            size="md"
+            [loading]="refreshing"
+            (clicked)="checkStatus()"
+            data-testid="check-status">
+            Check status
+          </app-button>
+        </div>
+
+        <!-- A rejected claim has to say why, or it just generates a support ticket. -->
+        <div
+          class="claim-card is-rejected"
+          *ngIf="!pending && latest && latest.status === 'rejected'"
+          data-testid="rejected-claim">
+          <div class="claim-head">
+            <app-icon name="alert-circle" [size]="20"></app-icon>
+            <h4>Last payment could not be confirmed</h4>
+          </div>
+          <p>
+            Reference <strong>{{ latest.utrNumber }}</strong> was not approved.
+            <ng-container *ngIf="latest.rejectionReason">
+              Reason: {{ latest.rejectionReason }}
+            </ng-container>
+            You can submit a new payment below, or
+            <a routerLink="/features/contact-support">contact support</a>.
+          </p>
+        </div>
+
+        <!-- Payments switched off, or the server is unreachable. -->
+        <div class="store-notice" *ngIf="!paymentsAvailable" role="status" data-testid="store-notice">
+          <app-icon name="information-circle" [size]="18"></app-icon>
+          <p>
+            Payments are temporarily unavailable. Prices below are correct — please
+            try again shortly, or
+            <a routerLink="/features/contact-support">contact support</a> if it persists.
+          </p>
+        </div>
+
         <!-- PRICING CARDS -->
         <p class="pricing-offline-note" *ngIf="offlinePricing">
-          Showing last known pricing — we could not reach the server. The store
-          confirms the exact price before you pay.
+          Showing last known pricing — we could not reach the server.
         </p>
 
-        <div class="pricing-cards-grid" *ngIf="!loadingPlans; else pricingSkeleton">
+        <div class="pricing-cards-grid">
           <div
             *ngFor="let plan of plans"
             class="pricing-card"
-            [class.featured]="isFeatured(plan)">
+            [class.featured]="isFeatured(plan)"
+            [class.is-selected]="selectedPlan?.planId === plan.planId">
             <div class="popular-badge" *ngIf="isFeatured(plan)">Most Popular</div>
             <h4 class="package-title">{{ plan.name }}</h4>
             <div class="package-price">{{ priceLabel(plan) }}</div>
@@ -100,20 +148,197 @@
               [variant]="isFeatured(plan) ? 'primary' : 'outline'"
               size="md"
               [block]="true"
-              [loading]="purchasingPlanId === plan.planId"
-              (clicked)="buy(plan)">
-              Choose {{ plan.name }}
+              [disabled]="!!pending"
+              (clicked)="choose(plan)">
+              {{ pending ? 'Payment pending' : 'Pay ' + amountLabel(plan) }}
             </app-button>
           </div>
         </div>
 
-        <ng-template #pricingSkeleton>
-          <p class="pricing-loading">Loading plans…</p>
-        </ng-template>
+        <!-- ============================ PAY PANEL ============================ -->
+        <section
+          class="pay-panel"
+          *ngIf="selectedPlan as plan"
+          aria-labelledby="pay-panel-title"
+          data-testid="pay-panel">
+          <div class="pay-head">
+            <div>
+              <h3 id="pay-panel-title">Pay {{ amountLabel(plan) }} for {{ plan.name }}</h3>
+              <p>Transfer the exact amount, then enter the reference number below.</p>
+            </div>
+            <button type="button" class="pay-close" (click)="closePanel()" aria-label="Close payment panel">
+              &times;
+            </button>
+          </div>
+
+          <!-- Step 1: pay -->
+          <ol class="pay-steps">
+            <li>
+              <span class="step-label">1. Send {{ amountLabel(plan) }}</span>
+
+              <div class="upi-row">
+                <div class="upi-id-box">
+                  <span class="upi-caption">UPI ID</span>
+                  <span class="upi-id" data-testid="upi-id">{{ settings?.upiId }}</span>
+                  <span class="upi-name">{{ settings?.upiName }}</span>
+                </div>
+                <app-button variant="outline" size="sm" (clicked)="copyUpiId()" data-testid="copy-upi">
+                  Copy
+                </app-button>
+              </div>
+
+              <div class="qr-box" *ngIf="qrDataUrl">
+                <img [src]="qrDataUrl" alt="UPI QR code for this payment" class="qr-img" />
+                <span class="qr-caption">Scan with any UPI app</span>
+              </div>
+
+              <app-button
+                variant="primary"
+                size="md"
+                [block]="true"
+                (clicked)="openUpiApp()"
+                data-testid="open-upi">
+                Open UPI app
+              </app-button>
+
+              <div class="bank-box" *ngIf="settings?.bankAccountNumber">
+                <span class="bank-title">Or transfer to the bank account</span>
+                <dl>
+                  <div><dt>Account name</dt><dd>{{ settings?.bankAccountName }}</dd></div>
+                  <div><dt>Account number</dt><dd>{{ settings?.bankAccountNumber }}</dd></div>
+                  <div><dt>IFSC</dt><dd>{{ settings?.bankIfsc }}</dd></div>
+                  <div *ngIf="settings?.bankName"><dt>Bank</dt><dd>{{ settings?.bankName }}</dd></div>
+                </dl>
+              </div>
+
+              <p class="pay-instructions" *ngIf="settings?.instructions">
+                {{ settings?.instructions }}
+              </p>
+            </li>
+
+            <!-- Step 2: tell us -->
+            <li>
+              <span class="step-label">2. Enter the reference number</span>
+
+              <label class="field">
+                <span class="field-label">UTR / Reference number <em>*</em></span>
+                <input
+                  type="text"
+                  class="field-input"
+                  name="utrNumber"
+                  [(ngModel)]="utrNumber"
+                  placeholder="e.g. 412345678901"
+                  autocomplete="off"
+                  inputmode="latin"
+                  maxlength="32"
+                  data-testid="utr-input" />
+                <span class="field-hint">
+                  The 12-digit number your bank app shows after the transfer.
+                </span>
+              </label>
+
+              <label class="field">
+                <span class="field-label">Name on the payment</span>
+                <input
+                  type="text"
+                  class="field-input"
+                  name="senderName"
+                  [(ngModel)]="senderName"
+                  placeholder="Optional — helps us match the transfer"
+                  maxlength="120" />
+              </label>
+
+              <label class="field">
+                <span class="field-label">Anything else we should know</span>
+                <input
+                  type="text"
+                  class="field-input"
+                  name="contactNote"
+                  [(ngModel)]="contactNote"
+                  placeholder="Optional"
+                  maxlength="200" />
+              </label>
+
+              <app-button
+                variant="primary"
+                size="md"
+                [block]="true"
+                [disabled]="!canSubmit"
+                [loading]="submitting"
+                (clicked)="submit()"
+                data-testid="submit-payment">
+                Submit payment
+              </app-button>
+
+              <p class="pay-footnote">
+                Submitting records your payment for review. Premium is activated once
+                we confirm the transfer, usually within {{ reviewHours }} hours.
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <!-- Restore, for a reinstall or a new phone. -->
+        <div class="restore-row">
+          <div class="restore-copy">
+            <span class="restore-title">Already paid for Premium?</span>
+            <span class="restore-desc">
+              Sign in with the same account to unlock it on this device.
+            </span>
+          </div>
+          <app-button
+            variant="outline"
+            size="md"
+            [loading]="restoring"
+            (clicked)="restore()"
+            data-testid="restore-purchases">
+            Restore Premium
+          </app-button>
+        </div>
+
+        <!--
+          Manual payment, so the terms people need are about refunds and
+          renewal by hand, not an app store's auto-renew rules.
+        -->
+        <section class="billing-terms" aria-labelledby="billing-terms-title">
+          <h4 id="billing-terms-title">Payment terms</h4>
+          <ul>
+            <li>
+              <strong>Billing period.</strong> Pro Monthly covers 30 days and Pro Annual
+              365 days from the date your payment is confirmed. Lifetime is a single
+              payment with no expiry.
+            </li>
+            <li>
+              <strong>No automatic renewal.</strong> Nothing is charged automatically and
+              no payment details are stored. When a plan ends, premium simply stops
+              until you choose to pay again.
+            </li>
+            <li>
+              <strong>Activation.</strong> Premium is switched on after we confirm the
+              transfer, usually within {{ reviewHours }} hours. You will see it unlock
+              in the app — no code to enter.
+            </li>
+            <li>
+              <strong>Wrong amount or a payment we cannot find.</strong> We will tell you
+              on this screen with the reason, and you can resubmit or ask us to look
+              again. Never send a second payment before that.
+            </li>
+            <li>
+              <strong>Refunds.</strong> Contact support within 7 days of activation and we
+              will refund to the account you paid from.
+            </li>
+          </ul>
+          <p class="terms-links">
+            <a routerLink="/features/terms-of-use">Terms of Use</a>
+            <span aria-hidden="true">·</span>
+            <a routerLink="/features/privacy-policy">Privacy Policy</a>
+            <span aria-hidden="true">·</span>
+            <a routerLink="/features/contact-support">Contact Support</a>
+          </p>
+        </section>
 
         <p class="pricing-account-note">
-          Premium is tied to your account when you are signed in, so it survives a
-          reinstall or a new phone.
+          Premium is tied to your account, so it survives a reinstall or a new phone.
           <button type="button" class="inline-link" (click)="goToAccount()">
             {{ auth.isSignedIn ? 'Manage account' : 'Sign in or create an account' }}
           </button>

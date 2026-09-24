@@ -10,8 +10,12 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:e2e": "playwright test",
+    "assets:generate": "python3 tools/generate-app-assets.py",
     "test:e2e:smoke": "playwright test --grep @smoke",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "serve:www": "node tools/serve-www.mjs 4173",
+    "test:e2e:prod": "E2E_TARGET=prod playwright test",
+    "test:unit": "vitest run --dir src"
   },
   "private": true,
   "dependencies": {

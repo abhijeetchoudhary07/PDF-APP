@@ -10,6 +10,11 @@ import { BehaviorSubject } from 'rxjs';
 import { AuthService } from '../api/auth.service';
 import { PdfApiService } from '../api/pdf-api.service';
 import type { PdfSafeUser } from '../api/pdf-api.types';
+import {
+  REVENUECAT_API_KEYS,
+  isStoreConfigured,
+  type StoreStatus,
+} from '../config/store.config';
 
 /**
  * Premium status, reconciled between the store and the account.
@@ -48,6 +53,16 @@ export class MonetizationService {
   /** Purchasable packages, once RevenueCat has been reached. Empty off-device. */
   public packages$ = new BehaviorSubject<PurchasesPackage[]>([]);
 
+  /**
+   * How far the store got, so the paywall can explain itself.
+   *
+   * Without this the page could only ever say "purchases are unavailable" and
+   * leave the reason to guesswork: a browser, a build with placeholder keys and
+   * a Play Console with no live products all produced exactly the same empty
+   * `packages$` and the same dismissible toast.
+   */
+  public storeStatus$ = new BehaviorSubject<StoreStatus>('off-device');
+
   /** Resolves when `configure` has run, so identity calls cannot race it. */
   private storeReady: Promise<boolean>;
   /** The app user id currently bound in RevenueCat, so logOut is only called if logIn was. */
@@ -70,14 +85,31 @@ export class MonetizationService {
     if (!this.platform.is('capacitor')) {
       // Browser and `ionic serve`: no store. The account still drives premium,
       // which is what makes this flow testable without a device.
+      this.storeStatus$.next('off-device');
+      return false;
+    }
+
+    const apiKey = this.platform.is('ios')
+      ? REVENUECAT_API_KEYS.ios
+      : REVENUECAT_API_KEYS.android;
+
+    if (!isStoreConfigured(apiKey)) {
+      /*
+       * Bail out loudly rather than configuring with the placeholder.
+       * `Purchases.configure()` accepts any string, so carrying on here would
+       * produce an empty offering list and a paywall whose buttons silently do
+       * nothing -- indistinguishable, from the outside, from a working build.
+       */
+      console.error(
+        '[monetization] RevenueCat is not configured: src/app/core/config/store.config.ts ' +
+          'still holds a placeholder API key, so no purchase can complete.'
+      );
+      this.storeStatus$.next('not-configured');
       return false;
     }
 
     try {
       await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
-
-      // Use your RevenueCat API keys here
-      const apiKey = this.platform.is('ios') ? 'appl_XXXXX' : 'goog_XXXXX';
       await Purchases.configure({ apiKey });
 
       await this.checkSubscriptionStatus();
@@ -85,6 +117,7 @@ export class MonetizationService {
       return true;
     } catch (e) {
       console.error('RevenueCat could not be initialised', e);
+      this.storeStatus$.next('error');
       return false;
     }
   }
@@ -142,11 +175,28 @@ export class MonetizationService {
   private async loadPackages(): Promise<void> {
     try {
       const offerings = await Purchases.getOfferings();
-      this.packages$.next(offerings.current?.availablePackages ?? []);
+      const packages = offerings.current?.availablePackages ?? [];
+      this.packages$.next(packages);
+
+      if (!packages.length) {
+        // Reached the store, but it has nothing to sell: the Play Console
+        // products are missing, still in draft, or not in the current offering.
+        console.warn(
+          '[monetization] RevenueCat returned no packages. Check that the Play Console ' +
+            'products are active and attached to the current offering.'
+        );
+      }
+      this.storeStatus$.next(packages.length ? 'ready' : 'no-products');
     } catch (e) {
       console.error('Could not load store offerings', e);
       this.packages$.next([]);
+      this.storeStatus$.next('error');
     }
+  }
+
+  /** True only when a purchase could actually complete right now. */
+  get canPurchase(): boolean {
+    return this.storeStatus$.value === 'ready';
   }
 
   async purchasePackage(pkg: PurchasesPackage): Promise<boolean> {
@@ -173,6 +223,19 @@ export class MonetizationService {
   }
 
   async restorePurchases(): Promise<boolean> {
+    if (!this.platform.is('capacitor')) {
+      /*
+       * Browser or `ionic serve`: RevenueCat is not configured, so calling it
+       * only produces a caught error and a "restore failed" toast. The account
+       * is the only entitlement source off-device, and re-reading it is
+       * exactly what a restore means here -- an admin grant restores this way.
+       */
+      if (this.auth.isSignedIn) {
+        await this.auth.syncProfile();
+      }
+      return this.isPremium;
+    }
+
     try {
       const { customerInfo } = await Purchases.restorePurchases();
       this.storeEntitled = typeof customerInfo.entitlements.active['premium'] !== 'undefined';
