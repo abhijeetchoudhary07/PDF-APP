@@ -387,6 +387,22 @@ def save(img, path):
     print(f"  {os.path.relpath(path, ROOT)}  ({img.width}x{img.height})")
 
 
+def night_folder(folder: str) -> str:
+    """
+    The dark-mode variant of a drawable folder.
+
+    Resource qualifiers are order-sensitive and aapt2 rejects anything else
+    outright: orientation, then night, then density. Appending "-night" to
+    "drawable-port-xxxhdpi" reads as a density followed by a qualifier that
+    cannot follow it, and the build fails with "Invalid resource directory
+    name" -- so the segment is spliced in ahead of the density instead.
+    """
+    if folder == "drawable":
+        return "drawable-night"
+    head, _, density = folder.rpartition("-")
+    return f"{head}-night-{density}" if head else f"{folder}-night"
+
+
 def main():
     print("@capacitor/assets sources")
     save(render_icon(1024), out("resources", "icon-only.png"))
@@ -417,8 +433,7 @@ def main():
     for folder, (w, h) in SPLASH_DRAWABLE.items():
         save(render_splash(w, h), out("resources", "android", "res", folder, "splash.png"))
         save(render_splash(w, h, dark=True),
-             out("resources", "android", "res", f"{folder}-night" if folder != "drawable" else "drawable-night",
-                 "splash.png"))
+             out("resources", "android", "res", night_folder(folder), "splash.png"))
 
     print("Web / PWA icons")
     for name, px in WEB_ICONS.items():

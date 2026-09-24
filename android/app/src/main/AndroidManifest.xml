@@ -3,6 +3,7 @@
 
     <application
         android:allowBackup="true"
+        android:requestLegacyExternalStorage="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -38,4 +39,28 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+      Saving a finished file.
+
+      StorageService writes to Directory.Documents, which on Android is the
+      *public* Documents folder, so the result shows up in the person's file
+      manager next to everything else they have downloaded. Capacitor's
+      Filesystem plugin asks for these two before it will touch public storage
+      on anything below Android 13; without them the request is refused before
+      the person ever sees a dialog, and every save fails on Android 7-10.
+
+      Both are capped:
+        - WRITE is meaningless from Android 11 (API 30) on, where the app can
+          already write the files it created.
+        - READ is ignored from Android 13 (API 33) on, which replaced it with
+          the READ_MEDIA_* family the plugin does not need here.
+      Play flags an uncapped WRITE_EXTERNAL_STORAGE, so the ceilings matter.
+    -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 </manifest>

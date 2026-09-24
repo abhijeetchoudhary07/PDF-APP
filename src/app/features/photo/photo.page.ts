@@ -398,50 +398,67 @@ export class PhotoPage implements OnDestroy {
     this.stageText = getProcessingStageLabel('analyzing', this.translationService);
     this.cdr.detectChanges();
 
-    const fileToProcess = await this.applyPhotoCustomizations(this.originalFile);
+    /*
+     * Everything from here to the end of the two modes is guarded.
+     *
+     * The image APIs underneath reject with a bare DOM `Event` when a file
+     * cannot be decoded, and a rejection escaping this method left
+     * `isProcessing` true for the rest of the page's life: the spinner never
+     * stopped, no message appeared, and the only way out was to leave the
+     * page. The catch routes those failures into `processedResult`, which the
+     * block below already turns into the ERROR state.
+     */
+    try {
+      const fileToProcess = await this.applyPhotoCustomizations(this.originalFile);
 
-    if (this.mode === 'kb') {
-      const config: CompressionConfig = {
-        targetKB: this.selectedTargetKB,
-        outputFormat: this.targetFormat || 'image/jpeg'
-      };
-      this.processingStage = 'optimizing';
-      this.stageText = getProcessingStageLabel('optimizing', this.translationService);
-      this.cdr.detectChanges();
-
-      this.processedResult = await this.compressionService.compressToExactKB(fileToProcess, config);
-    } else {
-      // Pixels Mode
-      try {
-        this.processingStage = 'processing';
-        this.stageText = getProcessingStageLabel('processing', this.translationService);
+      if (this.mode === 'kb') {
+        const config: CompressionConfig = {
+          targetKB: this.selectedTargetKB,
+          outputFormat: this.targetFormat || 'image/jpeg'
+        };
+        this.processingStage = 'optimizing';
+        this.stageText = getProcessingStageLabel('optimizing', this.translationService);
         this.cdr.detectChanges();
 
-        const outputFormat = this.targetFormat || 'image/jpeg';
-        const blob = await this.imageService.resizeToCanvasBlob(
-          fileToProcess,
-          this.targetWidth,
-          this.targetHeight,
-          outputFormat,
-          0.95
-        );
-        const newFile = new File([blob], this.originalFile.name, { type: outputFormat });
+        this.processedResult = await this.compressionService.compressToExactKB(fileToProcess, config);
+      } else {
+        // Pixels Mode
+        try {
+          this.processingStage = 'processing';
+          this.stageText = getProcessingStageLabel('processing', this.translationService);
+          this.cdr.detectChanges();
 
-        this.processedResult = {
-          success: true,
-          file: newFile,
-          dimensions: { width: this.targetWidth, height: this.targetHeight },
-          metadata: {
-            name: newFile.name,
-            type: newFile.type,
-            sizeBytes: newFile.size,
-            lastModified: newFile.lastModified,
-            extension: outputFormat.split('/')[1] || 'jpeg'
-          }
-        };
-      } catch (e: any) {
-        this.processedResult = { success: false, error: e.toString() };
+          const outputFormat = this.targetFormat || 'image/jpeg';
+          const blob = await this.imageService.resizeToCanvasBlob(
+            fileToProcess,
+            this.targetWidth,
+            this.targetHeight,
+            outputFormat,
+            0.95
+          );
+          const newFile = new File([blob], this.originalFile.name, { type: outputFormat });
+
+          this.processedResult = {
+            success: true,
+            file: newFile,
+            dimensions: { width: this.targetWidth, height: this.targetHeight },
+            metadata: {
+              name: newFile.name,
+              type: newFile.type,
+              sizeBytes: newFile.size,
+              lastModified: newFile.lastModified,
+              extension: outputFormat.split('/')[1] || 'jpeg'
+            }
+          };
+        } catch (e: any) {
+          this.processedResult = { success: false, error: e.toString() };
+        }
       }
+    } catch (e: any) {
+      this.processedResult = {
+        success: false,
+        error: e?.message || 'That photo could not be processed. It may be damaged or in a format this device cannot read.',
+      };
     }
 
     this.isProcessing = false;

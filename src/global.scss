@@ -355,3 +355,14 @@ ion-router-outlet > .ion-page:not(.is-workspace) > * {
 @media (prefers-reduced-motion: reduce) {
   .app-inline-spinner { animation-duration: 2s; }
 }
+
+/* --- HERO TITLE LINE SEPARATION --- */
+.hero-title .title-line {
+  display: block;
+  margin-bottom: clamp(6px, 1.2vw, 10px);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+

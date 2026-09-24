@@ -141,7 +141,7 @@ export const mr = {
   },
   home: {
     heroBadge: '100% तुमच्या डिव्हाइसवर • सर्व्हर अपलोड नाही',
-    heroTitle: 'प्रत्येक अर्जासाठी सोपे <span class="accent">दस्तऐवज सहाय्यक</span>',
+    heroTitle: '<span class="title-line">प्रत्येक अर्जासाठी</span><span class="title-line">सोपे दस्तऐवज सहाय्यक</span>',
     heroSubtitle: 'SSC, UPSC, MPSC, IBPS आणि इतर सरकारी परीक्षांसाठी पासपोर्ट फोटो, स्वाक्षरी आणि PDF अचूक KB आकारात सहज तयार करा.',
     searchPlaceholder: 'साधने शोधा (उदा. फोटो कंप्रेस, मर्ज, वर्ड ते पीडीएफ, सही)...',
     clearSearch: 'शोध साफ करा',

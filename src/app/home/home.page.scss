@@ -71,18 +71,45 @@
   font-size: clamp(2rem, 1.2rem + 3vw, 3.25rem);
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
-  margin: 0 0 var(--space-3);
+  margin: 0 0 var(--space-4, 16px);
   letter-spacing: -0.035em;
-  line-height: 1.08;
+  line-height: 1.18;
   text-wrap: balance;
-}
 
-/* One gradient phrase in the headline; the rest stays solid so it still reads. */
-.hero-title .accent {
-  background-image: var(--gradient-brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  :host ::ng-deep &,
+  ::ng-deep & {
+    .title-line {
+      display: block;
+      margin-bottom: clamp(6px, 1.2vw, 10px);
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .accent {
+      background-image: var(--gradient-brand);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+
+  .title-line {
+    display: block;
+    margin-bottom: clamp(6px, 1.2vw, 10px);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .accent {
+    background-image: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }
 
 .hero-subtitle {

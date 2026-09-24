@@ -141,7 +141,7 @@ export const hi = {
   },
   home: {
     heroBadge: '100% आपके डिवाइस पर • कोई सर्वर अपलोड नहीं',
-    heroTitle: 'हर सरकारी फॉर्म के लिए सरल <span class="accent">दस्तावेज़ सहायक</span>',
+    heroTitle: '<span class="title-line">हर सरकारी फॉर्म के लिए</span><span class="title-line">सरल दस्तावेज़ सहायक</span>',
     heroSubtitle: 'SSC, UPSC, IBPS और राज्य सेवा आयोग के फॉर्म के लिए पासपोर्ट फोटो, हस्ताक्षर और PDF को सही KB और साइज में आसानी से तैयार करें।',
     searchPlaceholder: 'टूल्स खोजें (जैसे फोटो कंप्रेस, मर्ज, वर्ड से पीडीएफ, साइन)...',
     clearSearch: 'सर्च साफ करें',

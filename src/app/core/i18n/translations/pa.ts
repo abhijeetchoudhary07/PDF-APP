@@ -141,7 +141,7 @@ export const pa = {
   },
   home: {
     heroBadge: '100% ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਤੇ • ਕੋਈ ਸਰਵਰ ਅੱਪਲੋਡ ਨਹੀਂ',
-    heroTitle: 'ਹਰ ਸਰਕਾਰੀ ਫਾਰਮ ਲਈ ਆਸਾਨ <span class="accent">ਦਸਤਾਵੇਜ਼ ਸਹਾਇਕ</span>',
+    heroTitle: '<span class="title-line">ਹਰ ਸਰਕਾਰੀ ਫਾਰਮ ਲਈ</span><span class="title-line">ਆਸਾਨ ਦਸਤਾਵੇਜ਼ ਸਹਾਇਕ</span>',
     heroSubtitle: 'SSC, UPSC, IBPS, PPSC ਅਤੇ ਪੰਜਾਬ ਸਰਕਾਰ ਦੀਆਂ ਭਰਤੀਆਂ ਲਈ ਪਾਸਪੋਰਟ ਫੋਟੋ, ਦਸਤਖਤ ਅਤੇ PDF ਨੂੰ ਸਹੀ KB ਵਿੱਚ ਆਸਾਨੀ ਨਾਲ ਤਿਆਰ ਕਰੋ।',
     searchPlaceholder: 'ਟੂਲ ਖੋਜੋ (ਜਿਵੇਂ ਫੋਟੋ ਕੰਪ੍ਰੈਸ, ਮਰਜ, ਵਰਡ ਤੋਂ ਪੀਡੀਐਫ, ਸਾਈਨ)...',
     clearSearch: 'ਖੋਜ ਸਾਫ ਕਰੋ',

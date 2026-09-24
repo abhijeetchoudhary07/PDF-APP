@@ -141,7 +141,7 @@ export const bn = {
   },
   home: {
     heroBadge: '১০০% আপনার ডিভাইসে • কোনো সার্ভার আপলোড নেই',
-    heroTitle: 'প্রতিটি আবেদন ফর্মের জন্য সহজ <span class="accent">ডকুমেন্ট সহায়ক</span>',
+    heroTitle: '<span class="title-line">প্রতিটি আবেদন ফর্মের জন্য</span><span class="title-line">সহজ ডকুমেন্ট সহায়ক</span>',
     heroSubtitle: 'SSC, UPSC, IBPS এবং রাজ্য সরকারি পরীক্ষার জন্য পাসপোর্ট ছবি, স্বাক্ষর এবং PDF ফাইলের আকার সহজেই সঠিক KB সীমায় প্রস্তুত করুন।',
     searchPlaceholder: 'টুল খুঁজুন (যেমন ফটো কম্প্রেস, মার্জ, ওয়ার্ড টু পিডিএফ, সাইন)...',
     clearSearch: 'অনুসন্ধান মুছুন',

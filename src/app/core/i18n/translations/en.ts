@@ -147,7 +147,7 @@ export const en = {
   },
   home: {
     heroBadge: '100% On Your Device • No Server Uploads',
-    heroTitle: 'The Simple <span class="accent">Document Helper</span> for Every Form',
+    heroTitle: '<span class="title-line">The Simple Document</span><span class="title-line">Helper for Every Form</span>',
     heroSubtitle: 'Easily resize passport photos, clean signatures, combine and shrink PDFs for SSC, UPSC, IBPS, and state job portals with exact size limits.',
     searchPlaceholder: 'Search tools (like photo compress, merge, word to pdf, sign)...',
     clearSearch: 'Clear search',

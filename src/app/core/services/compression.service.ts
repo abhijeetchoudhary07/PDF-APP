@@ -16,7 +16,22 @@ export class CompressionService {
     const minQualityThreshold = config.minQuality || 0.4; // Internal quality threshold
     const maxScaleDownLimit = config.maxScaleDown || 0.5; // Max 50% dimension reduction
     
-    const dims = await this.imageService.getImageDimensions(file);
+    /*
+     * Reading the source dimensions can fail: an image the browser cannot
+     * decode rejects with a bare DOM `Event`, not an Error. This used to sit
+     * outside the try below, so that rejection escaped `compressToExactKB`
+     * altogether -- the caller's `await` threw, its spinner was never cleared,
+     * and the page sat on "Shrinking and optimizing..." forever with nothing
+     * on screen to say what went wrong. Every exit from here is now a
+     * ProcessingResult the caller can render.
+     */
+    let dims;
+    try {
+      dims = await this.imageService.getImageDimensions(file);
+    } catch {
+      return { success: false, error: 'That image could not be opened. It may be damaged or in a format this device cannot read.' };
+    }
+
     let baseTargetWidth = dims.width;
     let baseTargetHeight = dims.height;
 
