@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account &amp; Data Deletion — Indian Form Helper</title>
+  <meta name="description" content="Request account and personal data deletion for Indian Form Helper. Learn what data is deleted, what is retained, and how to submit a request.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z'/></svg>">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --success: #059669;
+      --success-light: #ecfdf5;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --danger-light: #fef2f2;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header.site-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      color: white;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+    }
+
+    nav.site-nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    nav.site-nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    nav.site-nav a:hover, nav.site-nav a.active {
+      color: var(--primary);
+    }
+
+    .page-wrap {
+      max-width: 960px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 1.5rem;
+    }
+
+    .hero-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .badge-danger {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--danger-light);
+      color: var(--danger);
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text-main);
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+    }
+
+    .hero-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .notice-box {
+      background: var(--success-light);
+      border: 1px solid #a7f3d0;
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .notice-icon {
+      color: var(--success);
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
+
+    .notice-content h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #065f46;
+      margin-bottom: 0.35rem;
+    }
+
+    .notice-content p {
+      font-size: 0.9rem;
+      color: #047857;
+      line-height: 1.5;
+    }
+
+    .main-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 3rem 2.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .content-section {
+      margin-bottom: 2.5rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .content-section:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-main);
+    }
+
+    p {
+      margin-bottom: 1rem;
+      color: #334155;
+    }
+
+    ul {
+      margin-bottom: 1.25rem;
+      padding-left: 1.5rem;
+      color: #334155;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    /* Comparison Table */
+    .table-container {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    tbody tr:last-child td, tbody tr:last-child th {
+      border-bottom: none;
+    }
+
+    .badge-deleted {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+
+    .badge-none {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    /* Steps Cards */
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .step-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.5rem;
+      background: #f8fafc;
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: grid;
+      place-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .step-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-main);
+    }
+
+    .step-card p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      padding: 0.65rem 1.25rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.875em;
+      background: #f1f5f9;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: #0f172a;
+    }
+
+    footer.site-footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .footer-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .gov-disclaimer {
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      color: #92400e;
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.825rem;
+      line-height: 1.5;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    @media (max-width: 640px) {
+      .hero-banner { padding: 1.75rem 1.25rem; }
+      .main-card { padding: 1.75rem 1.25rem; }
+      h1 { font-size: 1.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <span>Indian Form Helper</span>
+      </a>
+      <nav class="site-nav">
+        <a href="index.html">Home</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="delete-account.html" class="active">Delete Account</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page-wrap">
+    <div class="hero-banner">
+      <span class="badge-danger">Data Sovereignty</span>
+      <h1>Account &amp; Data Deletion</h1>
+      <p class="hero-subtitle">How to request permanent deletion of your account and personal data.</p>
+      <div class="meta-bar">
+        <span>Google Play Policy Compliance</span>
+        <span>App ID: <code>com.pdfhelper.indianformhelper</code></span>
+        <span>Support: <code>support@indianformhelper.app</code></span>
+      </div>
+    </div>
+
+    <div class="notice-box">
+      <div class="notice-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      </div>
+      <div class="notice-content">
+        <h3>Remember: Your documents are never on our servers</h3>
+        <p>
+          Indian Form Helper executes all document processing (photos, signatures, certificates, and PDFs) 100% on your local device. No documents or personal files are ever uploaded or stored on any server. Only optional account credentials and subscription status reside on our servers.
+        </p>
+      </div>
+    </div>
+
+    <article class="main-card">
+      <section class="content-section">
+        <h2>1. Overview &amp; Google Play Compliance</h2>
+        <p>
+          In accordance with Google Play's User Data policy on Account Deletion, if you have registered an account within the Indian Form Helper app, you have the right to request that your account and all associated data be permanently deleted.
+        </p>
+        <p>
+          An account in Indian Form Helper is entirely optional and exists only to sync Pro entitlements across devices. You do not need to install or keep the app installed to submit a deletion request.
+        </p>
+      </section>
+
+      <section class="content-section">
+        <h2>2. What Data Is Deleted vs. Retained</h2>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Data Category</th>
+                <th>Status Upon Deletion</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>User Account</strong></td>
+                <td><span class="badge-deleted">Permanently Deleted</span></td>
+                <td>Your email address, hashed password, and user ID are purged.</td>
+              </tr>
+              <tr>
+                <td><strong>Profile Information</strong></td>
+                <td><span class="badge-deleted">Permanently Deleted</span></td>
+                <td>Display name and profile settings are erased immediately.</td>
+              </tr>
+              <tr>
+                <td><strong>Subscription &amp; Entitlement</strong></td>
+                <td><span class="badge-deleted">Permanently Deleted</span></td>
+                <td>Pro status, expiry dates, and entitlement records are revoked.</td>
+              </tr>
+              <tr>
+                <td><strong>Payment / UTR Records</strong></td>
+                <td><span class="badge-deleted">Permanently Deleted</span></td>
+                <td>Manual payment verification requests and UTR references are purged.</td>
+              </tr>
+              <tr>
+                <td><strong>Authentication Sessions</strong></td>
+                <td><span class="badge-deleted">Revoked &amp; Destroyed</span></td>
+                <td>All refresh tokens and active sessions are immediately invalidated.</td>
+              </tr>
+              <tr>
+                <td><strong>Document Files &amp; Photos</strong></td>
+                <td><span class="badge-none">Never Stored on Server</span></td>
+                <td>All processing is strictly on-device. There is zero document data to delete.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <strong>Retention Policy:</strong> Once an account deletion is executed, no identifying data is retained. Deletion is irreversible.
+        </p>
+      </section>
+
+      <section class="content-section">
+        <h2>3. How to Request Deletion</h2>
+
+        <div class="step-grid">
+          <div class="step-card">
+            <div class="step-number">A</div>
+            <h3>Method 1: In-App (Instant)</h3>
+            <p>If you currently have the app installed on your phone:</p>
+            <ol style="margin-left: 1.25rem; font-size: 0.875rem; color: #475569; margin-bottom: 1rem;">
+              <li>Open Indian Form Helper.</li>
+              <li>Go to <strong>Account</strong> (or Profile &rarr; Account).</li>
+              <li>Scroll to the <strong>Delete account</strong> card at the bottom.</li>
+              <li>Click <strong>Delete account</strong>, type <code>DELETE</code> into the confirmation field.</li>
+              <li>Tap <strong>Permanently delete</strong>.</li>
+            </ol>
+            <p style="font-size: 0.8rem; color: var(--danger); font-weight: 600;">
+              Effect: Your account and server records are deleted immediately and your session is destroyed.
+            </p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">B</div>
+            <h3>Method 2: Web / Email Request</h3>
+            <p>If you uninstalled the app or cannot access your device:</p>
+            <p style="font-size: 0.875rem; color: #475569; margin-bottom: 1rem;">
+              Send an email request to our support team from the email address associated with your account.
+            </p>
+            <a href="mailto:support@indianformhelper.app?subject=Account%20Deletion%20Request%20-%20Indian%20Form%20Helper&body=Please%20delete%20my%20Indian%20Form%20Helper%20account%20and%20all%20associated%20data.%0A%0ARegistered%20Email%20Address:%20" class="btn btn-danger">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              Email Deletion Request
+            </a>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.75rem;">
+              Timeline: Processed manually within 30 calendar days upon receipt.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section">
+        <h2>4. On-Device Local Data &amp; Storage Reset</h2>
+        <p>
+          Because documents are processed and saved locally on your phone, deleting your server account does not modify files saved in your phone's storage.
+        </p>
+        <p>To erase on-device preferences and cached data:</p>
+        <ul>
+          <li>In the app: Navigate to <strong>Settings &rarr; Local data &amp; storage</strong> and select <strong>Clear History</strong> or <strong>Factory Reset</strong>.</li>
+          <li>In Android Settings: Go to <strong>Settings &rarr; Apps &rarr; Indian Form Helper &rarr; Storage &rarr; Clear Data &amp; Cache</strong>.</li>
+        </ul>
+      </section>
+
+      <section class="content-section">
+        <h2>5. Questions or Support</h2>
+        <p>
+          If you have questions about your data or account deletion, contact our privacy team:
+        </p>
+        <p>
+          <strong>Email:</strong> <a href="mailto:support@indianformhelper.app">support@indianformhelper.app</a><br>
+          <strong>Website:</strong> <a href="https://indianformhelper.app">https://indianformhelper.app</a>
+        </p>
+      </section>
+    </article>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="gov-disclaimer">
+        <strong>Government Disclaimer:</strong> Indian Form Helper is an independent utility application developed by private developers to assist candidates in formatting and preparing documents according to standard examination guidelines. It is not affiliated with, endorsed by, or associated with any government agency, commission, or recruiting board.
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 Indian Form Helper. All rights reserved.</div>
+        <div>
+          <a href="privacy.html" style="color: var(--text-muted); text-decoration: underline;">Privacy Policy</a> &bull;
+          <a href="delete-account.html" style="color: var(--text-muted); text-decoration: underline;">Account Deletion</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

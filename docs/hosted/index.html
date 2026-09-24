@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indian Form Helper — Privacy, Policy &amp; Support</title>
+  <meta name="description" content="Official legal documentation, privacy disclosures, and account support for the Indian Form Helper Android and Web application.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z'/></svg>">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --success: #059669;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header.site-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      color: white;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+    }
+
+    nav.site-nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    nav.site-nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    nav.site-nav a:hover, nav.site-nav a.active {
+      color: var(--primary);
+    }
+
+    .hero-section {
+      max-width: 960px;
+      margin: 3.5rem auto 2.5rem;
+      padding: 0 1.5rem;
+      text-align: center;
+    }
+
+    .pill-badge {
+      display: inline-block;
+      padding: 0.3rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--primary-light);
+      color: var(--primary);
+      margin-bottom: 1.25rem;
+    }
+
+    h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .hero-desc {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.6;
+    }
+
+    .cards-grid {
+      max-width: 960px;
+      margin: 0 auto 4rem;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .doc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .doc-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      border-color: #cbd5e1;
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: grid;
+      place-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-icon.danger {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .card-icon.success {
+      background: #ecfdf5;
+      color: #059669;
+    }
+
+    .doc-card h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-main);
+    }
+
+    .doc-card p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+      flex-grow: 1;
+    }
+
+    .card-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    footer.site-footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .footer-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .gov-disclaimer {
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      color: #92400e;
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.825rem;
+      line-height: 1.5;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    @media (max-width: 640px) {
+      h1 { font-size: 2rem; }
+      .hero-desc { font-size: 1rem; }
+      .hero-section { margin-top: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <span>Indian Form Helper</span>
+      </a>
+      <nav class="site-nav">
+        <a href="index.html" class="active">Home</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="delete-account.html">Delete Account</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero-section">
+      <span class="pill-badge">Legal &amp; Policy Portal</span>
+      <h1>Indian Form Helper</h1>
+      <p class="hero-desc">
+        Resize photos, compress PDFs, and prepare documents for Indian government exams — 100% on-device, fully offline, and with zero file telemetry.
+      </p>
+    </section>
+
+    <section class="cards-grid">
+      <a href="privacy.html" class="doc-card">
+        <div>
+          <div class="card-icon success">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <h2>Privacy Policy</h2>
+          <p>
+            Learn about our 100% client-side WebAssembly architecture, zero server uploads guarantee, and full Google Play Data Safety disclosure.
+          </p>
+        </div>
+        <span class="card-action">
+          Read Privacy Policy &rarr;
+        </span>
+      </a>
+
+      <a href="delete-account.html" class="doc-card">
+        <div>
+          <div class="card-icon danger">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </div>
+          <h2>Account Deletion</h2>
+          <p>
+            Request permanent removal of your account, email address, and Pro entitlements via in-app actions or email.
+          </p>
+        </div>
+        <span class="card-action" style="color: #dc2626;">
+          Delete Account &rarr;
+        </span>
+      </a>
+
+      <div class="doc-card" style="cursor: default;">
+        <div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+          <h2>Support &amp; Contact</h2>
+          <p>
+            Need help formatting an exam document, restoring a subscription, or have feedback? Our support team is here to help.
+          </p>
+        </div>
+        <a href="mailto:support@indianformhelper.app" class="card-action">
+          support@indianformhelper.app &rarr;
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="gov-disclaimer">
+        <strong>Government Disclaimer:</strong> Indian Form Helper is an independent utility application developed by private developers to assist candidates in formatting and preparing documents according to standard examination guidelines. It is not affiliated with, endorsed by, or associated with any government agency, commission, or recruiting board.
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 Indian Form Helper. All rights reserved.</div>
+        <div>
+          <a href="privacy.html" style="color: var(--text-muted); text-decoration: underline;">Privacy Policy</a> &bull;
+          <a href="delete-account.html" style="color: var(--text-muted); text-decoration: underline;">Account Deletion</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
