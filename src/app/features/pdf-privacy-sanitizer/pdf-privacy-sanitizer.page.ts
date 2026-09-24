@@ -49,7 +49,7 @@ export type PrivacyStep = 'select' | 'scanning' | 'scan_result' | 'sanitizing' |
   ],
   providers: [DecimalPipe]
 })
-export class PdfPrivacySanitizerPage implements OnInit, OnDestroy {
+export class PdfPrivacySanitizerPage {
   currentStep: PrivacyStep = 'select';
   selectedFile?: File;
 
@@ -80,10 +80,6 @@ export class PdfPrivacySanitizerPage implements OnInit, OnDestroy {
     private toastService: ToastService,
     private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit(): void {}
-
-  ngOnDestroy(): void {}
 
   async onFileSelected(file: File): Promise<void> {
     if (!file.name.toLowerCase().endsWith('.pdf')) {

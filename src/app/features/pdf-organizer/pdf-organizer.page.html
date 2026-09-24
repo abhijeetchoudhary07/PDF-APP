@@ -496,9 +496,9 @@
           *ngIf="lastExportResult && mode !== 'split' && beforePreviewData && afterPreviewData"
           [beforeData]="beforePreviewData"
           [afterData]="afterPreviewData"
-          (onSave)="saveResult(lastExportResult)"
-          (onShare)="shareResult(lastExportResult)"
-          (onChangeSettings)="lastExportResult = undefined">
+          (saved)="saveResult(lastExportResult)"
+          (shared)="shareResult(lastExportResult)"
+          (resetRequested)="lastExportResult = undefined">
         </app-result-preview>
 
         <!-- RESULT PREVIEW (Multiple PDFs from Split) -->

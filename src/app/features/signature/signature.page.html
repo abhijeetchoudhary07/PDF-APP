@@ -183,9 +183,9 @@
             [beforeUrl]="originalPreviewUrl"
             [afterUrl]="processedPreviewUrl"
             [outputFilename]="processedResult?.file?.name"
-            (onSave)="saveSignature()"
-            (onShare)="shareSignature()"
-            (onChangeSettings)="workflowState = 'CONFIGURING'">
+            (saved)="saveSignature()"
+            (shared)="shareSignature()"
+            (resetRequested)="workflowState = 'CONFIGURING'">
           </app-result-preview>
 
           <app-related-tools

@@ -54,7 +54,7 @@ export type IntelligenceTab = 'overview' | 'summary' | 'search' | 'qa' | 'transl
   ],
   providers: [DecimalPipe]
 })
-export class PdfIntelligencePage implements OnInit, OnDestroy {
+export class PdfIntelligencePage implements OnInit {
   currentStep: 'select' | 'analyzing' | 'workspace' = 'select';
   selectedFile?: File;
 
@@ -135,8 +135,6 @@ export class PdfIntelligencePage implements OnInit, OnDestroy {
       this.onFileSelected(target.file);
     }
   }
-
-  ngOnDestroy() {}
 
   // =========================================================================
   // FILE SELECTION & EXTRACTION PIPELINE

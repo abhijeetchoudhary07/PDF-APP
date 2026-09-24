@@ -116,7 +116,7 @@
               subtitle="Restrictions and encryption removed. Ready to view and edit."
               [file]="unlockResultFile"
               (shared)="shareUnlockResult()"
-              (reset)="resetUnlock()">
+              (resetRequested)="resetUnlock()">
             </app-result-preview>
           </div>
         </div>
@@ -273,7 +273,7 @@
               subtitle="Protected with standard encryption and configured permissions."
               [file]="protectResultFile"
               (shared)="shareProtectResult()"
-              (reset)="resetProtect()">
+              (resetRequested)="resetProtect()">
             </app-result-preview>
           </div>
         </div>

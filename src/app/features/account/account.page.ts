@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import type { Subscription } from 'rxjs';
 import { AuthError, AuthService } from '../../core/api/auth.service';
 import { emailProblem, normalizeEmail, passwordProblem } from '../../core/api/credential-rules';
@@ -37,6 +37,7 @@ type Mode = 'signIn' | 'register';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     AppHeaderComponent,
     AppPageHeaderComponent,
     AppFooterComponent,
@@ -215,6 +216,52 @@ export class AccountPage implements OnInit, OnDestroy {
 
   goPremium(): void {
     void this.router.navigate(['/features/premium']);
+  }
+
+  /**
+   * Opens and closes the delete confirmation.
+   *
+   * Deletion is behind a second, typed step rather than a single button. It is
+   * the only irreversible action in the app, and it sits next to "Sign out" —
+   * two buttons that look alike and differ by everything.
+   */
+  confirmingDelete = false;
+  deleteConfirmation = '';
+
+  readonly DELETE_PHRASE = 'DELETE';
+
+  get canDelete(): boolean {
+    return this.deleteConfirmation.trim().toUpperCase() === this.DELETE_PHRASE;
+  }
+
+  startDelete(): void {
+    this.confirmingDelete = true;
+    this.deleteConfirmation = '';
+  }
+
+  cancelDelete(): void {
+    this.confirmingDelete = false;
+    this.deleteConfirmation = '';
+  }
+
+  async deleteAccount(): Promise<void> {
+    if (!this.canDelete) {
+      return;
+    }
+
+    this.busy = true;
+    try {
+      await this.auth.deleteAccount();
+      this.confirmingDelete = false;
+      this.deleteConfirmation = '';
+      this.toast.success('Your account and its data have been deleted.');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Could not delete the account. Please try again.';
+      this.toast.error(message);
+    } finally {
+      this.busy = false;
+    }
   }
 
   /** "Checked 4 minutes ago", for when the network is down. */

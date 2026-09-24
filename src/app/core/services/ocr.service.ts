@@ -11,10 +11,7 @@ import {
   OcrDocumentResult,
   OcrWord
 } from '../models/ocr.models';
-
-if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-}
+import '../utilities/pdfjs-worker';
 
 @Injectable({
   providedIn: 'root'

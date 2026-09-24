@@ -20,7 +20,7 @@ export class DocumentPreviewComponent {
   @Input() overlays?: OverlayConfig;
   @Input() isModal = false;
 
-  @Output() close = new EventEmitter<void>();
+  @Output() closed = new EventEmitter<void>();
 
   get isPdf(): boolean {
     return (

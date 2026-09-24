@@ -62,7 +62,7 @@ export class PdfPreviewComponent implements OnChanges, OnDestroy {
   @Input() overlays?: OverlayConfig;
   @Input() isModal = false;
 
-  @Output() close = new EventEmitter<void>();
+  @Output() closed = new EventEmitter<void>();
   @Output() pageChange = new EventEmitter<number>();
 
   currentPage = 1;

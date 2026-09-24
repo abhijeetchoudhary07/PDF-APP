@@ -48,6 +48,8 @@
 }
 
 .editor-title {
+  /* Reset the h1 defaults; this sits inline in a toolbar, not above content. */
+  margin: 0;
   font-size: var(--font-base, 16px);
   font-weight: 600;
   color: #ffffff;

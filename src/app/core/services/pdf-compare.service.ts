@@ -8,10 +8,7 @@ import {
   ComparisonMode
 } from '../models/pdf-analysis.types';
 import { PdfRenderService } from './pdf-render.service';
-
-if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-}
+import '../utilities/pdfjs-worker';
 
 @Injectable({
   providedIn: 'root'

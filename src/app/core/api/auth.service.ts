@@ -127,6 +127,32 @@ export class AuthService {
     await this.adoptSession(response);
   }
 
+  /**
+   * Deletes the account on the server, then this device's session.
+   *
+   * Google Play requires that an app which lets someone create an account also
+   * lets them delete it from inside the app, and from a public web page without
+   * installing anything. This is the in-app half.
+   *
+   * The local sign-out runs whatever the server says. A 404 or 401 means the
+   * account is already gone or the session is dead — in both cases leaving a
+   * signed-in shell on the device would be worse than clearing it. Only a
+   * genuine failure to reach the server is worth surfacing, because that is the
+   * one case where the account really might still exist.
+   */
+  async deleteAccount(): Promise<void> {
+    try {
+      await firstValueFrom(this.http.delete<void>(`${API_ROOT}/auth/me`));
+    } catch (error) {
+      const status = error instanceof HttpErrorResponse ? error.status : 0;
+      if (status !== 404 && status !== 401) {
+        throw toAuthError(error);
+      }
+    } finally {
+      await this.signOut();
+    }
+  }
+
   async signOut(): Promise<void> {
     this.accessToken = null;
     this.refreshToken = null;

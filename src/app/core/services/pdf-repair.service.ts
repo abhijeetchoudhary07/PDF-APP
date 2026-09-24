@@ -8,10 +8,7 @@ import {
   PdfRecoveryResult,
   PageRecoveryDetail
 } from '../models/pdf-analysis.types';
-
-if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-}
+import '../utilities/pdfjs-worker';
 
 @Injectable({
   providedIn: 'root'

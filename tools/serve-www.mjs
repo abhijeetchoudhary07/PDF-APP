@@ -71,19 +71,45 @@ async function resolveFile(urlPath) {
 const server = createServer(async (req, res) => {
   const file = (await resolveFile(req.url ?? '/')) ?? join(ROOT, 'index.html');
 
+  let info;
   try {
-    await stat(file);
+    info = await stat(file);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not found. Run `npm run build` first.');
     return;
   }
 
+  const isIndex = file === join(ROOT, 'index.html');
+
+  /*
+   * Everything but index.html is revalidated rather than re-sent.
+   *
+   * This used to be a flat `no-store`, which meant the browser re-downloaded
+   * every chunk on every navigation. With the suite running fully parallel and
+   * the app's chunks running to megabytes — the pdf.js worker alone is 1.2MB —
+   * a few hundred navigations moved gigabytes through one Node process, and
+   * tests started failing on timeouts that had nothing to do with the app.
+   * Which tests failed changed from run to run, which is the signature of load
+   * rather than a defect.
+   *
+   * `no-cache` still forces a request every time, so nothing stale is ever
+   * used; the ETag just lets that request come back as an empty 304. index.html
+   * keeps `no-store` outright, because serving yesterday's entry point is the
+   * one failure that would be genuinely confusing.
+   */
+  const etag = `W/"${info.size.toString(16)}-${info.mtimeMs.toString(16)}"`;
+
+  if (!isIndex && req.headers['if-none-match'] === etag) {
+    res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-cache' });
+    res.end();
+    return;
+  }
+
   res.writeHead(200, {
     'Content-Type': TYPES.get(extname(file).toLowerCase()) ?? 'application/octet-stream',
-    // The app is offline-first and the suite reloads constantly; a cached
-    // index.html between runs would serve yesterday's bundle.
-    'Cache-Control': 'no-store',
+    'Cache-Control': isIndex ? 'no-store' : 'no-cache',
+    ...(isIndex ? {} : { ETag: etag }),
   });
   createReadStream(file).pipe(res);
 });

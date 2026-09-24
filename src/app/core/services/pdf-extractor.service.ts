@@ -11,10 +11,7 @@ import {
   ExtractedAttachmentItem
 } from '../models/pdf-analysis.types';
 import { PdfPageManagerService } from './pdf-page-manager.service';
-
-if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-}
+import '../utilities/pdfjs-worker';
 
 export interface ExtractionOptions {
   extractText: boolean;

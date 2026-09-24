@@ -3,10 +3,7 @@ import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { ProcessingResult } from '../models/processing-result.model';
 import { CompressionConfig } from '../models/compression-config.model';
-
-// Use a fallback worker URL based on the exact version installed. 
-// Fallback to .mjs for v4, or .js for older.
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+import '../utilities/pdfjs-worker';
 
 export interface PdfCreationConfig {
   format: 'A4' | 'Letter';

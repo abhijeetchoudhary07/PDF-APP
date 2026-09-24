@@ -59,7 +59,7 @@ export type ScannerView = 'empty' | 'cropping' | 'enhancing' | 'pages_list' | 'p
     TranslatePipe
   ]
 })
-export class DocumentScannerPage implements OnInit, OnDestroy {
+export class DocumentScannerPage implements OnDestroy {
   @ViewChild('cropCanvas', { static: false }) cropCanvasRef?: ElementRef<HTMLCanvasElement>;
 
   currentView: ScannerView = 'empty';
@@ -116,8 +116,6 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit(): void {}
 
   ngOnDestroy(): void {
     // Revoke all object URLs

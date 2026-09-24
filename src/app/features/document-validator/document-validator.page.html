@@ -171,7 +171,7 @@
             *ngIf="validationResults.get('photo')!.passed"
             variant="secondary"
             size="sm"
-            (btnClick)="downloadSlotFile('photo')"
+            (clicked)="downloadSlotFile('photo')"
           >
             📥 {{ 'common.download' | translate }}
           </app-button>
@@ -179,7 +179,7 @@
           <app-button
             variant="ghost"
             size="sm"
-            (btnClick)="shareSlotFile('photo')"
+            (clicked)="shareSlotFile('photo')"
           >
             📤 {{ 'common.share' | translate }}
           </app-button>
@@ -278,7 +278,7 @@
             *ngIf="validationResults.get('signature')!.passed"
             variant="secondary"
             size="sm"
-            (btnClick)="downloadSlotFile('signature')"
+            (clicked)="downloadSlotFile('signature')"
           >
             📥 {{ 'common.download' | translate }}
           </app-button>
@@ -286,7 +286,7 @@
           <app-button
             variant="ghost"
             size="sm"
-            (btnClick)="shareSlotFile('signature')"
+            (clicked)="shareSlotFile('signature')"
           >
             📤 {{ 'common.share' | translate }}
           </app-button>
@@ -384,7 +384,7 @@
             *ngIf="validationResults.get('pdf')!.passed"
             variant="secondary"
             size="sm"
-            (btnClick)="downloadSlotFile('pdf')"
+            (clicked)="downloadSlotFile('pdf')"
           >
             📥 {{ 'common.download' | translate }}
           </app-button>
@@ -392,7 +392,7 @@
           <app-button
             variant="ghost"
             size="sm"
-            (btnClick)="shareSlotFile('pdf')"
+            (clicked)="shareSlotFile('pdf')"
           >
             📤 {{ 'common.share' | translate }}
           </app-button>

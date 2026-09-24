@@ -49,7 +49,7 @@ export type HeaderFooterStep = 'select' | 'configure' | 'processing' | 'result';
   ],
   providers: [DecimalPipe]
 })
-export class PdfHeaderFooterPage implements OnInit, OnDestroy {
+export class PdfHeaderFooterPage {
   currentStep: HeaderFooterStep = 'select';
   selectedFile?: File;
   originalArrayBuffer?: ArrayBuffer;
@@ -119,10 +119,6 @@ export class PdfHeaderFooterPage implements OnInit, OnDestroy {
     private toastService: ToastService,
     private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit(): void {}
-
-  ngOnDestroy(): void {}
 
   async onFileSelected(file: File): Promise<void> {
     if (!file.name.toLowerCase().endsWith('.pdf')) {

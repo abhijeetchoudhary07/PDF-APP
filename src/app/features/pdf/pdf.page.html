@@ -316,9 +316,9 @@
             [beforeUrl]="originalPdfThumbnailUrl"
             [afterUrl]="processedPdfThumbnailUrl"
             [outputFilename]="processedResult?.file?.name"
-            (onSave)="saveCompressedPdf()"
-            (onShare)="shareCompressedPdf()"
-            (onChangeSettings)="workflowState = 'CONFIGURING'">
+            (saved)="saveCompressedPdf()"
+            (shared)="shareCompressedPdf()"
+            (resetRequested)="workflowState = 'CONFIGURING'">
           </app-result-preview>
 
           <app-related-tools
@@ -413,9 +413,9 @@
             [beforeData]="beforePreviewData"
             [afterData]="afterPreviewData"
             [outputFilename]="processedResult?.file?.name"
-            (onSave)="saveCreatedPdf()"
-            (onShare)="shareCreatedPdf()"
-            (onChangeSettings)="workflowState = 'CONFIGURING'">
+            (saved)="saveCreatedPdf()"
+            (shared)="shareCreatedPdf()"
+            (resetRequested)="workflowState = 'CONFIGURING'">
           </app-result-preview>
         </div>
       </div>

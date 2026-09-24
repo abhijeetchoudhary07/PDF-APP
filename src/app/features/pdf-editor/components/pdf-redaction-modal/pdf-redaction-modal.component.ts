@@ -313,13 +313,11 @@ import { PdfRedaction } from '../../../../core/models/pdf-editor.types';
   imports: [
     AppIconComponent,CommonModule, FormsModule, IonicModule]
 })
-export class PdfRedactionModalComponent implements OnInit {
+export class PdfRedactionModalComponent {
   constructor(
     private modalCtrl: ModalController,
     public state: PdfEditorStateService
   ) {}
-
-  ngOnInit() {}
 
   get totalRedactions(): number {
     const doc = this.state.document;

@@ -2,10 +2,7 @@ import '../utilities/pdf-iterator-polyfill';
 import { Injectable } from '@angular/core';
 import * as pdfjsLib from 'pdfjs-dist';
 import { SearchMatch, Rect } from '../models/pdf-editor.types';
-
-if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-}
+import '../utilities/pdfjs-worker';
 
 export interface RenderPageResult {
   width: number;

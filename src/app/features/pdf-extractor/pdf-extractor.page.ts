@@ -51,7 +51,7 @@ export type ExtractorTab = 'text' | 'images' | 'tables' | 'pages' | 'attachments
   ],
   providers: [DecimalPipe]
 })
-export class PdfExtractorPage implements OnInit, OnDestroy {
+export class PdfExtractorPage {
   currentStep: ExtractorStep = 'select';
   selectedFile?: File;
 
@@ -112,10 +112,6 @@ export class PdfExtractorPage implements OnInit, OnDestroy {
       this.router.navigate(['/features/pdf-intelligence']);
     }
   }
-
-  ngOnInit(): void {}
-
-  ngOnDestroy(): void {}
 
   onFileSelected(file: File): void {
     if (!file.name.toLowerCase().endsWith('.pdf')) {

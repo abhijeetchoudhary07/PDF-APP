@@ -22,7 +22,7 @@ export class ImagePreviewComponent {
   @Input() zoomable = true;
   @Input() isModal = false;
 
-  @Output() close = new EventEmitter<void>();
+  @Output() closed = new EventEmitter<void>();
 
   zoomLevel = 1; // 1 = 100%
   readonly MIN_ZOOM = 0.25;
@@ -47,7 +47,7 @@ export class ImagePreviewComponent {
   @HostListener('keydown.escape')
   onEscape(): void {
     if (this.isModal) {
-      this.close.emit();
+      this.closed.emit();
     }
   }
 }

@@ -37,12 +37,23 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
   @Input() showWarning?: string; // For "Impossible Targets" warning
   @Input() showVisualComparison = true;
 
-  @Output() onSave = new EventEmitter<void>();
-  @Output() onShare = new EventEmitter<void>();
-  @Output() onChangeSettings = new EventEmitter<void>();
+  /*
+   * One name per event.
+   *
+   * There used to be two of each — `onSave`/`saved`, `onShare`/`shared` and
+   * `onChangeSettings`/`reset` — with every action emitting both halves. Five
+   * templates bound one set and one template bound the other, and nothing
+   * said which was current, so a new caller had an even chance of binding the
+   * pair that would eventually be deleted.
+   *
+   * The surviving names avoid both traps the old ones fell into: no `on`
+   * prefix (Angular supplies that at the binding site), and nothing that
+   * shadows a native DOM event — `reset` is a real event, so `(reset)` on this
+   * component read as though it might be one.
+   */
   @Output() saved = new EventEmitter<void>();
   @Output() shared = new EventEmitter<void>();
-  @Output() reset = new EventEmitter<void>();
+  @Output() resetRequested = new EventEmitter<void>();
 
   isShareModalOpen = false;
   copiedToast = false;
@@ -76,7 +87,6 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
   }
 
   handleSave(): void {
-    this.onSave.emit();
     this.saved.emit();
   }
 
@@ -97,7 +107,6 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
     });
 
     this.isShareModalOpen = true;
-    this.onShare.emit();
     this.shared.emit();
   }
 
@@ -147,8 +156,7 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
   }
 
   handleReset(): void {
-    this.onChangeSettings.emit();
-    this.reset.emit();
+    this.resetRequested.emit();
   }
 
   get compressionPercentage(): number {

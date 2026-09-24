@@ -17,10 +17,7 @@ import {
   QrContentType
 } from '../models/qr-barcode.types';
 import * as pdfjsLib from 'pdfjs-dist';
-
-if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-}
+import '../utilities/pdfjs-worker';
 
 @Injectable({
   providedIn: 'root'

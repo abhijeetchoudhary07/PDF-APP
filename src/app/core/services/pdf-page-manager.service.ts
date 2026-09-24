@@ -10,11 +10,9 @@ import {
   PdfSplitConfig
 } from '../models/pdf-organization.types';
 import { PdfRangeParserUtil } from '../utilities/pdf-range-parser.util';
+import '../utilities/pdfjs-worker';
 
 // Set worker if not already set
-if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-}
 
 const generateId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID

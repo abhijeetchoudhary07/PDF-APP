@@ -330,9 +330,9 @@
             [beforeUrl]="originalPreviewUrl"
             [afterUrl]="processedPreviewUrl"
             [outputFilename]="processedResult?.file?.name"
-            (onSave)="savePhoto()"
-            (onShare)="sharePhoto()"
-            (onChangeSettings)="workflowState = 'CONFIGURING'">
+            (saved)="savePhoto()"
+            (shared)="sharePhoto()"
+            (resetRequested)="workflowState = 'CONFIGURING'">
           </app-result-preview>
 
           <app-related-tools

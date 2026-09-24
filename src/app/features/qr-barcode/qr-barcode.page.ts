@@ -53,7 +53,7 @@ export type ScanInputSource = 'camera' | 'image' | 'pdf';
   ],
   providers: [DecimalPipe]
 })
-export class QrBarcodePage implements OnInit, OnDestroy {
+export class QrBarcodePage implements OnInit {
   activeTab: QrToolkitTab = 'scan';
   toolkitTabs: { id: QrToolkitTab; label: string }[] = [
     { id: 'scan', label: 'Scan & Decode' },
@@ -124,8 +124,6 @@ export class QrBarcodePage implements OnInit, OnDestroy {
 
     await this.updateQrPreview();
   }
-
-  ngOnDestroy() {}
 
   // =========================================================================
   // TAB SWITCHING

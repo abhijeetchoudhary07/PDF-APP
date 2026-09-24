@@ -97,6 +97,64 @@
                 leaves every tool working — it only stops premium from syncing.
               </p>
             </section>
+
+            <!--
+              Account deletion. Google Play requires an in-app path for any app
+              that lets people create an account, and a public web page that
+              does the same without installing it.
+
+              It is deliberately the last thing on the page, in its own card,
+              behind a typed confirmation: it is the only irreversible action
+              the app has, and it would otherwise sit one button away from
+              "Sign out".
+            -->
+            <section class="account-card account-card--danger">
+              <h3 class="danger-title">Delete account</h3>
+
+              <p class="danger-copy" *ngIf="!confirmingDelete">
+                Permanently deletes your account, your premium entitlement and
+                your payment history from our server. This cannot be undone.
+              </p>
+
+              <p class="danger-copy">
+                Documents are never uploaded, so nothing you have processed is
+                stored on our server and nothing of it is affected. Files saved
+                on this device stay on this device — delete them from your
+                phone's storage, or from
+                <a routerLink="/features/local-data-storage">Local data &amp; storage</a>.
+              </p>
+
+              <app-button
+                *ngIf="!confirmingDelete"
+                variant="outline"
+                size="md"
+                (clicked)="startDelete()">
+                Delete account
+              </app-button>
+
+              <div class="danger-confirm" *ngIf="confirmingDelete">
+                <app-input
+                  label="Type DELETE to confirm"
+                  placeholder="DELETE"
+                  [(ngModel)]="deleteConfirmation"
+                  name="deleteConfirmation">
+                </app-input>
+
+                <div class="account-actions">
+                  <app-button
+                    variant="danger"
+                    size="md"
+                    [disabled]="!canDelete"
+                    [loading]="busy"
+                    (clicked)="deleteAccount()">
+                    Permanently delete
+                  </app-button>
+                  <app-button variant="ghost" size="md" (clicked)="cancelDelete()">
+                    Keep my account
+                  </app-button>
+                </div>
+              </div>
+            </section>
           </ng-container>
 
           <!-- ================= SIGNED OUT ================= -->

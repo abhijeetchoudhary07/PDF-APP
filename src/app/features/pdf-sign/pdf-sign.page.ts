@@ -38,7 +38,7 @@ import {
     AppTabsComponent
   ]
 })
-export class PdfSignPage implements OnDestroy, AfterViewInit {
+export class PdfSignPage implements AfterViewInit {
   @ViewChild('pdfCanvas') pdfCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('drawCanvas') drawCanvas?: ElementRef<HTMLCanvasElement>;
 
@@ -95,8 +95,6 @@ export class PdfSignPage implements OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
     this.initDrawCanvas();
   }
-
-  ngOnDestroy(): void {}
 
   get currentSignatures(): PlacedSignature[] {
     return this.signatures.filter(s => s.pageNumber === this.currentPage);

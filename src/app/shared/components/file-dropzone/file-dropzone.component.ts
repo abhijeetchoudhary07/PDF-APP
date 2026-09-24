@@ -41,7 +41,7 @@ export class FileDropzoneComponent {
   @Output() filesSelected = new EventEmitter<File[]>();
   @Output() removeFile = new EventEmitter<void>();
   @Output() preview = new EventEmitter<void>();
-  @Output() cancel = new EventEmitter<void>();
+  @Output() cancelled = new EventEmitter<void>();
   @Output() retry = new EventEmitter<void>();
 
   constructor(private translationService: TranslationService) {}

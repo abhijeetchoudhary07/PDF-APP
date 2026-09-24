@@ -45,7 +45,7 @@ import {
   ],
   providers: [DecimalPipe]
 })
-export class PdfFlattenPage implements OnDestroy {
+export class PdfFlattenPage {
   @ViewChild('originalCanvas') originalCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('flattenedCanvas') flattenedCanvas?: ElementRef<HTMLCanvasElement>;
 
@@ -82,8 +82,6 @@ export class PdfFlattenPage implements OnDestroy {
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnDestroy(): void {}
 
   async selectPdf(): Promise<void> {
     const file = await this.fileService.pickPdfFile();

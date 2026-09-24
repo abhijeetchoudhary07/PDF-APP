@@ -58,7 +58,7 @@ export interface ChangeItem {
   ],
   providers: [DecimalPipe]
 })
-export class PdfComparePage implements OnInit, OnDestroy {
+export class PdfComparePage {
   @ViewChild('origCanvas', { static: false }) origCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('modCanvas', { static: false }) modCanvas?: ElementRef<HTMLCanvasElement>;
 
@@ -98,10 +98,6 @@ export class PdfComparePage implements OnInit, OnDestroy {
     private toastService: ToastService,
     private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit(): void {}
-
-  ngOnDestroy(): void {}
 
   onOriginalSelected(file: File): void {
     if (!file.name.toLowerCase().endsWith('.pdf')) {

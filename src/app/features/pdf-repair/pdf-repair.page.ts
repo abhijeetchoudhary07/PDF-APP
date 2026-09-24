@@ -46,7 +46,7 @@ export type RepairStep = 'select' | 'diagnosing' | 'diagnostic_report' | 'recove
   ],
   providers: [DecimalPipe]
 })
-export class PdfRepairPage implements OnInit, OnDestroy {
+export class PdfRepairPage {
   currentStep: RepairStep = 'select';
   selectedFile?: File;
 
@@ -69,10 +69,6 @@ export class PdfRepairPage implements OnInit, OnDestroy {
     private toastService: ToastService,
     private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit(): void {}
-
-  ngOnDestroy(): void {}
 
   async onFileSelected(file: File): Promise<void> {
     this.selectedFile = file;

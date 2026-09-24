@@ -43,7 +43,7 @@ import {
   ],
   providers: [DecimalPipe]
 })
-export class SignatureRequestPage implements OnInit {
+export class SignatureRequestPage {
   activeTab: 'remote' | 'local' = 'remote';
 
   requestTabs = [
@@ -82,8 +82,6 @@ export class SignatureRequestPage implements OnInit {
     private alertCtrl: AlertController,
     private toastCtrl: ToastController
   ) {}
-
-  ngOnInit(): void {}
 
   switchToLocalSigning(): void {
     this.router.navigate(['/features/pdf/sign']);

@@ -18,14 +18,14 @@
         <app-button
           variant="primary"
           size="lg"
-          (btnClick)="captureFromCamera()"
+          (clicked)="captureFromCamera()"
         >
           📸 {{ 'scanner.openCamera' | translate }}
         </app-button>
         <app-button
           variant="secondary"
           size="lg"
-          (btnClick)="importFromGallery()"
+          (clicked)="importFromGallery()"
         >
           🖼️ {{ 'scanner.importGallery' | translate }}
         </app-button>
@@ -90,20 +90,20 @@
     <div class="crop-actions-row">
       <app-button
         variant="ghost"
-        (btnClick)="resetCropToAuto()"
+        (clicked)="resetCropToAuto()"
       >
         ↺ {{ 'scanner.resetCorners' | translate }}
       </app-button>
       <div class="primary-actions">
         <app-button
           variant="ghost"
-          (btnClick)="cancelCrop()"
+          (clicked)="cancelCrop()"
         >
           {{ 'common.cancel' | translate }}
         </app-button>
         <app-button
           variant="primary"
-          (btnClick)="applyCrop()"
+          (clicked)="applyCrop()"
         >
           ✓ {{ 'scanner.applyCrop' | translate }}
         </app-button>
@@ -231,7 +231,7 @@
         <div class="enhance-actions">
           <app-button
             variant="primary"
-            (btnClick)="doneEnhancing()"
+            (clicked)="doneEnhancing()"
           >
             ✓ {{ 'common.apply' | translate }}
           </app-button>
@@ -252,14 +252,14 @@
         <app-button
           variant="secondary"
           size="sm"
-          (btnClick)="captureFromCamera()"
+          (clicked)="captureFromCamera()"
         >
           ➕ 📸 {{ 'scanner.addPageCamera' | translate }}
         </app-button>
         <app-button
           variant="ghost"
           size="sm"
-          (btnClick)="importFromGallery()"
+          (clicked)="importFromGallery()"
         >
           ➕ 🖼️ {{ 'scanner.addPageGallery' | translate }}
         </app-button>
@@ -380,14 +380,14 @@
         <app-button
           variant="primary"
           size="lg"
-          (btnClick)="downloadPdf()"
+          (clicked)="downloadPdf()"
         >
           📥 {{ 'scanner.downloadPdf' | translate }}
         </app-button>
         <app-button
           variant="secondary"
           size="lg"
-          (btnClick)="sharePdf()"
+          (clicked)="sharePdf()"
         >
           📤 {{ 'common.share' | translate }}
         </app-button>
@@ -406,13 +406,13 @@
       <div class="handoff-actions-row">
         <app-button
           variant="primary"
-          (btnClick)="makeSearchableWithOcr()"
+          (clicked)="makeSearchableWithOcr()"
         >
           🔍 {{ 'scanner.makeSearchableBtn' | translate }} →
         </app-button>
         <app-button
           variant="outline"
-          (btnClick)="scanForQrCodes()"
+          (clicked)="scanForQrCodes()"
         >
           📷 {{ 'qrBarcode.title' | translate }} →
         </app-button>
@@ -422,13 +422,13 @@
     <div class="scanner-footer-actions">
       <app-button
         variant="ghost"
-        (btnClick)="currentView = 'pages_list'"
+        (clicked)="currentView = 'pages_list'"
       >
         ‹ {{ 'scanner.backToPages' | translate }}
       </app-button>
       <app-button
         variant="ghost"
-        (btnClick)="resetScanner()"
+        (clicked)="resetScanner()"
       >
         🔄 {{ 'scanner.startNewScan' | translate }}
       </app-button>

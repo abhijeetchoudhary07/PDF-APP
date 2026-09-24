@@ -6,7 +6,7 @@
     [arrayBuffer]="pdfArrayBuffer"
     [overlays]="overlays"
     [isModal]="isModal"
-    (close)="close.emit()">
+    (closed)="closed.emit()">
   </app-pdf-preview>
 
   <!-- If Image -->
@@ -16,7 +16,7 @@
     [title]="title || file?.name"
     [fileSize]="file?.size"
     [isModal]="isModal"
-    (close)="close.emit()">
+    (closed)="closed.emit()">
   </app-image-preview>
 
   <!-- Fallback if neither -->

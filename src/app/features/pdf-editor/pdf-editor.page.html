@@ -5,9 +5,15 @@
       <a routerLink="/home" class="nav-back-link" title="Back to Home">
         <app-icon name="arrow-back-outline"></app-icon>
       </a>
-      <span class="editor-title">
+      <!--
+        A heading, not a span. This was the only feature page in the app with
+        no heading element at all, which left screen-reader users with nothing
+        to navigate to and no announced identity for the page. It already reads
+        as the title; it just was not marked up as one.
+      -->
+      <h1 class="editor-title">
         {{ (state.document$ | async)?.name || 'PDF Editor & Reader' }}
-      </span>
+      </h1>
     </div>
 
     <div class="nav-right">

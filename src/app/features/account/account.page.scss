@@ -204,3 +204,37 @@
   display: grid;
   gap: var(--space-4, 16px);
 }
+
+/* --- Delete account ------------------------------------------------------ */
+/*
+ * Deliberately not styled as a full red panel. A destructive action needs to be
+ * unmistakable at the moment of the click, not alarming for the whole time the
+ * page is open -- the account screen is also where someone checks whether their
+ * premium arrived, and that should not happen inside a warning box.
+ */
+.account-card--danger {
+  margin-top: var(--space-6, 24px);
+  border-color: var(--color-danger-border, #fecaca);
+
+  .danger-title {
+    margin: 0 0 var(--space-3, 12px);
+    font-size: var(--text-lg, 1.125rem);
+    color: var(--color-danger, #dc2626);
+  }
+
+  .danger-copy {
+    margin: 0 0 var(--space-4, 16px);
+    color: var(--color-text-muted, #64748b);
+    font-size: var(--text-sm, 0.875rem);
+    line-height: 1.6;
+
+    a {
+      color: var(--color-primary, #4f46e5);
+    }
+  }
+
+  .danger-confirm {
+    display: grid;
+    gap: var(--space-4, 16px);
+  }
+}

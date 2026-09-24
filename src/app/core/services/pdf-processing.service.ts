@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
+import '../utilities/pdfjs-worker';
 
 // Typically you'd point to a local worker file in assets, but we use CDN for simplicity in MVP
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 @Injectable({
   providedIn: 'root'

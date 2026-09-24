@@ -69,7 +69,7 @@
       <div class="progress-fill" [style.width.%]="progress"></div>
     </div>
     <span *ngIf="progress > 0" class="progress-percent">{{ progress }}%</span>
-    <button *ngIf="cancel.observers.length > 0" type="button" class="cancel-link" (click)="cancel.emit()">
+    <button *ngIf="cancelled.observers.length > 0" type="button" class="cancel-link" (click)="cancelled.emit()">
       {{ 'common.cancel' | translate }}
     </button>
   </div>
