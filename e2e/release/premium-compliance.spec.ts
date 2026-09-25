@@ -172,9 +172,17 @@ test.describe('Release — Premium & manual payment @release @premium', () => {
     await expect(page.getByRole('heading', { name: 'Premium Benefits' })).toBeVisible();
 
     const benefits = page.locator('.benefits-grid .benefit-item h4');
-    expect(await benefits.allTextContents()).toEqual(
-      expect.arrayContaining(['100% Ad-Free', 'Batch Processing']),
-    );
+    const titles = await benefits.allTextContents();
+    expect(titles).toEqual(expect.arrayContaining(['No Daily Limit', 'Batch Processing']));
+
+    /*
+     * Nothing here may sell the absence of advertising. The app ships no ad
+     * SDK and does not read the advertising identifier, so charging for
+     * "ad-free" would be selling something that does not exist -- and would
+     * contradict the privacy policy and the Data Safety answers that mirror
+     * it. This assertion is what stops that copy coming back.
+     */
+    expect(titles.join(' ')).not.toMatch(/ad[- ]?free|no ads/i);
   });
 
   test('PREM-004: the CTA names the amount, so nothing is hidden behind a tap', async ({ page }) => {

@@ -31,7 +31,7 @@ test.describe('PDF Privacy Sanitizer — Privacy Scan @phase2 @privacy', () => {
 
     // Header badge shows 0 items found
     const reportHeader = page.locator('.scan-report-card .report-header');
-    await expect(reportHeader).toContainText(/0 items found|0 संवेदनशील आइटम/i);
+    await expect(reportHeader).toContainText(/0\s+(privacy\s+)?items\s+found|0 संवेदनशील आइटम/i);
 
     // Metadata status box should NOT have .alert class
     const metaBox = page.locator('.status-box').first();

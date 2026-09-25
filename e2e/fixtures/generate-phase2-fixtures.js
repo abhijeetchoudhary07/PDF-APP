@@ -131,11 +131,19 @@ async function generatePhase2Fixtures() {
   // ==========================================
 
   // A. Clean PDF
-  const docClean = await PDFDocument.create();
+  // `updateMetadata: false` is the whole point of this fixture. pdf-lib
+  // otherwise stamps Producer, Creator, CreationDate and ModDate on every
+  // document it creates, so the "clean" file arrived carrying exactly four
+  // metadata entries and the sanitizer -- correctly -- reported four privacy
+  // items on it. The scanner was never wrong; the fixture was.
+  const docClean = await PDFDocument.create({ updateMetadata: false });
   const pClean = docClean.addPage([595, 842]);
   const fClean = await docClean.embedFont(StandardFonts.Helvetica);
   pClean.drawText('Clean document without metadata, comments, or form fields.', { x: 50, y: 750, font: fClean, size: 14 });
-  fs.writeFileSync(path.join(targetDir, 'privacy-clean.pdf'), await docClean.save());
+  fs.writeFileSync(
+    path.join(targetDir, 'privacy-clean.pdf'),
+    await docClean.save({ updateFieldAppearances: false }),
+  );
 
   // B. Metadata PDF
   const docMeta = await PDFDocument.create();
