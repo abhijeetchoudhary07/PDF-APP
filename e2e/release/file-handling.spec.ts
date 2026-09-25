@@ -22,7 +22,7 @@ function dropzoneInput(page: Page, nth = 0) {
 
 /** Text the app shows when it has refused a file, wherever it puts it. */
 function errorText(page: Page) {
-  return page.locator('.error-state, .error-text, app-action-result, .toast-error, [class*="error"]');
+  return page.locator('.error-state, .error-text, .toast-error, [class*="error"]');
 }
 
 async function openTool(page: Page, route: string): Promise<void> {
@@ -186,7 +186,7 @@ test.describe('Release — Download / output @release @files', () => {
 
     // The result card is the download affordance; a job that finishes without
     // one has produced nothing the user can keep.
-    await expect(page.locator('app-result-preview, .success-state, app-action-result').first())
+    await expect(page.locator('app-result-preview, .success-state').first())
       .toBeVisible({ timeout: 60000 });
   });
 
