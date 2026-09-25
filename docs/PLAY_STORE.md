@@ -5,7 +5,8 @@
 Everything needed to publish, plus an honest account of what currently stops
 the submission. Operational build detail lives in
 [PLAY_STORE_RELEASE.md](PLAY_STORE_RELEASE.md); this document is the Console
-submission itself.
+submission itself. For the sequenced list of what *you* have to do, in order,
+see [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md).
 
 > ## ⛔ Read first — what still stops submission
 >
