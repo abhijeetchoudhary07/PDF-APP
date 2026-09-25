@@ -4,9 +4,13 @@ The steps that cannot be done from this repository, in the order they have to
 happen. Everything here needs your identity, your money, your secrets or a
 product decision, which is why none of it is automated.
 
-**State (2026-09-25, updated):** policy URLs **live**; migration written as
-`029` and verified locally but **not applied to production**; no keystore; AAB
-unsigned; UPI payee unverified; billing route undecided.
+**State (2026-09-25, re-verified against the live services):** policy URLs
+**live**; migration `029` **applied to production** — the plans endpoint returns
+truthful copy; upload key created and the AAB **signed**; UPI payee still
+unverified; billing route still undecided.
+
+The two remaining Phase 0 items are both yours: send ₹1 to the payee, and pick a
+billing route. Neither is a code change, and 0.5 blocks submission.
 
 Reference material, not duplicated here:
 
@@ -43,23 +47,21 @@ Both serve `Officialpostflow360@gmail.com`. Re-check after any Pages change:
 curl -sL -o /dev/null -w '%{http_code}\n' https://abhijeetchoudhary07.github.io/PDF-APP/privacy
 ```
 
-### 0.2 · Apply migration 029 to production ▸ 5 min
+### 0.2 · ~~Apply migration 029 to production~~ ✅ done
 
 The paywall renders `pdf_plans.features_json` whenever the server answers, so
-the live API still advertises *Unlimited pages*, *Batch processing* and *OCR &
-PDF intelligence* — none of which is gated. The app's bundled fallback is
-already fixed; the server is not.
+an unmigrated server kept advertising *Unlimited pages*, *Batch processing* and
+*OCR & PDF intelligence* — none of which is gated — even though the app's
+bundled fallback was already fixed.
 
-**The file is already written** —
-`linkedin AUTO/migrations/029_pdf_app_plan_copy_truthful.sql`, uncommitted. It
-is numbered 029, not 028: `028_posts_error_and_processing.sql` already held that
-number. It has been applied to local PGlite and the SQL is valid.
+Done. Production now returns truthful copy for all four plans. Re-check with the
+command below and read the payload, not just the count: a `0` from `grep` on an
+error page or a cold-start timeout looks exactly like a pass.
 
-Applying it to **production** is the step left, and it needs care, because
-`server/cli/migrate.ts` has no dry-run and no way to apply one file — it applies
-everything pending. Check first whether `028_posts_error_and_processing.sql` is
-already recorded in production's `schema_migrations`. If it is not, running
-migrate also ships that unrelated schema change.
+Kept for the next migration, because none of it stopped being true:
+`server/cli/migrate.ts` has no dry-run and no way to apply a single file — it
+applies everything pending, so check what else is unrecorded in production's
+`schema_migrations` before running it.
 
 ```bash
 DATABASE_URL= npx tsx server/cli/migrate.ts   # local only, safe
@@ -83,23 +85,31 @@ pays sends money nowhere and you find out from a support mail.
 
 Send ₹1 to it from your own UPI app. Confirm it arrives.
 
-### 0.4 · Create the upload keystore ▸ 10 min
+### 0.4 · ~~Create the upload keystore~~ ✅ done
 
-**This one is irreducibly yours.** The password protects the only key Google
-will ever accept for this listing; lose it and the app can never be updated,
-leak it and someone else can update it. Nobody else should hold it — not CI,
-not an assistant.
+**The password is irreducibly yours.** It protects the only key Google will ever
+accept for this listing; lose it and the app can never be updated, leak it and
+someone else can update it. Nobody else should hold it — not CI, not an
+assistant.
 
-One command. It prompts for the password, generates the key, writes
-`keystore.properties`, verifies it and confirms git cannot see either file:
+Done via `tools/create-upload-key.sh`. `android/app/upload-keystore.jks`, alias
+`upload`, PKCS12, RSA 2048, valid to 2054-02-10, subject:
 
-```bash
-tools/create-upload-key.sh
+```
+CN=Abhijeet Dhaka, OU=Yugxor, O=Yugxor, L=Pune, ST=Maharashtra, C=IN
 ```
 
+A first attempt used `C=91` — the telephone dialing code, not the ISO 3166-1
+alpha-2 code — and was discarded and regenerated. Play does not validate these
+fields, but the DN is visible in the Console for the life of the listing and it
+cost nothing to correct before the key had any history.
+
 Full detail, and the by-hand equivalent, in
-[ANDROID_SIGNING.md](ANDROID_SIGNING.md). **Back the `.jks` and both passwords up in your
-password manager now**, before you do anything else.
+[ANDROID_SIGNING.md](ANDROID_SIGNING.md).
+
+> **Still outstanding:** back the `.jks` and its password up in your password
+> manager. The key currently exists in exactly one place, on one laptop. That is
+> the whole risk surface until you copy it somewhere durable.
 
 ### 0.5 · Decide the billing route ▸ the decision
 
@@ -308,15 +318,16 @@ usually cite a specific policy — read which one before changing anything.
 | # | Task | Time | Blocks |
 | --- | --- | --- | --- |
 | 0.1 | ~~Enable GitHub Pages~~ ✅ | — | — |
-| 0.2 | Apply migration 029 to production | 5 min | Truthful paid copy |
+| 0.2 | ~~Apply migration 029 to production~~ ✅ | — | — |
 | 0.3 | ₹1 to the UPI payee | 2 min | Taking any money |
-| 0.4 | Create the keystore | 10 min | **Every upload** |
+| 0.4 | ~~Create the keystore~~ ✅ | — | — |
 | 0.5 | Decide the billing route | — | **Submission** |
 | 1.x | Register, $25, verify identity | 1–3 days | Everything in the Console |
 | 2.x | Create app, listing, Data Safety | 2 h | Upload |
 | 3.x | Signed AAB, internal test on hardware | 1 h | Closed test |
 | 4.x | 12 testers × 14 days, then production | **14+ days** | Launch |
 
-Phase 0 is about half an hour. The long poles are identity verification and the
-14-day closed test, and neither can be shortened by starting the others late —
-so do 0.1 through 0.4 today and register the account in parallel.
+Phase 0 is down to 0.3 and 0.5 — two minutes of work and one decision. The long
+poles are identity verification and the 14-day closed test, and neither can be
+shortened by starting the others late, so register the account now rather than
+waiting on the decision.
