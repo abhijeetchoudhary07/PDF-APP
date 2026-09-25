@@ -29,9 +29,9 @@ submission itself.
 | **Short description** | `Resize photos, shrink PDFs and fix exam form documents — fully offline.` | 71/80 ✅ |
 | **Category** | Productivity | |
 | **Tags** | PDF, Document scanner, Photo editor, Productivity, Utilities | |
-| **Contact email** | `support@indianformhelper.app` **[TO CONFIRM]** | |
-| **Website** | `https://indianformhelper.app` **[TO CONFIRM]** | |
-| **Privacy policy URL** | `https://indianformhelper.app/privacy` **[MUST BE LIVE BEFORE SUBMISSION]** | |
+| **Contact email** | **[BLOCKER — must be a real, monitored mailbox]** `support@indianformhelper.app` does not exist: the domain is unregistered. Set one with `tools/set-support-email.sh`. | |
+| **Website** | `https://abhijeetchoudhary07.github.io/PDF-APP/` | |
+| **Privacy policy URL** | `https://abhijeetchoudhary07.github.io/PDF-APP/privacy` — published from `docs/hosted` by `.github/workflows/pages.yml`. Needs Settings → Pages → Source: GitHub Actions switched on once. | |
 | **Default language** | English (India) — `en-IN` | |
 
 ### Full description (1 812 / 4 000 characters)
@@ -140,8 +140,12 @@ permissions, third-party services, deletion and a section that mirrors the Data
 Safety form row for row.
 
 **It must also be reachable at a public URL without installing the app.** Play
-requires a policy URL that a reviewer can open in a browser. Publish the same
-content at `https://indianformhelper.app/privacy`.
+requires a policy URL that a reviewer can open in a browser. The same content is
+published at `https://abhijeetchoudhary07.github.io/PDF-APP/privacy` from `docs/hosted`.
+
+A `github.io` URL is acceptable to Play — it checks that the URL resolves and
+serves a policy, not who owns the domain. Moving to a custom domain later is a
+listing edit, not a client release, because the app never hard-codes the URL.
 
 > Keep §8 of the in-app policy and the Console's Data Safety answers in sync.
 > A mismatch between the two is an enforcement trigger in its own right.
@@ -187,7 +191,7 @@ required.
 | Path | Where | Status |
 | --- | --- | --- |
 | **In-app** | Account → Delete account | ✅ **Built in this audit** |
-| **Public web URL** | `https://indianformhelper.app/delete-account` | ⚠️ **Must be published** |
+| **Public web URL** | `https://abhijeetchoudhary07.github.io/PDF-APP/delete-account` | ✅ Published from `docs/hosted` |
 
 The in-app flow sits in its own card at the foot of `/account`, behind a typed
 `DELETE` confirmation, and calls `DELETE /api/v1/pdf-app/auth/me` before
@@ -234,7 +238,7 @@ without a network connection.
 An optional account exists only to carry a premium entitlement between
 devices. To review the account and premium screens:
 
-  Email:    playreview@indianformhelper.app
+  Email:    [set a real reviewer-contact mailbox before submitting]
   Password: [SET BEFORE SUBMISSION]
 
 This demo account has premium granted, so the paywall and the premium state

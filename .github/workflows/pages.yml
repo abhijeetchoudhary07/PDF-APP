@@ -1,0 +1,45 @@
+# Publishes docs/hosted to GitHub Pages.
+#
+# Google Play requires a publicly reachable privacy policy URL and, because this
+# app has accounts, a public account-deletion URL. Those pages are plain static
+# HTML with no build step, so Pages serves them directly from the repository and
+# the store listing never depends on a domain registration or a paid host.
+#
+# Clean URLs come from the directory layout (privacy/index.html), not from host
+# rewrite rules, so the same files work unchanged if this ever moves to
+# Cloudflare Pages or a custom domain.
+name: Deploy policy pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/hosted/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; a half-published policy page is worse than a late
+# one, and cancelling an in-flight deploy can leave exactly that.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/hosted
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -9,16 +9,15 @@ again, and a leaked key means someone else can. Nobody should hold it but you.
 
 ## 1. Create the keystore
 
-`keytool` ships with the JDK bundled inside Android Studio, so there is nothing
-to install:
+`keytool` ships with any JDK. On this machine it is already on `PATH`
+(Homebrew OpenJDK 17), so run it from the repository root:
 
 ```bash
-"/c/Program Files/Android/Android Studio/jbr/bin/keytool" -genkeypair -v \
-  -keystore android/app/upload-keystore.jks \
-  -alias upload \
-  -keyalg RSA -keysize 2048 -validity 10000 \
-  -storetype PKCS12
+keytool -genkeypair -v -keystore android/app/upload-keystore.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000 -storetype PKCS12
 ```
+
+If `keytool: command not found`, point at a JDK explicitly — Android Studio
+bundles one at `/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/keytool`.
 
 It will ask for a password and for your name and organisation. Use a password
 from your password manager — you will need it for every release for the life of
@@ -38,8 +37,8 @@ keyAlias=upload
 keyPassword=<the same password, unless you set a separate key password>
 ```
 
-Both `*.jks` and `keystore.properties` are in `.gitignore`. Check before your
-first commit:
+`*.jks`, `*.keystore` and `keystore.properties` are all in `android/.gitignore`.
+Check anyway before your first commit:
 
 ```bash
 git status --porcelain android/app/
@@ -50,8 +49,7 @@ If either file shows up there, stop and fix the ignore rules before committing.
 ## 3. Build the signed bundle
 
 ```bash
-cd android
-JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ./gradlew bundleRelease
+cd android && JAVA_HOME="$(/usr/libexec/java_home)" ./gradlew bundleRelease
 ```
 
 Output: `android/app/build/outputs/bundle/release/app-release.aab`
@@ -59,9 +57,10 @@ Output: `android/app/build/outputs/bundle/release/app-release.aab`
 Verify it really is signed:
 
 ```bash
-"/c/Program Files/Android/Android Studio/jbr/bin/jarsigner" -verify -verbose \
-  android/app/build/outputs/bundle/release/app-release.aab | tail -5
+jarsigner -verify -verbose android/app/build/outputs/bundle/release/app-release.aab | tail -5
 ```
+
+An unsigned bundle prints `jar is unsigned`; a signed one prints `jar verified`.
 
 ## 4. Enrol in Play App Signing
 
