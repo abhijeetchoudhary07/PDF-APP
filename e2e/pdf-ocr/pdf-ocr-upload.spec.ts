@@ -1,6 +1,21 @@
 import { test, expect } from '@playwright/test';
 import { getTestDataPath, setupCapacitorMocks } from '../fixtures/mocks';
 
+/**
+ * Returns the page to the file picker.
+ *
+ * The dropzone lives on the `select` step only, so once a file is chosen its
+ * `input[type=file]` is gone from the DOM and a second `setInputFiles` simply
+ * times out. "Cancel" on the detection summary is the way back.
+ */
+async function resetToPicker(page: import('@playwright/test').Page) {
+  const cancel = page.getByRole('button', { name: /^cancel$/i }).first();
+  if (await cancel.count()) {
+    await cancel.click();
+  }
+  await expect(page.locator('input[type="file"]')).toBeAttached({ timeout: 10000 });
+}
+
 test.describe('Smart PDF OCR — Upload & Input @ocr @smoke', () => {
   test.beforeEach(async ({ page }) => {
     await setupCapacitorMocks(page);
@@ -74,7 +89,8 @@ test.describe('Smart PDF OCR — Upload & Input @ocr @smoke', () => {
     await expect(page.locator('.file-name, .selected-file-card, .file-meta-bar').first()).toContainText('text.pdf');
 
     // Select again
-    await fileInput.setInputFiles(getTestDataPath('pdf/text.pdf'));
+    await resetToPicker(page);
+    await page.locator('input[type="file"]').setInputFiles(getTestDataPath('pdf/text.pdf'));
     await expect(page.locator('.file-name, .selected-file-card, .file-meta-bar').first()).toContainText('text.pdf');
   });
 
@@ -83,7 +99,8 @@ test.describe('Smart PDF OCR — Upload & Input @ocr @smoke', () => {
     await fileInput.setInputFiles(getTestDataPath('pdf/text.pdf'));
     await expect(page.locator('.file-name, .selected-file-card, .file-meta-bar').first()).toContainText('text.pdf');
 
-    await fileInput.setInputFiles(getTestDataPath('pdf/scanned.pdf'));
+    await resetToPicker(page);
+    await page.locator('input[type="file"]').setInputFiles(getTestDataPath('pdf/scanned.pdf'));
     await expect(page.locator('.file-name, .selected-file-card, .file-meta-bar').first()).toContainText('scanned.pdf');
   });
 

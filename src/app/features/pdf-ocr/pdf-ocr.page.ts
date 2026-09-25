@@ -200,11 +200,30 @@ export class PdfOcrPage implements OnInit, OnDestroy {
 
       this.currentStep = 'detect';
     } catch {
-      // If detection fails, fallback to standard configure step
+      /*
+       * Detection fails when pdf.js cannot open the document at all -- a
+       * truncated download, a renamed file that was never a PDF, a damaged
+       * scan. This used to fall through to the configure step as though the
+       * file were a one-page scan: the person picked a broken file, saw the
+       * OCR settings, chose languages, started recognition, and only then hit
+       * a failure -- or worse, got an empty result and no explanation.
+       *
+       * There is no recovering here. OCR renders its pages through the same
+       * parser that just refused the file, so anything detection cannot open,
+       * recognition cannot read either. Say so and go back to the picker with
+       * the file cleared, so the next choice starts from a clean state.
+       */
+      this.toastService.show(
+        'error',
+        'That PDF could not be opened. It may be damaged or incomplete -- try another file.',
+      );
+      this.clearPreviewUrl();
+      this.selectedFile = undefined;
       this.hasSelectableText = false;
-      this.totalPages = 1;
-      this.selectedPageNumbers = [1];
-      this.currentStep = 'configure';
+      this.textSample = '';
+      this.totalPages = 0;
+      this.selectedPageNumbers = [];
+      this.currentStep = 'select';
     } finally {
       this.isDetecting = false;
       this.cdr.detectChanges();
@@ -254,9 +273,19 @@ export class PdfOcrPage implements OnInit, OnDestroy {
   togglePageNumber(pageNum: number): void {
     const idx = this.selectedPageNumbers.indexOf(pageNum);
     if (idx > -1) {
-      if (this.selectedPageNumbers.length > 1) {
-        this.selectedPageNumbers.splice(idx, 1);
-      }
+      /*
+       * The last page used to be undroppable -- the splice was guarded by
+       * `length > 1`. That left the checkbox and the state disagreeing: the
+       * browser had already drawn the box unchecked, and because
+       * `isPageSelected` still returned true the `[checked]` binding never
+       * changed, so Angular had nothing to write back. The page looked
+       * deselected and was still queued for recognition.
+       *
+       * Emptying the set is allowed instead. The start button already binds
+       * its disabled state to `selectedPageNumbers.length === 0`, which is
+       * the rule the template was written around.
+       */
+      this.selectedPageNumbers.splice(idx, 1);
     } else {
       this.selectedPageNumbers.push(pageNum);
       this.selectedPageNumbers.sort((a, b) => a - b);
