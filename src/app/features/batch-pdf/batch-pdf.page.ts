@@ -7,6 +7,7 @@ import { PdfService } from '../../core/services/pdf.service';
 import { StorageService } from '../../core/services/storage.service';
 import { HistoryService } from '../../core/services/history.service';
 import { ProcessingResult } from '../../core/models/processing-result.model';
+import { ToastService } from '../../core/services/toast.service';
 
 const uuidv4 = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
@@ -57,7 +58,8 @@ export class BatchPdfPage {
     private fileService: FileService,
     private pdfService: PdfService,
     private storageService: StorageService,
-    private historyService: HistoryService
+    private historyService: HistoryService,
+    private toast: ToastService
   ) {}
 
   async selectPdfs() {
@@ -68,7 +70,7 @@ export class BatchPdfPage {
        const toAdd = files.slice(0, availableSlots);
        
        if (files.length > availableSlots) {
-         alert(`Only added ${availableSlots} files. Maximum batch size for PDFs is ${this.MAX_BATCH_SIZE}.`);
+         this.toast.warning(`Only ${availableSlots} added -- a batch holds at most ${this.MAX_BATCH_SIZE} PDFs.`);
        }
 
        for (const f of toAdd) {
@@ -102,7 +104,7 @@ export class BatchPdfPage {
     if (this.isProcessing || this.items.length === 0) return;
     
     if (!this.targetKB || this.targetKB < 50) {
-      alert('Please set a valid target KB (e.g. 200)');
+      this.toast.warning('Enter a target size in KB, for example 200.');
       return;
     }
 
@@ -169,7 +171,7 @@ export class BatchPdfPage {
     }
     
     if (savedCount > 0) {
-      alert(`Successfully saved ${savedCount} PDFs.`);
+      this.toast.success(`Saved ${savedCount} PDFs to your Documents folder.`);
     }
   }
 }

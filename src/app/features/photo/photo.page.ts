@@ -14,6 +14,7 @@ import { SingleFileWorkflowState, ProcessingStage, getProcessingStageLabel } fro
 import { TranslationService } from '../../core/services/translation.service';
 import { ImageCropperComponent } from '../../shared/components/image-cropper/image-cropper.component';
 import { ResultPreviewComponent, PreviewData } from '../../shared/components/result-preview/result-preview.component';
+import { ToastService } from '../../core/services/toast.service';
 import {
   AppHeaderComponent,
   AppFooterComponent,
@@ -158,7 +159,8 @@ export class PhotoPage implements OnDestroy {
     private historyService: HistoryService,
     private modalCtrl: ModalController,
     private cdr: ChangeDetectorRef,
-    public translationService: TranslationService
+    public translationService: TranslationService,
+    private toast: ToastService
   ) {}
 
   ngOnDestroy(): void {
@@ -495,7 +497,7 @@ export class PhotoPage implements OnDestroy {
           : undefined,
         outputPath: uri
       });
-      alert('Photo saved to: ' + uri);
+      this.toast.success('Saved to your Documents folder.');
     }
   }
 

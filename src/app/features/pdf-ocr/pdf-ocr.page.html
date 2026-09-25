@@ -113,6 +113,8 @@
             class="lang-pill"
             *ngFor="let lang of availableLanguages"
             [class.active]="selectedLanguage === lang.code"
+            [attr.data-testid]="'ocr-lang-' + lang.code"
+            [attr.aria-pressed]="selectedLanguage === lang.code"
             (click)="selectedLanguage = lang.code"
           >
             <span class="native">{{ lang.nativeName }}</span>

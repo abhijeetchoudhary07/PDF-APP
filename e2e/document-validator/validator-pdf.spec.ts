@@ -18,7 +18,7 @@ test.describe('Document Validator — PDF Validation Rules @validator', () => {
         await validateBtn.click();
       }
 
-      await expect(page.locator('.validation-report, .rule-row, .status-badge')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.validation-report, .rule-row, .status-badge').first()).toBeVisible({ timeout: 10000 });
     }
   });
 });

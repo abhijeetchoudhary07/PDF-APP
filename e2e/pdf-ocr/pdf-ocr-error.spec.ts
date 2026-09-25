@@ -11,7 +11,7 @@ test.describe('Smart PDF OCR — Error Recovery & Interruption @ocr @error', () 
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles(getTestDataPath('pdf/corrupt.pdf'));
 
-    await expect(page.locator('.toast-item, [role="alert"], .error-message')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.toast-item, [role="alert"], .error-message').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('OCR-041 & OCR-042: Cancel midway and verify clean state', async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe('Smart PDF OCR — Error Recovery & Interruption @ocr @error', () 
       if (await cancelBtn.isVisible()) {
         await cancelBtn.click();
         // State remains responsive and can be restarted
-        await expect(page.locator('.btn-start-ocr, .dropzone-container')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('.btn-start-ocr, .dropzone-container').first()).toBeVisible({ timeout: 10000 });
       }
     }
   });

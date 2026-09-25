@@ -41,10 +41,10 @@ test.describe('Phase 2 Shared — Multi-Language / Internationalization @phase2 
     if (await langSelect.isVisible()) {
       await langSelect.selectOption('hi');
       // Verify Hindi heading
-      await expect(page.locator('h1, .page-title')).toContainText(/पीडीएफ तुलना|तुलना/);
+      await expect(page.locator('h1, .page-title').first()).toContainText(/पीडीएफ तुलना|तुलना/);
 
       await langSelect.selectOption('en');
-      await expect(page.locator('h1, .page-title')).toContainText(/PDF Compare|Compare/i);
+      await expect(page.locator('h1, .page-title').first()).toContainText(/PDF Compare|Compare/i);
     }
   });
 });

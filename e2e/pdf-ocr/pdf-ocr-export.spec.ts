@@ -12,13 +12,13 @@ test.describe('Smart PDF OCR — Result UI & Export @ocr @critical', () => {
     await fileInput.setInputFiles(getTestDataPath('pdf/text.pdf'));
 
     // Digital PDF shows selectable text directly
-    await expect(page.locator('.selectable-text-banner, .sample-text-content')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.selectable-text-banner, .sample-text-content').first()).toBeVisible({ timeout: 10000 });
 
     // Copy text button
     const copyBtn = page.locator('.btn-copy-text, button:has-text("Copy"), [aria-label*="copy" i]');
     if (await copyBtn.isVisible()) {
       await copyBtn.click();
-      await expect(page.locator('.toast-item, :has-text("copied")')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.toast-item, :has-text("copied")').first()).toBeVisible({ timeout: 5000 });
     }
   });
 

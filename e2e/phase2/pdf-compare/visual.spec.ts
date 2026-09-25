@@ -29,7 +29,7 @@ test.describe('PDF Compare — Visual Diff & Stable UI States @phase2 @compare @
 
     // Verify visual diff display container is rendered
     await expect(page.locator('.diff-view-visual')).toBeVisible();
-    await expect(page.locator('.visual-diff-display, .visual-empty')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.visual-diff-display, .visual-empty').first()).toBeVisible({ timeout: 15000 });
   });
 
   test('CMP-061: Stable UI states for empty and populated compare page', async ({ page }) => {

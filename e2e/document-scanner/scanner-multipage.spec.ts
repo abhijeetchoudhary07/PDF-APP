@@ -35,7 +35,7 @@ test.describe('Document Scanner — Multi-page Management @scanner', () => {
       const rotateBtn = page.locator('.btn-rotate-page, [aria-label*="rotate" i], button:has-text("Rotate")');
       if (await rotateBtn.isVisible()) {
         await rotateBtn.click();
-        await expect(page.locator('.page-thumb-card, .page-item')).toBeVisible();
+        await expect(page.locator('.page-thumb-card, .page-item').first()).toBeVisible();
       }
     }
   });

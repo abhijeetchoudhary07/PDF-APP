@@ -1,0 +1,20 @@
+# The app is rendered by the device WebView, whose version is tied to the
+# device and not to us, so the build target has to be pinned deliberately.
+#
+# Why not the default: Angular otherwise emits class static initialization
+# blocks (`static { ... }`), which need Chrome 94 (Sept 2021). The WebView on
+# the Android 10 system image is Chrome 91, which cannot PARSE that -- the app
+# is a blank white screen and the only clue is a single
+# "Uncaught SyntaxError: Unexpected token '{'" in logcat.
+#
+# Why not lower: below roughly Chrome 89 the bundler stops emitting native ESM
+# for lazy routes and falls back to `require()`, which no browser provides.
+# That fails differently and just as fatally -- "Calling `require` for
+# ./chunk-*.js in an environment that doesn't expose the `require` function",
+# then "Constructor for ion-app was not found", and again a blank screen.
+#
+# 90 is the floor that clears both. Devices older than Android 10 are covered
+# only insofar as their WebView has been updated through the Play Store, which
+# is the normal case; a device pinned to its original WebView is not supported.
+# src/polyfills-legacy.ts supplies the runtime built-ins this target lacks.
+Chrome >= 90

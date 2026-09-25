@@ -23,7 +23,7 @@ test.describe('PDF Repair — Corrupted & Invalid File Handling @phase2 @repair 
     // Application remains responsive, no uncaught exceptions
     expect(pageErrors).toHaveLength(0);
     // User sees diagnostic report (marked ERROR) or user-friendly toast
-    await expect(page.locator('.diagnostic-section, .select-step-section, .toast-container')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.diagnostic-section, .select-step-section, .toast-container').first()).toBeVisible({ timeout: 15000 });
   });
 
   test('REP-031: Non-PDF file renamed as .pdf is rejected or reported safely', async ({ page }) => {

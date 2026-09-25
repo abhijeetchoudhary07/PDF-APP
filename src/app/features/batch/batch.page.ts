@@ -7,6 +7,7 @@ import { CompressionService } from '../../core/services/compression.service';
 import { StorageService } from '../../core/services/storage.service';
 import { HistoryService } from '../../core/services/history.service';
 import { ProcessingResult } from '../../core/models/processing-result.model';
+import { ToastService } from '../../core/services/toast.service';
 
 const uuidv4 = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
@@ -58,7 +59,8 @@ export class BatchPage {
     private fileService: FileService,
     private compressionService: CompressionService,
     private storageService: StorageService,
-    private historyService: HistoryService
+    private historyService: HistoryService,
+    private toast: ToastService
   ) {}
 
   async selectFiles() {
@@ -69,7 +71,7 @@ export class BatchPage {
        const toAdd = files.slice(0, availableSlots);
        
        if (files.length > availableSlots) {
-         alert(`Only added ${availableSlots} files. Maximum batch size is ${this.MAX_BATCH_SIZE}.`);
+         this.toast.warning(`Only ${availableSlots} added -- a batch holds at most ${this.MAX_BATCH_SIZE} files.`);
        }
 
        // Phase 17: Sync target format if all selected files have the same type
@@ -113,7 +115,7 @@ export class BatchPage {
     
     // Validate
     if (!this.targetKB || this.targetKB < 5) {
-      alert('Please set a valid target KB (e.g. 50)');
+      this.toast.warning('Enter a target size in KB, for example 50.');
       return;
     }
 
@@ -186,7 +188,7 @@ export class BatchPage {
     }
     
     if (savedCount > 0) {
-      alert(`Successfully saved ${savedCount} files.`);
+      this.toast.success(`Saved ${savedCount} files to your Documents folder.`);
     }
   }
 }

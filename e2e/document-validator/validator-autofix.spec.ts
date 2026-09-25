@@ -24,7 +24,7 @@ test.describe('Document Validator — 1-Click Auto-Fix & Re-validation @validato
     await autoFixBtn.first().click();
 
     // Verify toast notification and re-validation result
-    await expect(page.locator('.toast-item, :has-text("Auto-fixed"), :has-text("fixed")')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.toast-item, :has-text("Auto-fixed"), :has-text("fixed")').first()).toBeVisible({ timeout: 15000 });
   });
 
   test('VAL-059 to VAL-068: Validation report displays actual value, required value, and status', async ({ page }) => {
@@ -37,6 +37,6 @@ test.describe('Document Validator — 1-Click Auto-Fix & Re-validation @validato
     }
 
     // Verification of report structure
-    await expect(page.locator('.validation-report-card, .rule-list, .rule-row')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.validation-report-card, .rule-list, .rule-row').first()).toBeVisible({ timeout: 10000 });
   });
 });

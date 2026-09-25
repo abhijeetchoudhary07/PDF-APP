@@ -14,6 +14,7 @@ import { ProcessingResult } from '../../core/models/processing-result.model';
 import { SingleFileWorkflowState, ProcessingStage, getProcessingStageLabel } from '../../core/models/file-workflow-state.model';
 import { TranslationService } from '../../core/services/translation.service';
 import { ResultPreviewComponent, PreviewData } from '../../shared/components/result-preview/result-preview.component';
+import { ToastService } from '../../core/services/toast.service';
 import {
   AppHeaderComponent,
   AppFooterComponent,
@@ -99,7 +100,8 @@ export class PdfPage implements OnInit, OnDestroy {
     private historyService: HistoryService,
     private cdr: ChangeDetectorRef,
     public translationService: TranslationService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -318,7 +320,7 @@ export class PdfPage implements OnInit, OnDestroy {
     if (this.processedResult.success) {
       this.workflowState = 'SUCCESS';
     } else {
-      alert('Failed to create PDF: ' + this.processedResult.error);
+      this.toast.error('Could not create the PDF: ' + this.processedResult.error);
       this.workflowState = 'ERROR';
     }
     this.cdr.detectChanges();
@@ -328,7 +330,9 @@ export class PdfPage implements OnInit, OnDestroy {
   async onExtractPdfSelected(file: File): Promise<void> {
     const val = this.validationService.validatePdf(file);
     if (!val.valid) {
-      alert(val.error);
+      // `error` is optional on the result, and an empty toast would tell the
+      // person nothing at all about why their file was turned away.
+      this.toast.warning(val.error || 'That file is not a PDF this app can read.');
       return;
     }
 
@@ -355,7 +359,7 @@ export class PdfPage implements OnInit, OnDestroy {
         this.extractPageThumbnails.set(p, thumb);
       }
     } catch (e: any) {
-      alert('Failed to read PDF: ' + e);
+      this.toast.error('Could not read that PDF: ' + e);
     } finally {
       this.isProcessing = false;
       this.cdr.detectChanges();
@@ -381,7 +385,7 @@ export class PdfPage implements OnInit, OnDestroy {
     if (!this.extractPdfFile) return;
     const pagesToExtract = this.pagesArray.filter((_, i) => this.selectedPages[i]);
     if (pagesToExtract.length === 0) {
-      alert('Please select at least one page to extract.');
+      this.toast.warning('Select at least one page to extract.');
       return;
     }
 
@@ -393,7 +397,7 @@ export class PdfPage implements OnInit, OnDestroy {
       this.extractedImages = await this.pdfService.extractPagesToImages(this.extractPdfFile, pagesToExtract);
       this.extractedImageUrls = this.extractedImages.map(img => this.fileService.createObjectUrl(img));
     } catch (e: any) {
-      alert('Failed to extract images: ' + e);
+      this.toast.error('Could not extract the images: ' + e);
     } finally {
       this.isProcessing = false;
       this.cdr.detectChanges();
@@ -412,7 +416,7 @@ export class PdfPage implements OnInit, OnDestroy {
         outputSizeBytes: this.processedResult.file.size,
         outputPath: uri
       });
-      alert('PDF saved to: ' + uri);
+      this.toast.success('Saved to your Documents folder.');
     }
   }
 
@@ -440,7 +444,7 @@ export class PdfPage implements OnInit, OnDestroy {
   async saveExtractedImage(file: File): Promise<void> {
     const uri = await this.storageService.saveFile(file, 'photo');
     if (uri && uri !== 'web-download') {
-      alert('Image saved to: ' + uri);
+      this.toast.success('Saved to your Documents folder.');
     }
   }
 }

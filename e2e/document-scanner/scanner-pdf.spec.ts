@@ -22,7 +22,7 @@ test.describe('Document Scanner — PDF Generation & OCR Handoff @scanner @criti
     if (await generateBtn.isVisible()) {
       await generateBtn.click();
       // Should show PDF ready screen
-      await expect(page.locator('.pdf-ready-card, :has-text("created successfully"), .btn-download-pdf')).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('.pdf-ready-card, :has-text("created successfully"), .btn-download-pdf').first()).toBeVisible({ timeout: 15000 });
     }
   });
 
@@ -30,14 +30,14 @@ test.describe('Document Scanner — PDF Generation & OCR Handoff @scanner @criti
     const generateBtn = page.locator('.btn-generate-pdf, button:has-text("Generate PDF"), button:has-text("Save as PDF")');
     if (await generateBtn.isVisible()) {
       await generateBtn.click();
-      await expect(page.locator('.btn-make-searchable, button:has-text("Make Searchable")')).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('.btn-make-searchable, button:has-text("Make Searchable")').first()).toBeVisible({ timeout: 15000 });
 
       // Click "Make Searchable"
       await page.locator('.btn-make-searchable, button:has-text("Make Searchable")').click();
 
       // Verify navigation to OCR page with the scanned document loaded
       await expect(page).toHaveURL(/.*features\/pdf-ocr/);
-      await expect(page.locator('.selected-file-card, .file-name, .btn-start-ocr')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.selected-file-card, .file-name, .btn-start-ocr').first()).toBeVisible({ timeout: 10000 });
     }
   });
 });

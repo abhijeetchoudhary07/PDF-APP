@@ -9,8 +9,8 @@ test.describe('Document Scanner — Camera & Gallery Capture @scanner @smoke', (
 
   test('SCN-001: Open scanner page', async ({ page }) => {
     await expect(page).toHaveURL(/.*features\/document-scanner/);
-    await expect(page.locator('h1, .page-title')).toContainText(/scan|scanner/i);
-    await expect(page.locator('.btn-camera, .btn-gallery, button:has-text("Camera"), button:has-text("Gallery")')).toBeVisible();
+    await expect(page.locator('h1, .page-title').first()).toContainText(/scan|scanner/i);
+    await expect(page.locator('.btn-camera, .btn-gallery, button:has-text("Camera"), button:has-text("Gallery")').first()).toBeVisible();
   });
 
   test('SCN-005 & SCN-006: Capture document and retake', async ({ page }) => {
@@ -20,13 +20,13 @@ test.describe('Document Scanner — Camera & Gallery Capture @scanner @smoke', (
       await cameraBtn.click();
 
       // Should transition to crop/edit view
-      await expect(page.locator('.crop-view, .enhance-view, .canvas-container, canvas, .btn-retake')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.crop-view, .enhance-view, .canvas-container, canvas, .btn-retake').first()).toBeVisible({ timeout: 10000 });
 
       // Retake action
       const retakeBtn = page.locator('.btn-retake, button:has-text("Retake")');
       if (await retakeBtn.isVisible()) {
         await retakeBtn.click();
-        await expect(page.locator('.btn-camera, button:has-text("Camera")')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('.btn-camera, button:has-text("Camera")').first()).toBeVisible({ timeout: 10000 });
       }
     }
   });
@@ -36,7 +36,7 @@ test.describe('Document Scanner — Camera & Gallery Capture @scanner @smoke', (
     if (await fileInput.count() > 0) {
       await fileInput.first().setInputFiles(getTestDataPath('scanner/clean-document.jpg'));
       // Transition to crop or enhance view
-      await expect(page.locator('.crop-view, .enhance-view, canvas, .btn-confirm-crop')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.crop-view, .enhance-view, canvas, .btn-confirm-crop').first()).toBeVisible({ timeout: 10000 });
     }
   });
 });

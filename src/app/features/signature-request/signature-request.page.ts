@@ -12,6 +12,7 @@ import {
   RecipientRole
 } from '../../core/models/signature-request.types';
 import * as pdfjsLib from 'pdfjs-dist';
+import { ToastService } from '../../core/services/toast.service';
 
 import {
   AppHeaderComponent,
@@ -80,7 +81,8 @@ export class SignatureRequestPage {
     private requestService: SignatureRequestService,
     private router: Router,
     private alertCtrl: AlertController,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private toast: ToastService
   ) {}
 
   switchToLocalSigning(): void {
@@ -109,7 +111,7 @@ export class SignatureRequestPage {
       );
       this.currentPage = 1;
     } catch (e: any) {
-      alert('Error analyzing document: ' + e);
+      this.toast.error('Could not analyse that document: ' + e);
     } finally {
       this.isProcessing = false;
     }
@@ -130,7 +132,7 @@ export class SignatureRequestPage {
   addRecipient(): void {
     if (!this.request) return;
     if (!this.newRecipientName.trim() || !this.newRecipientEmail.trim()) {
-      alert('Please enter a valid recipient name and email.');
+      this.toast.warning('Enter a valid recipient name and email address.');
       return;
     }
 

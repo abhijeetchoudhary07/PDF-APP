@@ -15,6 +15,7 @@ import { IConverter } from '../../core/conversion/converter.interface';
 import { ConversionProgress, ConversionResult } from '../../core/conversion/conversion.types';
 import { ZipToPdfConverter, ZipFileInfo } from '../../core/conversion/converters/zip-to-pdf.converter';
 import * as pdfjsLib from 'pdfjs-dist';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -88,7 +89,8 @@ export class ConverterPage implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private conversionService: ConversionService,
-    private zipConverter: ZipToPdfConverter
+    private zipConverter: ZipToPdfConverter,
+    private toast: ToastService
   ) {}
 
   ngOnInit() {
@@ -236,7 +238,7 @@ export class ConverterPage implements OnInit, OnDestroy {
     if (!this.result?.file) return;
     const uri = await this.conversionService.saveResult(this.result.file, this.converterId);
     if (uri && uri !== 'web-download') {
-      alert(`File saved to device:\n${uri}`);
+      this.toast.success('Saved to your Documents folder.');
     }
   }
 

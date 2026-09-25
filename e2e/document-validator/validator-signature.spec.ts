@@ -17,7 +17,7 @@ test.describe('Document Validator — Signature Validation Rules @validator', ()
         await validateBtn.click();
       }
 
-      await expect(page.locator('.validation-report, .rule-row, .status-badge')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.validation-report, .rule-row, .status-badge').first()).toBeVisible({ timeout: 10000 });
     }
   });
 
@@ -31,7 +31,7 @@ test.describe('Document Validator — Signature Validation Rules @validator', ()
         await validateBtn.click();
       }
 
-      await expect(page.locator('.rule-failed, .status-issues, :has-text("FAIL"), :has-text("KB")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.rule-failed, .status-issues, :has-text("FAIL"), :has-text("KB")').first()).toBeVisible({ timeout: 10000 });
     }
   });
 });

@@ -54,7 +54,19 @@ export class StorageService {
         const result = await Filesystem.writeFile({
           path: safeName,
           data: base64Data,
-          directory: Directory.Documents
+          directory: Directory.Documents,
+          /*
+           * Create Documents/ if this phone has never had one.
+           *
+           * The folder is not guaranteed to exist: a freshly set up device
+           * that has never saved a document simply has no
+           * /storage/emulated/0/Documents, and without `recursive` the plugin
+           * refuses the write rather than creating it --
+           * "Missing parent directory" (OS-PLUG-FILE-0011), which the person
+           * sees as "Could not save the file" on the very first thing they
+           * try to keep.
+           */
+          recursive: true
         });
         uri = result.uri;
       } else {

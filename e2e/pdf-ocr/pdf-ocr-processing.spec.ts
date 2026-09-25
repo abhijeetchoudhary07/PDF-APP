@@ -12,9 +12,9 @@ test.describe('Smart PDF OCR — Processing & Selectable Text @ocr', () => {
     await fileInput.setInputFiles(getTestDataPath('pdf/text.pdf'));
 
     // Wait for text detection banner
-    await expect(page.locator('.selectable-text-banner, .text-preview-box, :has-text("selectable text")')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.selectable-text-banner, .text-preview-box, :has-text("selectable text")').first()).toBeVisible({ timeout: 10000 });
     // Text preview should show sample text
-    await expect(page.locator('.selectable-text-banner, .sample-text-content')).toContainText(/selectable text|digital/i);
+    await expect(page.locator('.selectable-text-banner, .sample-text-content').first()).toContainText(/selectable text|digital/i);
   });
 
   test('OCR-017 & OCR-018: Scanned PDF identifies requirement for OCR', async ({ page }) => {
@@ -22,7 +22,7 @@ test.describe('Smart PDF OCR — Processing & Selectable Text @ocr', () => {
     await fileInput.setInputFiles(getTestDataPath('pdf/scanned.pdf'));
 
     // Verify OCR configuration and page selection appear
-    await expect(page.locator('.page-selection-grid, .btn-start-ocr, :has-text("OCR")')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.page-selection-grid, .btn-start-ocr, :has-text("OCR")').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('OCR-020, OCR-021, OCR-022: Page selection controls (select all, deselect all, toggle)', async ({ page }) => {
@@ -62,6 +62,6 @@ test.describe('Smart PDF OCR — Processing & Selectable Text @ocr', () => {
     await cancelBtn.click();
 
     // Should return to configure or select step
-    await expect(page.locator('.btn-start-ocr, .dropzone-container')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.btn-start-ocr, .dropzone-container').first()).toBeVisible({ timeout: 10000 });
   });
 });

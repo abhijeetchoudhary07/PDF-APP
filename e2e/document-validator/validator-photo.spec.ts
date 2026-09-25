@@ -19,7 +19,7 @@ test.describe('Document Validator — Photo Validation Rules @validator', () => 
     }
 
     // Results report appears
-    await expect(page.locator('.validation-report, .rule-row, .status-badge')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.validation-report, .rule-row, .status-badge').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('VAL-027: Upload oversized photo and verify FAIL on file size', async ({ page }) => {
@@ -32,6 +32,6 @@ test.describe('Document Validator — Photo Validation Rules @validator', () => 
     }
 
     // Should indicate FAIL or error for file size
-    await expect(page.locator('.rule-failed, .status-issues, :has-text("FAIL"), :has-text("KB")')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.rule-failed, .status-issues, :has-text("FAIL"), :has-text("KB")').first()).toBeVisible({ timeout: 10000 });
   });
 });

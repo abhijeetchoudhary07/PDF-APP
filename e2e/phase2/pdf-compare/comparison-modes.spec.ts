@@ -53,7 +53,7 @@ test.describe('PDF Compare — Comparison Modes @phase2 @compare', () => {
 
     await expect(page.locator('.diff-view-visual')).toBeVisible();
     // Either visual loading or visual-diff-img / hint is visible
-    await expect(page.locator('.visual-diff-display, .visual-empty, .visual-loading')).toBeVisible();
+    await expect(page.locator('.visual-diff-display, .visual-empty, .visual-loading').first()).toBeVisible();
   });
 
   test('CMP-034: Switching between modes preserves comparison results', async ({ page }) => {

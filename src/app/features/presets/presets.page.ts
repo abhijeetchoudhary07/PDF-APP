@@ -1,8 +1,9 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { IonicModule, NavController } from '@ionic/angular/lazy';
+import { AlertController, IonicModule, NavController } from '@ionic/angular/lazy';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PresetService, Preset } from '../../core/services/preset.service';
+import { ToastService } from '../../core/services/toast.service';
 
 import {
   AppHeaderComponent,
@@ -48,7 +49,7 @@ export class PresetsPage implements OnInit {
   enableSig = false;
   enablePdf = false;
 
-  constructor(private presetService: PresetService, private navCtrl: NavController) {}
+  constructor(private presetService: PresetService, private navCtrl: NavController, private alertCtrl: AlertController, private toast: ToastService) {}
 
   async ngOnInit() {
     await this.loadPresets();
@@ -119,16 +120,37 @@ export class PresetsPage implements OnInit {
   }
 
   async deletePreset(preset: Preset) {
-    if (confirm(`Are you sure you want to delete "${preset.name}"?`)) {
-       await this.presetService.deleteCustomPreset(preset.id);
-       this.selectedPreset = undefined;
-       await this.loadPresets();
+    /*
+     * An Ionic alert rather than `confirm()`. The native dialog freezes the
+     * whole web view until it is dismissed, and on Android it is drawn by the
+     * system with "localhost says" above the question -- which reads like the
+     * page has been hijacked rather than like the app asking. This one is
+     * themed, non-blocking, and names the destructive button.
+     */
+    const alert = await this.alertCtrl.create({
+      header: 'Delete preset?',
+      message: `"${preset.name}" will be removed from this device. Saved files are not affected.`,
+      buttons: [
+        { text: 'Keep', role: 'cancel' },
+        { text: 'Delete', role: 'destructive' },
+      ],
+    });
+
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role !== 'destructive') {
+      return;
     }
+
+    await this.presetService.deleteCustomPreset(preset.id);
+    this.selectedPreset = undefined;
+    await this.loadPresets();
+    this.toast.success(`Deleted "${preset.name}".`);
   }
 
   async saveModal() {
     if (!this.editingPreset.name) {
-      alert('Please enter a name for the preset.');
+      this.toast.warning('Give the preset a name first.');
       return;
     }
     

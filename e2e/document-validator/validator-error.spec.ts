@@ -11,7 +11,7 @@ test.describe('Document Validator — Error Handling & Edge Cases @validator @er
     const input = page.locator('input[type="file"]').first();
     await input.setInputFiles(getTestDataPath('pdf/unsupported.txt'));
 
-    await expect(page.locator('.toast-item, [role="alert"], .error-message')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.toast-item, [role="alert"], .error-message').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('VAL-021: Prompt for missing required files when validating empty package', async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe('Document Validator — Error Handling & Edge Cases @validator @er
     if (await validateBtn.isVisible() && await validateBtn.isEnabled()) {
       await validateBtn.click();
       // Should show prompt or error about missing files
-      await expect(page.locator('.toast-item, [role="alert"], :has-text("upload"), :has-text("select")')).toBeVisible();
+      await expect(page.locator('.toast-item, [role="alert"], :has-text("upload"), :has-text("select")').first()).toBeVisible();
     }
   });
 });

@@ -23,11 +23,11 @@ test.describe('Common — Accessibility & Responsive UI @a11y @mobile', () => {
     // Mobile Viewport
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/features/document-validator');
-    await expect(page.locator('.page-title, h1')).toBeVisible();
+    await expect(page.locator('.page-title, h1').first()).toBeVisible();
 
     // Desktop Viewport
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/features/document-validator');
-    await expect(page.locator('.page-title, h1')).toBeVisible();
+    await expect(page.locator('.page-title, h1').first()).toBeVisible();
   });
 });

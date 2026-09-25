@@ -8,6 +8,7 @@ import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
 import * as pdfjsLib from 'pdfjs-dist';
+import { ToastService } from '../../core/services/toast.service';
 
 import {
   AppHeaderComponent,
@@ -89,7 +90,8 @@ export class PdfSignPage implements AfterViewInit {
     private shareService: ShareService,
     private historyService: HistoryService,
     private alertCtrl: AlertController,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private toast: ToastService
   ) {}
 
   ngAfterViewInit(): void {
@@ -239,7 +241,7 @@ export class PdfSignPage implements AfterViewInit {
       this.placeSignatureOnDocument(preparedDataUrl);
       this.closeSignatureDialog();
     } catch (e: any) {
-      alert('Failed to process uploaded signature: ' + e);
+      this.toast.error('Could not process that signature image: ' + e);
     } finally {
       this.isProcessing = false;
       input.value = '';

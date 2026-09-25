@@ -13,6 +13,6 @@ test.describe('Common — Error Handling & Recovery @error', () => {
     // Reopen another feature and verify clean state
     await page.goto('/features/document-scanner');
     await expect(page).toHaveURL(/.*features\/document-scanner/);
-    await expect(page.locator('.btn-camera, .btn-gallery, button:has-text("Camera")')).toBeVisible();
+    await expect(page.locator('.btn-camera, .btn-gallery, button:has-text("Camera")').first()).toBeVisible();
   });
 });

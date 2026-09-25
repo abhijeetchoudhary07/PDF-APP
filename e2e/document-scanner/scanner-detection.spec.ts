@@ -13,7 +13,7 @@ test.describe('Document Scanner — Edge Detection & Crop Modes @scanner', () =>
       await fileInput.first().setInputFiles(getTestDataPath('scanner/clean-document.jpg'));
 
       // Crop canvas or container appears
-      await expect(page.locator('.crop-view, canvas, .btn-confirm-crop, button:has-text("Apply")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.crop-view, canvas, .btn-confirm-crop, button:has-text("Apply")').first()).toBeVisible({ timeout: 10000 });
     }
   });
 
@@ -37,7 +37,7 @@ test.describe('Document Scanner — Edge Detection & Crop Modes @scanner', () =>
       if (await confirmBtn.isVisible()) {
         await confirmBtn.click();
         // Should advance to enhancement screen
-        await expect(page.locator('.enhance-view, .preset-chip, button:has-text("Document")')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('.enhance-view, .preset-chip, button:has-text("Document")').first()).toBeVisible({ timeout: 10000 });
       }
     }
   });

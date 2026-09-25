@@ -26,6 +26,17 @@ import {
  * Pricing comes from the server so it can be changed without shipping a build.
  * Payment itself is manual: UPI in the person's own bank app, then a reference
  * submitted here for an admin to confirm.
+ *
+ * These bundled rows are only a fallback for a paywall opened before the
+ * server answers, and they must be kept in step with `pdf_plans` by hand.
+ *
+ * They match migration 025, which sets the launch pricing. Note that a server
+ * still on migration 023's seed serves ₹149/₹1199/₹2999 instead, so until 025
+ * is deployed the fallback and the live catalogue disagree -- deploy the
+ * migration rather than editing these numbers to match a stale server.
+ * `offlinePricing` puts a warning on screen while these are showing, and
+ * `choose()` cannot open the pay panel until `payment-settings` has been
+ * fetched, so nobody can transact on a fallback price.
  */
 const OFFLINE_PLANS: PdfPlan[] = [
   {
@@ -34,7 +45,7 @@ const OFFLINE_PLANS: PdfPlan[] = [
     price: 49,
     currency: 'INR',
     durationDays: 30,
-    features: ['Unlimited pages', 'Batch processing', 'OCR & PDF intelligence', 'No ads'],
+    features: ['Unlimited pages', 'Batch processing', 'OCR & PDF intelligence', 'Priority support'],
     isActive: true,
     sortOrder: 1,
   },
@@ -44,7 +55,7 @@ const OFFLINE_PLANS: PdfPlan[] = [
     price: 365,
     currency: 'INR',
     durationDays: 365,
-    features: ['Everything in Pro Monthly', 'Best value for a full exam season'],
+    features: ['Everything in Pro Monthly', 'Best value for a full exam season', 'Early access to new tools'],
     isActive: true,
     sortOrder: 2,
   },
@@ -54,7 +65,7 @@ const OFFLINE_PLANS: PdfPlan[] = [
     price: 999,
     currency: 'INR',
     durationDays: null,
-    features: ['Everything in Pro Annual', 'One-time payment'],
+    features: ['Everything in Pro Annual', 'One-time payment', 'Lifetime updates'],
     isActive: true,
     sortOrder: 3,
   },

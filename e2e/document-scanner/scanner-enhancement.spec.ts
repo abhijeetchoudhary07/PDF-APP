@@ -34,7 +34,7 @@ test.describe('Document Scanner — Auto Enhance Presets @scanner', () => {
     const compareBtn = page.locator('.btn-compare, button:has-text("Compare"), [aria-label*="compare" i]');
     if (await compareBtn.isVisible()) {
       await compareBtn.click();
-      await expect(page.locator('.comparison-view, .split-view, canvas')).toBeVisible();
+      await expect(page.locator('.comparison-view, .split-view, canvas').first()).toBeVisible();
     }
   });
 
@@ -43,7 +43,7 @@ test.describe('Document Scanner — Auto Enhance Presets @scanner', () => {
     if (await addPageBtn.isVisible()) {
       await addPageBtn.click();
       // Should show thumbnail strip
-      await expect(page.locator('.page-thumb-card, .multipage-container, .thumbnail-strip')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.page-thumb-card, .multipage-container, .thumbnail-strip').first()).toBeVisible({ timeout: 10000 });
     }
   });
 });

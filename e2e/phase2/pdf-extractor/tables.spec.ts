@@ -36,7 +36,7 @@ test.describe('PDF Content Extractor — Table Extraction, CSV & XLSX Export @ph
     await expect(notice).toBeVisible();
 
     // Table preview or empty state
-    await expect(page.locator('.table-card, .empty-state')).toBeVisible();
+    await expect(page.locator('.table-card, .empty-state').first()).toBeVisible();
   });
 
   test('EXT-031: Export table to CSV downloads valid delimited file', async ({ page }) => {
