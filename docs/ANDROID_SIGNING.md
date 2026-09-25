@@ -13,6 +13,20 @@ again, and a leaked key means someone else can. Nobody should hold it but you.
 (Homebrew OpenJDK 17), so run it from the repository root:
 
 ```bash
+tools/create-upload-key.sh
+```
+
+It prompts you for a password, generates the key, writes `keystore.properties`
+mode 600, verifies the result and checks git cannot see either file. The
+password is handed to `keytool` through the environment rather than as an
+argument, because argv is readable by any process on the machine through `ps`.
+It refuses outright if a keystore already exists — overwriting one Play has
+seen ends your ability to update the listing, and that is not a prompt anyone
+should be able to click through.
+
+Or do it by hand, which is all the script does:
+
+```bash
 keytool -genkeypair -v -keystore android/app/upload-keystore.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000 -storetype PKCS12
 ```
 

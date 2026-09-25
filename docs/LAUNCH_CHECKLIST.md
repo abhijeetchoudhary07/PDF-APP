@@ -90,28 +90,15 @@ will ever accept for this listing; lose it and the app can never be updated,
 leak it and someone else can update it. Nobody else should hold it — not CI,
 not an assistant.
 
-Full walkthrough in [ANDROID_SIGNING.md](ANDROID_SIGNING.md). Short form:
+One command. It prompts for the password, generates the key, writes
+`keystore.properties`, verifies it and confirms git cannot see either file:
 
 ```bash
-keytool -genkeypair -v -keystore android/app/upload-keystore.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000 -storetype PKCS12
+tools/create-upload-key.sh
 ```
 
-Then create `android/app/keystore.properties`:
-
-```properties
-storeFile=upload-keystore.jks
-storePassword=<what you just chose>
-keyAlias=upload
-keyPassword=<same, unless you set a separate key password>
-```
-
-Both files are already in `android/.gitignore`. Confirm anyway:
-
-```bash
-git status --porcelain android/app/
-```
-
-Nothing should be listed. **Back the `.jks` and both passwords up in your
+Full detail, and the by-hand equivalent, in
+[ANDROID_SIGNING.md](ANDROID_SIGNING.md). **Back the `.jks` and both passwords up in your
 password manager now**, before you do anything else.
 
 ### 0.5 · Decide the billing route ▸ the decision
