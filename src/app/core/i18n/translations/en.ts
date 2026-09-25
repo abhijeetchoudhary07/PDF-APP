@@ -122,7 +122,7 @@ export const en = {
     examPresets: 'Exam & Job Form Presets',
     productPricing: 'Product & Info',
     productOverview: 'Overview',
-    goPremium: 'Go Premium (No Ads)',
+    goPremium: 'Go Premium (Unlimited)',
     batchPhoto: 'Batch Photo Tool',
     batchPdf: 'Batch PDF Tool',
     processHistory: 'Your History',

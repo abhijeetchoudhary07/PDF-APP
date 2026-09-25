@@ -122,7 +122,7 @@ export const pa = {
     examPresets: 'ਸਰਕਾਰੀ ਪ੍ਰੀਖਿਆ ਪ੍ਰੀਸੈੱਟ',
     productPricing: 'ਉਤਪਾਦ ਅਤੇ ਜਾਣਕਾਰੀ',
     productOverview: 'ਵੇਰਵਾ (Overview)',
-    goPremium: 'ਪ੍ਰੀਮੀਅਮ ਲਵੋ (ਇਸ਼ਤਿਹਾਰ ਮੁਕਤ)',
+    goPremium: 'ਪ੍ਰੀਮੀਅਮ ਲਵੋ (ਅਸੀਮਤ)',
     batchPhoto: 'ਬੈਚ ਫੋਟੋ ਟੂਲ',
     batchPdf: 'ਬੈਚ PDF ਟੂਲ',
     processHistory: 'ਕੰਮ ਦਾ ਇਤਿਹਾਸ',

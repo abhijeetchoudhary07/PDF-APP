@@ -122,7 +122,7 @@ export const bn = {
     examPresets: 'সরকারি পরীক্ষার প্রিসেট',
     productPricing: 'পণ্য ও তথ্য',
     productOverview: 'বিবরণ (Overview)',
-    goPremium: 'প্রিমিয়াম নিন (বিজ্ঞাপনমুক্ত)',
+    goPremium: 'প্রিমিয়াম নিন (সীমাহীন)',
     batchPhoto: 'ব্যাচ ফটো টুল',
     batchPdf: 'ব্যাচ PDF টুল',
     processHistory: 'কাজের ইতিহাস',

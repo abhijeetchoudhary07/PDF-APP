@@ -122,7 +122,7 @@ export const mr = {
     examPresets: 'सरकारी परीक्षा प्रीसेट्स',
     productPricing: 'उत्पादन आणि माहिती',
     productOverview: 'आढावा (Overview)',
-    goPremium: 'प्रीमियम मिळवा (जाहिरातमुक्त)',
+    goPremium: 'प्रीमियम मिळवा (अमर्यादित)',
     batchPhoto: 'बॅच फोटो टूल',
     batchPdf: 'बॅच PDF टूल',
     processHistory: 'प्रक्रिया इतिहास',

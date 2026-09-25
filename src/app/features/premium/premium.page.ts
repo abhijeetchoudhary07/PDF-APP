@@ -45,7 +45,7 @@ const OFFLINE_PLANS: PdfPlan[] = [
     price: 49,
     currency: 'INR',
     durationDays: 30,
-    features: ['Unlimited pages', 'Batch processing', 'OCR & PDF intelligence', 'Priority support'],
+    features: ['Unlimited pages', 'Batch processing', 'OCR & PDF intelligence', 'Unlimited daily saves', 'Priority support'],
     isActive: true,
     sortOrder: 1,
   },

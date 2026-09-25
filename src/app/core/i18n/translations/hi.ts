@@ -122,7 +122,7 @@ export const hi = {
     examPresets: 'सरकारी परीक्षा प्रीसेट्स',
     productPricing: 'उत्पाद और जानकारी',
     productOverview: 'अवलोकन (Overview)',
-    goPremium: 'प्रीमियम लें (बिना विज्ञापन)',
+    goPremium: 'प्रीमियम लें (असीमित)',
     batchPhoto: 'बैच फोटो टूल',
     batchPdf: 'बैच PDF टूल',
     processHistory: 'प्रोसेसिंग इतिहास',
