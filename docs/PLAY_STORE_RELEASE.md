@@ -28,20 +28,23 @@ so the OS does not double-scroll a focused field.
 
 ---
 
-## 2. Adding the Android platform
+## 2. The Android platform
 
-The repository has no `android/` directory yet. It is generated, not authored:
+`android/` exists, is committed, and builds. An earlier revision of this section
+said it had to be generated first; it does not. The project is regenerated
+output, though, so treat it as such — edit `capacitor.config.ts` and the app
+manifest, not the generated Gradle files.
+
+Rebuilding the web bundle and copying it in, which is what you run before every
+release build:
 
 ```bash
-npm install --save @capacitor/android @capacitor/splash-screen
-npx cap add android
 npm run build
 npx cap sync android
 ```
 
-`@capacitor/splash-screen` is what makes the `SplashScreen` config block take
-effect; without it the keys are inert and Android falls back to its own
-launch theme.
+`npx cap add android` would only be needed on a fresh clone that somehow lacked
+the directory, and it is not part of the release loop.
 
 ---
 

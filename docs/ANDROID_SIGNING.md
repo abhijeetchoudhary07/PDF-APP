@@ -49,7 +49,21 @@ If either file shows up there, stop and fix the ignore rules before committing.
 ## 3. Build the signed bundle
 
 ```bash
-cd android && JAVA_HOME="$(/usr/libexec/java_home)" ./gradlew bundleRelease
+cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew bundleRelease
+```
+
+**Do not use `/usr/libexec/java_home` here.** Capacitor 8 compiles its plugins
+at Java 21. Homebrew's `openjdk@21` is installed on this machine but keg-only,
+so it was never symlinked into `/Library/Java/JavaVirtualMachines` — and
+`java_home` does not report that as an error. It quietly returns the 17 it can
+see, including for `java_home -v 21`, so the build dies at
+`:capacitor-camera:compileReleaseJavaWithJavac` with "Cannot find a Java
+installation ... matching {languageVersion=21}" while the command looks right.
+
+The explicit path above avoids it. To fix it at the source instead:
+
+```bash
+sudo ln -sfn /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-21.jdk
 ```
 
 Output: `android/app/build/outputs/bundle/release/app-release.aab`

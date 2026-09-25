@@ -9,26 +9,44 @@ submission itself.
 
 > ## ⛔ Read first — what still stops submission
 >
-> | # | Blocker | Why it stops submission |
-> | --- | --- | --- |
-> | **1** | **No upload keystore** | `android/app/keystore.properties` is absent, so `bundleRelease` produces an **unsigned** AAB and Play rejects it. §10 |
-> | **2** | **Privacy policy URL is not live** | `indianformhelper.app` does not resolve. Play requires a reachable policy, and the in-app links point there. §3 |
-> | **3** | **In-app UPI payments for digital features** | Violates Play's Payments policy. The single most common cause of suspension. §9 |
+> Re-verified against the repository, a fresh manifest merge and the live API
+> on **2026-09-25**. Every row below was reproduced, not recalled.
 >
-> 1 and 2 are mechanical — under an hour. 3 is a product decision and needs an
-> owner before anything is uploaded.
+> | # | Blocker | Evidence |
+> | --- | --- | --- |
+> | **1** | **No upload keystore** | `android/app/keystore.properties` is absent, so `bundleRelease` produces an **unsigned** AAB: `jarsigner -verify` on the bundle prints `jar is unsigned`. §10 |
+> | **2** | **Both policy URLs return 404** | GitHub Pages was never enabled — `api.github.com/repos/abhijeetchoudhary07/PDF-APP/pages` is 404, and so are `/privacy` and `/delete-account`. The workflow is committed and pushed; it has never had a source. §3 |
+> | **3** | ~~No JDK 21 on the build machine~~ — **cleared** | Capacitor 8 compiles at Java 21. Homebrew's `openjdk@21` was installed but keg-only, so `java_home` could not see it and `java_home -v 21` silently returned 17. Build with the explicit cellar path. §10 |
+> | **4** | **In-app UPI payments for digital features** | Violates Play's Payments policy. The single most common cause of suspension. §9 |
+>
+> 1–3 are mechanical, under an hour between them. 4 is a product decision and
+> needs an owner before anything is uploaded.
 >
 > ### Cleared since this document was first written
 >
 > - **The Android platform exists.** `android/` is generated, committed, and
 >   builds: `bundleRelease` produces a 12 MB AAB.
-> - **The payment backend is deployed.** `payment-settings` and
->   `manual-payment` answer in production, and pricing serves ₹49 / ₹365 / ₹999.
-> - **Plan copy no longer mis-sells.** "No ads" and "Ads supported" are gone
->   from both the app and `pdf_plans`; the tiers are separated by the daily save
->   cap, which is genuinely enforced. Batch processing is gated for real.
-> - **Account deletion works.** `DELETE /auth/me` returned 405 and is now
->   implemented, which Play requires of any app offering sign-up.
+> - **The payment backend is deployed and answering.** `subscription/plans` and
+>   `subscription/payment-settings` return 200 — ₹49 / ₹365 / ₹999 and a live
+>   payee — and `subscription/manual-payment` returns 401 without a token.
+> - **Account deletion works end to end.** `DELETE /auth/me` used to return 405;
+>   it now returns 401 unauthenticated, so the endpoint exists.
+> - **AdMob and Firebase are gone, and the AAB proves it.** The bundle was
+>   rebuilt on 2026-09-25 at 12:45 (12.0 MB) and its packaged manifest contains
+>   no `AD_ID`, no install-referrer and no `play-services-measurement`. The §4
+>   Data Safety answers now match the binary. It is still **unsigned**, because
+>   there is no keystore.
+> - **"No ads" is no longer sold** as a feature, in either the app or `pdf_plans`.
+> - **The support address is real.** All three dead addresses —
+>   `support@indianformhelper.app`, `support@indianformhelper.in` and
+>   `privacy@indianformhelper.in` — now point at `Officialpostflow360@gmail.com`,
+>   as do the two `https://indianformhelper.app` website links on the hosted
+>   pages. `tools/set-support-email.sh` was rewriting only the HTML-entity
+>   spelling and silently skipping every plain `mailto:`; that bug is fixed.
+> - **The plan copy is true.** Pro no longer advertises *Unlimited pages*,
+>   *Batch processing* or *OCR & PDF intelligence*. **The server half is not
+>   applied yet** — migration 028 is written out in §9 and has to be run against
+>   `pdf_plans`, or the API keeps serving the old claims.
 
 ---
 
@@ -40,9 +58,9 @@ submission itself.
 | **Short description** | `Resize photos, shrink PDFs and fix exam form documents — fully offline.` | 71/80 ✅ |
 | **Category** | Productivity | |
 | **Tags** | PDF, Document scanner, Photo editor, Productivity, Utilities | |
-| **Contact email** | **[BLOCKER — must be a real, monitored mailbox]** `support@indianformhelper.app` does not exist: the domain is unregistered. Set one with `tools/set-support-email.sh`. | |
-| **Website** | `https://abhijeetchoudhary07.github.io/PDF-APP/` | |
-| **Privacy policy URL** | `https://abhijeetchoudhary07.github.io/PDF-APP/privacy` — published from `docs/hosted` by `.github/workflows/pages.yml`. Needs Settings → Pages → Source: GitHub Actions switched on once. | |
+| **Contact email** | `Officialpostflow360@gmail.com` — set across the app, the hosted pages and this document. Change it with `tools/set-support-email.sh <address>`; it rewrites both the `mailto:` and the visible text everywhere. | |
+| **Website** | `https://abhijeetchoudhary07.github.io/PDF-APP/` — **404 today**, see below | |
+| **Privacy policy URL** | `https://abhijeetchoudhary07.github.io/PDF-APP/privacy` — **404 today.** Published from `docs/hosted` by `.github/workflows/pages.yml`, which is committed and pushed but has never run: Pages has no source. Switch **Settings → Pages → Source: GitHub Actions** on once, then run the workflow. | |
 | **Default language** | English (India) — `en-IN` | |
 
 ### Full description (1 812 / 4 000 characters)
@@ -152,7 +170,23 @@ Safety form row for row.
 
 **It must also be reachable at a public URL without installing the app.** Play
 requires a policy URL that a reviewer can open in a browser. The same content is
-published at `https://abhijeetchoudhary07.github.io/PDF-APP/privacy` from `docs/hosted`.
+prepared at `https://abhijeetchoudhary07.github.io/PDF-APP/privacy`, served from
+`docs/hosted`.
+
+> ### ⛔ It is not live. Both pages 404 today.
+> `.github/workflows/pages.yml` is committed and pushed, but GitHub Pages has
+> never had a source, so the workflow has never deployed — the Pages API for
+> this repository returns 404 as well.
+>
+> **Fix, once:** repository **Settings → Pages → Source: GitHub Actions**, then
+> **Actions → Deploy policy pages → Run workflow**. Confirm before touching the
+> Console:
+>
+> ```bash
+> curl -o /dev/null -w '%{http_code}\n' https://abhijeetchoudhary07.github.io/PDF-APP/privacy
+> ```
+>
+> `200`, not `404`. Do the same for `/delete-account`.
 
 A `github.io` URL is acceptable to Play — it checks that the URL resolves and
 serves a policy, not who owns the domain. Moving to a custom domain later is a
@@ -173,9 +207,9 @@ listing edit, not a client release, because the app never hard-codes the URL.
 | Name (optional) | ✅ | ❌ | Personalisation | ✅ | ✅ |
 | Purchase history | ✅ | ❌ | Entitlement, support | ✅ | ✅ |
 | UPI reference (UTR) | ✅ | ❌ | Verifying a manual payment | ✅ | ✅ |
-| Crash logs | ✅ | ✅ Firebase Crashlytics | Stability | ✅ | ✅ |
-| Analytics | ✅ | ✅ Firebase Analytics | Product usage | ✅ | ✅ |
-| Advertising ID | ⚠️ See §8 | ⚠️ | — | ✅ | ✅ |
+| Crash logs | **❌ Never** | ❌ | No crash reporter is wired up | n/a | n/a |
+| Analytics / app activity | **❌ Never** | ❌ | `AnalyticsService` records events **locally** and transmits nothing | n/a | n/a |
+| Advertising ID | **❌ Never** | ❌ | No ad SDK; `AD_ID` is not in the merged manifest | n/a | n/a |
 | **Documents, photos, PDFs** | **❌ Never** | **❌ Never** | Processed only on-device | n/a | n/a |
 | **File contents** | **❌ Never** | **❌ Never** | — | n/a | n/a |
 
@@ -185,12 +219,23 @@ listing edit, not a client release, because the app never hard-codes the URL.
 - Committed to Play Families Policy — N/A (not child-directed)
 - Independent security review — No
 
-> ⚠️ Answer the Advertising ID question against the **shipped manifest**, not
-> against intent. The AdMob SDK is a dependency and merges
-> `com.google.android.gms.permission.AD_ID` into the manifest even though
-> `AdService` is never called. Either remove the dependency (recommended —
-> nothing uses it) or declare the ID. Declaring "not collected" while the
-> permission is present is an automatic rejection.
+> ⚠️ Answer the Advertising ID question against the **binary you are about to
+> upload**, not against this table. AdMob and Firebase have both been removed,
+> and a manifest merged from the current tree carries no `AD_ID` — but the AAB
+> sitting in `build/outputs/` predates the removal and still does. Declaring
+> "not collected" while the permission is present is an automatic rejection, so
+> rebuild first and then check the bundle itself:
+>
+> ```bash
+> grep -c AD_ID android/app/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml
+> ```
+>
+> `0` is the only acceptable answer. The same goes for
+> `play-services-measurement` and `BIND_GET_INSTALL_REFERRER_SERVICE`.
+>
+> These rows must also stay in step with §8 of the in-app privacy policy and
+> with `PLAY_STORE_RELEASE.md` §5. A mismatch between the label and the policy
+> is an enforcement trigger by itself.
 
 ---
 
@@ -214,14 +259,17 @@ entitlement, the subscription record and all manual-payment claims.
 server, so there is nothing else to delete.
 **Timescale:** immediate in-app; within 30 days for an emailed request.
 
-> ### ⚠️ Backend half is not implemented
-> The client calls `DELETE /api/v1/pdf-app/auth/me`. **That endpoint does not
-> exist on the server yet.** It lives in the separate accounts repository. The
-> client treats 404 and 401 as "already gone" and still clears the local
-> session, so the button behaves sanely today — but the row stays in the
-> database, which does not satisfy the policy.
+> ### ✅ Backend half is implemented
+> An earlier revision of this document recorded `DELETE /api/v1/pdf-app/auth/me`
+> as missing — it returned 405. It is now live in the accounts repository and
+> returns **401** when called without a token, which is the endpoint existing
+> and refusing an anonymous caller:
 >
-> **Endpoint specification** for the server repo:
+> ```bash
+> curl -o /dev/null -w '%{http_code}\n' -X DELETE https://postflow360.onrender.com/api/v1/pdf-app/auth/me
+> ```
+>
+> Contract, for the record:
 >
 > ```
 > DELETE /api/v1/pdf-app/auth/me
@@ -232,6 +280,10 @@ server, so there is nothing else to delete.
 > Errors:   401 invalid/expired token · 404 already deleted
 > Notes:    idempotent; must survive being called twice
 > ```
+>
+> **Still to do before submitting:** delete a throwaway account through the
+> in-app button once, end to end, against production. The endpoint answering
+> 401 proves it is routed, not that it cascades.
 
 ---
 
@@ -279,7 +331,7 @@ Answer the IARC questionnaire as follows — all **No**:
 | --- | --- |
 | **Target age group** | 18+ |
 | **Appeals to children** | No |
-| **Ads** | Declare **No** — and remove the AdMob dependency to make that true (§8) |
+| **Ads** | Declare **No** — true as of the AdMob removal; §8 has the manifest check that keeps it true |
 
 > 18+ is the honest answer: the audience is adults applying for exams and jobs,
 > and it keeps the app out of Families policy, which it is not built for.
@@ -288,26 +340,37 @@ Answer the IARC questionnaire as follows — all **No**:
 
 ## 8. Permissions
 
-No `AndroidManifest.xml` exists yet. This is what the installed plugins will
-merge in.
+This is the **actual merged release manifest**, read back after a merge from
+the current tree — not a prediction of what the plugins might add:
 
 | Permission | Source | Justification | Keep? |
 | --- | --- | --- | --- |
 | `INTERNET` | Core | Account sign-in and entitlement sync only. No document data | ✅ |
-| `ACCESS_NETWORK_STATE` | Firebase | Offline detection | ✅ |
-| `CAMERA` | `@capacitor/camera` | Document Scanner; capturing a photo or signature. Requested at point of use | ✅ |
-| `READ_MEDIA_IMAGES` | `@capacitor/camera` | Choosing an existing photo to process | ✅ |
-| `READ_EXTERNAL_STORAGE` (≤32) | `@capacitor/filesystem` | Opening a PDF the user picks | ✅ |
-| `WRITE_EXTERNAL_STORAGE` (≤28) | `@capacitor/filesystem` | Saving a finished document | ✅ |
-| `com.android.vending.BILLING` | RevenueCat | Dormant — no products configured | ⚠️ Remove unless §9 option 4 |
-| `com.google.android.gms.permission.AD_ID` | AdMob | **Nothing requests an ad.** `AdService` has zero callers | ❌ **Remove the dependency** |
-| `POST_NOTIFICATIONS` | — | Not used | ❌ Not requested |
+| `ACCESS_NETWORK_STATE` | Capacitor | Offline detection | ✅ |
+| `VIBRATE` | `@capacitor/haptics` | Touch feedback | ✅ |
+| `WRITE_EXTERNAL_STORAGE` (≤29) | App manifest | Saving a finished document to public Documents | ✅ |
+| `READ_EXTERNAL_STORAGE` (≤32) | App manifest | Opening a PDF the user picks | ✅ |
+| `com.android.vending.BILLING` | `billing:8.3.0`, via RevenueCat | Dormant — no products configured | ⚠️ See §9 |
+| `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | AndroidX | Self-scoped, generated | ✅ |
 
-**[ACTION]** Drop `@capacitor-community/admob` from `package.json` and delete
-`ad.service.ts`. It contributes a tracking permission, a Data Safety
-declaration and a content-rating answer, in exchange for no ads. It also still
-carries `initializeForTesting: true` and placeholder ad unit IDs
-(`'android-banner-id'`), neither of which should ever reach a production build.
+Both storage permissions are capped with `maxSdkVersion`, which matters: Play
+flags an uncapped `WRITE_EXTERNAL_STORAGE`.
+
+**Gone, and verified gone:** `com.google.android.gms.permission.AD_ID`,
+`BIND_GET_INSTALL_REFERRER_SERVICE` and `play-services-measurement` all left
+with AdMob and Firebase Analytics. Re-check after any dependency change —
+adding one Google library back is enough to reintroduce `AD_ID` transitively
+and silently invalidate the §4 answers.
+
+> ### ⚠️ No `CAMERA` permission is merged
+> Three screens call `Camera.getPhoto({ source: CameraSource.Camera })` —
+> Document Scanner, QR/Barcode and photo capture — and the merged manifest
+> declares no `CAMERA` permission. Capacitor's plugin delegates to the system
+> camera *intent*, which does not require it, so this is very likely correct
+> and is the better of the two options (declaring it would force a runtime
+> prompt for nothing). It has **not been confirmed on a physical device.**
+> Capture on a real phone during internal testing before the closed track
+> opens; a scanner that cannot scan is the kind of thing a reviewer finds.
 
 ---
 
@@ -321,9 +384,16 @@ app, submits the UTR in the paywall, and an admin approves it. Plans come from
 
 | Plan | Price | Duration |
 | --- | --- | --- |
-| `pro_monthly` | ₹149 | 30 days |
-| `pro_annual` | ₹1 199 | 365 days |
-| `lifetime` | ₹2 999 | Forever |
+| `pro_monthly` | ₹49 | 30 days |
+| `pro_annual` | ₹365 | 365 days |
+| `lifetime` | ₹999 | Forever |
+
+Confirmed live on 2026-09-25 — the API serves exactly these, and `OFFLINE_PLANS`
+in `premium.page.ts` mirrors them. (An earlier revision of this document listed
+₹149 / ₹1 199 / ₹2 999, which migration `025_pdf_app_pricing_update.sql`
+superseded.) `payment-settings` is live too, with `isActive: true` and the payee
+`indianformhelper@okicici` — **confirm that handle actually receives money
+before anyone pays into it.**
 
 ### Why it cannot be submitted as-is
 
@@ -345,15 +415,83 @@ common cause of suspension under that policy. RevenueCat is wired but dormant �
 
 ### Second problem — the plan descriptions are not true
 
-`pro_monthly` advertises *Unlimited pages*, *Batch processing*, *OCR & PDF
-intelligence* and *No ads*. **None of those are gated.** The only thing premium
+*No ads* has since been dropped from the copy. The other three claims are
+**still live on the API today** and still ungated. The only thing premium
 changes is the 5-saves-per-day cap:
 
-- `BatchProcessingService` holds the premium check and is never injected —
-  both batch pages implement their own ungated `processBatch()`
-- `AdService` has zero callers, so there are no ads to remove
-- No page-count limit exists anywhere in the code
-- OCR and PDF Intelligence have no premium check
+| Advertised on `pro_monthly` | Gated? | Verified 2026-09-25 |
+| --- | :---: | --- |
+| Unlimited pages | ❌ | No page-count limit exists anywhere in the code |
+| Batch processing | ❌ | `BatchProcessingService` holds the premium check **and is imported by nothing but itself**. `batch.page.ts` and `batch-pdf.page.ts` both run their own ungated `processBatch()` and reference neither `MonetizationService` nor the quota |
+| OCR & PDF intelligence | ❌ | Neither feature has a premium check |
+| Unlimited daily saves | ✅ | Real. `StorageService.saveFile` is the single gate every output passes through |
+
+`isPremium` is referenced in exactly four places — the profile, account and
+premium pages, and the quota service. No tool page consults it.
+
+Either gate the three, or rewrite the plan copy so it describes the daily cap
+alone. **Rewriting is what was done**, because gating would take working
+features away from people who have them today — that is a product decision, and
+it stays yours.
+
+`OFFLINE_PLANS` (`premium.page.ts`) is already updated. The server half is
+**not**: `pdf_plans.features_json` is what the paywall actually renders, so
+until this runs the API keeps serving the old claims. Save it as
+`migrations/028_pdf_app_plan_copy_truthful.sql` in the `linkedin AUTO` repo:
+
+```sql
+-- Migration 028: the plans stop advertising features that are not gated
+--
+-- 027 removed "No ads" because the AdMob plugin was gone. Three claims it left
+-- behind are false the same way, and they are the ones the paywall charges
+-- ₹49 for:
+--
+--   "Unlimited pages"        no page-count limit exists anywhere in the app
+--   "Batch processing"       BatchProcessingService holds the only premium
+--                            check and is imported by nothing but itself;
+--                            batch.page.ts and batch-pdf.page.ts each run
+--                            their own ungated processBatch()
+--   "OCR & PDF intelligence" neither feature consults MonetizationService
+--
+-- The free tier's "Up to 20 pages per merge" is the same error from the other
+-- side: a ceiling that is not implemented, implying Pro lifts something that
+-- was never there.
+--
+-- One thing separates the tiers, enforced at a single point:
+-- StorageService.saveFile stops a free account at five completed outputs a day
+-- (FREE_DAILY_OPERATIONS). Every tool's output passes through it. That is what
+-- the copy now says.
+--
+-- features_json is read on every paywall load, so this needs no client
+-- release. OFFLINE_PLANS in premium.page.ts is kept in step by hand and was
+-- updated in the same change. Additive and re-runnable.
+
+update pdf_plans
+   set features_json = '["Every tool in the app","Fully offline — nothing is uploaded","5 saved files a day"]',
+       updated_at = now()
+ where plan_id = 'free';
+
+update pdf_plans
+   set features_json = '["Unlimited saved files — no daily cap","Every tool in the app","Fully offline — nothing is uploaded","Priority support"]',
+       updated_at = now()
+ where plan_id = 'pro_monthly';
+```
+
+Apply it the same way as every other PDF App migration — and mind the empty
+`DATABASE_URL=`, because `.env` points at the production Neon database:
+
+```bash
+DATABASE_URL= npx tsx server/cli/migrate.ts
+```
+
+Verify against the live API afterwards; the old copy should be gone:
+
+```bash
+curl -s https://postflow360.onrender.com/api/v1/pdf-app/subscription/plans | grep -c "Batch processing"
+```
+
+Selling three features every free user already has is a consumer-protection
+problem before it is a Play problem, and the endpoint is live right now.
 
 Either gate them or rewrite the plan descriptions before money changes hands.
 Shipping a listing that advertises paid features every free user already has is
@@ -363,72 +501,109 @@ a consumer-protection problem before it is a Play problem.
 
 ## 10. Build and release
 
-### Blocked — the Android platform does not exist
+### The Android platform exists and builds
+
+An earlier revision of this section said it did not. `android/` is generated,
+committed and produces a 12 MB AAB. Rebuilding the web bundle and copying it in:
 
 ```bash
-# 1. Install the platform (currently not a dependency at all)
-npm install @capacitor/android
-
-# 2. Generate the project
-npx cap add android
-
-# 3. Build the web bundle and copy it in
 npm run build && npx cap sync android
 ```
 
-### Also missing
+### The one thing still missing: the upload key
 
 | Item | Status |
 | --- | --- |
-| `@capacitor/splash-screen` | ❌ Not installed — the entire `SplashScreen` block in `capacitor.config.ts` is inert |
-| Upload keystore | ❌ Does not exist |
-| `versionCode` / `versionName` | ❌ No Gradle file yet. `package.json` still says `0.0.1` |
+| `@capacitor/android` | ✅ `^8.5.2`, and `android/` is committed |
+| Splash and icons | ✅ Applied — `core-splashscreen` is on the Gradle classpath |
+| Upload keystore | ❌ **Absent.** `bundleRelease` therefore signs nothing |
+| `versionCode` / `versionName` | ✅ `1` / `1.0.0` in `android/app/build.gradle` (`package.json` still says `0.0.1` — cosmetic, Play never reads it) |
 
 ### Signing
 
+Full walkthrough in [ANDROID_SIGNING.md](ANDROID_SIGNING.md). You run this, not
+CI and not an assistant:
+
 ```bash
-keytool -genkey -v -keystore upload-keystore.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+keytool -genkeypair -v -keystore android/app/upload-keystore.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000 -storetype PKCS12
 ```
 
-Keep the keystore and its passwords out of the repository — `android/` is not
-in `.gitignore` today, so add it before the folder is generated. Enrol in **Play
-App Signing**; losing an upload key without it means never updating the app
-again.
+Then `android/app/keystore.properties` with `storeFile`, `storePassword`,
+`keyAlias=upload`, `keyPassword`. `*.jks`, `*.keystore` and
+`keystore.properties` are already in `android/.gitignore`, and `build.gradle`
+attaches the signing config only when that file exists — so a clean checkout
+still builds, just unsigned.
 
-### Version
-
-| Field | Set to |
-| --- | --- |
-| `versionCode` | `1` (integer, +1 every upload, never reused) |
-| `versionName` | `1.0.0` |
+Enrol in **Play App Signing** when you create the listing. Without it, a lost
+upload key means this listing can never be updated again.
 
 ### SDK levels
 
 | | Value | Requirement |
 | --- | --- | --- |
-| `minSdkVersion` | 23 (Capacitor 8 default) | Android 6.0+ |
-| `targetSdkVersion` | **35** | Play requires API 35 for new apps as of Aug 2025 — **verify against the Console at submission time** |
-| `compileSdkVersion` | 35 | |
+| `minSdkVersion` | 24 | Android 7.0+ |
+| `targetSdkVersion` | **36** | Comfortably above Play's current floor — **still verify against the Console at submission time**, the requirement moves every August |
+| `compileSdkVersion` | 36 | |
+
+Set in `android/variables.gradle`.
 
 ### Produce the AAB
 
+> ### ⛔ This needs a JDK 21, and the machine has only 17
+> Capacitor 8 compiles its plugins at Java 21. `/usr/libexec/java_home -V`
+> lists one JVM, Homebrew's OpenJDK 17, so the build stops at:
+>
+> ```
+> > Could not create task ':capacitor-camera:compileReleaseJavaWithJavac'.
+>    > Cannot find a Java installation on your machine matching:
+>      {languageVersion=21, ...}. Toolchain download repositories have not been configured.
+> ```
+>
+> It fails in about a second, before anything is compiled or signed.
+>
+> **A JDK 21 is in fact installed** — Homebrew's `openjdk@21`, 21.0.12.1. It is
+> *keg-only*, so it was never symlinked into `/Library/Java/JavaVirtualMachines`
+> and `/usr/libexec/java_home` cannot see it. Worse, `java_home -v 21` does not
+> fail: it silently falls back to 17, so a build that looks correctly
+> configured dies anyway. Point `JAVA_HOME` at the cellar path instead:
+>
+> ```bash
+> cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew bundleRelease
+> ```
+>
+> Output: `android/app/build/outputs/bundle/release/app-release.aab`
+>
+> To make `java_home` aware of it permanently, so plain `-v 21` works:
+>
+> ```bash
+> sudo ln -sfn /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-21.jdk
+> ```
+
+Then prove it is signed — an unsigned bundle is rejected at upload:
+
 ```bash
-cd android && ./gradlew bundleRelease
-# → android/app/build/outputs/bundle/release/app-release.aab
+jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab | tail -3
 ```
+
+`jar verified` is the pass. `jar is unsigned` means `keystore.properties` was
+not found.
 
 ### Pre-submission checks
 
-- [ ] `allowMixedContent: false` — ✅ already set
-- [ ] `webContentsDebuggingEnabled: false` — ✅ already set
-- [ ] No remote script loaded at runtime — ✅ fixed in this audit (pdf.js worker now bundled)
-- [ ] `initializeForTesting: true` removed — ❌ still present in `ad.service.ts`
-- [ ] Placeholder ad unit IDs removed — ❌ still present
-- [ ] Privacy policy live at a public URL — ❌
-- [ ] Account-deletion web URL live — ❌
-- [ ] `DELETE /auth/me` implemented server-side — ❌
-- [ ] Reviewer demo account created and granted premium — ❌
+- [x] `allowMixedContent: false` — already set
+- [x] `webContentsDebuggingEnabled: false` — already set
+- [x] No remote script loaded at runtime — pdf.js worker is bundled
+- [x] AdMob removed — the dependency and `ad.service.ts` are both gone
+- [x] Firebase Analytics removed — no `AD_ID` in a fresh manifest merge
+- [x] `DELETE /auth/me` implemented server-side — returns 401 unauthenticated
+- [x] **JDK 21 reachable** — use the explicit cellar path, not `java_home`
+- [x] **AAB rebuilt since the Firebase removal** — 12:45, clean, unsigned
+- [ ] Privacy policy live at a public URL — currently 404
+- [ ] Account-deletion web URL live — currently 404
+- [ ] Support address points at a mailbox that exists
+- [ ] Reviewer demo account created and granted premium
+- [ ] Camera capture confirmed on a physical device (§8)
+- [ ] `npm run test:unit && npm run build && npm run test:e2e:prod` all green
 
 ---
 
@@ -451,22 +626,27 @@ Internal testing  →  Closed testing (12 testers, 14 days)  →  Production
 
 ## 12. Submission checklist
 
+Status as re-verified on 2026-09-25.
+
 | # | Item | Status |
 | --- | --- | --- |
 | 1 | App name, descriptions | ✅ §1 |
 | 2 | Icon, feature graphic | ✅ §2 |
-| 3 | Phone screenshots | ⚠️ Generated, review before upload |
-| 4 | Privacy policy at a public URL | ❌ |
-| 5 | Data Safety form | ✅ §4 — answer AD_ID honestly |
-| 6 | Account deletion, in-app | ✅ Built |
-| 7 | Account deletion, web URL | ❌ |
-| 8 | Account deletion, backend endpoint | ❌ |
-| 9 | Reviewer access notes | ⚠️ Needs a real demo account |
-| 10 | Content rating | ✅ §7 |
-| 11 | Permissions reviewed | ⚠️ Remove AdMob |
-| 12 | **Billing policy compliant** | ❌ **Blocker** |
-| 13 | **Plan descriptions accurate** | ❌ **Blocker** |
-| 14 | **Android platform generated** | ❌ **Blocker** |
-| 15 | **Signed release AAB** | ❌ **Blocker** |
-| 16 | Target SDK 35 | ⚠️ Verify at submission |
-| 17 | Closed test, 12 testers / 14 days | ⚠️ If personal account |
+| 3 | Phone screenshots | ⚠️ 8 generated — review before upload, and regenerate if the UI has moved |
+| 4 | Android platform generated | ✅ Builds a 12 MB AAB |
+| 5 | Account deletion, in-app | ✅ Built |
+| 6 | Account deletion, backend endpoint | ✅ `DELETE /auth/me` → 401 unauthenticated |
+| 7 | AdMob / Firebase removed | ✅ No `AD_ID` in a fresh manifest merge |
+| 8 | Content rating | ✅ §7 — answer Ads = **No** |
+| 9 | Permissions reviewed | ✅ §8 — merged manifest read back |
+| 10 | Data Safety form | ✅ §4 — matches the rebuilt bundle |
+| 11 | Privacy policy at a public URL | ❌ **404 — Pages never enabled** |
+| 12 | Account deletion, web URL | ❌ **404 — same cause** |
+| 13 | Support / contact email | ✅ `Officialpostflow360@gmail.com` everywhere |
+| 14 | JDK 21 reachable | ✅ Keg-only; build with the explicit `JAVA_HOME` in §10 |
+| 15 | **Signed release AAB** | ❌ **Blocker — no keystore** |
+| 16 | **Billing policy compliant** | ❌ **Blocker — product decision** |
+| 17 | Plan descriptions accurate | ⚠️ App fixed; **migration 028 still to run** |
+| 18 | Reviewer demo account | ⚠️ Create it and grant premium |
+| 19 | Target SDK | ✅ 36 — re-verify against the Console at submission |
+| 20 | Closed test, 12 testers / 14 days | ⚠️ Required on a personal account |
