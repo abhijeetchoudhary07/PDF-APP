@@ -103,7 +103,7 @@ export class ContactSupportPage implements OnInit {
       : '';
 
     const body = `${this.message}\n\nSender: ${this.name || 'Candidate'}\nEmail: ${this.email}${diagText}`;
-    const mailtoUrl = `mailto:support@indianformhelper.in?subject=${encodeURIComponent(`[${this.category.toUpperCase()}] ${this.subject || 'Support Inquiry'}`)}&body=${encodeURIComponent(body)}`;
+    const mailtoUrl = `mailto:Officialpostflow360@gmail.com?subject=${encodeURIComponent(`[${this.category.toUpperCase()}] ${this.subject || 'Support Inquiry'}`)}&body=${encodeURIComponent(body)}`;
 
     setTimeout(() => {
       this.isSubmitting = false;
