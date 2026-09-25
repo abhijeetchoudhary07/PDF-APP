@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The same exclusion for Android 11 and below, which has no way to tell a cloud
+  backup from a device transfer: fullBackupContent governs both at once.
+
+  Since the two cannot be separated here, the safer reading wins and the
+  preferences, which carry the signed-in session's refresh token, stay on the
+  device. See data_extraction_rules.xml for the Android 12+ split and the
+  reasoning behind it.
+-->
+<full-backup-content>
+  <exclude domain="sharedpref" path="CapacitorStorage.xml" />
+</full-backup-content>

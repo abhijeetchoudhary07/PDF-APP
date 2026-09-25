@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What may leave this device, and by which route (Android 12+).
+
+  Everything the app persists (presets, history, profile, the daily quota and
+  the signed-in session) shares one SharedPreferences file, CapacitorStorage,
+  because that is the single store the Preferences plugin writes to. The
+  session inside it holds a refresh token, and Preferences.configure({ group })
+  is global and asynchronous, so the token cannot be split into a file of its
+  own without racing every other read.
+
+  The two backup routes are treated differently instead, because they are not
+  the same risk.
+
+  cloud-backup copies to Google's servers. Bearer credentials should not go
+  there, from an app whose whole promise is that nothing leaves the phone, so
+  the preferences are excluded.
+
+  device-transfer is a direct phone to phone copy during setup, with no third
+  party holding anything. Presets someone built for their exam forms are worth
+  carrying across an upgrade, so that route keeps them.
+
+  The cost, stated plainly: restoring from a cloud backup starts signed out and
+  without saved presets. Restoring by device transfer keeps both.
+-->
+<data-extraction-rules>
+  <cloud-backup>
+    <exclude domain="sharedpref" path="CapacitorStorage.xml" />
+  </cloud-backup>
+
+  <device-transfer>
+    <!-- Everything, including the preferences excluded from cloud backup. -->
+  </device-transfer>
+</data-extraction-rules>
