@@ -34,6 +34,14 @@ import {
  * still on migration 023's seed serves ₹149/₹1199/₹2999 instead, so until 025
  * is deployed the fallback and the live catalogue disagree -- deploy the
  * migration rather than editing these numbers to match a stale server.
+ *
+ * The feature lists match migration 028. Pro used to advertise "Unlimited
+ * pages", "Batch processing" and "OCR & PDF intelligence"; none of the three
+ * is gated anywhere in the app, so they were charging for what every free
+ * account already has. What premium actually changes is the daily cap in
+ * StorageService.saveFile, and that is what these lists now say. If the three
+ * are ever gated for real, revert 028 and this list together.
+ *
  * `offlinePricing` puts a warning on screen while these are showing, and
  * `choose()` cannot open the pay panel until `payment-settings` has been
  * fetched, so nobody can transact on a fallback price.
@@ -45,7 +53,12 @@ const OFFLINE_PLANS: PdfPlan[] = [
     price: 49,
     currency: 'INR',
     durationDays: 30,
-    features: ['Unlimited pages', 'Batch processing', 'OCR & PDF intelligence', 'Unlimited daily saves', 'Priority support'],
+    features: [
+      'Unlimited saved files — no daily cap',
+      'Every tool in the app',
+      'Fully offline — nothing is uploaded',
+      'Priority support',
+    ],
     isActive: true,
     sortOrder: 1,
   },
