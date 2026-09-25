@@ -32,10 +32,24 @@ export class HistoryService {
 
   async addHistoryItem(item: Omit<HistoryItem, 'id' | 'date'>): Promise<void> {
     const history = await this.getHistory();
+    const now = new Date().getTime();
     const newItem: HistoryItem = {
       ...item,
-      id: `hist_${new Date().getTime()}`,
-      date: new Date().getTime()
+      /*
+       * The timestamp alone is not unique.
+       *
+       * A batch run adds one entry per saved file in a tight loop, and several
+       * of those land in the same millisecond. With `hist_${now}` as the id
+       * they all got the *same* id, and `deleteItem` filters by id — so
+       * removing one row from the history page removed every row that happened
+       * to be written in that millisecond. The random suffix is what makes the
+       * id identify a row rather than an instant.
+       *
+       * Entries written before this change keep their plain `hist_<ms>` ids;
+       * deletion matches on the exact string, so they are unaffected.
+       */
+      id: `hist_${now}_${Math.random().toString(36).slice(2, 8)}`,
+      date: now
     };
     
     // Keep last 100 items

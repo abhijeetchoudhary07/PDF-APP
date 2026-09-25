@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ImageService } from './image.service';
 import { CompressionConfig } from '../models/compression-config.model';
 export { CompressionConfig };
@@ -8,7 +8,8 @@ import { ProcessingResult } from '../models/processing-result.model';
   providedIn: 'root'
 })
 export class CompressionService {
-  constructor(private imageService: ImageService) {}
+  private imageService = inject(ImageService);
+
 
   async compressToExactKB(file: File, config: CompressionConfig): Promise<ProcessingResult> {
     const targetBytes = (config.targetKB || 50) * 1024;

@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -32,13 +32,13 @@ import { ConverterMetadata } from '../../core/conversion/conversion.types';
   ]
 })
 export class ConversionHubPage implements OnInit {
+  private registry = inject(ConversionRegistryService);
+
   searchTerm: string = '';
   selectedCategory: 'all' | 'pdf-to-format' | 'format-to-pdf' = 'all';
 
   pdfToFormatConverters: ConverterMetadata[] = [];
   formatToPdfConverters: ConverterMetadata[] = [];
-
-  constructor(private registry: ConversionRegistryService) {}
 
   ngOnInit() {
     this.pdfToFormatConverters = this.registry

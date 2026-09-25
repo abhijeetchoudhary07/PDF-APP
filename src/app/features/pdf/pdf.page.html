@@ -32,462 +32,476 @@
       <!-- ============================================== -->
       <!-- 1. FULL PDF TOOLS DASHBOARD (6 GROUPS)         -->
       <!-- ============================================== -->
-      <div *ngIf="mode === 'dashboard'" class="dashboard-wrapper">
-        <div class="dashboard-intro">
-          <h2>Client-Side PDF Workstation</h2>
-          <p>Every tool runs 100% in your browser memory. No documents are uploaded to cloud servers.</p>
-        </div>
-
-        <!-- GROUP 1: CONVERT -->
-        <div class="tool-group-card">
-          <div class="group-header">
-            <div class="group-title">
-              <span class="group-dot dot-convert"></span>
-              <strong>CONVERT (PDF to Other Formats)</strong>
+      @if (mode === 'dashboard') {
+        <div class="dashboard-wrapper">
+          <div class="dashboard-intro">
+            <h2>Client-Side PDF Workstation</h2>
+            <p>Every tool runs 100% in your browser memory. No documents are uploaded to cloud servers.</p>
+          </div>
+          <!-- GROUP 1: CONVERT -->
+          <div class="tool-group-card">
+            <div class="group-header">
+              <div class="group-title">
+                <span class="group-dot dot-convert"></span>
+                <strong>CONVERT (PDF to Other Formats)</strong>
+              </div>
+              <span class="group-badge">Offline Vector & Text</span>
             </div>
-            <span class="group-badge">Offline Vector & Text</span>
-          </div>
-          <div class="group-grid">
-            <a routerLink="/features/pdf/conversion/pdf-to-word" class="subtool-item">
-              <span class="subtool-icon">DOCX</span>
-              <span>PDF to Word</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/pdf-to-excel" class="subtool-item">
-              <span class="subtool-icon icon-success">XLSX</span>
-              <span>PDF to Excel</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/pdf-to-powerpoint" class="subtool-item">
-              <span class="subtool-icon icon-warning">PPTX</span>
-              <span>PDF to PPT</span>
-            </a>
-            <a (click)="mode = 'extract'" class="subtool-item">
-              <span class="subtool-icon icon-danger">JPG</span>
-              <span>PDF to JPG</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/pdf-to-png" class="subtool-item">
-              <span class="subtool-icon icon-secondary">PNG</span>
-              <span>PDF to PNG</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/pdf-to-pdfa" class="subtool-item">
-              <span class="subtool-icon">PDF/A</span>
-              <span>PDF to PDF/A</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/pdf-to-txt" class="subtool-item">
-              <span class="subtool-icon">TXT</span>
-              <span>OCR / Text Extract</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- GROUP 2: CREATE PDF -->
-        <div class="tool-group-card">
-          <div class="group-header">
-            <div class="group-title">
-              <span class="group-dot dot-primary"></span>
-              <strong>CREATE PDF (Documents to PDF)</strong>
+            <div class="group-grid">
+              <a routerLink="/features/pdf/conversion/pdf-to-word" class="subtool-item">
+                <span class="subtool-icon">DOCX</span>
+                <span>PDF to Word</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/pdf-to-excel" class="subtool-item">
+                <span class="subtool-icon icon-success">XLSX</span>
+                <span>PDF to Excel</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/pdf-to-powerpoint" class="subtool-item">
+                <span class="subtool-icon icon-warning">PPTX</span>
+                <span>PDF to PPT</span>
+              </a>
+              <a (click)="mode = 'extract'" class="subtool-item">
+                <span class="subtool-icon icon-danger">JPG</span>
+                <span>PDF to JPG</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/pdf-to-png" class="subtool-item">
+                <span class="subtool-icon icon-secondary">PNG</span>
+                <span>PDF to PNG</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/pdf-to-pdfa" class="subtool-item">
+                <span class="subtool-icon">PDF/A</span>
+                <span>PDF to PDF/A</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/pdf-to-txt" class="subtool-item">
+                <span class="subtool-icon">TXT</span>
+                <span>OCR / Text Extract</span>
+              </a>
             </div>
-            <span class="group-badge">Office & Web</span>
           </div>
-          <div class="group-grid">
-            <a (click)="mode = 'create'" class="subtool-item highlight">
-              <span class="subtool-icon icon-danger">+PDF</span>
-              <span>JPG to PDF</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/word-to-pdf" class="subtool-item">
-              <span class="subtool-icon">Word</span>
-              <span>Word to PDF</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/excel-to-pdf" class="subtool-item">
-              <span class="subtool-icon icon-success">Excel</span>
-              <span>Excel to PDF</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/powerpoint-to-pdf" class="subtool-item">
-              <span class="subtool-icon icon-warning">PPT</span>
-              <span>PPT to PDF</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/txt-to-pdf" class="subtool-item">
-              <span class="subtool-icon">Text</span>
-              <span>TXT to PDF</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/csv-to-pdf" class="subtool-item">
-              <span class="subtool-icon icon-tertiary">CSV</span>
-              <span>CSV to PDF</span>
-            </a>
-            <a routerLink="/features/pdf/conversion/html-to-pdf" class="subtool-item">
-              <span class="subtool-icon icon-secondary">HTML</span>
-              <span>HTML to PDF</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- GROUP 3: ORGANIZE -->
-        <div class="tool-group-card">
-          <div class="group-header">
-            <div class="group-title">
-              <span class="group-dot dot-organize"></span>
-              <strong>ORGANIZE (Page Management)</strong>
+          <!-- GROUP 2: CREATE PDF -->
+          <div class="tool-group-card">
+            <div class="group-header">
+              <div class="group-title">
+                <span class="group-dot dot-primary"></span>
+                <strong>CREATE PDF (Documents to PDF)</strong>
+              </div>
+              <span class="group-badge">Office & Web</span>
             </div>
-            <span class="group-badge">Visual Grid</span>
-          </div>
-          <div class="group-grid">
-            <a routerLink="/features/pdf/merge" class="subtool-item">
-              <span class="subtool-icon icon-primary">Merge</span>
-              <span>Merge PDFs</span>
-            </a>
-            <a routerLink="/features/pdf/split" class="subtool-item">
-              <span class="subtool-icon icon-secondary">Split</span>
-              <span>Split PDF</span>
-            </a>
-            <a routerLink="/features/pdf/rotate" class="subtool-item">
-              <span class="subtool-icon icon-warning">Rotate</span>
-              <span>Rotate Pages</span>
-            </a>
-            <a routerLink="/features/pdf/delete" class="subtool-item">
-              <span class="subtool-icon icon-danger">Delete</span>
-              <span>Delete Pages</span>
-            </a>
-            <a routerLink="/features/pdf/extract" class="subtool-item">
-              <span class="subtool-icon">Extract</span>
-              <span>Extract Pages</span>
-            </a>
-            <a routerLink="/features/pdf/organize" class="subtool-item highlight">
-              <span class="subtool-icon icon-primary">Grid</span>
-              <span>Visual Organizer</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- GROUP 4: EDIT -->
-        <div class="tool-group-card">
-          <div class="group-header">
-            <div class="group-title">
-              <span class="group-dot dot-edit"></span>
-              <strong>EDIT & ANNOTATE</strong>
+            <div class="group-grid">
+              <a (click)="mode = 'create'" class="subtool-item highlight">
+                <span class="subtool-icon icon-danger">+PDF</span>
+                <span>JPG to PDF</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/word-to-pdf" class="subtool-item">
+                <span class="subtool-icon">Word</span>
+                <span>Word to PDF</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/excel-to-pdf" class="subtool-item">
+                <span class="subtool-icon icon-success">Excel</span>
+                <span>Excel to PDF</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/powerpoint-to-pdf" class="subtool-item">
+                <span class="subtool-icon icon-warning">PPT</span>
+                <span>PPT to PDF</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/txt-to-pdf" class="subtool-item">
+                <span class="subtool-icon">Text</span>
+                <span>TXT to PDF</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/csv-to-pdf" class="subtool-item">
+                <span class="subtool-icon icon-tertiary">CSV</span>
+                <span>CSV to PDF</span>
+              </a>
+              <a routerLink="/features/pdf/conversion/html-to-pdf" class="subtool-item">
+                <span class="subtool-icon icon-secondary">HTML</span>
+                <span>HTML to PDF</span>
+              </a>
             </div>
-            <span class="group-badge">Vector Canvas</span>
           </div>
-          <div class="group-grid">
-            <a routerLink="/features/pdf/editor" class="subtool-item highlight">
-              <span class="subtool-icon icon-danger">Edit</span>
-              <span>Full PDF Editor</span>
-            </a>
-            <a routerLink="/features/pdf/editor" class="subtool-item">
-              <span class="subtool-icon icon-primary">Draw</span>
-              <span>Annotate & Draw</span>
-            </a>
-            <a routerLink="/features/pdf/editor" class="subtool-item">
-              <span class="subtool-icon icon-secondary">Crop</span>
-              <span>Crop Pages</span>
-            </a>
-            <a routerLink="/features/pdf/editor" class="subtool-item">
-              <span class="subtool-icon">Mark</span>
-              <span>Watermark</span>
-            </a>
-            <a routerLink="/features/pdf/editor" class="subtool-item">
-              <span class="subtool-icon">1-2-3</span>
-              <span>Number Pages</span>
-            </a>
-            <a routerLink="/features/pdf/editor" class="subtool-item highlight">
-              <span class="subtool-icon icon-danger">Redact</span>
-              <span>True Redaction</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- GROUP 5: FILL & SIGN -->
-        <div class="tool-group-card">
-          <div class="group-header">
-            <div class="group-title">
-              <span class="group-dot dot-sign"></span>
-              <strong>FILL & SIGN</strong>
+          <!-- GROUP 3: ORGANIZE -->
+          <div class="tool-group-card">
+            <div class="group-header">
+              <div class="group-title">
+                <span class="group-dot dot-organize"></span>
+                <strong>ORGANIZE (Page Management)</strong>
+              </div>
+              <span class="group-badge">Visual Grid</span>
             </div>
-            <span class="group-badge">AcroForms & Touch</span>
-          </div>
-          <div class="group-grid">
-            <a routerLink="/features/pdf/forms" class="subtool-item highlight">
-              <span class="subtool-icon icon-primary">Form</span>
-              <span>Fill Form</span>
-            </a>
-            <a routerLink="/features/pdf/sign" class="subtool-item highlight">
-              <span class="subtool-icon icon-success">Sign</span>
-              <span>Sign PDF</span>
-            </a>
-            <a routerLink="/features/pdf/signature-request" class="subtool-item">
-              <span class="subtool-icon">Request</span>
-              <span>Request Signature</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- GROUP 6: PROTECT -->
-        <div class="tool-group-card">
-          <div class="group-header">
-            <div class="group-title">
-              <span class="group-dot dot-security"></span>
-              <strong>PROTECT & SECURITY</strong>
+            <div class="group-grid">
+              <a routerLink="/features/pdf/merge" class="subtool-item">
+                <span class="subtool-icon icon-primary">Merge</span>
+                <span>Merge PDFs</span>
+              </a>
+              <a routerLink="/features/pdf/split" class="subtool-item">
+                <span class="subtool-icon icon-secondary">Split</span>
+                <span>Split PDF</span>
+              </a>
+              <a routerLink="/features/pdf/rotate" class="subtool-item">
+                <span class="subtool-icon icon-warning">Rotate</span>
+                <span>Rotate Pages</span>
+              </a>
+              <a routerLink="/features/pdf/delete" class="subtool-item">
+                <span class="subtool-icon icon-danger">Delete</span>
+                <span>Delete Pages</span>
+              </a>
+              <a routerLink="/features/pdf/extract" class="subtool-item">
+                <span class="subtool-icon">Extract</span>
+                <span>Extract Pages</span>
+              </a>
+              <a routerLink="/features/pdf/organize" class="subtool-item highlight">
+                <span class="subtool-icon icon-primary">Grid</span>
+                <span>Visual Organizer</span>
+              </a>
             </div>
-            <span class="group-badge">ISO 32000-1</span>
           </div>
-          <div class="group-grid">
-            <a routerLink="/features/pdf/protect" class="subtool-item">
-              <span class="subtool-icon icon-warning">Lock</span>
-              <span>Protect PDF</span>
-            </a>
-            <a routerLink="/features/pdf/unlock" class="subtool-item">
-              <span class="subtool-icon icon-success">Unlock</span>
-              <span>Unlock PDF</span>
-            </a>
-            <a routerLink="/features/pdf/flatten" class="subtool-item highlight">
-              <span class="subtool-icon">Flatten</span>
-              <span>Flatten PDF</span>
-            </a>
+          <!-- GROUP 4: EDIT -->
+          <div class="tool-group-card">
+            <div class="group-header">
+              <div class="group-title">
+                <span class="group-dot dot-edit"></span>
+                <strong>EDIT & ANNOTATE</strong>
+              </div>
+              <span class="group-badge">Vector Canvas</span>
+            </div>
+            <div class="group-grid">
+              <a routerLink="/features/pdf/editor" class="subtool-item highlight">
+                <span class="subtool-icon icon-danger">Edit</span>
+                <span>Full PDF Editor</span>
+              </a>
+              <a routerLink="/features/pdf/editor" class="subtool-item">
+                <span class="subtool-icon icon-primary">Draw</span>
+                <span>Annotate & Draw</span>
+              </a>
+              <a routerLink="/features/pdf/editor" class="subtool-item">
+                <span class="subtool-icon icon-secondary">Crop</span>
+                <span>Crop Pages</span>
+              </a>
+              <a routerLink="/features/pdf/editor" class="subtool-item">
+                <span class="subtool-icon">Mark</span>
+                <span>Watermark</span>
+              </a>
+              <a routerLink="/features/pdf/editor" class="subtool-item">
+                <span class="subtool-icon">1-2-3</span>
+                <span>Number Pages</span>
+              </a>
+              <a routerLink="/features/pdf/editor" class="subtool-item highlight">
+                <span class="subtool-icon icon-danger">Redact</span>
+                <span>True Redaction</span>
+              </a>
+            </div>
+          </div>
+          <!-- GROUP 5: FILL & SIGN -->
+          <div class="tool-group-card">
+            <div class="group-header">
+              <div class="group-title">
+                <span class="group-dot dot-sign"></span>
+                <strong>FILL & SIGN</strong>
+              </div>
+              <span class="group-badge">AcroForms & Touch</span>
+            </div>
+            <div class="group-grid">
+              <a routerLink="/features/pdf/forms" class="subtool-item highlight">
+                <span class="subtool-icon icon-primary">Form</span>
+                <span>Fill Form</span>
+              </a>
+              <a routerLink="/features/pdf/sign" class="subtool-item highlight">
+                <span class="subtool-icon icon-success">Sign</span>
+                <span>Sign PDF</span>
+              </a>
+              <a routerLink="/features/pdf/signature-request" class="subtool-item">
+                <span class="subtool-icon">Request</span>
+                <span>Request Signature</span>
+              </a>
+            </div>
+          </div>
+          <!-- GROUP 6: PROTECT -->
+          <div class="tool-group-card">
+            <div class="group-header">
+              <div class="group-title">
+                <span class="group-dot dot-security"></span>
+                <strong>PROTECT & SECURITY</strong>
+              </div>
+              <span class="group-badge">ISO 32000-1</span>
+            </div>
+            <div class="group-grid">
+              <a routerLink="/features/pdf/protect" class="subtool-item">
+                <span class="subtool-icon icon-warning">Lock</span>
+                <span>Protect PDF</span>
+              </a>
+              <a routerLink="/features/pdf/unlock" class="subtool-item">
+                <span class="subtool-icon icon-success">Unlock</span>
+                <span>Unlock PDF</span>
+              </a>
+              <a routerLink="/features/pdf/flatten" class="subtool-item highlight">
+                <span class="subtool-icon">Flatten</span>
+                <span>Flatten PDF</span>
+              </a>
+            </div>
           </div>
         </div>
-      </div>
+      }
 
       <!-- ============================================== -->
       <!-- 2. COMPRESS MODE                               -->
       <!-- ============================================== -->
-      <div *ngIf="mode === 'compress'" class="tool-workspace">
-        <!-- EMPTY / UPLOAD STATE -->
-        <div *ngIf="workflowState === 'EMPTY' || (!originalFile && workflowState === 'ERROR')">
-          <app-file-dropzone
-            icon="document-text"
-            [title]="'dropzone.pdfTitle' | translate"
-            [description]="'dropzone.pdfDesc' | translate"
-            accept="application/pdf"
-            [errorMessage]="errorMessage"
-            (fileSelected)="onCompressPdfSelected($event)">
-          </app-file-dropzone>
-        </div>
-
-        <!-- CONFIGURE STATE -->
-        <div *ngIf="originalFile && workflowState !== 'SUCCESS'" class="configuring-section">
-          <app-file-preview
-            [file]="originalFile"
-            [thumbnailUrl]="originalPdfThumbnailUrl"
-            [pageCount]="originalPdfPageCount"
-            (replace)="selectPdf()"
-            (remove)="removeCompressPdf()">
-          </app-file-preview>
-
-          <div class="config-card">
-            <label class="control-label">{{ 'pdfPage.targetSizeLabel' | translate }}</label>
-            <div class="preset-chips">
-              <button
-                *ngFor="let size of targetSizes"
-                type="button"
-                class="preset-chip"
-                [class.active]="selectedTargetKB === size"
-                (click)="selectedTargetKB = size">
-                {{ size >= 1024 ? (size / 1024) + ' MB' : size + ' KB' }}
-              </button>
+      @if (mode === 'compress') {
+        <div class="tool-workspace">
+          <!-- EMPTY / UPLOAD STATE -->
+          @if (workflowState === 'EMPTY' || (!originalFile && workflowState === 'ERROR')) {
+            <div>
+              <app-file-dropzone
+                icon="document-text"
+                [title]="'dropzone.pdfTitle' | translate"
+                [description]="'dropzone.pdfDesc' | translate"
+                accept="application/pdf"
+                [errorMessage]="errorMessage"
+                (fileSelected)="onCompressPdfSelected($event)">
+              </app-file-dropzone>
             </div>
-
-            <!-- Processing Banner -->
-            <div *ngIf="isProcessing" class="processing-banner">
-              <div class="spinner-box">
-                <div class="loading-spinner"></div>
+          }
+          <!-- CONFIGURE STATE -->
+          @if (originalFile && workflowState !== 'SUCCESS') {
+            <div class="configuring-section">
+              <app-file-preview
+                [file]="originalFile"
+                [thumbnailUrl]="originalPdfThumbnailUrl"
+                [pageCount]="originalPdfPageCount"
+                (replace)="selectPdf()"
+                (remove)="removeCompressPdf()">
+              </app-file-preview>
+              <div class="config-card">
+                <label class="control-label">{{ 'pdfPage.targetSizeLabel' | translate }}</label>
+                <div class="preset-chips">
+                  @for (size of targetSizes; track size) {
+                    <button
+                      type="button"
+                      class="preset-chip"
+                      [class.active]="selectedTargetKB === size"
+                      (click)="selectedTargetKB = size">
+                      {{ size >= 1024 ? (size / 1024) + ' MB' : size + ' KB' }}
+                    </button>
+                  }
+                </div>
+                <!-- Processing Banner -->
+                @if (isProcessing) {
+                  <div class="processing-banner">
+                    <div class="spinner-box">
+                      <div class="loading-spinner"></div>
+                    </div>
+                    <div class="stage-info">
+                      <strong>{{ stageText }}</strong>
+                      <span>{{ 'common.processing' | translate }}</span>
+                    </div>
+                    <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">{{ 'common.cancel' | translate }}</button>
+                  </div>
+                }
+                <app-button
+                  variant="danger"
+                  size="lg"
+                  [block]="true"
+                  [loading]="isProcessing"
+                  (clicked)="compressPdf()">
+                  {{ isProcessing ? stageText : ('pdfPage.compressPdfBtn' | translate:{ size: (selectedTargetKB >= 1024 ? (selectedTargetKB / 1024) + ' MB' : selectedTargetKB + ' KB') }) }}
+                </app-button>
               </div>
-              <div class="stage-info">
-                <strong>{{ stageText }}</strong>
-                <span>{{ 'common.processing' | translate }}</span>
-              </div>
-              <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">{{ 'common.cancel' | translate }}</button>
             </div>
-
-            <app-button
-              variant="danger"
-              size="lg"
-              [block]="true"
-              [loading]="isProcessing"
-              (clicked)="compressPdf()">
-              {{ isProcessing ? stageText : ('pdfPage.compressPdfBtn' | translate:{ size: (selectedTargetKB >= 1024 ? (selectedTargetKB / 1024) + ' MB' : selectedTargetKB + ' KB') }) }}
-            </app-button>
-          </div>
+          }
+          <!-- SUCCESS / RESULT STATE -->
+          @if (workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData) {
+            <div class="result-section">
+              <app-result-preview
+                [file]="processedResult?.file"
+                [beforeData]="beforePreviewData"
+                [afterData]="afterPreviewData"
+                [beforeUrl]="originalPdfThumbnailUrl"
+                [afterUrl]="processedPdfThumbnailUrl"
+                [outputFilename]="processedResult?.file?.name"
+                (saved)="saveCompressedPdf()"
+                (shared)="shareCompressedPdf()"
+                (resetRequested)="workflowState = 'CONFIGURING'">
+              </app-result-preview>
+              <app-related-tools
+                currentToolId="pdf_dashboard"
+                category="PDF"
+                [title]="'results.relatedToolsTitle' | translate"
+                [subtitle]="'results.relatedToolsSubtitle' | translate">
+              </app-related-tools>
+            </div>
+          }
         </div>
-
-        <!-- SUCCESS / RESULT STATE -->
-        <div *ngIf="workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData" class="result-section">
-          <app-result-preview
-            [file]="processedResult?.file"
-            [beforeData]="beforePreviewData"
-            [afterData]="afterPreviewData"
-            [beforeUrl]="originalPdfThumbnailUrl"
-            [afterUrl]="processedPdfThumbnailUrl"
-            [outputFilename]="processedResult?.file?.name"
-            (saved)="saveCompressedPdf()"
-            (shared)="shareCompressedPdf()"
-            (resetRequested)="workflowState = 'CONFIGURING'">
-          </app-result-preview>
-
-          <app-related-tools
-            currentToolId="pdf_dashboard"
-            category="PDF"
-            [title]="'results.relatedToolsTitle' | translate"
-            [subtitle]="'results.relatedToolsSubtitle' | translate">
-          </app-related-tools>
-        </div>
-      </div>
+      }
 
       <!-- ============================================== -->
       <!-- 3. CREATE MODE (Images to PDF)                 -->
       <!-- ============================================== -->
-      <div *ngIf="mode === 'create'" class="tool-workspace">
-        <div *ngIf="imageFiles.length === 0">
-          <app-file-dropzone
-            icon="images"
-            title="Select or Drag & Drop Images to Compile"
-            description="Select multiple photos, documents, or scans. Reorder them and export into a clean PDF."
-            accept="image/jpeg,image/png,image/webp"
-            [multiple]="true"
-            (filesSelected)="onImagesDropped($event)">
-          </app-file-dropzone>
-        </div>
-
-        <div *ngIf="imageFiles.length > 0 && workflowState !== 'SUCCESS'" class="images-reorder-card">
-          <div class="card-header-bar">
-            <strong>Selected Images ({{ imageFiles.length }})</strong>
-            <app-button variant="outline" size="sm" (clicked)="selectImages()">+ Add More</app-button>
-          </div>
-
-          <div class="image-items-list">
-            <div *ngFor="let file of imageFiles; let i = index" class="image-item-row">
-              <div class="item-info">
-                <img *ngIf="imageThumbnailUrls[i]" [src]="imageThumbnailUrls[i]" class="item-thumb" alt="Thumb" />
-                <span class="item-index">{{ i + 1 }}</span>
-                <div class="item-text">
-                  <strong>{{ file.name }}</strong>
-                  <span>{{ (file.size / 1024) | number:'1.0-1' }} KB</span>
+      @if (mode === 'create') {
+        <div class="tool-workspace">
+          @if (imageFiles.length === 0) {
+            <div>
+              <app-file-dropzone
+                icon="images"
+                title="Select or Drag & Drop Images to Compile"
+                description="Select multiple photos, documents, or scans. Reorder them and export into a clean PDF."
+                accept="image/jpeg,image/png,image/webp"
+                [multiple]="true"
+                (filesSelected)="onImagesDropped($event)">
+              </app-file-dropzone>
+            </div>
+          }
+          @if (imageFiles.length > 0 && workflowState !== 'SUCCESS') {
+            <div class="images-reorder-card">
+              <div class="card-header-bar">
+                <strong>Selected Images ({{ imageFiles.length }})</strong>
+                <app-button variant="outline" size="sm" (clicked)="selectImages()">+ Add More</app-button>
+              </div>
+              <div class="image-items-list">
+                @for (file of imageFiles; track file; let i = $index) {
+                  <div class="image-item-row">
+                    <div class="item-info">
+                      @if (imageThumbnailUrls[i]) {
+                        <img [src]="imageThumbnailUrls[i]" class="item-thumb" alt="Thumb" />
+                      }
+                      <span class="item-index">{{ i + 1 }}</span>
+                      <div class="item-text">
+                        <strong>{{ file.name }}</strong>
+                        <span>{{ (file.size / 1024) | number:'1.0-1' }} KB</span>
+                      </div>
+                    </div>
+                    <div class="item-actions">
+                      <button type="button" class="icon-btn" (click)="moveImage(i, -1)" [disabled]="i === 0" title="Move Up">&uarr;</button>
+                      <button type="button" class="icon-btn" (click)="moveImage(i, 1)" [disabled]="i === imageFiles.length - 1" title="Move Down">&darr;</button>
+                      <button type="button" class="icon-btn btn-danger" (click)="removeImage(i)" title="Remove">&times;</button>
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="config-grid ion-margin-top">
+                <div class="field-group">
+                  <label class="field-label">Page Format</label>
+                  <select [(ngModel)]="createConfig.format" class="field-select">
+                    <option value="A4">A4 (Standard)</option>
+                    <option value="Letter">US Letter</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Orientation</label>
+                  <select [(ngModel)]="createConfig.orientation" class="field-select">
+                    <option value="Portrait">Portrait</option>
+                    <option value="Landscape">Landscape</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Fitting</label>
+                  <select [(ngModel)]="createConfig.fitMode" class="field-select">
+                    <option value="fit">Fit (Preserve Ratio)</option>
+                    <option value="fill">Fill (Crop Edges)</option>
+                  </select>
                 </div>
               </div>
-              <div class="item-actions">
-                <button type="button" class="icon-btn" (click)="moveImage(i, -1)" [disabled]="i === 0" title="Move Up">&uarr;</button>
-                <button type="button" class="icon-btn" (click)="moveImage(i, 1)" [disabled]="i === imageFiles.length - 1" title="Move Down">&darr;</button>
-                <button type="button" class="icon-btn btn-danger" (click)="removeImage(i)" title="Remove">&times;</button>
+              <div class="action-submit-wrap">
+                <app-button
+                  variant="primary"
+                  size="lg"
+                  [block]="true"
+                  [loading]="isProcessing"
+                  (clicked)="createPdf()">
+                  {{ isProcessing ? 'Generating PDF...' : 'Create PDF (' + imageFiles.length + ' Pages)' }}
+                </app-button>
               </div>
             </div>
-          </div>
-
-          <div class="config-grid ion-margin-top">
-            <div class="field-group">
-              <label class="field-label">Page Format</label>
-              <select [(ngModel)]="createConfig.format" class="field-select">
-                <option value="A4">A4 (Standard)</option>
-                <option value="Letter">US Letter</option>
-              </select>
+          }
+          @if (workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData) {
+            <div class="result-section">
+              <app-result-preview
+                [file]="processedResult?.file"
+                [beforeData]="beforePreviewData"
+                [afterData]="afterPreviewData"
+                [outputFilename]="processedResult?.file?.name"
+                (saved)="saveCreatedPdf()"
+                (shared)="shareCreatedPdf()"
+                (resetRequested)="workflowState = 'CONFIGURING'">
+              </app-result-preview>
             </div>
-
-            <div class="field-group">
-              <label class="field-label">Orientation</label>
-              <select [(ngModel)]="createConfig.orientation" class="field-select">
-                <option value="Portrait">Portrait</option>
-                <option value="Landscape">Landscape</option>
-              </select>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Fitting</label>
-              <select [(ngModel)]="createConfig.fitMode" class="field-select">
-                <option value="fit">Fit (Preserve Ratio)</option>
-                <option value="fill">Fill (Crop Edges)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="action-submit-wrap">
-            <app-button
-              variant="primary"
-              size="lg"
-              [block]="true"
-              [loading]="isProcessing"
-              (clicked)="createPdf()">
-              {{ isProcessing ? 'Generating PDF...' : 'Create PDF (' + imageFiles.length + ' Pages)' }}
-            </app-button>
-          </div>
+          }
         </div>
-
-        <div *ngIf="workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData" class="result-section">
-          <app-result-preview
-            [file]="processedResult?.file"
-            [beforeData]="beforePreviewData"
-            [afterData]="afterPreviewData"
-            [outputFilename]="processedResult?.file?.name"
-            (saved)="saveCreatedPdf()"
-            (shared)="shareCreatedPdf()"
-            (resetRequested)="workflowState = 'CONFIGURING'">
-          </app-result-preview>
-        </div>
-      </div>
+      }
 
       <!-- ============================================== -->
       <!-- 4. EXTRACT MODE (PDF to Images)                -->
       <!-- ============================================== -->
-      <div *ngIf="mode === 'extract'" class="tool-workspace">
-        <div *ngIf="!extractPdfFile">
-          <app-file-dropzone
-            icon="copy"
-            title="Select or Drag & Drop PDF to Extract"
-            description="Extract all or specific pages into high-resolution JPG images."
-            accept="application/pdf"
-            (fileSelected)="onExtractPdfSelected($event)">
-          </app-file-dropzone>
-        </div>
-
-        <div *ngIf="extractPdfFile && extractedImages.length === 0" class="config-card">
-          <div class="card-header-bar">
-            <strong>{{ extractPdfFile.name }} ({{ pdfPageCount }} Pages)</strong>
-            <div class="toggle-btns">
-              <button type="button" class="btn-text" (click)="toggleSelectAll(true)">Select All</button>
-              <button type="button" class="btn-text" (click)="toggleSelectAll(false)">Deselect All</button>
+      @if (mode === 'extract') {
+        <div class="tool-workspace">
+          @if (!extractPdfFile) {
+            <div>
+              <app-file-dropzone
+                icon="copy"
+                title="Select or Drag & Drop PDF to Extract"
+                description="Extract all or specific pages into high-resolution JPG images."
+                accept="application/pdf"
+                (fileSelected)="onExtractPdfSelected($event)">
+              </app-file-dropzone>
             </div>
-          </div>
-
-          <!-- REUSABLE PDF THUMBNAIL GRID -->
-          <div class="pages-thumbnail-grid">
-            <app-pdf-page-thumbnail
-              *ngFor="let page of pagesArray; let i = index"
-              [pageNumber]="page"
-              [thumbnailUrl]="extractPageThumbnails.get(page)"
-              [isSelected]="selectedPages[i]"
-              [showActions]="false"
-              (selectPage)="togglePage(i)">
-            </app-pdf-page-thumbnail>
-          </div>
-
-          <div class="action-submit-wrap ion-margin-top">
-            <app-button
-              variant="secondary"
-              size="lg"
-              [block]="true"
-              [loading]="isProcessing"
-              (clicked)="extractSelectedPages()">
-              {{ isProcessing ? stageText : 'Extract Selected Pages as JPG' }}
-            </app-button>
-          </div>
-        </div>
-
-        <!-- Extracted Results -->
-        <div *ngIf="extractedImages.length > 0" class="extracted-results-card">
-          <div class="card-header-bar">
-            <strong>Extracted {{ extractedImages.length }} Images</strong>
-            <app-button variant="outline" size="sm" (clicked)="extractedImages = []">Extract More</app-button>
-          </div>
-
-          <div class="extracted-grid">
-            <div *ngFor="let img of extractedImages; let i = index" class="extracted-item">
-              <img *ngIf="extractedImageUrls[i]" [src]="extractedImageUrls[i]" alt="Extracted page" class="extracted-preview-img" />
-              <div class="extracted-info">
-                <span>{{ img.name }}</span>
-                <span>{{ (img.size / 1024) | number:'1.0-1' }} KB</span>
+          }
+          @if (extractPdfFile && extractedImages.length === 0) {
+            <div class="config-card">
+              <div class="card-header-bar">
+                <strong>{{ extractPdfFile.name }} ({{ pdfPageCount }} Pages)</strong>
+                <div class="toggle-btns">
+                  <button type="button" class="btn-text" (click)="toggleSelectAll(true)">Select All</button>
+                  <button type="button" class="btn-text" (click)="toggleSelectAll(false)">Deselect All</button>
+                </div>
               </div>
-              <app-button variant="primary" size="sm" [block]="true" (clicked)="saveExtractedImage(img)">
-                Download
-              </app-button>
+              <!-- REUSABLE PDF THUMBNAIL GRID -->
+              <div class="pages-thumbnail-grid">
+                @for (page of pagesArray; track page; let i = $index) {
+                  <app-pdf-page-thumbnail
+                    [pageNumber]="page"
+                    [thumbnailUrl]="extractPageThumbnails.get(page)"
+                    [isSelected]="selectedPages[i]"
+                    [showActions]="false"
+                    (selectPage)="togglePage(i)">
+                  </app-pdf-page-thumbnail>
+                }
+              </div>
+              <div class="action-submit-wrap ion-margin-top">
+                <app-button
+                  variant="secondary"
+                  size="lg"
+                  [block]="true"
+                  [loading]="isProcessing"
+                  (clicked)="extractSelectedPages()">
+                  {{ isProcessing ? stageText : 'Extract Selected Pages as JPG' }}
+                </app-button>
+              </div>
             </div>
-          </div>
+          }
+          <!-- Extracted Results -->
+          @if (extractedImages.length > 0) {
+            <div class="extracted-results-card">
+              <div class="card-header-bar">
+                <strong>Extracted {{ extractedImages.length }} Images</strong>
+                <app-button variant="outline" size="sm" (clicked)="extractedImages = []">Extract More</app-button>
+              </div>
+              <div class="extracted-grid">
+                @for (img of extractedImages; track img; let i = $index) {
+                  <div class="extracted-item">
+                    @if (extractedImageUrls[i]) {
+                      <img [src]="extractedImageUrls[i]" alt="Extracted page" class="extracted-preview-img" />
+                    }
+                    <div class="extracted-info">
+                      <span>{{ img.name }}</span>
+                      <span>{{ (img.size / 1024) | number:'1.0-1' }} KB</span>
+                    </div>
+                    <app-button variant="primary" size="sm" [block]="true" (clicked)="saveExtractedImage(img)">
+                      Download
+                    </app-button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
         </div>
-      </div>
+      }
     </div>
   </main>
 

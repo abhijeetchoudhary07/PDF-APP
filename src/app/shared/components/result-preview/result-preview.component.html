@@ -2,100 +2,124 @@
   <!-- Header -->
   <div class="result-header">
     <div class="header-icon-box" [class.icon-warning]="showWarning">
-      <svg *ngIf="!showWarning" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-      <svg *ngIf="showWarning" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-        <line x1="12" y1="9" x2="12" y2="13"></line>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </svg>
+      @if (!showWarning) {
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      }
+      @if (showWarning) {
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      }
     </div>
     <div class="header-title-box">
       <h3 class="status-title">{{ title || (showWarning ? ('results.optimizationNotice' | translate) : ('results.processingComplete' | translate)) }}</h3>
-      <p *ngIf="showWarning" class="warning-text">{{ showWarning }}</p>
-      <p *ngIf="!showWarning && subtitle" class="success-text">{{ subtitle }}</p>
-      <p *ngIf="!showWarning && !subtitle" class="success-text">{{ 'results.successSubtitle' | translate }}</p>
+      @if (showWarning) {
+        <p class="warning-text">{{ showWarning }}</p>
+      }
+      @if (!showWarning && subtitle) {
+        <p class="success-text">{{ subtitle }}</p>
+      }
+      @if (!showWarning && !subtitle) {
+        <p class="success-text">{{ 'results.successSubtitle' | translate }}</p>
+      }
     </div>
 
     <!-- Savings Badge -->
-    <div *ngIf="compressionPercentage > 0" class="savings-badge">
-      <span class="savings-label">{{ 'results.saved' | translate }}</span>
-      <strong class="savings-value">{{ compressionPercentage | number:'1.0-1' }}%</strong>
-    </div>
+    @if (compressionPercentage > 0) {
+      <div class="savings-badge">
+        <span class="savings-label">{{ 'results.saved' | translate }}</span>
+        <strong class="savings-value">{{ compressionPercentage | number:'1.0-1' }}%</strong>
+      </div>
+    }
   </div>
 
   <!-- Comparison Grid (When Before & After exist) -->
-  <div *ngIf="beforeData && afterData" class="comparison-grid">
-    <!-- BEFORE -->
-    <div class="stat-card before-card">
-      <div class="stat-tag">{{ 'results.before' | translate }}</div>
-      <div class="stat-size">{{ (beforeData.sizeBytes / 1024) | number:'1.0-1' }} <span class="unit">KB</span></div>
-      <div class="stat-meta">
-        <div *ngIf="beforeData.width && beforeData.height" class="meta-row">
-          <span>{{ 'results.dimensions' | translate }}</span>
-          <strong>{{ beforeData.width }} &times; {{ beforeData.height }} px</strong>
-        </div>
-        <div *ngIf="beforeData.pages" class="meta-row">
-          <span>{{ 'results.pages' | translate }}</span>
-          <strong>{{ beforeData.pages }}</strong>
-        </div>
-        <div class="meta-name" [title]="beforeData.name">{{ beforeData.name }}</div>
-      </div>
-    </div>
-
-    <div class="comparison-arrow" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none">
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-        <polyline points="12 5 19 12 12 19"></polyline>
-      </svg>
-    </div>
-
-    <!-- AFTER -->
-    <div class="stat-card after-card">
-      <div class="stat-tag tag-success">{{ 'results.after' | translate }}</div>
-      <div class="stat-size text-success">{{ (afterData.sizeBytes / 1024) | number:'1.0-1' }} <span class="unit">KB</span></div>
-      <div class="stat-meta">
-        <div *ngIf="afterData.width && afterData.height" class="meta-row">
-          <span>{{ 'results.dimensions' | translate }}</span>
-          <strong>{{ afterData.width }} &times; {{ afterData.height }} px</strong>
-        </div>
-        <div *ngIf="afterData.pages" class="meta-row">
-          <span>{{ 'results.pages' | translate }}</span>
-          <strong>{{ afterData.pages }}</strong>
-        </div>
-        <div class="meta-name" [title]="outputFilename || afterData.name">
-          {{ outputFilename || afterData.name }}
+  @if (beforeData && afterData) {
+    <div class="comparison-grid">
+      <!-- BEFORE -->
+      <div class="stat-card before-card">
+        <div class="stat-tag">{{ 'results.before' | translate }}</div>
+        <div class="stat-size">{{ (beforeData.sizeBytes / 1024) | number:'1.0-1' }} <span class="unit">KB</span></div>
+        <div class="stat-meta">
+          @if (beforeData.width && beforeData.height) {
+            <div class="meta-row">
+              <span>{{ 'results.dimensions' | translate }}</span>
+              <strong>{{ beforeData.width }} &times; {{ beforeData.height }} px</strong>
+            </div>
+          }
+          @if (beforeData.pages) {
+            <div class="meta-row">
+              <span>{{ 'results.pages' | translate }}</span>
+              <strong>{{ beforeData.pages }}</strong>
+            </div>
+          }
+          <div class="meta-name" [title]="beforeData.name">{{ beforeData.name }}</div>
         </div>
       </div>
+      <div class="comparison-arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </div>
+      <!-- AFTER -->
+      <div class="stat-card after-card">
+        <div class="stat-tag tag-success">{{ 'results.after' | translate }}</div>
+        <div class="stat-size text-success">{{ (afterData.sizeBytes / 1024) | number:'1.0-1' }} <span class="unit">KB</span></div>
+        <div class="stat-meta">
+          @if (afterData.width && afterData.height) {
+            <div class="meta-row">
+              <span>{{ 'results.dimensions' | translate }}</span>
+              <strong>{{ afterData.width }} &times; {{ afterData.height }} px</strong>
+            </div>
+          }
+          @if (afterData.pages) {
+            <div class="meta-row">
+              <span>{{ 'results.pages' | translate }}</span>
+              <strong>{{ afterData.pages }}</strong>
+            </div>
+          }
+          <div class="meta-name" [title]="outputFilename || afterData.name">
+            {{ outputFilename || afterData.name }}
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  }
 
   <!-- Single File Result Card (When only After/File exists) -->
-  <div *ngIf="!beforeData && afterData" class="single-result-card" style="padding: 16px; background: var(--color-surface, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; margin-bottom: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <strong style="font-size: 15px; color: var(--color-text, #0f172a);">{{ outputFilename || afterData.name }}</strong>
-        <p style="margin: 4px 0 0; font-size: 13px; color: var(--color-text-secondary, #64748b);">
-          {{ (afterData.sizeBytes / 1024) | number:'1.0-1' }} KB &bull; {{ afterData.type }}
-        </p>
+  @if (!beforeData && afterData) {
+    <div class="single-result-card" style="padding: 16px; background: var(--color-surface, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong style="font-size: 15px; color: var(--color-text, #0f172a);">{{ outputFilename || afterData.name }}</strong>
+          <p style="margin: 4px 0 0; font-size: 13px; color: var(--color-text-secondary, #64748b);">
+            {{ (afterData.sizeBytes / 1024) | number:'1.0-1' }} KB &bull; {{ afterData.type }}
+          </p>
+        </div>
+        <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; background: var(--color-success-soft, #f0fdf4); color: var(--color-success, #16a34a);">
+          {{ 'results.ready' | translate }}
+        </span>
       </div>
-      <span style="font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; background: var(--color-success-soft, #f0fdf4); color: var(--color-success, #16a34a);">
-        {{ 'results.ready' | translate }}
-      </span>
     </div>
-  </div>
+  }
 
   <!-- EMBEDDED VISUAL COMPARISON (IF AVAILABLE) -->
-  <div *ngIf="hasVisualPreview" class="visual-preview-section">
-    <app-before-after-preview
-      [beforeUrl]="beforeUrl"
-      [afterUrl]="afterUrl"
-      [beforeData]="beforeData"
-      [afterData]="afterData!"
-      [title]="'results.visualInspection' | translate">
-    </app-before-after-preview>
-  </div>
+  @if (hasVisualPreview) {
+    <div class="visual-preview-section">
+      <app-before-after-preview
+        [beforeUrl]="beforeUrl"
+        [afterUrl]="afterUrl"
+        [beforeData]="beforeData"
+        [afterData]="afterData!"
+        [title]="'results.visualInspection' | translate">
+      </app-before-after-preview>
+    </div>
+  }
 
   <!-- Action Buttons -->
   <div class="result-actions">
@@ -235,30 +259,36 @@
         <!-- Copy Info/Link -->
         <button type="button" class="social-channel-card copy-channel" (click)="copyShareLink()">
           <div class="channel-icon-box copy-box">
-            <svg *ngIf="!copiedToast" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-            <svg *ngIf="copiedToast" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" style="color: #10b981;">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+            @if (!copiedToast) {
+              <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            }
+            @if (copiedToast) {
+              <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" style="color: #10b981;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            }
           </div>
           <span class="channel-title">{{ copiedToast ? 'Copied!' : 'Copy Link' }}</span>
         </button>
 
         <!-- Device Share (Native Web Share API) -->
-        <button *ngIf="canNativeShare" type="button" class="social-channel-card device-channel" (click)="shareNative(); closeShareModal()">
-          <div class="channel-icon-box device-box">
-            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
-              <circle cx="18" cy="5" r="3"></circle>
-              <circle cx="6" cy="12" r="3"></circle>
-              <circle cx="18" cy="19" r="3"></circle>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-            </svg>
-          </div>
-          <span class="channel-title">Device Share</span>
-        </button>
+        @if (canNativeShare) {
+          <button type="button" class="social-channel-card device-channel" (click)="shareNative(); closeShareModal()">
+            <div class="channel-icon-box device-box">
+              <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+                <circle cx="18" cy="5" r="3"></circle>
+                <circle cx="6" cy="12" r="3"></circle>
+                <circle cx="18" cy="19" r="3"></circle>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+              </svg>
+            </div>
+            <span class="channel-title">Device Share</span>
+          </button>
+        }
       </div>
 
       <!-- Quick Guidance Tip -->

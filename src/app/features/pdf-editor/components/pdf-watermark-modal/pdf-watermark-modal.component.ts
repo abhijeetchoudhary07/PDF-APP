@@ -1,8 +1,8 @@
 import { AppIconComponent } from '../../../../shared/components/ui';
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular/lazy';
+import { ModalController } from '@ionic/angular';
 import { PdfEditorStateService } from '../../../../core/services/pdf-editor-state.service';
 import {
   PdfWatermark,
@@ -21,7 +21,7 @@ import {
           <app-icon name="close"></app-icon>
         </button>
       </div>
-
+    
       <div class="watermark-modal-content">
         <div class="watermark-type-pills">
           <button
@@ -39,64 +39,67 @@ import {
             Image Watermark
           </button>
         </div>
-
+    
         <!-- TEXT WATERMARK CONTROLS -->
-        <div *ngIf="watermarkType === 'text'" class="form-section">
-          <div class="form-group">
-            <label class="form-label">Watermark Text</label>
-            <input type="text" [(ngModel)]="text" placeholder="e.g. CONFIDENTIAL, DRAFT" class="custom-input" />
+        @if (watermarkType === 'text') {
+          <div class="form-section">
+            <div class="form-group">
+              <label class="form-label">Watermark Text</label>
+              <input type="text" [(ngModel)]="text" placeholder="e.g. CONFIDENTIAL, DRAFT" class="custom-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Font Size ({{ fontSize }} pt)</label>
+              <input type="range" min="16" max="100" [(ngModel)]="fontSize" class="custom-range" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Font</label>
+              <select [(ngModel)]="fontFamily" class="custom-select">
+                <option value="Helvetica">Helvetica</option>
+                <option value="TimesRoman">Times New Roman</option>
+                <option value="Courier">Courier</option>
+              </select>
+            </div>
+            <div class="form-group row-group">
+              <label class="form-label">Color</label>
+              <input type="color" [(ngModel)]="color" class="color-picker" />
+            </div>
           </div>
-
-          <div class="form-group">
-            <label class="form-label">Font Size ({{ fontSize }} pt)</label>
-            <input type="range" min="16" max="100" [(ngModel)]="fontSize" class="custom-range" />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Font</label>
-            <select [(ngModel)]="fontFamily" class="custom-select">
-              <option value="Helvetica">Helvetica</option>
-              <option value="TimesRoman">Times New Roman</option>
-              <option value="Courier">Courier</option>
-            </select>
-          </div>
-
-          <div class="form-group row-group">
-            <label class="form-label">Color</label>
-            <input type="color" [(ngModel)]="color" class="color-picker" />
-          </div>
-        </div>
-
+        }
+    
         <!-- IMAGE WATERMARK CONTROLS -->
-        <div *ngIf="watermarkType === 'image'" class="form-section">
-          <button type="button" class="btn btn-outline" (click)="pickImage()">
-            <app-icon name="image-outline"></app-icon>
-            {{ imageUrl ? 'Change Image' : 'Select Image' }}
-          </button>
-          <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
-
-          <div *ngIf="imageUrl" class="image-preview">
-            <img [src]="imageUrl" alt="Watermark Preview" />
+        @if (watermarkType === 'image') {
+          <div class="form-section">
+            <button type="button" class="btn btn-outline" (click)="pickImage()">
+              <app-icon name="image-outline"></app-icon>
+              {{ imageUrl ? 'Change Image' : 'Select Image' }}
+            </button>
+            <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
+            @if (imageUrl) {
+              <div class="image-preview">
+                <img [src]="imageUrl" alt="Watermark Preview" />
+              </div>
+            }
+            @if (imageUrl) {
+              <div class="form-group">
+                <label class="form-label">Scale ({{ (scale * 100) | number:'1.0-0' }}%)</label>
+                <input type="range" min="0.1" max="1.5" step="0.05" [(ngModel)]="scale" class="custom-range" />
+              </div>
+            }
           </div>
-
-          <div *ngIf="imageUrl" class="form-group">
-            <label class="form-label">Scale ({{ (scale * 100) | number:'1.0-0' }}%)</label>
-            <input type="range" min="0.1" max="1.5" step="0.05" [(ngModel)]="scale" class="custom-range" />
-          </div>
-        </div>
-
+        }
+    
         <!-- SHARED CONTROLS (Opacity, Rotation, Position, Scope) -->
         <div class="form-section">
           <div class="form-group">
             <label class="form-label">Opacity ({{ (opacity * 100) | number:'1.0-0' }}%)</label>
             <input type="range" min="0.05" max="1.0" step="0.05" [(ngModel)]="opacity" class="custom-range" />
           </div>
-
+    
           <div class="form-group">
             <label class="form-label">Rotation ({{ rotation }}°)</label>
             <input type="range" min="-90" max="90" step="5" [(ngModel)]="rotation" class="custom-range" />
           </div>
-
+    
           <div class="form-group">
             <label class="form-label">Position</label>
             <select [(ngModel)]="position" class="custom-select">
@@ -106,7 +109,7 @@ import {
               <option value="bottom">Bottom</option>
             </select>
           </div>
-
+    
           <div class="form-group">
             <label class="form-label">Apply To</label>
             <div class="scope-toggle-pills">
@@ -127,7 +130,7 @@ import {
             </div>
           </div>
         </div>
-
+    
         <!-- ACTIONS -->
         <div class="actions">
           <button class="btn btn-primary" (click)="saveWatermark()">
@@ -139,7 +142,7 @@ import {
         </div>
       </div>
     </div>
-  `,
+    `,
   styles: [`
     .watermark-modal-wrapper {
       background: var(--color-surface, #ffffff);
@@ -311,9 +314,12 @@ import {
   `],
   standalone: true,
   imports: [
-    AppIconComponent,CommonModule, FormsModule, IonicModule]
+    AppIconComponent,CommonModule, FormsModule]
 })
 export class PdfWatermarkModalComponent implements OnInit {
+  private modalCtrl = inject(ModalController);
+  private state = inject(PdfEditorStateService);
+
   watermarkType: 'text' | 'image' = 'text';
   text = 'CONFIDENTIAL';
   fontSize = 48;
@@ -327,11 +333,6 @@ export class PdfWatermarkModalComponent implements OnInit {
   imageUrl?: string;
   imageBlob?: Blob;
   scale = 0.5;
-
-  constructor(
-    private modalCtrl: ModalController,
-    private state: PdfEditorStateService
-  ) {}
 
   ngOnInit() {
     const existing = this.state.document?.watermark;

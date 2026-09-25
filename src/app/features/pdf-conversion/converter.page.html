@@ -2,310 +2,336 @@
   <app-header></app-header>
 
   <main class="app-main-content">
-    <div class="tool-page-container" *ngIf="converter">
-
-      <!-- PAGE HEADER -->
-      <app-page-header
-        [title]="converter.metadata.name"
-        [subtitle]="converter.metadata.description"
-        backUrl="/features/pdf/conversion"
-        [breadcrumbs]="[{ label: 'Converter', url: '/features/pdf/conversion' }, { label: converter.metadata.name }]"
-        badge="OFFLINE CONVERTER"
-        badgeVariant="convert">
-        <div actions *ngIf="selectedFile || result">
-          <app-button variant="ghost" size="sm" (clicked)="clearAll()" [disabled]="isProcessing">
-            Reset
-          </app-button>
-        </div>
-      </app-page-header>
-
-      <!-- DISCLAIMER BANNER -->
-      <div class="disclaimer-banner" *ngIf="converter.metadata.disclaimer">
-        <div class="disclaimer-icon">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-        </div>
-        <div class="disclaimer-text">
-          <strong>Client-Side Engine Notice:</strong>
-          <p>{{ converter.metadata.disclaimer }}</p>
-        </div>
-      </div>
-
-      <!-- 1. FILE SELECTION ZONE -->
-      <div *ngIf="!result && !selectedFile" class="selection-section">
-        <div class="dropzone-card" (click)="fileInput.click()">
-          <div class="dropzone-icon-box">
-            <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2" fill="none">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-          </div>
-          <h3>Choose or Drag {{ converter.metadata.sourceFormats.join(', ') }} File</h3>
-          <p>Offline & private &bull; your document never leaves your device</p>
-          <app-button variant="primary" size="md">
-            Browse File
-          </app-button>
-        </div>
-
-        <input
-          #fileInput
-          type="file"
-          [accept]="converter.metadata.acceptMimeTypes"
-          (change)="onFileSelected($event)"
-          style="display: none;" />
-
-        <!-- DIRECT TEXT INPUT (IF SUPPORTED) -->
-        <div *ngIf="converter.metadata.supportsTextInput" class="direct-text-wrap">
-          <div class="divider-line"><span>OR ENTER TEXT DIRECTLY</span></div>
-          <textarea
-            [(ngModel)]="textInput"
-            placeholder="Type or paste text content here..."
-            rows="5"
-            class="text-input-box">
-          </textarea>
-        </div>
-      </div>
-
-      <!-- SELECTED FILE CARD -->
-      <div *ngIf="selectedFile && !result" class="selected-file-card">
-        <div class="file-summary-left">
-          <div class="file-icon-box">
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-            </svg>
-          </div>
-          <div class="file-text">
-            <strong>{{ selectedFile.name }}</strong>
-            <span>{{ (selectedFile.size / 1024) | number:'1.0-1' }} KB</span>
-          </div>
-        </div>
-        <button type="button" class="remove-btn" (click)="clearAll()" aria-label="Remove file">&times;</button>
-      </div>
-
-      <!-- 2. CONFIGURATION PANEL -->
-      <div *ngIf="(selectedFile || (converter.metadata.supportsTextInput && textInput.trim())) && !result && !isProcessing" class="config-panel">
-        <div class="config-card">
-          <h4 class="config-title">Conversion Settings</h4>
-
-          <!-- PDF TO PNG OPTIONS -->
-          <div *ngIf="converterId === 'pdf-to-png'" class="options-group">
-            <div class="field-group">
-              <label class="field-label">Resolution / DPI</label>
-              <select [(ngModel)]="options.dpi" class="field-select">
-                <option [value]="72">Standard (72 DPI)</option>
-                <option [value]="150">High Quality (150 DPI)</option>
-                <option [value]="300">Ultra Print (300 DPI)</option>
-              </select>
+    @if (converter) {
+      <div class="tool-page-container">
+        <!-- PAGE HEADER -->
+        <app-page-header
+          [title]="converter.metadata.name"
+          [subtitle]="converter.metadata.description"
+          backUrl="/features/pdf/conversion"
+          [breadcrumbs]="[{ label: 'Converter', url: '/features/pdf/conversion' }, { label: converter.metadata.name }]"
+          badge="OFFLINE CONVERTER"
+          badgeVariant="convert">
+          @if (selectedFile || result) {
+            <div actions>
+              <app-button variant="ghost" size="sm" (clicked)="clearAll()" [disabled]="isProcessing">
+                Reset
+              </app-button>
             </div>
-
-            <!-- Page Selector -->
-            <div *ngIf="pdfPageCount > 0" class="page-selector-box">
-              <div class="selector-header">
-                <strong>Select Pages ({{ pdfPageCount }} Total)</strong>
-                <div class="toggle-btns">
-                  <button type="button" class="btn-text" (click)="toggleSelectAllPages(true)">All</button>
-                  <button type="button" class="btn-text" (click)="toggleSelectAllPages(false)">None</button>
+          }
+        </app-page-header>
+        <!-- DISCLAIMER BANNER -->
+        @if (converter.metadata.disclaimer) {
+          <div class="disclaimer-banner">
+            <div class="disclaimer-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </div>
+            <div class="disclaimer-text">
+              <strong>Client-Side Engine Notice:</strong>
+              <p>{{ converter.metadata.disclaimer }}</p>
+            </div>
+          </div>
+        }
+        <!-- 1. FILE SELECTION ZONE -->
+        @if (!result && !selectedFile) {
+          <div class="selection-section">
+            <div class="dropzone-card" (click)="fileInput.click()">
+              <div class="dropzone-icon-box">
+                <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <h3>Choose or Drag {{ converter.metadata.sourceFormats.join(', ') }} File</h3>
+              <p>Offline & private &bull; your document never leaves your device</p>
+              <app-button variant="primary" size="md">
+                Browse File
+              </app-button>
+            </div>
+            <input
+              #fileInput
+              type="file"
+              [accept]="converter.metadata.acceptMimeTypes"
+              (change)="onFileSelected($event)"
+              style="display: none;" />
+            <!-- DIRECT TEXT INPUT (IF SUPPORTED) -->
+            @if (converter.metadata.supportsTextInput) {
+              <div class="direct-text-wrap">
+                <div class="divider-line"><span>OR ENTER TEXT DIRECTLY</span></div>
+                <textarea
+                  [(ngModel)]="textInput"
+                  placeholder="Type or paste text content here..."
+                  rows="5"
+                  class="text-input-box">
+                </textarea>
+              </div>
+            }
+          </div>
+        }
+        <!-- SELECTED FILE CARD -->
+        @if (selectedFile && !result) {
+          <div class="selected-file-card">
+            <div class="file-summary-left">
+              <div class="file-icon-box">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+              </div>
+              <div class="file-text">
+                <strong>{{ selectedFile.name }}</strong>
+                <span>{{ (selectedFile.size / 1024) | number:'1.0-1' }} KB</span>
+              </div>
+            </div>
+            <button type="button" class="remove-btn" (click)="clearAll()" aria-label="Remove file">&times;</button>
+          </div>
+        }
+        <!-- 2. CONFIGURATION PANEL -->
+        @if ((selectedFile || (converter.metadata.supportsTextInput && textInput.trim())) && !result && !isProcessing) {
+          <div class="config-panel">
+            <div class="config-card">
+              <h4 class="config-title">Conversion Settings</h4>
+              <!-- PDF TO PNG OPTIONS -->
+              @if (converterId === 'pdf-to-png') {
+                <div class="options-group">
+                  <div class="field-group">
+                    <label class="field-label">Resolution / DPI</label>
+                    <select [(ngModel)]="options.dpi" class="field-select">
+                      <option [value]="72">Standard (72 DPI)</option>
+                      <option [value]="150">High Quality (150 DPI)</option>
+                      <option [value]="300">Ultra Print (300 DPI)</option>
+                    </select>
+                  </div>
+                  <!-- Page Selector -->
+                  @if (pdfPageCount > 0) {
+                    <div class="page-selector-box">
+                      <div class="selector-header">
+                        <strong>Select Pages ({{ pdfPageCount }} Total)</strong>
+                        <div class="toggle-btns">
+                          <button type="button" class="btn-text" (click)="toggleSelectAllPages(true)">All</button>
+                          <button type="button" class="btn-text" (click)="toggleSelectAllPages(false)">None</button>
+                        </div>
+                      </div>
+                      <div class="pages-chips-grid">
+                        @for (p of pagesArray; track p; let i = $index) {
+                          <button
+                            type="button"
+                            class="page-chip"
+                            [class.active]="selectedPages[i]"
+                            (click)="selectedPages[i] = !selectedPages[i]">
+                            Page {{ p }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+              <!-- PDF TO EXCEL OPTIONS -->
+              @if (converterId === 'pdf-to-excel') {
+                <div class="options-group">
+                  <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="options.singleSheet" class="native-check" />
+                    <span class="custom-check-box"></span>
+                    <div>
+                      <strong>Combine into Single Sheet</strong>
+                      <p>Appends all page tables into one continuous worksheet</p>
+                    </div>
+                  </label>
+                </div>
+              }
+              <!-- PDF TO POWERPOINT OPTIONS -->
+              @if (converterId === 'pdf-to-ppt') {
+                <div class="options-group">
+                  <div class="field-group">
+                    <label class="field-label">Slide Ratio</label>
+                    <select [(ngModel)]="options.aspectRatio" class="field-select">
+                      <option value="16x9">16:9 Widescreen (Modern)</option>
+                      <option value="4x3">4:3 Standard (Classic)</option>
+                    </select>
+                  </div>
+                </div>
+              }
+              <!-- LAYOUT OPTIONS (DOCX, XLSX, TXT, CSV, HTML TO PDF) -->
+              @if (['word-to-pdf', 'excel-to-pdf', 'text-to-pdf', 'rtf-to-pdf', 'html-to-pdf', 'csv-to-pdf', 'epub-to-pdf', 'opendocument-to-pdf'].includes(converterId)) {
+                <div class="options-grid">
+                  <div class="field-group">
+                    <label class="field-label">Page Size</label>
+                    <select [(ngModel)]="options.format" class="field-select">
+                      <option value="A4">A4 (Standard)</option>
+                      <option value="Letter">US Letter</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Orientation</label>
+                    <select [(ngModel)]="options.orientation" class="field-select">
+                      <option value="Portrait">Portrait (Vertical)</option>
+                      <option value="Landscape">Landscape (Horizontal)</option>
+                    </select>
+                  </div>
+                  @if (converterId === 'text-to-pdf') {
+                    <div class="field-group">
+                      <label class="field-label">Font Family</label>
+                      <select [(ngModel)]="options.fontFamily" class="field-select">
+                        <option value="Helvetica">Helvetica (Sans)</option>
+                        <option value="TimesRoman">Times New Roman (Serif)</option>
+                        <option value="Courier">Courier (Monospace)</option>
+                      </select>
+                    </div>
+                  }
+                </div>
+              }
+              <!-- ZIP TO PDF CHECKLIST -->
+              @if (converterId === 'zip-to-pdf' && zipEntries.length > 0) {
+                <div class="zip-checklist">
+                  <div class="selector-header">
+                    <strong>Archive Files ({{ zipEntries.length }} Found)</strong>
+                    <div class="toggle-btns">
+                      <button type="button" class="btn-text" (click)="toggleSelectAllZip(true)">All</button>
+                      <button type="button" class="btn-text" (click)="toggleSelectAllZip(false)">None</button>
+                    </div>
+                  </div>
+                  <div class="zip-items-list">
+                    @for (entry of zipEntries; track entry; let i = $index) {
+                      <div class="zip-item-row" [class.disabled]="!entry.supported">
+                        <label class="checkbox-row">
+                          <input type="checkbox" [(ngModel)]="selectedZipEntries[i]" [disabled]="!entry.supported" class="native-check" />
+                          <span class="custom-check-box"></span>
+                          <div class="zip-item-info">
+                            <strong>{{ entry.name }}</strong>
+                            <span>{{ (entry.size / 1024) | number:'1.0-1' }} KB &bull; {{ entry.extension | uppercase }}</span>
+                          </div>
+                        </label>
+                        <app-badge [variant]="entry.supported ? 'success' : 'neutral'" size="sm">
+                          {{ entry.supported ? 'Supported' : 'Skipped' }}
+                        </app-badge>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              <div class="action-submit-wrap">
+                <app-button variant="primary" size="lg" [block]="true" (clicked)="startConversion()">
+                  Start Conversion
+                </app-button>
+              </div>
+            </div>
+          </div>
+        }
+        <!-- 3. PROCESSING STATE -->
+        @if (isProcessing) {
+          <div class="processing-card">
+            <div class="spinner-box">
+              <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="2.5" fill="none" class="animate-spin">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path>
+              </svg>
+            </div>
+            <h3>{{ progress.stage || 'Processing document...' }}</h3>
+            @if (progress.message) {
+              <p class="progress-subtext">{{ progress.message }}</p>
+            }
+            <app-progress [value]="progress.percent"></app-progress>
+          </div>
+        }
+        <!-- 4. ERROR STATE -->
+        @if (errorMessage && !isProcessing) {
+          <div class="error-banner">
+            <div class="error-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div class="error-text">
+              <strong>Conversion Error</strong>
+              <p>{{ errorMessage }}</p>
+            </div>
+            <app-button variant="danger" size="sm" (clicked)="retry()">Retry</app-button>
+          </div>
+        }
+        <!-- 5. RESULT PREVIEW & ACTIONS -->
+        @if (result?.success && !isProcessing) {
+          <div class="result-card">
+            <div class="result-header-row">
+              <div class="success-icon-circle">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <div>
+                <h3>Conversion Successful!</h3>
+                @if (result.file) {
+                  <span>{{ result.file.name }} ({{ (result.file.size / 1024) | number:'1.0-1' }} KB)</span>
+                }
+              </div>
+            </div>
+            <!-- Table Preview -->
+            @if (result.previewData?.headers) {
+              <div class="table-preview-wrap">
+                <h4>Extracted Table Preview</h4>
+                <div class="table-scroll">
+                  <table class="preview-table">
+                    <thead>
+                      <tr>
+                        @for (h of result.previewData.headers; track h) {
+                          <th>{{ h }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of result.previewData.rows; track row) {
+                        <tr>
+                          @for (cell of row; track cell) {
+                            <td>{{ cell }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
                 </div>
               </div>
-              <div class="pages-chips-grid">
-                <button
-                  *ngFor="let p of pagesArray; let i = index"
-                  type="button"
-                  class="page-chip"
-                  [class.active]="selectedPages[i]"
-                  (click)="selectedPages[i] = !selectedPages[i]">
-                  Page {{ p }}
-                </button>
+            }
+            <!-- Image Preview -->
+            @if (result.previewUrl && converter.metadata.targetFormat === 'png') {
+              <div class="image-preview-wrap">
+                <img [src]="result.previewUrl" alt="Converted Preview" class="preview-img" />
               </div>
+            }
+            <!-- Action Buttons -->
+            <div class="result-actions-grid">
+              <app-button variant="success" size="lg" (clicked)="saveResultFile()">
+                <svg icon-start viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Save {{ converter.metadata.targetFormat | uppercase }}
+              </app-button>
+              <app-button variant="outline" size="lg" (clicked)="shareResultFile()">
+                <svg icon-start viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                Share
+              </app-button>
+            </div>
+            <div class="another-action">
+              <button type="button" class="btn-link" (click)="clearAll()">Convert Another Document</button>
             </div>
           </div>
-
-          <!-- PDF TO EXCEL OPTIONS -->
-          <div *ngIf="converterId === 'pdf-to-excel'" class="options-group">
-            <label class="checkbox-row">
-              <input type="checkbox" [(ngModel)]="options.singleSheet" class="native-check" />
-              <span class="custom-check-box"></span>
-              <div>
-                <strong>Combine into Single Sheet</strong>
-                <p>Appends all page tables into one continuous worksheet</p>
-              </div>
-            </label>
-          </div>
-
-          <!-- PDF TO POWERPOINT OPTIONS -->
-          <div *ngIf="converterId === 'pdf-to-ppt'" class="options-group">
-            <div class="field-group">
-              <label class="field-label">Slide Ratio</label>
-              <select [(ngModel)]="options.aspectRatio" class="field-select">
-                <option value="16x9">16:9 Widescreen (Modern)</option>
-                <option value="4x3">4:3 Standard (Classic)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- LAYOUT OPTIONS (DOCX, XLSX, TXT, CSV, HTML TO PDF) -->
-          <div *ngIf="['word-to-pdf', 'excel-to-pdf', 'text-to-pdf', 'rtf-to-pdf', 'html-to-pdf', 'csv-to-pdf', 'epub-to-pdf', 'opendocument-to-pdf'].includes(converterId)" class="options-grid">
-            <div class="field-group">
-              <label class="field-label">Page Size</label>
-              <select [(ngModel)]="options.format" class="field-select">
-                <option value="A4">A4 (Standard)</option>
-                <option value="Letter">US Letter</option>
-              </select>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Orientation</label>
-              <select [(ngModel)]="options.orientation" class="field-select">
-                <option value="Portrait">Portrait (Vertical)</option>
-                <option value="Landscape">Landscape (Horizontal)</option>
-              </select>
-            </div>
-
-            <div *ngIf="converterId === 'text-to-pdf'" class="field-group">
-              <label class="field-label">Font Family</label>
-              <select [(ngModel)]="options.fontFamily" class="field-select">
-                <option value="Helvetica">Helvetica (Sans)</option>
-                <option value="TimesRoman">Times New Roman (Serif)</option>
-                <option value="Courier">Courier (Monospace)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- ZIP TO PDF CHECKLIST -->
-          <div *ngIf="converterId === 'zip-to-pdf' && zipEntries.length > 0" class="zip-checklist">
-            <div class="selector-header">
-              <strong>Archive Files ({{ zipEntries.length }} Found)</strong>
-              <div class="toggle-btns">
-                <button type="button" class="btn-text" (click)="toggleSelectAllZip(true)">All</button>
-                <button type="button" class="btn-text" (click)="toggleSelectAllZip(false)">None</button>
-              </div>
-            </div>
-            <div class="zip-items-list">
-              <div *ngFor="let entry of zipEntries; let i = index" class="zip-item-row" [class.disabled]="!entry.supported">
-                <label class="checkbox-row">
-                  <input type="checkbox" [(ngModel)]="selectedZipEntries[i]" [disabled]="!entry.supported" class="native-check" />
-                  <span class="custom-check-box"></span>
-                  <div class="zip-item-info">
-                    <strong>{{ entry.name }}</strong>
-                    <span>{{ (entry.size / 1024) | number:'1.0-1' }} KB &bull; {{ entry.extension | uppercase }}</span>
-                  </div>
-                </label>
-                <app-badge [variant]="entry.supported ? 'success' : 'neutral'" size="sm">
-                  {{ entry.supported ? 'Supported' : 'Skipped' }}
-                </app-badge>
-              </div>
-            </div>
-          </div>
-
-          <div class="action-submit-wrap">
-            <app-button variant="primary" size="lg" [block]="true" (clicked)="startConversion()">
-              Start Conversion
-            </app-button>
-          </div>
-        </div>
+        }
       </div>
-
-      <!-- 3. PROCESSING STATE -->
-      <div *ngIf="isProcessing" class="processing-card">
-        <div class="spinner-box">
-          <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="2.5" fill="none" class="animate-spin">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"></circle>
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path>
-          </svg>
-        </div>
-        <h3>{{ progress.stage || 'Processing document...' }}</h3>
-        <p *ngIf="progress.message" class="progress-subtext">{{ progress.message }}</p>
-        <app-progress [value]="progress.percent"></app-progress>
-      </div>
-
-      <!-- 4. ERROR STATE -->
-      <div *ngIf="errorMessage && !isProcessing" class="error-banner">
-        <div class="error-icon">
-          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-        </div>
-        <div class="error-text">
-          <strong>Conversion Error</strong>
-          <p>{{ errorMessage }}</p>
-        </div>
-        <app-button variant="danger" size="sm" (clicked)="retry()">Retry</app-button>
-      </div>
-
-      <!-- 5. RESULT PREVIEW & ACTIONS -->
-      <div *ngIf="result?.success && !isProcessing" class="result-card">
-        <div class="result-header-row">
-          <div class="success-icon-circle">
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </div>
-          <div>
-            <h3>Conversion Successful!</h3>
-            <span *ngIf="result.file">{{ result.file.name }} ({{ (result.file.size / 1024) | number:'1.0-1' }} KB)</span>
-          </div>
-        </div>
-
-        <!-- Table Preview -->
-        <div *ngIf="result.previewData?.headers" class="table-preview-wrap">
-          <h4>Extracted Table Preview</h4>
-          <div class="table-scroll">
-            <table class="preview-table">
-              <thead>
-                <tr>
-                  <th *ngFor="let h of result.previewData.headers">{{ h }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let row of result.previewData.rows">
-                  <td *ngFor="let cell of row">{{ cell }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Image Preview -->
-        <div *ngIf="result.previewUrl && converter.metadata.targetFormat === 'png'" class="image-preview-wrap">
-          <img [src]="result.previewUrl" alt="Converted Preview" class="preview-img" />
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="result-actions-grid">
-          <app-button variant="success" size="lg" (clicked)="saveResultFile()">
-            <svg icon-start viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Save {{ converter.metadata.targetFormat | uppercase }}
-          </app-button>
-
-          <app-button variant="outline" size="lg" (clicked)="shareResultFile()">
-            <svg icon-start viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">
-              <circle cx="18" cy="5" r="3"></circle>
-              <circle cx="6" cy="12" r="3"></circle>
-              <circle cx="18" cy="19" r="3"></circle>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-            </svg>
-            Share
-          </app-button>
-        </div>
-
-        <div class="another-action">
-          <button type="button" class="btn-link" (click)="clearAll()">Convert Another Document</button>
-        </div>
-      </div>
-
-    </div>
+    }
   </main>
 
   <app-footer></app-footer>

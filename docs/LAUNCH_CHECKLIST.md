@@ -6,11 +6,17 @@ product decision, which is why none of it is automated.
 
 **State (2026-09-25, re-verified against the live services):** policy URLs
 **live**; migration `029` **applied to production** — the plans endpoint returns
-truthful copy; upload key created and the AAB **signed**; UPI payee still
-unverified; billing route still undecided.
+truthful copy; upload key created and the AAB **signed**; billing route
+**decided and built** — Google Play Billing; UPI payee still unverified.
 
-The two remaining Phase 0 items are both yours: send ₹1 to the payee, and pick a
-billing route. Neither is a code change, and 0.5 blocks submission.
+The signed `.aab` is current, which was checked by content rather than by date:
+every hashed JS chunk in it matches a build from this commit, and
+`main-*.js` is byte-identical. Its source file timestamps are newer than the
+bundle, which looks like a stale artefact and is not one.
+
+Phase 0 is down to **one two-minute task that is yours: send ₹1 to the payee.**
+Play Billing still needs a RevenueCat key and three Console products, but those
+now sit in Phase 2 because they need the Console account to exist first.
 
 Reference material, not duplicated here:
 
@@ -111,28 +117,50 @@ Full detail, and the by-hand equivalent, in
 > manager. The key currently exists in exactly one place, on one laptop. That is
 > the whole risk surface until you copy it somewhere durable.
 
-### 0.5 · Decide the billing route ▸ the decision
+### 0.5 · ~~Decide the billing route~~ ✅ decided — Google Play Billing
 
 Play's Payments policy requires Google Play Billing for digital content
-unlocked inside the app. The shipped flow collects UPI payment in-app and
-unlocks premium after an admin approves it. That is the most common single
-cause of suspension under that policy, and it is a product decision rather than
-a bug.
+unlocked inside the app. The flow that shipped collected UPI payment in-app and
+unlocked premium after an admin approved it, which is the most common single
+cause of suspension under that policy.
 
-| | Route | Effort | Trade |
-| --- | --- | --- | --- |
-| **1** | **Sell on the web; the app only restores** | Low | Keeps the whole manual-UPI backend. No service fee. Poor in-app conversion |
-| 2 | User Choice Billing | Medium | Reduced fee, still needs Play Billing integrated |
-| 3 | Ship outside Play | Low | Gives up Play distribution |
-| 4 | Play Billing alongside | High | Real RevenueCat keys, Console products, a signed build in a track to test |
+**Route 4 chosen: Play Billing is the purchase path inside the app, and the UPI
+transfer moves to the browser.** Running both inside the app is the same
+violation — "alongside" is only permitted under User Choice Billing — so the
+split is by runtime:
 
-**Route 1 is the shortest path to a submittable build**, and it is one config
-change: `is_active = false` in `pdf_payment_settings` hides the pay panel, which
-the paywall already handles. Move the payment flow onto the Pages site.
+| Runtime | Buys with | Restores from |
+| --- | --- | --- |
+| Android app | Google Play Billing, through RevenueCat | Account, then store |
+| Browser | UPI transfer + admin approval | Account |
 
-Whichever you pick, link-out and alternative-billing rules have moved repeatedly
-and vary by region. **Read the current Payments policy text in the Console
-yourself before submitting** rather than trusting any summary, including this one.
+The code is done: on a device the paywall opens a Play checkout, and the UPI
+panel is not merely hidden but unreachable — the payee is never even fetched.
+`premium.page.spec.ts` pins both sides of that branch. Full detail, including
+the `:basePlan` suffix that silently kills subscription matching, is in
+[PLAY_STORE.md](PLAY_STORE.md) §9.
+
+**What is left is account work, not code**, and it needs the Console to exist —
+so it happens in Phase 2:
+
+1. RevenueCat project → public Android key into `src/app/core/config/store.config.ts`
+2. Play Console products: `pro_monthly` and `pro_annual` as **subscriptions**,
+   `lifetime` as a **one-time product**, ids exactly as `PLAY_PRODUCT_IDS` has them
+3. Attach all three to RevenueCat's current offering, entitlement id `premium`
+4. Set `PDF_APP_REVENUECAT_SECRET_KEY` on Render — or a Google Play service
+   account plus `PDF_APP_GOOGLE_PLAY_PACKAGE_NAME`. Without one of those,
+   `subscription/verify` answers 501 and a purchase never becomes a durable
+   account entitlement: premium lives only on the device that bought it, and
+   the admin portal never sees the subscription
+5. Test a real purchase from a track build — it cannot be done locally
+
+Until step 1, an on-device paywall reports `not-configured` and says so rather
+than opening a sheet that cannot complete. **Do not submit before a real
+purchase has completed in a track.**
+
+Link-out and alternative-billing rules have moved repeatedly and vary by region.
+**Read the current Payments policy text in the Console yourself before
+submitting** rather than trusting any summary, including this one.
 
 ---
 
@@ -202,8 +230,8 @@ created; no crash logs, no analytics, no advertising ID.
 ### 2.5 · Content rating
 
 IARC questionnaire per §7 — everything **No** except *purchase of digital
-goods*, which depends on your Phase 0.5 decision. Ads: **No**. Target age
-**18+**.
+goods*, which is **Yes**: the app sells subscriptions through Play Billing.
+Ads: **No**. Target age **18+**.
 
 ### 2.6 · App access
 
@@ -251,6 +279,31 @@ not found — Play rejects that bundle at upload.
 ```bash
 npm run test:unit && npm run build && npm run test:e2e:prod
 ```
+
+**That command does not test accounts.** Everything that registers a user,
+reads an entitlement or deletes an account skips itself under `E2E_TARGET=prod`
+— deliberately, because those tests grant premium through an admin endpoint and
+that has no business running against the production backend. The effect is that
+sign-up, the paywall, the premium grant and account deletion — the flows 3.4
+asks you to check by hand on a phone — are exactly the ones the pre-flight
+never touches.
+
+Run them against the local backend too. Start it in the `linkedin AUTO`
+repository:
+
+```bash
+DATABASE_URL= npm run dev:api
+```
+
+Then, here:
+
+```bash
+npm run test:e2e:accounts
+```
+
+74 tests across both viewports, ending in a full sign-up → every tool → paywall
+→ premium → delete-account journey. The `DATABASE_URL=` prefix is what keeps it
+on local PGlite instead of production Neon.
 
 And confirm the bundle carries no advertising id:
 
@@ -321,13 +374,15 @@ usually cite a specific policy — read which one before changing anything.
 | 0.2 | ~~Apply migration 029 to production~~ ✅ | — | — |
 | 0.3 | ₹1 to the UPI payee | 2 min | Taking any money |
 | 0.4 | ~~Create the keystore~~ ✅ | — | — |
-| 0.5 | Decide the billing route | — | **Submission** |
+| 0.5 | ~~Decide the billing route~~ ✅ Play Billing | — | — |
 | 1.x | Register, $25, verify identity | 1–3 days | Everything in the Console |
 | 2.x | Create app, listing, Data Safety | 2 h | Upload |
+| 2.8 | RevenueCat key + 3 Console products + a real test purchase | 2 h | **Submission** |
 | 3.x | Signed AAB, internal test on hardware | 1 h | Closed test |
 | 4.x | 12 testers × 14 days, then production | **14+ days** | Launch |
 
-Phase 0 is down to 0.3 and 0.5 — two minutes of work and one decision. The long
-poles are identity verification and the 14-day closed test, and neither can be
-shortened by starting the others late, so register the account now rather than
-waiting on the decision.
+Phase 0 is down to 0.3 alone — two minutes of work. The long poles are identity
+verification and the 14-day closed test, and neither can be shortened by
+starting the others late, so register the account today: the Play Billing
+products in 2.8 cannot be created until it exists, and they now gate
+submission.

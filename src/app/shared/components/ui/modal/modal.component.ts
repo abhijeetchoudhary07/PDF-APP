@@ -7,36 +7,39 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div *ngIf="isOpen" class="modal-backdrop" (click)="onBackdropClick($event)">
-      <div class="modal-dialog" [ngClass]="size ? 'modal-' + size : 'modal-md'" (click)="$event.stopPropagation()">
-        
-        <!-- Header -->
-        <div class="modal-header">
-          <div class="modal-title-group">
-            <h3 class="modal-title">{{ title }}</h3>
-            <p *ngIf="subtitle" class="modal-subtitle">{{ subtitle }}</p>
+    @if (isOpen) {
+      <div class="modal-backdrop" (click)="onBackdropClick($event)">
+        <div class="modal-dialog" [ngClass]="size ? 'modal-' + size : 'modal-md'" (click)="$event.stopPropagation()">
+          <!-- Header -->
+          <div class="modal-header">
+            <div class="modal-title-group">
+              <h3 class="modal-title">{{ title }}</h3>
+              @if (subtitle) {
+                <p class="modal-subtitle">{{ subtitle }}</p>
+              }
+            </div>
+            <button
+              type="button"
+              class="modal-close-btn"
+              (click)="close()"
+              aria-label="Close dialog">
+              &times;
+            </button>
           </div>
-          <button
-            type="button"
-            class="modal-close-btn"
-            (click)="close()"
-            aria-label="Close dialog">
-            &times;
-          </button>
-        </div>
-
-        <!-- Body -->
-        <div class="modal-body">
-          <ng-content></ng-content>
-        </div>
-
-        <!-- Footer -->
-        <div *ngIf="hasFooter" class="modal-footer">
-          <ng-content select="[modal-footer]"></ng-content>
+          <!-- Body -->
+          <div class="modal-body">
+            <ng-content></ng-content>
+          </div>
+          <!-- Footer -->
+          @if (hasFooter) {
+            <div class="modal-footer">
+              <ng-content select="[modal-footer]"></ng-content>
+            </div>
+          }
         </div>
       </div>
-    </div>
-  `,
+    }
+    `,
   styles: [`
     .modal-backdrop {
       position: fixed;

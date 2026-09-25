@@ -398,23 +398,64 @@ superseded.) `payment-settings` is live too, with `isActive: true` and the payee
 `indianformhelper@okicici` — **confirm that handle actually receives money
 before anyone pays into it.**
 
-### Why it cannot be submitted as-is
+### Why it could not be submitted as-is
 
 Play's Payments policy requires **Google Play Billing** for digital content
 unlocked inside the app. An in-app UPI flow that unlocks premium is the most
-common cause of suspension under that policy. RevenueCat is wired but dormant —
-`store.config.ts` still holds `goog_XXXXX`.
+common cause of suspension under that policy.
 
-### The four compliant routes
+### The route taken — **Play Billing**, decided 2026-09-25
+
+Play Billing is now the only purchase path inside the app. The UPI transfer
+stays in the browser, which Play does not distribute and the policy does not
+reach.
+
+Note what changed from how this option was first written down here — *"add Play
+Billing **alongside**, UPI only where Billing is unavailable"*. That is still
+the violation. The policy requires Play Billing to be the only way to unlock
+premium from inside the app unless you are enrolled in User Choice Billing, so
+the split is by runtime and not by availability:
+
+| Runtime | Purchase path | Restore path |
+| --- | --- | --- |
+| Android app (Capacitor) | Google Play Billing, through RevenueCat | Account, then store |
+| Browser | UPI transfer + admin approval | Account |
+
+**Done in code:**
+
+- `premium.page.ts` branches on `playBilling` (`Platform.is('capacitor')`). On a
+  device `choose()` opens a Play checkout, and the UPI panel is unreachable:
+  `payPanelPlan` is null there whatever sets `selectedPlan`, and
+  `loadSettings()` does not fetch the payee at all — a UPI id the app never
+  holds cannot be put on screen by a later bug.
+- `PLAY_PRODUCT_IDS` in `store.config.ts` maps each `pdf_plans.plan_id` to its
+  Console product id, and `baseProductId()` strips the `:basePlan` suffix Play
+  appends to subscriptions. Without that strip every subscription button is
+  dead while `lifetime` works — which reads as a RevenueCat outage rather than
+  a string comparison.
+- `premium.page.spec.ts` pins the branch from both sides. The four on-device
+  specs fail if the route flag is flipped, which is how they were checked.
+
+**Still to do, and none of it is code:**
+
+| | Step | Where |
+| --- | --- | --- |
+| 1 | Create a project and put the **public Android key** in `store.config.ts` | RevenueCat |
+| 2 | Create `pro_monthly` and `pro_annual` as **subscriptions**, `lifetime` as a **one-time product** — ids exactly as in `PLAY_PRODUCT_IDS` | Play Console → Monetise |
+| 3 | Attach all three to the current offering, under the entitlement id `premium` | RevenueCat |
+| 4 | Set `PDF_APP_REVENUECAT_SECRET_KEY`, or a service account plus `PDF_APP_GOOGLE_PLAY_PACKAGE_NAME` — otherwise `subscription/verify` answers 501 and premium never leaves the device that bought it | Render |
+| 5 | Upload a signed build to a track: a purchase cannot be tested from a local build | Play Console |
+
+Until step 1 lands, an on-device paywall reports `not-configured` and says so
+out loud rather than opening a sheet that cannot complete.
+
+### The routes not taken
 
 | # | Option | Effort | Notes |
 | --- | --- | --- | --- |
 | 1 | **Sell outside the app.** Move the pay panel to the website; the app only *restores* an entitlement | **Low** | The paywall already reads `PdfPaymentSettings.isActive`, so hiding the panel is a config change. Play permits recognising a purchase made elsewhere |
 | 2 | **User Choice Billing** — Google's alternative billing, available in India | Medium | Reduced service fee; still needs Play Billing integrated |
 | 3 | **Ship outside Play** — direct APK or another store | Low | Gives up Play distribution |
-| 4 | **Add Play Billing alongside**, UPI only where Billing is unavailable | **High** | Real RevenueCat keys + Play Console products + a signed build to test |
-
-**Option 1 is the shortest path to a submittable build.**
 
 ### Second problem — the plan descriptions are not true
 

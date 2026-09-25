@@ -35,248 +35,258 @@
         </div>
 
         <!-- UNLOCK MODE -->
-        <div *ngIf="mode === 'unlock'" class="security-container">
-          <!-- Upload Dropzone -->
-          <div *ngIf="!unlockFile" class="upload-container">
-            <app-file-dropzone
-              accept="application/pdf"
-              icon="lock-open"
-              title="Select or Drop Protected PDF"
-              description="Supply authorized password to remove permissions restrictions and decrypt into an unlocked copy."
-              (fileSelected)="onUnlockFileSelected($event)">
-            </app-file-dropzone>
+        @if (mode === 'unlock') {
+          <div class="security-container">
+            <!-- Upload Dropzone -->
+            @if (!unlockFile) {
+              <div class="upload-container">
+                <app-file-dropzone
+                  accept="application/pdf"
+                  icon="lock-open"
+                  title="Select or Drop Protected PDF"
+                  description="Supply authorized password to remove permissions restrictions and decrypt into an unlocked copy."
+                  (fileSelected)="onUnlockFileSelected($event)">
+                </app-file-dropzone>
+              </div>
+            }
+            <!-- Action Card when File Selected -->
+            @if (unlockFile && unlockWorkflowState !== 'SUCCESS') {
+              <div class="action-card">
+                <!-- Reusable File Preview Component -->
+                <app-file-preview
+                  [file]="unlockFile"
+                  format="PDF"
+                  (remove)="removeUnlockFile()"
+                  (replace)="selectPdfToUnlock()">
+                </app-file-preview>
+                @if (unlockStatus) {
+                  <div class="status-summary" style="margin-top: 16px;">
+                    @if (unlockStatus.requiresUserPassword) {
+                      <div class="status-alert warning">
+                        <app-icon name="key-outline"></app-icon>
+                        <span>This document requires a password to open.</span>
+                      </div>
+                    }
+                    @if (!unlockStatus.requiresUserPassword && unlockStatus.hasPermissionsRestricted) {
+                      <div class="status-alert info">
+                        <app-icon name="shield-outline"></app-icon>
+                        <span>This document allows opening but has restrictions on printing, copying, or editing.</span>
+                      </div>
+                    }
+                  </div>
+                }
+                <div class="input-section" style="margin-top: 16px;">
+                  <div class="password-input-wrapper">
+                    <app-icon name="key-outline" class="input-icon"></app-icon>
+                    <input type="password" [(ngModel)]="unlockPassword" placeholder="Enter PDF Password" class="custom-input-field" />
+                  </div>
+                  <p class="input-tip">
+                    Note: Anti-piracy policy prevents cracking unknown passwords. You must enter the valid password to unlock.
+                  </p>
+                </div>
+                <!-- Progress Indicator -->
+                @if (unlockWorkflowState === 'PROCESSING') {
+                  <div style="margin-top: 16px;">
+                    <app-progress
+                      [indeterminate]="true"
+                      variant="primary"
+                      [label]="stageLabels[currentStage]">
+                    </app-progress>
+                  </div>
+                }
+                <!-- Error Alert -->
+                @if (unlockWorkflowState === 'ERROR') {
+                  <div style="margin-top: 16px; padding: 12px 16px; background: var(--color-danger-soft, #fef2f2); border: 1px solid var(--color-danger, #ef4444); border-radius: 8px; color: var(--color-danger, #ef4444); display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <app-icon name="alert-circle-outline"></app-icon>
+                      <span>{{ errorMessage }}</span>
+                    </div>
+                    <app-button size="sm" variant="outline" (clicked)="executeUnlock()">Retry</app-button>
+                  </div>
+                }
+                <div style="margin-top: 20px;">
+                  <app-button
+                    variant="success"
+                    size="lg"
+                    [block]="true"
+                    (clicked)="executeUnlock()"
+                    [disabled]="isUnlocking">
+                    <app-icon name="lock-open-outline" class="btn-icon"></app-icon>
+                    {{ isUnlocking ? 'Decrypting Document...' : 'Unlock & Export Decrypted Copy' }}
+                  </app-button>
+                </div>
+              </div>
+            }
+            <!-- Result View when Unlocked -->
+            @if (unlockWorkflowState === 'SUCCESS' && unlockResultFile) {
+              <div class="result-container" style="margin-top: 16px;">
+                <app-result-preview
+                  title="Document Unlocked Successfully"
+                  subtitle="Restrictions and encryption removed. Ready to view and edit."
+                  [file]="unlockResultFile"
+                  (shared)="shareUnlockResult()"
+                  (resetRequested)="resetUnlock()">
+                </app-result-preview>
+              </div>
+            }
           </div>
-
-          <!-- Action Card when File Selected -->
-          <div *ngIf="unlockFile && unlockWorkflowState !== 'SUCCESS'" class="action-card">
-            <!-- Reusable File Preview Component -->
-            <app-file-preview
-              [file]="unlockFile"
-              format="PDF"
-              (remove)="removeUnlockFile()"
-              (replace)="selectPdfToUnlock()">
-            </app-file-preview>
-
-            <div *ngIf="unlockStatus" class="status-summary" style="margin-top: 16px;">
-              <div *ngIf="unlockStatus.requiresUserPassword" class="status-alert warning">
-                <app-icon name="key-outline"></app-icon>
-                <span>This document requires a password to open.</span>
-              </div>
-              <div *ngIf="!unlockStatus.requiresUserPassword && unlockStatus.hasPermissionsRestricted" class="status-alert info">
-                <app-icon name="shield-outline"></app-icon>
-                <span>This document allows opening but has restrictions on printing, copying, or editing.</span>
-              </div>
-            </div>
-
-            <div class="input-section" style="margin-top: 16px;">
-              <div class="password-input-wrapper">
-                <app-icon name="key-outline" class="input-icon"></app-icon>
-                <input type="password" [(ngModel)]="unlockPassword" placeholder="Enter PDF Password" class="custom-input-field" />
-              </div>
-              <p class="input-tip">
-                Note: Anti-piracy policy prevents cracking unknown passwords. You must enter the valid password to unlock.
-              </p>
-            </div>
-
-            <!-- Progress Indicator -->
-            <div *ngIf="unlockWorkflowState === 'PROCESSING'" style="margin-top: 16px;">
-              <app-progress
-                [indeterminate]="true"
-                variant="primary"
-                [label]="stageLabels[currentStage]">
-              </app-progress>
-            </div>
-
-            <!-- Error Alert -->
-            <div *ngIf="unlockWorkflowState === 'ERROR'" style="margin-top: 16px; padding: 12px 16px; background: var(--color-danger-soft, #fef2f2); border: 1px solid var(--color-danger, #ef4444); border-radius: 8px; color: var(--color-danger, #ef4444); display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <app-icon name="alert-circle-outline"></app-icon>
-                <span>{{ errorMessage }}</span>
-              </div>
-              <app-button size="sm" variant="outline" (clicked)="executeUnlock()">Retry</app-button>
-            </div>
-
-            <div style="margin-top: 20px;">
-              <app-button
-                variant="success"
-                size="lg"
-                [block]="true"
-                (clicked)="executeUnlock()"
-                [disabled]="isUnlocking">
-                <app-icon name="lock-open-outline" class="btn-icon"></app-icon>
-                {{ isUnlocking ? 'Decrypting Document...' : 'Unlock & Export Decrypted Copy' }}
-              </app-button>
-            </div>
-          </div>
-
-          <!-- Result View when Unlocked -->
-          <div *ngIf="unlockWorkflowState === 'SUCCESS' && unlockResultFile" class="result-container" style="margin-top: 16px;">
-            <app-result-preview
-              title="Document Unlocked Successfully"
-              subtitle="Restrictions and encryption removed. Ready to view and edit."
-              [file]="unlockResultFile"
-              (shared)="shareUnlockResult()"
-              (resetRequested)="resetUnlock()">
-            </app-result-preview>
-          </div>
-        </div>
+        }
 
         <!-- PROTECT MODE -->
-        <div *ngIf="mode === 'protect'" class="security-container">
-          <!-- Upload Dropzone -->
-          <div *ngIf="!protectFile" class="upload-container">
-            <app-file-dropzone
-              accept="application/pdf"
-              icon="lock-closed"
-              title="Select or Drop PDF to Protect"
-              description="Encrypt your PDF document with standard 128-bit encryption. Restrict printing, copying, or editing."
-              (fileSelected)="onProtectFileSelected($event)">
-            </app-file-dropzone>
+        @if (mode === 'protect') {
+          <div class="security-container">
+            <!-- Upload Dropzone -->
+            @if (!protectFile) {
+              <div class="upload-container">
+                <app-file-dropzone
+                  accept="application/pdf"
+                  icon="lock-closed"
+                  title="Select or Drop PDF to Protect"
+                  description="Encrypt your PDF document with standard 128-bit encryption. Restrict printing, copying, or editing."
+                  (fileSelected)="onProtectFileSelected($event)">
+                </app-file-dropzone>
+              </div>
+            }
+            <!-- Action Card when File Selected -->
+            @if (protectFile && protectWorkflowState !== 'SUCCESS') {
+              <div class="action-card">
+                <!-- Reusable File Preview Component -->
+                <app-file-preview
+                  [file]="protectFile"
+                  format="PDF"
+                  (remove)="removeProtectFile()"
+                  (replace)="selectPdfToProtect()">
+                </app-file-preview>
+                <!-- OPEN PASSWORD -->
+                <div class="section-title" style="margin-top: 16px;">
+                  <strong>1. Document Open Password</strong>
+                  <p>Required to open and view the PDF file.</p>
+                </div>
+                <div class="password-group">
+                  <div class="password-input-wrapper">
+                    <app-icon name="lock-closed-outline" class="input-icon"></app-icon>
+                    <input type="password" [(ngModel)]="userPassword" placeholder="Enter Open Password" class="custom-input-field" />
+                  </div>
+                  <div class="password-input-wrapper">
+                    <app-icon name="checkmark-circle-outline" class="input-icon"></app-icon>
+                    <input type="password" [(ngModel)]="confirmUserPassword" placeholder="Confirm Open Password" class="custom-input-field" />
+                  </div>
+                </div>
+                <!-- PERMISSIONS SETTINGS -->
+                <div class="section-title" style="margin-top: 20px;">
+                  <strong>2. Permissions & Restrictions</strong>
+                  <p>Control what authorized readers are permitted to do.</p>
+                </div>
+                <div class="permissions-card">
+                  <div class="permission-row">
+                    <div>
+                      <h5>Allow Printing</h5>
+                      <p>Restrict or allow high-resolution printing</p>
+                    </div>
+                    <select [(ngModel)]="permissions.allowPrinting" class="custom-select-small">
+                      <option value="high-resolution">High Quality</option>
+                      <option value="low-resolution">Low Quality</option>
+                      <option value="none">No Printing</option>
+                    </select>
+                  </div>
+                  <div class="permission-row">
+                    <div>
+                      <h5>Allow Copying</h5>
+                      <p>Extracting text and graphics to clipboard</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" [(ngModel)]="permissions.allowCopying" />
+                      <span class="slider round"></span>
+                    </label>
+                  </div>
+                  <div class="permission-row">
+                    <div>
+                      <h5>Allow Modifying</h5>
+                      <p>Editing text, pages, or document structure</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" [(ngModel)]="permissions.allowModifying" />
+                      <span class="slider round"></span>
+                    </label>
+                  </div>
+                  <div class="permission-row">
+                    <div>
+                      <h5>Allow Annotations & Forms</h5>
+                      <p>Adding comments and filling existing form fields</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" [(ngModel)]="permissions.allowFillingForms" />
+                      <span class="slider round"></span>
+                    </label>
+                  </div>
+                </div>
+                <!-- ADVANCED PERMISSION PASSWORD TOGGLE -->
+                <div class="advanced-toggle" (click)="showAdvancedPasswords = !showAdvancedPasswords">
+                  <span>{{ showAdvancedPasswords ? 'Hide' : 'Show' }} Advanced Owner Password</span>
+                  <app-icon [name]="showAdvancedPasswords ? 'chevron-up' : 'chevron-down'"></app-icon>
+                </div>
+                @if (showAdvancedPasswords) {
+                  <div class="advanced-box">
+                    <p class="input-tip">
+                      Owner password allows the administrator to override permissions and edit security settings. If left blank, your Open Password is used.
+                    </p>
+                    <div class="password-group">
+                      <div class="password-input-wrapper">
+                        <input type="password" [(ngModel)]="ownerPassword" placeholder="Owner / Admin Password" class="custom-input-field" />
+                      </div>
+                      <div class="password-input-wrapper">
+                        <input type="password" [(ngModel)]="confirmOwnerPassword" placeholder="Confirm Owner Password" class="custom-input-field" />
+                      </div>
+                    </div>
+                  </div>
+                }
+                <!-- Progress Indicator -->
+                @if (protectWorkflowState === 'PROCESSING') {
+                  <div style="margin-top: 16px;">
+                    <app-progress
+                      [indeterminate]="true"
+                      variant="primary"
+                      [label]="stageLabels[currentStage]">
+                    </app-progress>
+                  </div>
+                }
+                <!-- Error Alert -->
+                @if (protectWorkflowState === 'ERROR') {
+                  <div style="margin-top: 16px; padding: 12px 16px; background: var(--color-danger-soft, #fef2f2); border: 1px solid var(--color-danger, #ef4444); border-radius: 8px; color: var(--color-danger, #ef4444); display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <app-icon name="alert-circle-outline"></app-icon>
+                      <span>{{ errorMessage }}</span>
+                    </div>
+                    <app-button size="sm" variant="outline" (clicked)="executeProtect()">Retry</app-button>
+                  </div>
+                }
+                <div class="action-btn-row" style="margin-top: 20px;">
+                  <app-button
+                    variant="primary"
+                    size="lg"
+                    [block]="true"
+                    (clicked)="executeProtect()"
+                    [disabled]="isProtecting">
+                    <app-icon name="shield-checkmark-outline" class="btn-icon"></app-icon>
+                    {{ isProtecting ? 'Encrypting Document...' : 'Protect & Export PDF' }}
+                  </app-button>
+                </div>
+              </div>
+            }
+            <!-- Result View when Protected -->
+            @if (protectWorkflowState === 'SUCCESS' && protectResultFile) {
+              <div class="result-container" style="margin-top: 16px;">
+                <app-result-preview
+                  title="Document Protected Successfully"
+                  subtitle="Protected with standard encryption and configured permissions."
+                  [file]="protectResultFile"
+                  (shared)="shareProtectResult()"
+                  (resetRequested)="resetProtect()">
+                </app-result-preview>
+              </div>
+            }
           </div>
-
-          <!-- Action Card when File Selected -->
-          <div *ngIf="protectFile && protectWorkflowState !== 'SUCCESS'" class="action-card">
-            <!-- Reusable File Preview Component -->
-            <app-file-preview
-              [file]="protectFile"
-              format="PDF"
-              (remove)="removeProtectFile()"
-              (replace)="selectPdfToProtect()">
-            </app-file-preview>
-
-            <!-- OPEN PASSWORD -->
-            <div class="section-title" style="margin-top: 16px;">
-              <strong>1. Document Open Password</strong>
-              <p>Required to open and view the PDF file.</p>
-            </div>
-
-            <div class="password-group">
-              <div class="password-input-wrapper">
-                <app-icon name="lock-closed-outline" class="input-icon"></app-icon>
-                <input type="password" [(ngModel)]="userPassword" placeholder="Enter Open Password" class="custom-input-field" />
-              </div>
-
-              <div class="password-input-wrapper">
-                <app-icon name="checkmark-circle-outline" class="input-icon"></app-icon>
-                <input type="password" [(ngModel)]="confirmUserPassword" placeholder="Confirm Open Password" class="custom-input-field" />
-              </div>
-            </div>
-
-            <!-- PERMISSIONS SETTINGS -->
-            <div class="section-title" style="margin-top: 20px;">
-              <strong>2. Permissions & Restrictions</strong>
-              <p>Control what authorized readers are permitted to do.</p>
-            </div>
-
-            <div class="permissions-card">
-              <div class="permission-row">
-                <div>
-                  <h5>Allow Printing</h5>
-                  <p>Restrict or allow high-resolution printing</p>
-                </div>
-                <select [(ngModel)]="permissions.allowPrinting" class="custom-select-small">
-                  <option value="high-resolution">High Quality</option>
-                  <option value="low-resolution">Low Quality</option>
-                  <option value="none">No Printing</option>
-                </select>
-              </div>
-
-              <div class="permission-row">
-                <div>
-                  <h5>Allow Copying</h5>
-                  <p>Extracting text and graphics to clipboard</p>
-                </div>
-                <label class="switch">
-                  <input type="checkbox" [(ngModel)]="permissions.allowCopying" />
-                  <span class="slider round"></span>
-                </label>
-              </div>
-
-              <div class="permission-row">
-                <div>
-                  <h5>Allow Modifying</h5>
-                  <p>Editing text, pages, or document structure</p>
-                </div>
-                <label class="switch">
-                  <input type="checkbox" [(ngModel)]="permissions.allowModifying" />
-                  <span class="slider round"></span>
-                </label>
-              </div>
-
-              <div class="permission-row">
-                <div>
-                  <h5>Allow Annotations & Forms</h5>
-                  <p>Adding comments and filling existing form fields</p>
-                </div>
-                <label class="switch">
-                  <input type="checkbox" [(ngModel)]="permissions.allowFillingForms" />
-                  <span class="slider round"></span>
-                </label>
-              </div>
-            </div>
-
-            <!-- ADVANCED PERMISSION PASSWORD TOGGLE -->
-            <div class="advanced-toggle" (click)="showAdvancedPasswords = !showAdvancedPasswords">
-              <span>{{ showAdvancedPasswords ? 'Hide' : 'Show' }} Advanced Owner Password</span>
-              <app-icon [name]="showAdvancedPasswords ? 'chevron-up' : 'chevron-down'"></app-icon>
-            </div>
-
-            <div *ngIf="showAdvancedPasswords" class="advanced-box">
-              <p class="input-tip">
-                Owner password allows the administrator to override permissions and edit security settings. If left blank, your Open Password is used.
-              </p>
-              <div class="password-group">
-                <div class="password-input-wrapper">
-                  <input type="password" [(ngModel)]="ownerPassword" placeholder="Owner / Admin Password" class="custom-input-field" />
-                </div>
-                <div class="password-input-wrapper">
-                  <input type="password" [(ngModel)]="confirmOwnerPassword" placeholder="Confirm Owner Password" class="custom-input-field" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Progress Indicator -->
-            <div *ngIf="protectWorkflowState === 'PROCESSING'" style="margin-top: 16px;">
-              <app-progress
-                [indeterminate]="true"
-                variant="primary"
-                [label]="stageLabels[currentStage]">
-              </app-progress>
-            </div>
-
-            <!-- Error Alert -->
-            <div *ngIf="protectWorkflowState === 'ERROR'" style="margin-top: 16px; padding: 12px 16px; background: var(--color-danger-soft, #fef2f2); border: 1px solid var(--color-danger, #ef4444); border-radius: 8px; color: var(--color-danger, #ef4444); display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <app-icon name="alert-circle-outline"></app-icon>
-                <span>{{ errorMessage }}</span>
-              </div>
-              <app-button size="sm" variant="outline" (clicked)="executeProtect()">Retry</app-button>
-            </div>
-
-            <div class="action-btn-row" style="margin-top: 20px;">
-              <app-button
-                variant="primary"
-                size="lg"
-                [block]="true"
-                (clicked)="executeProtect()"
-                [disabled]="isProtecting">
-                <app-icon name="shield-checkmark-outline" class="btn-icon"></app-icon>
-                {{ isProtecting ? 'Encrypting Document...' : 'Protect & Export PDF' }}
-              </app-button>
-            </div>
-          </div>
-
-          <!-- Result View when Protected -->
-          <div *ngIf="protectWorkflowState === 'SUCCESS' && protectResultFile" class="result-container" style="margin-top: 16px;">
-            <app-result-preview
-              title="Document Protected Successfully"
-              subtitle="Protected with standard encryption and configured permissions."
-              [file]="protectResultFile"
-              (shared)="shareProtectResult()"
-              (resetRequested)="resetProtect()">
-            </app-result-preview>
-          </div>
-        </div>
+        }
       </div>
     </div>
   </main>

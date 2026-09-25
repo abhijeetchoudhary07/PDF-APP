@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -37,6 +37,11 @@ import { ToastService } from '../../core/services/toast.service';
   providers: [DecimalPipe]
 })
 export class ConverterPage implements OnInit, OnDestroy {
+  private route = inject(ActivatedRoute);
+  private conversionService = inject(ConversionService);
+  private zipConverter = inject(ZipToPdfConverter);
+  private toast = inject(ToastService);
+
   converterId: string = '';
   converter?: IConverter;
 
@@ -85,13 +90,6 @@ export class ConverterPage implements OnInit, OnDestroy {
   // ZIP to PDF inspection
   zipEntries: ZipFileInfo[] = [];
   selectedZipEntries: boolean[] = [];
-
-  constructor(
-    private route: ActivatedRoute,
-    private conversionService: ConversionService,
-    private zipConverter: ZipToPdfConverter,
-    private toast: ToastService
-  ) {}
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {

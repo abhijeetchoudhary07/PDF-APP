@@ -3,20 +3,20 @@
   <div class="reader-toolbar">
     <!-- Left: Thumbnails Toggle & Search Toggle -->
     <div class="toolbar-section">
-      <button class="tool-btn" [class.active]="showThumbnails" (click)="toggleThumbnailsEvent.emit()" title="Page Thumbnails">
+      <button class="tool-btn" [class.active]="showThumbnails" (click)="toggleThumbnailsEvent.emit()" [title]="'editor.thumbnailsTitle' | translate">
         <app-icon name="grid-outline"></app-icon>
       </button>
-      <button class="tool-btn" [class.active]="showSearch" (click)="toggleSearchEvent.emit()" title="Search Document (Ctrl+F)">
+      <button class="tool-btn" [class.active]="showSearch" (click)="toggleSearchEvent.emit()" [title]="'editor.searchTitle' | translate">
         <app-icon name="search-outline"></app-icon>
       </button>
     </div>
 
     <!-- Center: Page Navigation -->
     <div class="toolbar-section page-nav">
-      <button class="tool-btn" (click)="prevPage()" [disabled]="state.currentPageNumber <= 1" title="Previous Page (Left Arrow)">
+      <button class="tool-btn" (click)="prevPage()" [disabled]="state.currentPageNumber <= 1" [title]="'editor.prevPageTitle' | translate">
         <app-icon name="chevron-back-outline"></app-icon>
       </button>
-      
+
       <div class="page-input-wrapper">
         <input
           type="number"
@@ -24,97 +24,111 @@
           [max]="(state.document$ | async)?.pageCount || 1"
           [value]="state.currentPageNumber"
           (change)="onPageInputChange($any($event.target).value)"
-        />
+          />
         <span class="page-total">/ {{ (state.document$ | async)?.pageCount || 1 }}</span>
       </div>
 
-      <button class="tool-btn" (click)="nextPage()" [disabled]="state.currentPageNumber >= ((state.document$ | async)?.pageCount || 1)" title="Next Page (Right Arrow)">
+      <button class="tool-btn" (click)="nextPage()" [disabled]="state.currentPageNumber >= ((state.document$ | async)?.pageCount || 1)" [title]="'editor.nextPageTitle' | translate">
         <app-icon name="chevron-forward-outline"></app-icon>
       </button>
     </div>
 
     <!-- Right: Zoom & Fullscreen -->
     <div class="toolbar-section zoom-controls">
-      <button class="tool-btn" (click)="zoomOut()" title="Zoom Out (Ctrl -)">
+      <button class="tool-btn" (click)="zoomOut()" [title]="'editor.zoomOutTitle' | translate">
         <app-icon name="remove-outline"></app-icon>
       </button>
       <span class="zoom-label">{{ ((state.zoom$ | async) || 1.0) * 100 | number:'1.0-0' }}%</span>
-      <button class="tool-btn" (click)="zoomIn()" title="Zoom In (Ctrl +)">
+      <button class="tool-btn" (click)="zoomIn()" [title]="'editor.zoomInTitle' | translate">
         <app-icon name="add-outline"></app-icon>
       </button>
-      <button class="tool-btn" (click)="fitWidth()" title="Fit Width">
+      <button class="tool-btn" (click)="fitWidth()" [title]="'editor.fitWidthTitle' | translate">
         <app-icon name="scan-outline"></app-icon>
       </button>
-      <button class="tool-btn" (click)="fitPage()" title="Fit Page">
+      <button class="tool-btn" (click)="fitPage()" [title]="'editor.fitPageTitle' | translate">
         <app-icon name="expand-outline"></app-icon>
       </button>
-      <button class="tool-btn" (click)="toggleFullscreen()" title="Fullscreen">
+      <button class="tool-btn" (click)="toggleFullscreen()" [title]="'editor.fullscreenTitle' | translate">
         <app-icon [name]="isFullscreen ? 'contract-outline' : 'fullscreen-outline'"></app-icon>
       </button>
     </div>
   </div>
 
   <!-- SEARCH BAR (COLLAPSIBLE) -->
-  <div class="search-overlay" *ngIf="showSearch">
-    <div class="search-box">
-      <app-icon name="search-outline" class="search-icon"></app-icon>
-      <input
-        type="text"
-        placeholder="Search text in document..."
-        [(ngModel)]="searchQuery"
-        (keyup.enter)="performSearch()"
-        autofocus
-      />
-      
-      <div class="search-meta" *ngIf="searchResults.length > 0">
-        {{ currentMatchIndex + 1 }} of {{ searchResults.length }}
+  @if (showSearch) {
+    <div class="search-overlay">
+      <div class="search-box">
+        <app-icon name="search-outline" class="search-icon"></app-icon>
+        <input
+          type="text"
+          [placeholder]="'editor.searchPlaceholder' | translate"
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="performSearch()"
+          autofocus
+          />
+        @if (searchResults.length > 0) {
+          <div class="search-meta">
+            {{ 'editor.searchMatches' | translate: { current: currentMatchIndex + 1, total: searchResults.length } }}
+          </div>
+        }
+        @if (searchResults.length === 0 && searchQuery && !isSearching) {
+          <div class="search-meta no-match">
+            {{ 'editor.noMatches' | translate }}
+          </div>
+        }
+        <button class="tool-btn" (click)="prevMatch()" [disabled]="searchResults.length === 0" [title]="'editor.prevMatchTitle' | translate">
+          <app-icon name="chevron-up-outline"></app-icon>
+        </button>
+        <button class="tool-btn" (click)="nextMatch()" [disabled]="searchResults.length === 0" [title]="'editor.nextMatchTitle' | translate">
+          <app-icon name="chevron-down-outline"></app-icon>
+        </button>
+        <button class="tool-btn close-btn" (click)="closeSearch()" [title]="'editor.closeSearchTitle' | translate">
+          <app-icon name="close-outline"></app-icon>
+        </button>
       </div>
-      <div class="search-meta no-match" *ngIf="searchResults.length === 0 && searchQuery && !isSearching">
-        No matches
-      </div>
-
-      <button class="tool-btn" (click)="prevMatch()" [disabled]="searchResults.length === 0" title="Previous match">
-        <app-icon name="chevron-up-outline"></app-icon>
-      </button>
-      <button class="tool-btn" (click)="nextMatch()" [disabled]="searchResults.length === 0" title="Next match">
-        <app-icon name="chevron-down-outline"></app-icon>
-      </button>
-      <button class="tool-btn close-btn" (click)="closeSearch()" title="Close search">
-        <app-icon name="close-outline"></app-icon>
-      </button>
     </div>
-  </div>
+  }
 
   <!-- MAIN VIEW AREA WITH THUMBNAIL DRAWER -->
   <div class="reader-body">
     <!-- Collapsible Sidebar Thumbnails -->
-    <aside class="thumbnails-sidebar" *ngIf="showThumbnails">
-      <div class="sidebar-header">
-        <span>Pages ({{ (state.document$ | async)?.pageCount || 0 }})</span>
-      </div>
-      <div class="thumbnails-list">
-        <div
-          *ngFor="let page of (state.document$ | async)?.pages"
-          class="thumbnail-item"
-          [class.active]="page.pageNumber === state.currentPageNumber"
-          (click)="selectPage(page.pageNumber)"
-        >
-          <div class="thumb-preview">
-            <img
-              *ngIf="thumbnailUrls.get(page.pageNumber)"
-              [src]="thumbnailUrls.get(page.pageNumber)"
-              [alt]="'Page ' + page.pageNumber"
-            />
-            <div *ngIf="!thumbnailUrls.get(page.pageNumber)" class="thumb-placeholder">
-              <app-icon name="document-text-outline"></app-icon>
-            </div>
-            <span *ngIf="page.cropBox" class="crop-badge">Cropped</span>
-            <span *ngIf="page.redactions.length > 0" class="redact-badge">Redacted</span>
-          </div>
-          <span class="thumb-number">{{ page.pageNumber }}</span>
+    @if (showThumbnails) {
+      <aside class="thumbnails-sidebar">
+        <div class="sidebar-header">
+          <span>{{ 'editor.pagesCount' | translate: { count: (state.document$ | async)?.pageCount || 0 } }}</span>
         </div>
-      </div>
-    </aside>
+        <div class="thumbnails-list">
+          @for (page of (state.document$ | async)?.pages; track page) {
+            <div
+              class="thumbnail-item"
+              [class.active]="page.pageNumber === state.currentPageNumber"
+              (click)="selectPage(page.pageNumber)"
+              >
+              <div class="thumb-preview">
+                @if (thumbnailUrls.get(page.pageNumber)) {
+                  <img
+                    [src]="thumbnailUrls.get(page.pageNumber)"
+                    [alt]="'editor.pageAlt' | translate: { page: page.pageNumber }"
+                    />
+                }
+                @if (!thumbnailUrls.get(page.pageNumber)) {
+                  <div class="thumb-placeholder">
+                    <app-icon name="document-text-outline"></app-icon>
+                  </div>
+                }
+                @if (page.cropBox) {
+                  <span class="crop-badge">{{ 'editor.croppedBadge' | translate }}</span>
+                }
+                @if (page.redactions.length > 0) {
+                  <span class="redact-badge">{{ 'editor.redactedBadge' | translate }}</span>
+                }
+              </div>
+              <span class="thumb-number">{{ page.pageNumber }}</span>
+            </div>
+          }
+        </div>
+      </aside>
+    }
 
     <!-- Project-in content (The Canvas viewport) -->
     <main class="canvas-viewport">

@@ -140,8 +140,8 @@ test.describe('Release — Full user journey @release @journey @full', () => {
     await test.step('free: the quota pill routes to the paywall', async () => {
       await page.goto('/home');
       await shell.waitReady();
-      await expect(shell.quotaPill).toBeVisible();
-      await shell.quotaPill.click();
+      await expect(shell.heroQuota).toBeVisible();
+      await shell.heroQuota.click();
       await expect(page).toHaveURL(/\/features\/premium/);
     });
 
@@ -200,7 +200,13 @@ test.describe('Release — Full user journey @release @journey @full', () => {
 
     // The premium surface is still reachable; it just sells again.
     await premium.open();
-    await expect(shell.quotaPill.or(page.locator('main'))).toBeVisible();
+    /*
+     * The paywall selling again is the actual claim here, so assert that
+     * rather than `quotaPill.or(main)`: that union was satisfied by `main`,
+     * which every page has, and on a phone it resolved first to the header's
+     * hidden desktop chip and failed on visibility instead.
+     */
+    await expect(premium.planCards.first()).toBeVisible({ timeout: 30000 });
 
     // === 9. Delete the account ============================================
     await account.open();

@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule, DecimalPipe } from '@angular/common';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { PdfHeaderFooterService } from '../../core/services/pdf-header-footer.service';
@@ -34,7 +34,6 @@ export type HeaderFooterStep = 'select' | 'configure' | 'processing' | 'result';
   styleUrls: ['./pdf-header-footer.page.scss'],
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     RouterModule,
     AppHeaderComponent,
@@ -46,10 +45,17 @@ export type HeaderFooterStep = 'select' | 'configure' | 'processing' | 'result';
     FileDropzoneComponent,
     PdfPreviewComponent,
     TranslatePipe
-  ],
+],
   providers: [DecimalPipe]
 })
 export class PdfHeaderFooterPage {
+  private headerFooterService = inject(PdfHeaderFooterService);
+  private fileService = inject(FileService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
+
   currentStep: HeaderFooterStep = 'select';
   selectedFile?: File;
   originalArrayBuffer?: ArrayBuffer;
@@ -110,15 +116,6 @@ export class PdfHeaderFooterPage {
 
   // Color presets
   colorPresets = ['#000000', '#475569', '#2563eb', '#16a34a', '#dc2626', '#9333ea'];
-
-  constructor(
-    private headerFooterService: PdfHeaderFooterService,
-    private fileService: FileService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private toastService: ToastService,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   async onFileSelected(file: File): Promise<void> {
     if (!file.name.toLowerCase().endsWith('.pdf')) {

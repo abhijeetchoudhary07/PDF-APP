@@ -12,7 +12,7 @@
 
       <div class="account-container">
         <!-- Privacy note: this app's whole promise is local processing, so the
-             boundary is stated on the screen that appears to contradict it. -->
+        boundary is stated on the screen that appears to contradict it. -->
         <div class="privacy-note">
           <app-icon name="shield-checkmark"></app-icon>
           <p>
@@ -22,19 +22,20 @@
           </p>
         </div>
 
-        <ng-container *ngIf="auth.ready$ | async; else loadingBlock">
-          <ng-container *ngIf="auth.user$ | async as user; else signedOutBlock">
+        @if (auth.ready$ | async) {
+          @if (auth.user$ | async; as user) {
             <!-- ================= SIGNED IN ================= -->
             <section class="account-card">
               <div class="account-identity">
                 <div class="account-avatar">{{ user.email.charAt(0).toUpperCase() }}</div>
                 <div>
                   <h3 class="account-email">{{ user.email }}</h3>
-                  <p class="account-meta" *ngIf="user.displayName">{{ user.displayName }}</p>
+                  @if (user.displayName) {
+                    <p class="account-meta">{{ user.displayName }}</p>
+                  }
                 </div>
               </div>
-
-              <ng-container *ngIf="auth.entitlement$ | async as entitlement">
+              @if (auth.entitlement$ | async; as entitlement) {
                 <div class="plan-row" [class.is-pro]="entitlement.isPremium">
                   <div>
                     <span class="plan-label">Current plan</span>
@@ -46,40 +47,42 @@
                     {{ entitlement.isPremium ? 'PRO' : 'FREE' }}
                   </span>
                 </div>
-
                 <dl class="plan-details">
                   <div>
                     <dt>Expires</dt>
                     <dd>{{ formatExpiry(entitlement.validUntil, entitlement.isPremium) }}</dd>
                   </div>
-                  <div *ngIf="entitlement.isPremium && entitlement.daysRemaining !== null">
-                    <dt>Days left</dt>
-                    <dd>{{ entitlement.daysRemaining }}</dd>
-                  </div>
-                  <div *ngIf="entitlement.isPremium">
-                    <dt>Source</dt>
-                    <dd>
-                      {{ entitlement.platform === 'manual_admin'
-                          ? 'Granted by support'
-                          : (entitlement.platform === 'promotional' ? 'Promotional' : 'Store purchase') }}
-                    </dd>
-                  </div>
+                  @if (entitlement.isPremium && entitlement.daysRemaining !== null) {
+                    <div>
+                      <dt>Days left</dt>
+                      <dd>{{ entitlement.daysRemaining }}</dd>
+                    </div>
+                  }
+                  @if (entitlement.isPremium) {
+                    <div>
+                      <dt>Source</dt>
+                      <dd>
+                        {{ entitlement.platform === 'manual_admin'
+                        ? 'Granted by support'
+                        : (entitlement.platform === 'promotional' ? 'Promotional' : 'Store purchase') }}
+                      </dd>
+                    </div>
+                  }
                   <div>
                     <dt>Status checked</dt>
                     <dd>{{ lastSyncedLabel() }}</dd>
                   </div>
                 </dl>
-
-                <app-button
-                  *ngIf="!entitlement.isPremium"
-                  variant="primary"
-                  size="md"
-                  [block]="true"
-                  (clicked)="goPremium()">
-                  See premium plans
-                </app-button>
-              </ng-container>
-
+                @if (!entitlement.isPremium) {
+                  <app-button
+                    variant="primary"
+                    size="md"
+                    [block]="true"
+                    (clicked)="goPremium()">
+                    See premium plans
+                  </app-button>
+                }
+              }
               <div class="account-actions">
                 <app-button variant="outline" size="md" [loading]="busy" (clicked)="refresh()">
                   Refresh status
@@ -91,31 +94,28 @@
                   Sign out
                 </app-button>
               </div>
-
               <p class="account-hint">
                 Premium granted by support appears here after a refresh. Signing out
                 leaves every tool working — it only stops premium from syncing.
               </p>
             </section>
-
             <!--
-              Account deletion. Google Play requires an in-app path for any app
-              that lets people create an account, and a public web page that
-              does the same without installing it.
-
-              It is deliberately the last thing on the page, in its own card,
-              behind a typed confirmation: it is the only irreversible action
-              the app has, and it would otherwise sit one button away from
-              "Sign out".
+            Account deletion. Google Play requires an in-app path for any app
+            that lets people create an account, and a public web page that
+            does the same without installing it.
+            It is deliberately the last thing on the page, in its own card,
+            behind a typed confirmation: it is the only irreversible action
+            the app has, and it would otherwise sit one button away from
+            "Sign out".
             -->
             <section class="account-card account-card--danger">
               <h3 class="danger-title">Delete account</h3>
-
-              <p class="danger-copy" *ngIf="!confirmingDelete">
-                Permanently deletes your account, your premium entitlement and
-                your payment history from our server. This cannot be undone.
-              </p>
-
+              @if (!confirmingDelete) {
+                <p class="danger-copy">
+                  Permanently deletes your account, your premium entitlement and
+                  your payment history from our server. This cannot be undone.
+                </p>
+              }
               <p class="danger-copy">
                 Documents are never uploaded, so nothing you have processed is
                 stored on our server and nothing of it is affected. Files saved
@@ -123,42 +123,39 @@
                 phone's storage, or from
                 <a routerLink="/features/local-data-storage">Local data &amp; storage</a>.
               </p>
-
-              <app-button
-                *ngIf="!confirmingDelete"
-                variant="outline"
-                size="md"
-                (clicked)="startDelete()">
-                Delete account
-              </app-button>
-
-              <div class="danger-confirm" *ngIf="confirmingDelete">
-                <app-input
-                  label="Type DELETE to confirm"
-                  placeholder="DELETE"
-                  [(ngModel)]="deleteConfirmation"
-                  name="deleteConfirmation">
-                </app-input>
-
-                <div class="account-actions">
-                  <app-button
-                    variant="danger"
-                    size="md"
-                    [disabled]="!canDelete"
-                    [loading]="busy"
-                    (clicked)="deleteAccount()">
-                    Permanently delete
-                  </app-button>
-                  <app-button variant="ghost" size="md" (clicked)="cancelDelete()">
-                    Keep my account
-                  </app-button>
+              @if (!confirmingDelete) {
+                <app-button
+                  variant="outline"
+                  size="md"
+                  (clicked)="startDelete()">
+                  Delete account
+                </app-button>
+              }
+              @if (confirmingDelete) {
+                <div class="danger-confirm">
+                  <app-input
+                    label="Type DELETE to confirm"
+                    placeholder="DELETE"
+                    [(ngModel)]="deleteConfirmation"
+                    name="deleteConfirmation">
+                  </app-input>
+                  <div class="account-actions">
+                    <app-button
+                      variant="danger"
+                      size="md"
+                      [disabled]="!canDelete"
+                      [loading]="busy"
+                      (clicked)="deleteAccount()">
+                      Permanently delete
+                    </app-button>
+                    <app-button variant="ghost" size="md" (clicked)="cancelDelete()">
+                      Keep my account
+                    </app-button>
+                  </div>
                 </div>
-              </div>
+              }
             </section>
-          </ng-container>
-
-          <!-- ================= SIGNED OUT ================= -->
-          <ng-template #signedOutBlock>
+          } @else {
             <section class="account-card">
               <div class="mode-switch" role="tablist">
                 <button
@@ -178,16 +175,15 @@
                   Create account
                 </button>
               </div>
-
               <form class="account-form" (ngSubmit)="submit()">
-                <app-input
-                  *ngIf="mode === 'register'"
-                  label="Name"
-                  placeholder="Optional"
-                  [(ngModel)]="displayName"
-                  name="displayName">
-                </app-input>
-
+                @if (mode === 'register') {
+                  <app-input
+                    label="Name"
+                    placeholder="Optional"
+                    [(ngModel)]="displayName"
+                    name="displayName">
+                  </app-input>
+                }
                 <app-input
                   label="Email"
                   type="email"
@@ -197,7 +193,6 @@
                   [(ngModel)]="email"
                   name="email">
                 </app-input>
-
                 <app-input
                   label="Password"
                   type="password"
@@ -208,13 +203,12 @@
                   [(ngModel)]="password"
                   name="password">
                 </app-input>
-
                 <!--
-                  No (clicked) handler: the button is a real type="submit"
-                  inside the form, so a click already reaches submit() through
-                  (ngSubmit). Binding both meant every click called submit()
-                  twice — harmless only because of the `busy` guard, and one
-                  refactor away from firing two registrations.
+                No (clicked) handler: the button is a real type="submit"
+                inside the form, so a click already reaches submit() through
+                (ngSubmit). Binding both meant every click called submit()
+                twice — harmless only because of the `busy` guard, and one
+                refactor away from firing two registrations.
                 -->
                 <app-button
                   type="submit"
@@ -226,21 +220,20 @@
                   {{ mode === 'register' ? 'Create account' : 'Sign in' }}
                 </app-button>
               </form>
-
               <p class="account-hint">
                 {{ mode === 'register'
-                    ? 'Already bought premium on this phone? Create an account and it will be linked automatically.'
-                    : 'No account yet? Creating one takes a moment and keeps your premium if you switch phones.' }}
+                ? 'Already bought premium on this phone? Create an account and it will be linked automatically.'
+                : 'No account yet? Creating one takes a moment and keeps your premium if you switch phones.' }}
               </p>
             </section>
-          </ng-template>
-        </ng-container>
-
-        <ng-template #loadingBlock>
+          }
+          <!-- ================= SIGNED OUT ================= -->
+        } @else {
           <section class="account-card account-card--loading">
             <p>Checking your account…</p>
           </section>
-        </ng-template>
+        }
+
       </div>
     </div>
   </main>

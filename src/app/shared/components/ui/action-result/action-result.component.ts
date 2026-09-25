@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { AppButtonComponent } from '../button/button.component';
 import { AppRelatedToolsComponent } from '../related-tools/related-tools.component';
@@ -8,7 +8,7 @@ import { AppRelatedToolsComponent } from '../related-tools/related-tools.compone
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-action-result',
   standalone: true,
-  imports: [CommonModule, RouterModule, AppButtonComponent, AppRelatedToolsComponent],
+  imports: [RouterModule, AppButtonComponent, AppRelatedToolsComponent],
   template: `
     <div class="action-result-container">
       <!-- Success Header Card -->
@@ -19,18 +19,28 @@ import { AppRelatedToolsComponent } from '../related-tools/related-tools.compone
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
           </svg>
         </div>
-
+    
         <h2 class="result-title">{{ title }}</h2>
         <p class="result-subtitle">{{ subtitle }}</p>
-
+    
         <!-- File Metadata Pill -->
-        <div *ngIf="fileName || outputSizeFormatted" class="meta-pill">
-          <span *ngIf="fileName" class="file-name">{{ fileName }}</span>
-          <span *ngIf="fileName && outputSizeFormatted" class="meta-divider">&bull;</span>
-          <span *ngIf="outputSizeFormatted" class="file-size">{{ outputSizeFormatted }}</span>
-          <span *ngIf="compressionRatio" class="ratio-badge">{{ compressionRatio }}</span>
-        </div>
-
+        @if (fileName || outputSizeFormatted) {
+          <div class="meta-pill">
+            @if (fileName) {
+              <span class="file-name">{{ fileName }}</span>
+            }
+            @if (fileName && outputSizeFormatted) {
+              <span class="meta-divider">&bull;</span>
+            }
+            @if (outputSizeFormatted) {
+              <span class="file-size">{{ outputSizeFormatted }}</span>
+            }
+            @if (compressionRatio) {
+              <span class="ratio-badge">{{ compressionRatio }}</span>
+            }
+          </div>
+        }
+    
         <!-- Action Buttons -->
         <div class="action-buttons-group">
           <app-button
@@ -44,7 +54,7 @@ import { AppRelatedToolsComponent } from '../related-tools/related-tools.compone
             </svg>
             Save File
           </app-button>
-
+    
           <app-button
             variant="secondary"
             size="lg"
@@ -58,7 +68,7 @@ import { AppRelatedToolsComponent } from '../related-tools/related-tools.compone
             </svg>
             Share
           </app-button>
-
+    
           <app-button
             variant="outline"
             size="lg"
@@ -70,7 +80,7 @@ import { AppRelatedToolsComponent } from '../related-tools/related-tools.compone
             Process Another
           </app-button>
         </div>
-
+    
         <!-- Privacy assurance -->
         <div class="offline-tag">
           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
@@ -79,7 +89,7 @@ import { AppRelatedToolsComponent } from '../related-tools/related-tools.compone
           <span>Processed 100% locally on your device</span>
         </div>
       </div>
-
+    
       <!-- Smart Cross-Linking / Next Steps -->
       <app-related-tools
         [currentToolId]="currentToolId"
@@ -88,7 +98,7 @@ import { AppRelatedToolsComponent } from '../related-tools/related-tools.compone
         subtitle="Continue editing, organizing, or converting this file without leaving the app">
       </app-related-tools>
     </div>
-  `,
+    `,
   styles: [`
     .action-result-container {
       width: 100%;

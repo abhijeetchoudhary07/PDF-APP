@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { AlertController, ToastController } from '@ionic/angular/lazy';
+import { Injectable, inject } from '@angular/core';
+import { AlertController, ToastController } from '@ionic/angular';
 import { TranslationService } from './translation.service';
 
 export type AppErrorCode =
@@ -27,15 +27,12 @@ export interface UserFriendlyError {
   providedIn: 'root'
 })
 export class AppErrorService {
-  private translationService: TranslationService;
+  private alertCtrl = inject(AlertController);
+  private toastCtrl = inject(ToastController);
 
-  constructor(
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
-    translationService?: TranslationService
-  ) {
-    this.translationService = translationService || new TranslationService();
-  }
+  // Non-optional, so the `|| new TranslationService()` fallback this used to
+  // carry could never run.
+  private translationService = inject(TranslationService);
 
   /**
    * Translates any thrown exception or error into a user-friendly, localized error object.

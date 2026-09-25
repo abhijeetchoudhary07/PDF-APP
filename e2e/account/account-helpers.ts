@@ -178,7 +178,13 @@ export async function writeStoredSession(
  */
 export async function openAccountPage(page: Page): Promise<void> {
   await page.goto('/account');
-  await page.locator('.account-card').waitFor({ state: 'visible', timeout: 30000 });
+  /*
+   * `.first()` is load-bearing. Signed out the page has one `.account-card`;
+   * signed in it has two, because the "Delete account" panel is one as well —
+   * so the bare locator passed for every signed-out test and failed strict
+   * mode for every signed-in one, which read as the sign-in itself breaking.
+   */
+  await page.locator('.account-card').first().waitFor({ state: 'visible', timeout: 30000 });
   await page
     .locator('.account-identity, .mode-switch')
     .first()

@@ -10,7 +10,7 @@
         badge="FORMS"
         badgeVariant="edit"
         backUrl="/home">
-    
+
         <div actions class="header-action-group">
           <app-button
             variant="ghost"
@@ -32,185 +32,207 @@
       </app-page-header>
 
       <!-- FORM MODE TABS -->
-      <div class="tabs-wrapper" *ngIf="document">
-        <app-tabs
-          [tabs]="formTabs"
-          [activeTab]="mode"
-          (tabChange)="mode = $any($event)"
-          variant="segment">
-        </app-tabs>
-      </div>
+      @if (document) {
+        <div class="tabs-wrapper">
+          <app-tabs
+            [tabs]="formTabs"
+            [activeTab]="mode"
+            (tabChange)="mode = $any($event)"
+            variant="segment">
+          </app-tabs>
+        </div>
+      }
 
       <div class="forms-content-container">
         <!-- Upload State -->
-        <div *ngIf="!document" class="upload-container">
-          <div class="upload-card">
-            <div class="upload-icon-badge">
-              <app-icon name="document-text-outline"></app-icon>
+        @if (!document) {
+          <div class="upload-container">
+            <div class="upload-card">
+              <div class="upload-icon-badge">
+                <app-icon name="document-text-outline"></app-icon>
+              </div>
+              <h2>Fill PDF Forms Offline</h2>
+              <p>Upload any government or official application form. Automatically detect interactive fields or manually position custom entries.</p>
+              <app-button
+                variant="primary"
+                size="lg"
+                [block]="true"
+                (clicked)="selectPdf()"
+                [disabled]="isProcessing">
+                <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
+                {{ isProcessing ? 'Analyzing Document...' : 'Select PDF Document' }}
+              </app-button>
             </div>
-            <h2>Fill PDF Forms Offline</h2>
-            <p>Upload any government or official application form. Automatically detect interactive fields or manually position custom entries.</p>
-            <app-button
-              variant="primary"
-              size="lg"
-              [block]="true"
-              (clicked)="selectPdf()"
-              [disabled]="isProcessing">
-              <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
-              {{ isProcessing ? 'Analyzing Document...' : 'Select PDF Document' }}
-            </app-button>
           </div>
-        </div>
+        }
 
         <!-- Active Form Workspace -->
-        <div *ngIf="document" class="form-workspace">
-          <!-- Document Info Bar -->
-          <div class="doc-info-bar">
-            <div class="doc-title-info">
-              <strong class="doc-name">{{ document.name }}</strong>
-              <app-badge [variant]="document.hasNativeForms ? 'success' : 'warning'" size="sm">
-                {{ document.hasNativeForms ? 'Interactive Form' : 'Manual Placement Mode' }}
-              </app-badge>
-            </div>
-            <div class="page-stepper">
-              <app-button variant="ghost" size="sm" (clicked)="prevPage()" [disabled]="currentPage <= 1">
-                <app-icon name="chevron-back"></app-icon>
-              </app-button>
-              <span class="page-counter">Page {{ currentPage }} / {{ totalPages }}</span>
-              <app-button variant="ghost" size="sm" (clicked)="nextPage()" [disabled]="currentPage >= totalPages">
-                <app-icon name="chevron-forward"></app-icon>
-              </app-button>
-            </div>
-          </div>
-
-          <!-- Mode Specific Tools -->
-          <div *ngIf="mode === 'manual'" class="manual-tools-card">
-            <div class="manual-tools-header">
-              <strong>Add Field on Page {{ currentPage }}</strong>
-            </div>
-            <div class="manual-tool-buttons">
-              <app-button size="sm" variant="outline" (clicked)="addManualField('text')">
-                <app-icon name="text-outline" class="btn-icon"></app-icon> + Text
-              </app-button>
-              <app-button size="sm" variant="outline" (clicked)="addManualField('checkbox')">
-                <app-icon name="checkbox-outline" class="btn-icon"></app-icon> + Checkbox
-              </app-button>
-              <app-button size="sm" variant="outline" (clicked)="addManualField('date')">
-                <app-icon name="calendar-outline" class="btn-icon"></app-icon> + Date
-              </app-button>
-            </div>
-          </div>
-
-          <!-- Field Navigator Bar -->
-          <div *ngIf="filteredFields.length > 0" class="field-nav-bar">
-            <div class="nav-counter">
-              <span>Field {{ currentFieldIndex + 1 }} of {{ filteredFields.length }}</span>
-            </div>
-            <div class="nav-controls">
-              <app-button size="sm" variant="outline" (clicked)="prevField()" [disabled]="currentFieldIndex <= 0">
-                <app-icon name="arrow-up-outline" class="btn-icon"></app-icon> Prev
-              </app-button>
-              <app-button size="sm" variant="outline" (clicked)="nextField()" [disabled]="currentFieldIndex >= filteredFields.length - 1">
-                Next <app-icon name="arrow-down-outline" class="btn-icon"></app-icon>
-              </app-button>
-              <app-button size="sm" variant="danger" (clicked)="clearAllValues()">
-                <app-icon name="refresh-outline" class="btn-icon"></app-icon> Reset All
-              </app-button>
-            </div>
-          </div>
-
-          <!-- Active Field Editor Card -->
-          <div *ngIf="currentField" class="active-field-card">
-            <div class="active-field-header">
-              <div class="field-title-group">
-                <app-badge variant="primary" size="sm">{{ currentField.type | uppercase }}</app-badge>
-                <strong class="field-label-text">{{ currentField.label || currentField.name }}</strong>
+        @if (document) {
+          <div class="form-workspace">
+            <!-- Document Info Bar -->
+            <div class="doc-info-bar">
+              <div class="doc-title-info">
+                <strong class="doc-name">{{ document.name }}</strong>
+                <app-badge [variant]="document.hasNativeForms ? 'success' : 'warning'" size="sm">
+                  {{ document.hasNativeForms ? 'Interactive Form' : 'Manual Placement Mode' }}
+                </app-badge>
               </div>
-              <app-button *ngIf="!currentField.isNative" size="sm" variant="danger" (clicked)="removeManualField(currentField.id)">
-                <app-icon name="trash-outline"></app-icon>
-              </app-button>
+              <div class="page-stepper">
+                <app-button variant="ghost" size="sm" (clicked)="prevPage()" [disabled]="currentPage <= 1">
+                  <app-icon name="chevron-back"></app-icon>
+                </app-button>
+                <span class="page-counter">Page {{ currentPage }} / {{ totalPages }}</span>
+                <app-button variant="ghost" size="sm" (clicked)="nextPage()" [disabled]="currentPage >= totalPages">
+                  <app-icon name="chevron-forward"></app-icon>
+                </app-button>
+              </div>
             </div>
-
-            <!-- TEXT FIELD -->
-            <div *ngIf="currentField.type === 'text'" class="field-input-box">
-              <textarea
-                *ngIf="currentField.isMultiline"
-                [(ngModel)]="currentField.value"
-                placeholder="Enter text..."
-                rows="3"
-                class="custom-textarea">
-              </textarea>
-              <input
-                *ngIf="!currentField.isMultiline"
-                type="text"
-                [(ngModel)]="currentField.value"
-                placeholder="Enter text..."
-                class="custom-input" />
-            </div>
-
-            <!-- DATE FIELD -->
-            <div *ngIf="currentField.type === 'date'" class="field-input-box">
-              <input
-                type="date"
-                [(ngModel)]="currentField.value"
-                placeholder="YYYY-MM-DD"
-                class="custom-input" />
-            </div>
-
-            <!-- CHECKBOX FIELD -->
-            <div *ngIf="currentField.type === 'checkbox'" class="field-input-box">
-              <label class="checkbox-label">
-                <input type="checkbox" [(ngModel)]="currentField.value" class="custom-checkbox" />
-                <span>Mark as Checked</span>
-              </label>
-            </div>
-
-            <!-- RADIO FIELD -->
-            <div *ngIf="currentField.type === 'radio'" class="field-input-box">
-              <div class="radio-options-list">
-                <label *ngFor="let opt of currentField.options" class="radio-label">
-                  <input type="radio" [value]="opt" [(ngModel)]="currentField.value" name="radioField" />
-                  <span>{{ opt }}</span>
+            <!-- Mode Specific Tools -->
+            @if (mode === 'manual') {
+              <div class="manual-tools-card">
+                <div class="manual-tools-header">
+                  <strong>Add Field on Page {{ currentPage }}</strong>
+                </div>
+                <div class="manual-tool-buttons">
+                  <app-button size="sm" variant="outline" (clicked)="addManualField('text')">
+                    <app-icon name="text-outline" class="btn-icon"></app-icon> + Text
+                  </app-button>
+                  <app-button size="sm" variant="outline" (clicked)="addManualField('checkbox')">
+                    <app-icon name="checkbox-outline" class="btn-icon"></app-icon> + Checkbox
+                  </app-button>
+                  <app-button size="sm" variant="outline" (clicked)="addManualField('date')">
+                    <app-icon name="calendar-outline" class="btn-icon"></app-icon> + Date
+                  </app-button>
+                </div>
+              </div>
+            }
+            <!-- Field Navigator Bar -->
+            @if (filteredFields.length > 0) {
+              <div class="field-nav-bar">
+                <div class="nav-counter">
+                  <span>Field {{ currentFieldIndex + 1 }} of {{ filteredFields.length }}</span>
+                </div>
+                <div class="nav-controls">
+                  <app-button size="sm" variant="outline" (clicked)="prevField()" [disabled]="currentFieldIndex <= 0">
+                    <app-icon name="arrow-up-outline" class="btn-icon"></app-icon> Prev
+                  </app-button>
+                  <app-button size="sm" variant="outline" (clicked)="nextField()" [disabled]="currentFieldIndex >= filteredFields.length - 1">
+                    Next <app-icon name="arrow-down-outline" class="btn-icon"></app-icon>
+                  </app-button>
+                  <app-button size="sm" variant="danger" (clicked)="clearAllValues()">
+                    <app-icon name="refresh-outline" class="btn-icon"></app-icon> Reset All
+                  </app-button>
+                </div>
+              </div>
+            }
+            <!-- Active Field Editor Card -->
+            @if (currentField) {
+              <div class="active-field-card">
+                <div class="active-field-header">
+                  <div class="field-title-group">
+                    <app-badge variant="primary" size="sm">{{ currentField.type | uppercase }}</app-badge>
+                    <strong class="field-label-text">{{ currentField.label || currentField.name }}</strong>
+                  </div>
+                  @if (!currentField.isNative) {
+                    <app-button size="sm" variant="danger" (clicked)="removeManualField(currentField.id)">
+                      <app-icon name="trash-outline"></app-icon>
+                    </app-button>
+                  }
+                </div>
+                <!-- TEXT FIELD -->
+                @if (currentField.type === 'text') {
+                  <div class="field-input-box">
+                    @if (currentField.isMultiline) {
+                      <textarea
+                        [(ngModel)]="currentField.value"
+                        placeholder="Enter text..."
+                        rows="3"
+                        class="custom-textarea">
+                      </textarea>
+                    }
+                    @if (!currentField.isMultiline) {
+                      <input
+                        type="text"
+                        [(ngModel)]="currentField.value"
+                        placeholder="Enter text..."
+                        class="custom-input" />
+                    }
+                  </div>
+                }
+                <!-- DATE FIELD -->
+                @if (currentField.type === 'date') {
+                  <div class="field-input-box">
+                    <input
+                      type="date"
+                      [(ngModel)]="currentField.value"
+                      placeholder="YYYY-MM-DD"
+                      class="custom-input" />
+                  </div>
+                }
+                <!-- CHECKBOX FIELD -->
+                @if (currentField.type === 'checkbox') {
+                  <div class="field-input-box">
+                    <label class="checkbox-label">
+                      <input type="checkbox" [(ngModel)]="currentField.value" class="custom-checkbox" />
+                      <span>Mark as Checked</span>
+                    </label>
+                  </div>
+                }
+                <!-- RADIO FIELD -->
+                @if (currentField.type === 'radio') {
+                  <div class="field-input-box">
+                    <div class="radio-options-list">
+                      @for (opt of currentField.options; track opt) {
+                        <label class="radio-label">
+                          <input type="radio" [value]="opt" [(ngModel)]="currentField.value" name="radioField" />
+                          <span>{{ opt }}</span>
+                        </label>
+                      }
+                    </div>
+                  </div>
+                }
+                <!-- DROPDOWN FIELD -->
+                @if (currentField.type === 'dropdown') {
+                  <div class="field-input-box">
+                    <select [(ngModel)]="currentField.value" class="custom-select">
+                      <option value="" disabled selected>Select an option</option>
+                      @for (opt of currentField.options; track opt) {
+                        <option [value]="opt">{{ opt }}</option>
+                      }
+                    </select>
+                  </div>
+                }
+              </div>
+            }
+            <!-- Export & Flatten Options -->
+            <div class="export-options-card">
+              <div class="toggle-option-row">
+                <div>
+                  <strong>Flatten PDF on Export</strong>
+                  <p class="toggle-desc">
+                    Bakes all form field entries into static PDF graphics for secure submission.
+                  </p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="flattenOnExport" />
+                  <span class="slider round"></span>
                 </label>
               </div>
             </div>
-
-            <!-- DROPDOWN FIELD -->
-            <div *ngIf="currentField.type === 'dropdown'" class="field-input-box">
-              <select [(ngModel)]="currentField.value" class="custom-select">
-                <option value="" disabled selected>Select an option</option>
-                <option *ngFor="let opt of currentField.options" [value]="opt">{{ opt }}</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Export & Flatten Options -->
-          <div class="export-options-card">
-            <div class="toggle-option-row">
-              <div>
-                <strong>Flatten PDF on Export</strong>
-                <p class="toggle-desc">
-                  Bakes all form field entries into static PDF graphics for secure submission.
-                </p>
+            <!-- Document Page Preview Toggle -->
+            <div class="preview-card">
+              <div class="preview-header" (click)="showPreview = !showPreview">
+                <strong>Document Preview (Page {{ currentPage }})</strong>
+                <app-icon [name]="showPreview ? 'chevron-up' : 'chevron-down'"></app-icon>
               </div>
-              <label class="switch">
-                <input type="checkbox" [(ngModel)]="flattenOnExport" />
-                <span class="slider round"></span>
-              </label>
+              @if (showPreview) {
+                <div class="canvas-container">
+                  <canvas #previewCanvas></canvas>
+                </div>
+              }
             </div>
           </div>
-
-          <!-- Document Page Preview Toggle -->
-          <div class="preview-card">
-            <div class="preview-header" (click)="showPreview = !showPreview">
-              <strong>Document Preview (Page {{ currentPage }})</strong>
-              <app-icon [name]="showPreview ? 'chevron-up' : 'chevron-down'"></app-icon>
-            </div>
-            <div *ngIf="showPreview" class="canvas-container">
-              <canvas #previewCanvas></canvas>
-            </div>
-          </div>
-        </div>
+        }
       </div>
     </div>
   </main>

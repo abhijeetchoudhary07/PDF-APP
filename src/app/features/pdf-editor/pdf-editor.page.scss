@@ -65,6 +65,91 @@
   flex-shrink: 0;
 }
 
+/*
+ * The language selector, restyled for this toolbar only.
+ *
+ * Its own styles are built for the app header: a bordered chip on a light
+ * surface, collapsing to a 44px square on a phone so it matches the search and
+ * menu buttons beside it. Dropped onto this gradient bar unchanged, that square
+ * reads as a heavy dark block and — at 375px — pushes the document name out of
+ * the row entirely.
+ *
+ * So it is dressed as one more ghost icon here, the same treatment as the back
+ * arrow and the undo/redo buttons it sits next to. The 44px touch target is
+ * kept; only the chrome changes.
+ */
+.editor-lang-selector ::ng-deep {
+  .lang-trigger-btn {
+    background-color: transparent;
+    border-color: transparent;
+    color: #ffffff;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      border-color: transparent;
+    }
+
+    &.is-open {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-color: transparent;
+      box-shadow: none;
+    }
+  }
+
+  .globe-icon,
+  .chevron-icon {
+    color: #ffffff;
+  }
+
+  /*
+   * The menu itself drops onto the page background rather than the gradient,
+   * so it keeps its own surface colours and only needs to escape the toolbar's
+   * stacking context.
+   */
+  .lang-dropdown-menu {
+    z-index: var(--z-modal, 1200);
+  }
+}
+
+/*
+ * Making room on a phone.
+ *
+ * `.nav-right` does not shrink, so everything added to it comes out of the
+ * document title on the left. At 375px that row already held the back arrow,
+ * undo, redo, share and a labelled Export button, leaving the title about 55px
+ * — and the language selector would have taken all but 7px of that.
+ *
+ * So the Export label folds away at the same breakpoint, which returns roughly
+ * what the selector costs. The button keeps its size, its warning colour and
+ * the download icon, so it still reads as the primary action; the accessible
+ * name comes from the title attribute either way.
+ */
+@media (max-width: 480px) {
+  .editor-lang-selector ::ng-deep .lang-trigger-btn {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+
+  /*
+   * Clipped, not `display: none`. `app-button` has no aria-label input, so the
+   * inner <button> takes its accessible name from this text -- hiding it
+   * outright would leave the export control unnamed for a screen reader.
+   */
+  .export-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
 /* DESKTOP TOOLBAR */
 .desktop-toolbar {
   display: flex;

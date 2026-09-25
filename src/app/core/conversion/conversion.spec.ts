@@ -1,6 +1,7 @@
 import '../utilities/pdf-iterator-polyfill';
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { ConversionRegistryService } from './conversion-registry.service';
 import { PdfLayoutHelper } from './utils/pdf-layout.helper';
 import { HtmlSanitizerHelper } from './utils/html-sanitizer.helper';
@@ -28,39 +29,48 @@ import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
 
 describe('Conversion Architecture — Phase 1', () => {
-  const pdfToPng = new PdfToPngConverter();
-  const pdfToWord = new PdfToWordConverter();
-  const pdfToExcel = new PdfToExcelConverter();
-  const pdfToPpt = new PdfToPptConverter();
-  const wordToPdf = new WordToPdfConverter();
-  const excelToPdf = new ExcelToPdfConverter();
-  const pptToPdf = new PptToPdfConverter();
-  const textToPdf = new TextToPdfConverter();
-  const rtfToPdf = new RtfToPdfConverter();
-  const htmlToPdf = new HtmlToPdfConverter();
-  const csvToPdf = new CsvToPdfConverter();
-  const epubToPdf = new EpubToPdfConverter();
-  const zipToPdf = new ZipToPdfConverter();
-  const openDocToPdf = new OpenDocumentToPdfConverter();
-  const pagesToPdf = new PagesToPdfConverter();
+  /*
+   * Resolved from TestBed, not constructed by hand.
+   *
+   * The registry takes all fifteen converters through `inject()`, so building
+   * it with `new` would throw; asking the injector for each converter as well
+   * means the specs below assert against the same instances the registry holds.
+   */
+  let registry: ConversionRegistryService;
+  let pdfToPng: PdfToPngConverter;
+  let pdfToWord: PdfToWordConverter;
+  let pdfToExcel: PdfToExcelConverter;
+  let pdfToPpt: PdfToPptConverter;
+  let wordToPdf: WordToPdfConverter;
+  let excelToPdf: ExcelToPdfConverter;
+  let pptToPdf: PptToPdfConverter;
+  let textToPdf: TextToPdfConverter;
+  let rtfToPdf: RtfToPdfConverter;
+  let htmlToPdf: HtmlToPdfConverter;
+  let csvToPdf: CsvToPdfConverter;
+  let epubToPdf: EpubToPdfConverter;
+  let zipToPdf: ZipToPdfConverter;
+  let openDocToPdf: OpenDocumentToPdfConverter;
+  let pagesToPdf: PagesToPdfConverter;
 
-  const registry = new ConversionRegistryService(
-    pdfToPng,
-    pdfToWord,
-    pdfToExcel,
-    pdfToPpt,
-    wordToPdf,
-    excelToPdf,
-    pptToPdf,
-    textToPdf,
-    rtfToPdf,
-    htmlToPdf,
-    csvToPdf,
-    epubToPdf,
-    zipToPdf,
-    openDocToPdf,
-    pagesToPdf
-  );
+  beforeAll(() => {
+    registry = TestBed.inject(ConversionRegistryService);
+    pdfToPng = TestBed.inject(PdfToPngConverter);
+    pdfToWord = TestBed.inject(PdfToWordConverter);
+    pdfToExcel = TestBed.inject(PdfToExcelConverter);
+    pdfToPpt = TestBed.inject(PdfToPptConverter);
+    wordToPdf = TestBed.inject(WordToPdfConverter);
+    excelToPdf = TestBed.inject(ExcelToPdfConverter);
+    pptToPdf = TestBed.inject(PptToPdfConverter);
+    textToPdf = TestBed.inject(TextToPdfConverter);
+    rtfToPdf = TestBed.inject(RtfToPdfConverter);
+    htmlToPdf = TestBed.inject(HtmlToPdfConverter);
+    csvToPdf = TestBed.inject(CsvToPdfConverter);
+    epubToPdf = TestBed.inject(EpubToPdfConverter);
+    zipToPdf = TestBed.inject(ZipToPdfConverter);
+    openDocToPdf = TestBed.inject(OpenDocumentToPdfConverter);
+    pagesToPdf = TestBed.inject(PagesToPdfConverter);
+  });
 
   describe('ConversionRegistryService', () => {
     it('should register all 15 converters', () => {

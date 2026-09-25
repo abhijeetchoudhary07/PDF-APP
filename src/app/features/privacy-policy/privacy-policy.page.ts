@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 
 import {
@@ -17,14 +17,13 @@ import {
   templateUrl: './privacy-policy.page.html',
   styleUrls: ['./privacy-policy.page.scss'],
   imports: [
-    CommonModule,
     RouterModule,
     AppHeaderComponent,
     AppPageHeaderComponent,
     AppFooterComponent,
     PrivacySupportNavComponent,
     AppButtonComponent
-  ]
+]
 })
 export class PrivacyPolicyPage {
   lastUpdated = 'September 2026';

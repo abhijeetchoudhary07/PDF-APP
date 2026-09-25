@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { AppLanguageSelectorComponent } from '../language-selector/language-selector.component';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -8,7 +8,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-footer',
   standalone: true,
-  imports: [CommonModule, RouterModule, AppLanguageSelectorComponent, TranslatePipe],
+  imports: [RouterModule, AppLanguageSelectorComponent, TranslatePipe],
   template: `
     <footer class="app-footer">
       <div class="footer-inner">

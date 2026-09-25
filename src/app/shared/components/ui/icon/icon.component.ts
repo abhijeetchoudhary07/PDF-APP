@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ICON_PATHS, resolveIconName } from './icon.registry';
 
@@ -14,7 +14,7 @@ import { ICON_PATHS, resolveIconName } from './icon.registry';
   selector: 'app-icon',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <svg
       [attr.width]="size"
@@ -43,6 +43,8 @@ import { ICON_PATHS, resolveIconName } from './icon.registry';
   `]
 })
 export class AppIconComponent {
+  private sanitizer = inject(DomSanitizer);
+
   @Input() set name(value: string) {
     const key = resolveIconName(value || '');
     this.paths = key
@@ -58,6 +60,4 @@ export class AppIconComponent {
   @Input() label?: string;
 
   paths: SafeHtml | null = null;
-
-  constructor(private sanitizer: DomSanitizer) {}
 }

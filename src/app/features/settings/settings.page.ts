@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -42,6 +42,12 @@ import {
   ]
 })
 export class SettingsPage implements OnInit {
+  monetization = inject(MonetizationService);
+  themeService = inject(ThemeService);
+  profileService = inject(ProfileService);
+  private historyService = inject(HistoryService);
+  private toastService = inject(ToastService);
+
   profile: UserProfile | null = null;
   historyCount = 0;
   estimatedStorage = '0 KB';
@@ -49,14 +55,6 @@ export class SettingsPage implements OnInit {
   isClearHistoryModalOpen = false;
   isPrivacyPolicyModalOpen = false;
   isTermsModalOpen = false;
-
-  constructor(
-    public monetization: MonetizationService,
-    public themeService: ThemeService,
-    public profileService: ProfileService,
-    private historyService: HistoryService,
-    private toastService: ToastService
-  ) {}
 
   async ngOnInit() {
     this.profileService.profile$.subscribe(p => {

@@ -12,81 +12,83 @@ const ONBOARDING_KEY = 'IFH_ONBOARDING_COMPLETED_V1';
   standalone: true,
   imports: [CommonModule, AppButtonComponent, TranslatePipe],
   template: `
-    <div *ngIf="isOpen" class="onboarding-backdrop" (click)="dismiss()">
-      <div class="onboarding-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-        
-        <!-- Top bar: Skip button -->
-        <div class="dialog-top-bar">
-          <span class="step-indicator">{{ 'onboarding.stepIndicator' | translate:{ current: currentStep + 1, total: steps.length } }}</span>
-          <button type="button" class="skip-btn" (click)="dismiss()">{{ 'onboarding.skip' | translate }}</button>
-        </div>
-
-        <!-- Slide Content -->
-        <div class="slide-content">
-          <div class="slide-icon-circle" [ngClass]="'icon-' + steps[currentStep].color">
-            <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2" fill="none">
-              <!-- Step 0: Shield / Privacy -->
-              <ng-container *ngIf="currentStep === 0">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                <polyline points="9 12 11 14 15 10"></polyline>
-              </ng-container>
-
-              <!-- Step 1: Target / Precision -->
-              <ng-container *ngIf="currentStep === 1">
-                <circle cx="12" cy="12" r="10"></circle>
-                <circle cx="12" cy="12" r="6"></circle>
-                <circle cx="12" cy="12" r="2"></circle>
-              </ng-container>
-
-              <!-- Step 2: Suite / All-in-one -->
-              <ng-container *ngIf="currentStep === 2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                <line x1="8" y1="21" x2="16" y2="21"></line>
-                <line x1="12" y1="17" x2="12" y2="21"></line>
-              </ng-container>
-            </svg>
+    @if (isOpen) {
+      <div class="onboarding-backdrop" (click)="dismiss()">
+        <div class="onboarding-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <!-- Top bar: Skip button -->
+          <div class="dialog-top-bar">
+            <span class="step-indicator">{{ 'onboarding.stepIndicator' | translate:{ current: currentStep + 1, total: steps.length } }}</span>
+            <button type="button" class="skip-btn" (click)="dismiss()">{{ 'onboarding.skip' | translate }}</button>
           </div>
-
-          <h3 class="slide-title">{{ steps[currentStep].titleKey | translate }}</h3>
-          <p class="slide-desc">{{ steps[currentStep].descKey | translate }}</p>
-
-          <!-- Bullet Points -->
-          <ul class="slide-bullets">
-            <li *ngFor="let pointKey of steps[currentStep].bulletKeys">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" class="check-icon">
-                <polyline points="20 6 9 17 4 12"></polyline>
+          <!-- Slide Content -->
+          <div class="slide-content">
+            <div class="slide-icon-circle" [ngClass]="'icon-' + steps[currentStep].color">
+              <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2" fill="none">
+                <!-- Step 0: Shield / Privacy -->
+                @if (currentStep === 0) {
+                  <ng-container>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                  </ng-container>
+                }
+                <!-- Step 1: Target / Precision -->
+                @if (currentStep === 1) {
+                  <ng-container>
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="6"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                  </ng-container>
+                }
+                <!-- Step 2: Suite / All-in-one -->
+                @if (currentStep === 2) {
+                  <ng-container>
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                  </ng-container>
+                }
               </svg>
-              <span>{{ pointKey | translate }}</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Bottom Controls -->
-        <div class="dialog-bottom-bar">
-          <!-- Step Dots -->
-          <div class="dots-row">
-            <span
-              *ngFor="let step of steps; let i = index"
-              class="dot"
-              [class.active]="i === currentStep"
-              (click)="currentStep = i">
-            </span>
+            </div>
+            <h3 class="slide-title">{{ steps[currentStep].titleKey | translate }}</h3>
+            <p class="slide-desc">{{ steps[currentStep].descKey | translate }}</p>
+            <!-- Bullet Points -->
+            <ul class="slide-bullets">
+              @for (pointKey of steps[currentStep].bulletKeys; track pointKey) {
+                <li>
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" class="check-icon">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>{{ pointKey | translate }}</span>
+                </li>
+              }
+            </ul>
           </div>
-
-          <!-- Next / Finish Button -->
-          <div class="action-wrap">
-            <app-button
-              variant="primary"
-              size="md"
-              (clicked)="nextStep()">
-              {{ currentStep === steps.length - 1 ? ('onboarding.getStarted' | translate) : ('onboarding.continue' | translate) }}
-            </app-button>
+          <!-- Bottom Controls -->
+          <div class="dialog-bottom-bar">
+            <!-- Step Dots -->
+            <div class="dots-row">
+              @for (step of steps; track step; let i = $index) {
+                <span
+                  class="dot"
+                  [class.active]="i === currentStep"
+                  (click)="currentStep = i">
+                </span>
+              }
+            </div>
+            <!-- Next / Finish Button -->
+            <div class="action-wrap">
+              <app-button
+                variant="primary"
+                size="md"
+                (clicked)="nextStep()">
+                {{ currentStep === steps.length - 1 ? ('onboarding.getStarted' | translate) : ('onboarding.continue' | translate) }}
+              </app-button>
+            </div>
           </div>
         </div>
-
       </div>
-    </div>
-  `,
+    }
+    `,
   styles: [`
     .onboarding-backdrop {
       position: fixed;

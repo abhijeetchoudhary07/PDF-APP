@@ -26,7 +26,9 @@ export interface ExtractionOptions {
 export class PdfExtractorService {
   public pageManager: PdfPageManagerService;
 
-  constructor(pageManager?: PdfPageManagerService) {
+  constructor() {
+    const pageManager = inject(PdfPageManagerService);
+
     this.pageManager = pageManager ?? new PdfPageManagerService();
   }
 

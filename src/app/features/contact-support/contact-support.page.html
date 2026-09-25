@@ -3,7 +3,7 @@
 
   <main class="app-main-content">
     <div class="app-container">
-      
+
       <!-- Page Header with Breadcrumbs -->
       <app-page-header
         title="Contact Support"
@@ -60,143 +60,145 @@
       </div>
 
       <div class="support-form-layout">
-        
+
         <!-- MAIN SUPPORT FORM -->
         <div class="form-container">
-          <div *ngIf="!submittedTicketId" class="form-inner">
-            <div class="form-header">
-              <h3>Submit a Support Inquiry</h3>
-              <p>Fill out the details below. We typically respond within 24 hours on business days.</p>
-            </div>
-
-            <form (ngSubmit)="onSubmit()" class="support-form">
-              <!-- Category -->
-              <div class="form-group">
-                <label for="category">Inquiry Topic</label>
-                <select id="category" [(ngModel)]="category" name="category" class="form-select">
-                  <option value="bug">Report a Bug / File Processing Error</option>
-                  <option value="preset">Request Exam Portal Specification (e.g. SSC, UPSC, NTA)</option>
-                  <option value="feature">Suggest a Feature / Tool Idea</option>
-                  <option value="billing">PRO License & Billing Inquiry</option>
-                  <option value="general">General Question / Feedback</option>
-                </select>
+          @if (!submittedTicketId) {
+            <div class="form-inner">
+              <div class="form-header">
+                <h3>Submit a Support Inquiry</h3>
+                <p>Fill out the details below. We typically respond within 24 hours on business days.</p>
               </div>
-
-              <!-- Name & Email Row -->
-              <div class="form-row">
+              <form (ngSubmit)="onSubmit()" class="support-form">
+                <!-- Category -->
                 <div class="form-group">
-                  <label for="name">Your Name</label>
+                  <label for="category">Inquiry Topic</label>
+                  <select id="category" [(ngModel)]="category" name="category" class="form-select">
+                    <option value="bug">Report a Bug / File Processing Error</option>
+                    <option value="preset">Request Exam Portal Specification (e.g. SSC, UPSC, NTA)</option>
+                    <option value="feature">Suggest a Feature / Tool Idea</option>
+                    <option value="billing">PRO License & Billing Inquiry</option>
+                    <option value="general">General Question / Feedback</option>
+                  </select>
+                </div>
+                <!-- Name & Email Row -->
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <input
+                      type="text"
+                      id="name"
+                      [(ngModel)]="name"
+                      name="name"
+                      placeholder="Candidate name"
+                      class="form-input" />
+                  </div>
+                  <div class="form-group">
+                    <label for="email">Email Address <span class="req">*</span></label>
+                    <input
+                      type="email"
+                      id="email"
+                      [(ngModel)]="email"
+                      name="email"
+                      placeholder="you@example.com"
+                      required
+                      class="form-input" />
+                  </div>
+                </div>
+                <!-- Subject -->
+                <div class="form-group">
+                  <label for="subject">Subject</label>
                   <input
                     type="text"
-                    id="name"
-                    [(ngModel)]="name"
-                    name="name"
-                    placeholder="Candidate name"
+                    id="subject"
+                    [(ngModel)]="subject"
+                    name="subject"
+                    placeholder="Brief description of your query"
                     class="form-input" />
                 </div>
-
+                <!-- Message -->
                 <div class="form-group">
-                  <label for="email">Email Address <span class="req">*</span></label>
-                  <input
-                    type="email"
-                    id="email"
-                    [(ngModel)]="email"
-                    name="email"
-                    placeholder="you@example.com"
+                  <label for="message">Message / Details <span class="req">*</span></label>
+                  <textarea
+                    id="message"
+                    [(ngModel)]="message"
+                    name="message"
+                    rows="5"
+                    placeholder="Describe your question, portal issue, or error message..."
                     required
-                    class="form-input" />
-                </div>
-              </div>
-
-              <!-- Subject -->
-              <div class="form-group">
-                <label for="subject">Subject</label>
-                <input
-                  type="text"
-                  id="subject"
-                  [(ngModel)]="subject"
-                  name="subject"
-                  placeholder="Brief description of your query"
-                  class="form-input" />
-              </div>
-
-              <!-- Message -->
-              <div class="form-group">
-                <label for="message">Message / Details <span class="req">*</span></label>
-                <textarea
-                  id="message"
-                  [(ngModel)]="message"
-                  name="message"
-                  rows="5"
-                  placeholder="Describe your question, portal issue, or error message..."
-                  required
                   class="form-textarea"></textarea>
-              </div>
-
-              <!-- Diagnostics Checkbox -->
-              <div class="form-group-checkbox">
-                <label class="checkbox-label">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="includeDiagnostics"
-                    name="includeDiagnostics" />
-                  <span class="checkbox-custom"></span>
-                  <span class="checkbox-text">
-                    <strong>Include anonymous system diagnostics</strong>
-                    <span class="checkbox-subtext">Attaches browser version, screen size, and engine status (zero personal or file data).</span>
-                  </span>
-                </label>
-              </div>
-
-              <!-- Submit Button -->
-              <div class="form-actions">
-                <app-button
-                  variant="primary"
-                  size="md"
-                  [disabled]="isSubmitting || !email || !message">
-                  <span *ngIf="!isSubmitting">Send Support Message</span>
-                  <span *ngIf="isSubmitting">Generating Ticket...</span>
-                </app-button>
-              </div>
-            </form>
-          </div>
+                </div>
+                <!-- Diagnostics Checkbox -->
+                <div class="form-group-checkbox">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="includeDiagnostics"
+                      name="includeDiagnostics" />
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">
+                      <strong>Include anonymous system diagnostics</strong>
+                      <span class="checkbox-subtext">Attaches browser version, screen size, and engine status (zero personal or file data).</span>
+                    </span>
+                  </label>
+                </div>
+                <!-- Submit Button -->
+                <div class="form-actions">
+                  <app-button
+                    variant="primary"
+                    size="md"
+                    [disabled]="isSubmitting || !email || !message">
+                    @if (!isSubmitting) {
+                      <span>Send Support Message</span>
+                    }
+                    @if (isSubmitting) {
+                      <span>Generating Ticket...</span>
+                    }
+                  </app-button>
+                </div>
+              </form>
+            </div>
+          }
 
           <!-- SUCCESS STATE -->
-          <div *ngIf="submittedTicketId" class="ticket-success-card">
-            <div class="success-icon">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
+          @if (submittedTicketId) {
+            <div class="ticket-success-card">
+              <div class="success-icon">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <h3>Inquiry Ready! Reference #{{ submittedTicketId }}</h3>
+              <p>
+                Your default email client has been prepared with your inquiry details and system diagnostics. If your email client did not open automatically, you can email us directly at <strong>Officialpostflow360&#64;gmail.com</strong>.
+              </p>
+              <app-button variant="outline" size="sm" (clicked)="resetForm()">
+                Submit Another Inquiry
+              </app-button>
             </div>
-            <h3>Inquiry Ready! Reference #{{ submittedTicketId }}</h3>
-            <p>
-              Your default email client has been prepared with your inquiry details and system diagnostics. If your email client did not open automatically, you can email us directly at <strong>Officialpostflow360&#64;gmail.com</strong>.
-            </p>
-            <app-button variant="outline" size="sm" (clicked)="resetForm()">
-              Submit Another Inquiry
-            </app-button>
-          </div>
+          }
         </div>
 
         <!-- SIDEBAR: QUICK PORTAL REQUESTS & DIAGNOSTICS PREVIEW -->
         <aside class="support-sidebar">
-          
+
           <!-- QUICK PRESET REQUESTS -->
           <div class="sidebar-card">
             <h4>Frequently Requested Portals</h4>
             <p class="sidebar-tip">Click any portal below to auto-fill a specification update request:</p>
             <div class="quick-portals-list">
-              <button
-                *ngFor="let p of portalRequests"
-                type="button"
-                class="portal-req-btn"
-                (click)="quickRequestPortal(p.name)">
-                <span>+ {{ p.name }}</span>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
+              @for (p of portalRequests; track p) {
+                <button
+                  type="button"
+                  class="portal-req-btn"
+                  (click)="quickRequestPortal(p.name)">
+                  <span>+ {{ p.name }}</span>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              }
             </div>
           </div>
 

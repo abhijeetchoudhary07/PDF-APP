@@ -65,30 +65,35 @@
         </button>
       </div>
 
-      <button
-        *ngIf="isModal"
-        type="button"
-        class="close-modal-btn"
-        (click)="closed.emit()"
-        title="Close preview">
-        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
+      @if (isModal) {
+        <button
+          type="button"
+          class="close-modal-btn"
+          (click)="closed.emit()"
+          title="Close preview">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      }
     </div>
   </div>
 
   <!-- CANVAS WRAPPER -->
   <div class="pdf-canvas-wrapper">
-    <div *ngIf="isLoading" class="canvas-loading-overlay">
-      <div class="loading-spinner"></div>
-      <span>Rendering page {{ currentPage }}...</span>
-    </div>
+    @if (isLoading) {
+      <div class="canvas-loading-overlay">
+        <div class="loading-spinner"></div>
+        <span>Rendering page {{ currentPage }}...</span>
+      </div>
+    }
 
-    <div *ngIf="error" class="canvas-error-box">
-      <p>{{ error }}</p>
-    </div>
+    @if (error) {
+      <div class="canvas-error-box">
+        <p>{{ error }}</p>
+      </div>
+    }
 
     <div class="canvas-shadow-box">
       <canvas #pdfCanvas class="rendered-canvas"></canvas>

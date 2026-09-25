@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -54,6 +54,15 @@ export type ScanInputSource = 'camera' | 'image' | 'pdf';
   providers: [DecimalPipe]
 })
 export class QrBarcodePage implements OnInit {
+  qrService = inject(QrBarcodeService);
+  private fileService = inject(FileService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private toastService = inject(ToastService);
+  private analyticsService = inject(AnalyticsService);
+  private bridgeService = inject(DocumentBridgeService);
+  private cdr = inject(ChangeDetectorRef);
+
   activeTab: QrToolkitTab = 'scan';
   toolkitTabs: { id: QrToolkitTab; label: string }[] = [
     { id: 'scan', label: 'Scan & Decode' },
@@ -97,17 +106,6 @@ export class QrBarcodePage implements OnInit {
   previewQrDataUrl: string = '';
   isGenerating = false;
   generatorDocTitle: string = 'My QR Code';
-
-  constructor(
-    public qrService: QrBarcodeService,
-    private fileService: FileService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private toastService: ToastService,
-    private analyticsService: AnalyticsService,
-    private bridgeService: DocumentBridgeService,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   async ngOnInit() {
     // Check if handed off from document scanner or another tool

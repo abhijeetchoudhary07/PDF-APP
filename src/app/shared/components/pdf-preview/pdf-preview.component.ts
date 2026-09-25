@@ -1,12 +1,4 @@
-import { Component,
-  ElementRef,
-  EventEmitter,
-  Input,
-  OnChanges,
-  OnDestroy,
-  Output,
-  SimpleChanges,
-  ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PdfRenderService } from '../../../core/services/pdf-render.service';
 
@@ -53,6 +45,8 @@ export interface OverlayConfig {
   imports: [CommonModule]
 })
 export class PdfPreviewComponent implements OnChanges, OnDestroy {
+  private pdfRenderService = inject(PdfRenderService);
+
   @ViewChild('pdfCanvas', { static: false }) pdfCanvas?: ElementRef<HTMLCanvasElement>;
 
   @Input() pdfFile?: File;
@@ -72,8 +66,6 @@ export class PdfPreviewComponent implements OnChanges, OnDestroy {
   error?: string;
 
   private currentDoc: any = null;
-
-  constructor(private pdfRenderService: PdfRenderService) {}
 
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
     if (changes['pdfFile'] || changes['arrayBuffer']) {

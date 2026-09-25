@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Preferences } from '@capacitor/preferences';
@@ -30,7 +30,8 @@ export interface Preset {
   providedIn: 'root'
 })
 export class PresetService {
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
+
 
   async getPhotoPresets(): Promise<Preset[]> {
     return firstValueFrom(this.http.get<Preset[]>('assets/presets/photo-presets.json'));

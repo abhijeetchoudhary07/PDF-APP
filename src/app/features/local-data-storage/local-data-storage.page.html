@@ -3,7 +3,7 @@
 
   <main class="app-main-content">
     <div class="app-container">
-      
+
       <!-- Page Header with Breadcrumbs -->
       <app-page-header
         title="Local Data Storage"
@@ -13,7 +13,7 @@
         badgeVariant="presets"
         [showBack]="true"
         backUrl="/features/settings">
-        
+
         <div actions class="header-actions">
           <app-button variant="outline" size="sm" (clicked)="exportBackup()">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -105,20 +105,24 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let r of storageRecords">
-                <td>
-                  <strong>{{ r.name }}</strong>
-                  <code class="key-chip">{{ r.key }}</code>
-                </td>
-                <td>
-                  <span class="engine-badge">{{ r.type }}</span>
-                </td>
-                <td class="desc-cell">{{ r.purpose }}</td>
-                <td class="size-cell">
-                  <span class="size-val">{{ r.formattedSize }}</span>
-                  <span *ngIf="r.itemCount !== undefined" class="count-val">({{ r.itemCount }} items)</span>
-                </td>
-              </tr>
+              @for (r of storageRecords; track r) {
+                <tr>
+                  <td>
+                    <strong>{{ r.name }}</strong>
+                    <code class="key-chip">{{ r.key }}</code>
+                  </td>
+                  <td>
+                    <span class="engine-badge">{{ r.type }}</span>
+                  </td>
+                  <td class="desc-cell">{{ r.purpose }}</td>
+                  <td class="size-cell">
+                    <span class="size-val">{{ r.formattedSize }}</span>
+                    @if (r.itemCount !== undefined) {
+                      <span class="count-val">({{ r.itemCount }} items)</span>
+                    }
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>

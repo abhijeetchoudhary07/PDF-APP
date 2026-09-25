@@ -1,16 +1,7 @@
-import { AppIconComponent } from '../../../../shared/components/ui';
-import { Component,
-  Input,
-  Output,
-  EventEmitter,
-  OnInit,
-  OnDestroy,
-  HostListener,
-  ViewChild,
-  ElementRef, ChangeDetectionStrategy } from '@angular/core';
+import { AppIconComponent, TranslatePipe } from '../../../../shared/components/ui';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener, ViewChild, ElementRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular/lazy';
 import { Subscription } from 'rxjs';
 import { PdfEditorStateService } from '../../../../core/services/pdf-editor-state.service';
 import { PdfRenderService } from '../../../../core/services/pdf-render.service';
@@ -23,9 +14,12 @@ import { SearchMatch } from '../../../../core/models/pdf-editor.types';
   styleUrls: ['./pdf-reader.component.scss'],
   standalone: true,
   imports: [
-    AppIconComponent,CommonModule, FormsModule, IonicModule]
+    AppIconComponent, TranslatePipe, CommonModule, FormsModule]
 })
 export class PdfReaderComponent implements OnInit, OnDestroy {
+  state = inject(PdfEditorStateService);
+  renderService = inject(PdfRenderService);
+
   @Input() showThumbnails = false;
   @Input() showSearch = false;
   @Output() toggleThumbnailsEvent = new EventEmitter<void>();
@@ -50,11 +44,6 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
   private initialZoom = 1.0;
 
   private subs = new Subscription();
-
-  constructor(
-    public state: PdfEditorStateService,
-    public renderService: PdfRenderService
-  ) {}
 
   ngOnInit() {
     this.subs.add(

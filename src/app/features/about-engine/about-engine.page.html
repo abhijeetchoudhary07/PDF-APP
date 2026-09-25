@@ -3,7 +3,7 @@
 
   <main class="app-main-content">
     <div class="app-container">
-      
+
       <!-- Page Header with Breadcrumbs -->
       <app-page-header
         title="About the Engine"
@@ -103,12 +103,14 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let b of benchmarks">
-                <td><strong>{{ b.operation }}</strong></td>
-                <td><span class="badge-time">{{ b.avgTime }}</span></td>
-                <td><span class="badge-mem">{{ b.memory }}</span></td>
-                <td><span class="badge-zero">0 bytes (100% Offline)</span></td>
-              </tr>
+              @for (b of benchmarks; track b) {
+                <tr>
+                  <td><strong>{{ b.operation }}</strong></td>
+                  <td><span class="badge-time">{{ b.avgTime }}</span></td>
+                  <td><span class="badge-mem">{{ b.memory }}</span></td>
+                  <td><span class="badge-zero">0 bytes (100% Offline)</span></td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
@@ -124,19 +126,21 @@
         </div>
 
         <div class="tech-grid">
-          <div *ngFor="let tech of technologies" class="tech-card">
-            <div class="tech-header">
-              <div class="tech-title-wrap">
-                <h4>{{ tech.name }}</h4>
-                <span class="tech-role">{{ tech.role }}</span>
+          @for (tech of technologies; track tech) {
+            <div class="tech-card">
+              <div class="tech-header">
+                <div class="tech-title-wrap">
+                  <h4>{{ tech.name }}</h4>
+                  <span class="tech-role">{{ tech.role }}</span>
+                </div>
+                <div class="tech-tags">
+                  <span class="tag-version">v{{ tech.version }}</span>
+                  <span class="tag-license">{{ tech.license }}</span>
+                </div>
               </div>
-              <div class="tech-tags">
-                <span class="tag-version">v{{ tech.version }}</span>
-                <span class="tag-license">{{ tech.license }}</span>
-              </div>
+              <p class="tech-desc">{{ tech.description }}</p>
             </div>
-            <p class="tech-desc">{{ tech.description }}</p>
-          </div>
+          }
         </div>
       </section>
 

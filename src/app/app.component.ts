@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, OnDestroy, inject } from '@angular/core';
 import { App } from '@capacitor/app';
 import type { PluginListenerHandle } from '@capacitor/core';
-import { IonicModule } from '@ionic/angular/lazy';
+import { IonApp, IonRouterOutlet } from '@ionic/angular';
 import { ThemeService } from './core/services/theme.service';
 import { MonetizationService } from './core/services/monetization.service';
 import {
@@ -17,7 +17,8 @@ import {
   styleUrls: ['app.component.scss'],
   standalone: true,
   imports: [
-    IonicModule,
+    IonApp,
+    IonRouterOutlet,
     AppToastContainerComponent,
     AppGlobalSearchModalComponent,
     AppOnboardingModalComponent

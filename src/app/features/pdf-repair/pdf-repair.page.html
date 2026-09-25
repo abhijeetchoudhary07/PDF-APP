@@ -11,219 +11,231 @@
   ></app-page-header>
 
   <!-- STEP 1: SELECT DAMAGED FILE -->
-  <section *ngIf="currentStep === 'select'" class="select-step-section">
-    <div class="dropzone-wrapper">
-      <app-file-dropzone
-        [accept]="'.pdf,application/pdf'"
-        [title]="'repair.selectPrompt' | translate"
-        [description]="'repair.dropPrompt' | translate"
-        (fileSelected)="onFileSelected($event)"
-      ></app-file-dropzone>
-    </div>
-
-    <!-- Diagnostic Capabilities Grid -->
-    <div class="capabilities-grid">
-      <div class="cap-card">
-        <span class="cap-icon">🩺</span>
-        <h4>{{ 'repair.capDiagnosticTitle' | translate }}</h4>
-        <p>{{ 'repair.capDiagnosticDesc' | translate }}</p>
+  @if (currentStep === 'select') {
+    <section class="select-step-section">
+      <div class="dropzone-wrapper">
+        <app-file-dropzone
+          [accept]="'.pdf,application/pdf'"
+          [title]="'repair.selectPrompt' | translate"
+          [description]="'repair.dropPrompt' | translate"
+          (fileSelected)="onFileSelected($event)"
+        ></app-file-dropzone>
       </div>
-      <div class="cap-card">
-        <span class="cap-icon">🔧</span>
-        <h4>{{ 'repair.capRebuildTitle' | translate }}</h4>
-        <p>{{ 'repair.capRebuildDesc' | translate }}</p>
+      <!-- Diagnostic Capabilities Grid -->
+      <div class="capabilities-grid">
+        <div class="cap-card">
+          <span class="cap-icon">🩺</span>
+          <h4>{{ 'repair.capDiagnosticTitle' | translate }}</h4>
+          <p>{{ 'repair.capDiagnosticDesc' | translate }}</p>
+        </div>
+        <div class="cap-card">
+          <span class="cap-icon">🔧</span>
+          <h4>{{ 'repair.capRebuildTitle' | translate }}</h4>
+          <p>{{ 'repair.capRebuildDesc' | translate }}</p>
+        </div>
+        <div class="cap-card">
+          <span class="cap-icon">🛡️</span>
+          <h4>{{ 'repair.capSafeTitle' | translate }}</h4>
+          <p>{{ 'repair.capSafeDesc' | translate }}</p>
+        </div>
       </div>
-      <div class="cap-card">
-        <span class="cap-icon">🛡️</span>
-        <h4>{{ 'repair.capSafeTitle' | translate }}</h4>
-        <p>{{ 'repair.capSafeDesc' | translate }}</p>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- STEP 2: DIAGNOSING SPINNER -->
-  <section *ngIf="currentStep === 'diagnosing'" class="processing-section">
-    <div class="proc-card">
-      <div class="spinner"></div>
-      <h3>{{ 'repair.diagnosingTitle' | translate }}</h3>
-      <p>{{ 'repair.diagnosingDesc' | translate }}</p>
-    </div>
-  </section>
+  @if (currentStep === 'diagnosing') {
+    <section class="processing-section">
+      <div class="proc-card">
+        <div class="spinner"></div>
+        <h3>{{ 'repair.diagnosingTitle' | translate }}</h3>
+        <p>{{ 'repair.diagnosingDesc' | translate }}</p>
+      </div>
+    </section>
+  }
 
   <!-- STEP 3: DIAGNOSTIC REPORT (STAGE 1) -->
-  <section *ngIf="currentStep === 'diagnostic_report' && healthReport" class="diagnostic-section">
-    <div class="health-card">
-      <div class="health-header">
-        <div class="health-title-group">
-          <h3>{{ 'repair.healthReportTitle' | translate }}</h3>
-          <span class="file-name">{{ selectedFile?.name }}</span>
+  @if (currentStep === 'diagnostic_report' && healthReport) {
+    <section class="diagnostic-section">
+      <div class="health-card">
+        <div class="health-header">
+          <div class="health-title-group">
+            <h3>{{ 'repair.healthReportTitle' | translate }}</h3>
+            <span class="file-name">{{ selectedFile?.name }}</span>
+          </div>
+          <span class="health-badge" [class]="'badge-' + healthReport.overallStatus">
+            {{ healthReport.overallStatus | uppercase }}
+          </span>
         </div>
-        <span class="health-badge" [class]="'badge-' + healthReport.overallStatus">
-          {{ healthReport.overallStatus | uppercase }}
-        </span>
-      </div>
-
-      <!-- Quick Stats -->
-      <div class="health-stats-row">
-        <div class="stat-item">
-          <span class="stat-num">{{ healthReport.pageCount }}</span>
-          <span class="stat-label">{{ 'repair.detectedPages' | translate }}</span>
-        </div>
-        <div class="stat-item valid">
-          <span class="stat-num">{{ healthReport.validPagesCount }}</span>
-          <span class="stat-label">{{ 'repair.readablePages' | translate }}</span>
-        </div>
-        <div class="stat-item corrupt" *ngIf="healthReport.corruptedPagesCount > 0">
-          <span class="stat-num">{{ healthReport.corruptedPagesCount }}</span>
-          <span class="stat-label">{{ 'repair.corruptedPages' | translate }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-num">{{ healthReport.pdfVersion }}</span>
-          <span class="stat-label">PDF {{ 'common.format' | translate }}</span>
-        </div>
-      </div>
-
-      <!-- Structural Integrity Checks -->
-      <div class="checks-grid">
-        <div class="check-item" [class.passed]="healthReport.headerValid">
-          <span class="check-icon">{{ healthReport.headerValid ? '✓' : '✗' }}</span>
-          <div class="check-text">
-            <strong>{{ 'repair.checkHeader' | translate }}</strong>
-            <span>{{ healthReport.headerValid ? ('repair.valid' | translate) : ('repair.corrupted' | translate) }}</span>
+        <!-- Quick Stats -->
+        <div class="health-stats-row">
+          <div class="stat-item">
+            <span class="stat-num">{{ healthReport.pageCount }}</span>
+            <span class="stat-label">{{ 'repair.detectedPages' | translate }}</span>
+          </div>
+          <div class="stat-item valid">
+            <span class="stat-num">{{ healthReport.validPagesCount }}</span>
+            <span class="stat-label">{{ 'repair.readablePages' | translate }}</span>
+          </div>
+          @if (healthReport.corruptedPagesCount > 0) {
+            <div class="stat-item corrupt">
+              <span class="stat-num">{{ healthReport.corruptedPagesCount }}</span>
+              <span class="stat-label">{{ 'repair.corruptedPages' | translate }}</span>
+            </div>
+          }
+          <div class="stat-item">
+            <span class="stat-num">{{ healthReport.pdfVersion }}</span>
+            <span class="stat-label">PDF {{ 'common.format' | translate }}</span>
           </div>
         </div>
-
-        <div class="check-item" [class.passed]="healthReport.xrefValid">
-          <span class="check-icon">{{ healthReport.xrefValid ? '✓' : '✗' }}</span>
-          <div class="check-text">
-            <strong>{{ 'repair.checkXref' | translate }}</strong>
-            <span>{{ healthReport.xrefValid ? ('repair.valid' | translate) : ('repair.missingOrBroken' | translate) }}</span>
+        <!-- Structural Integrity Checks -->
+        <div class="checks-grid">
+          <div class="check-item" [class.passed]="healthReport.headerValid">
+            <span class="check-icon">{{ healthReport.headerValid ? '✓' : '✗' }}</span>
+            <div class="check-text">
+              <strong>{{ 'repair.checkHeader' | translate }}</strong>
+              <span>{{ healthReport.headerValid ? ('repair.valid' | translate) : ('repair.corrupted' | translate) }}</span>
+            </div>
+          </div>
+          <div class="check-item" [class.passed]="healthReport.xrefValid">
+            <span class="check-icon">{{ healthReport.xrefValid ? '✓' : '✗' }}</span>
+            <div class="check-text">
+              <strong>{{ 'repair.checkXref' | translate }}</strong>
+              <span>{{ healthReport.xrefValid ? ('repair.valid' | translate) : ('repair.missingOrBroken' | translate) }}</span>
+            </div>
+          </div>
+          <div class="check-item" [class.passed]="healthReport.pagesTreeValid">
+            <span class="check-icon">{{ healthReport.pagesTreeValid ? '✓' : '✗' }}</span>
+            <div class="check-text">
+              <strong>{{ 'repair.checkPagesTree' | translate }}</strong>
+              <span>{{ healthReport.pagesTreeValid ? ('repair.valid' | translate) : ('repair.damaged' | translate) }}</span>
+            </div>
+          </div>
+          <div class="check-item" [class.passed]="healthReport.trailerValid">
+            <span class="check-icon">{{ healthReport.trailerValid ? '✓' : '✗' }}</span>
+            <div class="check-text">
+              <strong>{{ 'repair.checkTrailer' | translate }}</strong>
+              <span>{{ healthReport.trailerValid ? ('repair.valid' | translate) : ('repair.missingEof' | translate) }}</span>
+            </div>
           </div>
         </div>
-
-        <div class="check-item" [class.passed]="healthReport.pagesTreeValid">
-          <span class="check-icon">{{ healthReport.pagesTreeValid ? '✓' : '✗' }}</span>
-          <div class="check-text">
-            <strong>{{ 'repair.checkPagesTree' | translate }}</strong>
-            <span>{{ healthReport.pagesTreeValid ? ('repair.valid' | translate) : ('repair.damaged' | translate) }}</span>
+        <!-- Issues List -->
+        @if (healthReport.issues.length > 0) {
+          <div class="issues-list">
+            <h4>{{ 'repair.issuesDetectedTitle' | translate }} ({{ healthReport.issues.length }})</h4>
+            @for (issue of healthReport.issues; track issue) {
+              <div class="issue-item" [class]="'level-' + issue.level">
+                <div class="issue-head">
+                  <span class="issue-title">{{ issue.title }}</span>
+                  <span class="issue-code">{{ issue.code }}</span>
+                </div>
+                <p class="issue-desc">{{ issue.description }}</p>
+                @if (issue.location) {
+                  <span class="issue-location">📍 {{ issue.location }}</span>
+                }
+              </div>
+            }
           </div>
-        </div>
-
-        <div class="check-item" [class.passed]="healthReport.trailerValid">
-          <span class="check-icon">{{ healthReport.trailerValid ? '✓' : '✗' }}</span>
-          <div class="check-text">
-            <strong>{{ 'repair.checkTrailer' | translate }}</strong>
-            <span>{{ healthReport.trailerValid ? ('repair.valid' | translate) : ('repair.missingEof' | translate) }}</span>
-          </div>
+        }
+        <!-- Recovery Trigger -->
+        <div class="diagnostic-actions">
+          <app-button
+            variant="primary"
+            size="lg"
+            (clicked)="startRecovery()"
+          >{{ 'repair.startRecoveryBtn' | translate }}</app-button>
+          <app-button
+            variant="outline"
+            size="md"
+            (clicked)="reset()"
+          >{{ 'common.chooseAnother' | translate }}</app-button>
         </div>
       </div>
-
-      <!-- Issues List -->
-      <div *ngIf="healthReport.issues.length > 0" class="issues-list">
-        <h4>{{ 'repair.issuesDetectedTitle' | translate }} ({{ healthReport.issues.length }})</h4>
-        <div *ngFor="let issue of healthReport.issues" class="issue-item" [class]="'level-' + issue.level">
-          <div class="issue-head">
-            <span class="issue-title">{{ issue.title }}</span>
-            <span class="issue-code">{{ issue.code }}</span>
-          </div>
-          <p class="issue-desc">{{ issue.description }}</p>
-          <span *ngIf="issue.location" class="issue-location">📍 {{ issue.location }}</span>
-        </div>
-      </div>
-
-      <!-- Recovery Trigger -->
-      <div class="diagnostic-actions">
-        <app-button
-          variant="primary"
-          size="lg"
-          (clicked)="startRecovery()"
-        >{{ 'repair.startRecoveryBtn' | translate }}</app-button>
-        <app-button
-          variant="outline"
-          size="md"
-          (clicked)="reset()"
-        >{{ 'common.chooseAnother' | translate }}</app-button>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- STEP 4: RECOVERY IN PROGRESS -->
-  <section *ngIf="currentStep === 'recovering'" class="processing-section">
-    <div class="proc-card">
-      <div class="spinner"></div>
-      <h3>{{ 'repair.recoveringTitle' | translate }}</h3>
-      <p>{{ recoveryMessage }}</p>
-
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" [style.width.%]="recoveryProgress"></div>
+  @if (currentStep === 'recovering') {
+    <section class="processing-section">
+      <div class="proc-card">
+        <div class="spinner"></div>
+        <h3>{{ 'repair.recoveringTitle' | translate }}</h3>
+        <p>{{ recoveryMessage }}</p>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" [style.width.%]="recoveryProgress"></div>
+        </div>
+        <span class="progress-pct">{{ recoveryProgress }}%</span>
       </div>
-      <span class="progress-pct">{{ recoveryProgress }}%</span>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- STEP 5: RECOVERY REPORT & EXPORT (STAGE 2) -->
-  <section *ngIf="currentStep === 'recovery_report' && recoveryResult" class="recovery-report-section">
-    <div class="recovery-card">
-      <div class="recovery-header">
-        <span class="check-icon">✓</span>
-        <div class="recovery-title-group">
-          <h3>{{ 'repair.recoveryCompleteTitle' | translate }}</h3>
-          <p class="page-counts-summary">
-            {{ recoveryResult.originalPagesCount }} {{ 'repair.detectedPages' | translate }} •
-            <strong>{{ recoveryResult.recoveredPagesCount }} {{ 'repair.recoveredPages' | translate }}</strong>
-            <span *ngIf="recoveryResult.failedPagesCount > 0" class="failed-badge">
-              ({{ recoveryResult.failedPagesCount }} {{ 'repair.unrecoverable' | translate }})
-            </span>
-          </p>
+  @if (currentStep === 'recovery_report' && recoveryResult) {
+    <section class="recovery-report-section">
+      <div class="recovery-card">
+        <div class="recovery-header">
+          <span class="check-icon">✓</span>
+          <div class="recovery-title-group">
+            <h3>{{ 'repair.recoveryCompleteTitle' | translate }}</h3>
+            <p class="page-counts-summary">
+              {{ recoveryResult.originalPagesCount }} {{ 'repair.detectedPages' | translate }} •
+              <strong>{{ recoveryResult.recoveredPagesCount }} {{ 'repair.recoveredPages' | translate }}</strong>
+              @if (recoveryResult.failedPagesCount > 0) {
+                <span class="failed-badge">
+                  ({{ recoveryResult.failedPagesCount }} {{ 'repair.unrecoverable' | translate }})
+                </span>
+              }
+            </p>
+          </div>
+        </div>
+        <!-- Page Recovery Details Grid -->
+        <div class="recovery-details-grid">
+          @for (page of recoveryResult.pageDetails; track page) {
+            <div
+              class="page-detail-card"
+              [class]="'status-' + page.status"
+              >
+              <span class="page-num">{{ 'common.pages' | translate }} {{ page.pageNumber }}</span>
+              <span class="page-strategy">{{ page.strategyUsed }}</span>
+            </div>
+          }
+        </div>
+        <!-- Operations Log -->
+        <div class="recovery-log-box">
+          <h4>{{ 'repair.recoveryOperationsLog' | translate }}</h4>
+          <ul>
+            @for (log of recoveryResult.recoveryLog; track log) {
+              <li>{{ log }}</li>
+            }
+          </ul>
+        </div>
+        <!-- Live Preview -->
+        @if (recoveredArrayBuffer) {
+          <div class="recovered-preview-box">
+            <h4>{{ 'common.preview' | translate }}</h4>
+            <app-pdf-preview [arrayBuffer]="recoveredArrayBuffer" [initialPage]="1"></app-pdf-preview>
+          </div>
+        }
+        <!-- Actions -->
+        <div class="result-actions">
+          <app-button
+            variant="primary"
+            size="lg"
+            (clicked)="downloadRecovered()"
+          >{{ 'repair.downloadRecoveredBtn' | translate }}</app-button>
+          <app-button
+            variant="outline"
+            size="lg"
+            (clicked)="shareRecovered()"
+          >{{ 'common.share' | translate }}</app-button>
+          <app-button
+            variant="ghost"
+            size="md"
+            (clicked)="reset()"
+          >{{ 'common.chooseAnother' | translate }}</app-button>
         </div>
       </div>
-
-      <!-- Page Recovery Details Grid -->
-      <div class="recovery-details-grid">
-        <div
-          *ngFor="let page of recoveryResult.pageDetails"
-          class="page-detail-card"
-          [class]="'status-' + page.status"
-        >
-          <span class="page-num">{{ 'common.pages' | translate }} {{ page.pageNumber }}</span>
-          <span class="page-strategy">{{ page.strategyUsed }}</span>
-        </div>
-      </div>
-
-      <!-- Operations Log -->
-      <div class="recovery-log-box">
-        <h4>{{ 'repair.recoveryOperationsLog' | translate }}</h4>
-        <ul>
-          <li *ngFor="let log of recoveryResult.recoveryLog">{{ log }}</li>
-        </ul>
-      </div>
-
-      <!-- Live Preview -->
-      <div *ngIf="recoveredArrayBuffer" class="recovered-preview-box">
-        <h4>{{ 'common.preview' | translate }}</h4>
-        <app-pdf-preview [arrayBuffer]="recoveredArrayBuffer" [initialPage]="1"></app-pdf-preview>
-      </div>
-
-      <!-- Actions -->
-      <div class="result-actions">
-        <app-button
-          variant="primary"
-          size="lg"
-          (clicked)="downloadRecovered()"
-        >{{ 'repair.downloadRecoveredBtn' | translate }}</app-button>
-        <app-button
-          variant="outline"
-          size="lg"
-          (clicked)="shareRecovered()"
-        >{{ 'common.share' | translate }}</app-button>
-        <app-button
-          variant="ghost"
-          size="md"
-          (clicked)="reset()"
-        >{{ 'common.chooseAnother' | translate }}</app-button>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- Related Tools -->
   <app-related-tools [currentToolId]="'pdf_repair'"></app-related-tools>

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { PdfCompareService } from './pdf-compare.service';
 import { PdfPrivacyService } from './pdf-privacy.service';
@@ -16,15 +17,13 @@ describe('Phase 2: PDF Analysis, Privacy & Document Manipulation', () => {
   let extractorService: PdfExtractorService;
 
   beforeEach(() => {
-    const renderService = new PdfRenderService();
-    compareService = new PdfCompareService(renderService);
-
-    privacyService = new PdfPrivacyService();
-    headerFooterService = new PdfHeaderFooterService();
-    repairService = new PdfRepairService();
-
-    const pageManager = new PdfPageManagerService();
-    extractorService = new PdfExtractorService(pageManager);
+    // Every one of these is `providedIn: 'root'`, so TestBed wires the real
+    // collaborators (PdfRenderService, PdfPageManagerService) itself.
+    compareService = TestBed.inject(PdfCompareService);
+    privacyService = TestBed.inject(PdfPrivacyService);
+    headerFooterService = TestBed.inject(PdfHeaderFooterService);
+    repairService = TestBed.inject(PdfRepairService);
+    extractorService = TestBed.inject(PdfExtractorService);
   });
 
   // Helper to create a test PDF with text

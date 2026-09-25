@@ -1,7 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule, DecimalPipe } from '@angular/common';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, AlertController, ToastController } from '@ionic/angular/lazy';
+import { AlertController, ToastController } from '@ionic/angular';
 import { ActivatedRoute } from '@angular/router';
 import { FileService } from '../../core/services/file.service';
 import { PdfSecurityService } from '../../core/services/pdf-security.service';
@@ -37,8 +37,6 @@ import {
   standalone: true,
   imports: [
     AppIconComponent,
-    IonicModule,
-    CommonModule,
     FormsModule,
     AppHeaderComponent,
     AppPageHeaderComponent,
@@ -49,10 +47,20 @@ import {
     FileDropzoneComponent,
     FilePreviewComponent,
     ResultPreviewComponent
-  ],
+],
   providers: [DecimalPipe]
 })
 export class PdfSecurityPage implements OnInit {
+  private route = inject(ActivatedRoute);
+  private fileService = inject(FileService);
+  private pdfSecurity = inject(PdfSecurityService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private alertCtrl = inject(AlertController);
+  private toastCtrl = inject(ToastController);
+  private cdr = inject(ChangeDetectorRef);
+
   mode: 'unlock' | 'protect' = 'protect';
 
   securityTabs = [
@@ -88,18 +96,6 @@ export class PdfSecurityPage implements OnInit {
 
   permissions: PdfSecurityPermissions = { ...DEFAULT_PERMISSIONS };
   isProtecting = false;
-
-  constructor(
-    private route: ActivatedRoute,
-    private fileService: FileService,
-    private pdfSecurity: PdfSecurityService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   ngOnInit(): void {
     const requestedMode = this.route.snapshot.data['mode'] || this.route.snapshot.queryParams['mode'];

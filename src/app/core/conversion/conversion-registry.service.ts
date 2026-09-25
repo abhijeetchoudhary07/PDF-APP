@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { IConverter } from './converter.interface';
 import { ConverterCategory } from './conversion.types';
 
@@ -25,23 +25,23 @@ import { PagesToPdfConverter } from './converters/pages-to-pdf.converter';
 export class ConversionRegistryService {
   private converters = new Map<string, IConverter>();
 
-  constructor(
-    pdfToPng: PdfToPngConverter,
-    pdfToWord: PdfToWordConverter,
-    pdfToExcel: PdfToExcelConverter,
-    pdfToPpt: PdfToPptConverter,
-    wordToPdf: WordToPdfConverter,
-    excelToPdf: ExcelToPdfConverter,
-    pptToPdf: PptToPdfConverter,
-    textToPdf: TextToPdfConverter,
-    rtfToPdf: RtfToPdfConverter,
-    htmlToPdf: HtmlToPdfConverter,
-    csvToPdf: CsvToPdfConverter,
-    epubToPdf: EpubToPdfConverter,
-    zipToPdf: ZipToPdfConverter,
-    openDocumentToPdf: OpenDocumentToPdfConverter,
-    pagesToPdf: PagesToPdfConverter
-  ) {
+  constructor() {
+    const pdfToPng = inject(PdfToPngConverter);
+    const pdfToWord = inject(PdfToWordConverter);
+    const pdfToExcel = inject(PdfToExcelConverter);
+    const pdfToPpt = inject(PdfToPptConverter);
+    const wordToPdf = inject(WordToPdfConverter);
+    const excelToPdf = inject(ExcelToPdfConverter);
+    const pptToPdf = inject(PptToPdfConverter);
+    const textToPdf = inject(TextToPdfConverter);
+    const rtfToPdf = inject(RtfToPdfConverter);
+    const htmlToPdf = inject(HtmlToPdfConverter);
+    const csvToPdf = inject(CsvToPdfConverter);
+    const epubToPdf = inject(EpubToPdfConverter);
+    const zipToPdf = inject(ZipToPdfConverter);
+    const openDocumentToPdf = inject(OpenDocumentToPdfConverter);
+    const pagesToPdf = inject(PagesToPdfConverter);
+
     const list: IConverter[] = [
       pdfToPng,
       pdfToWord,

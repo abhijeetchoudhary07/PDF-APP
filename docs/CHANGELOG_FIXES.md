@@ -117,7 +117,7 @@ element sits inline in a toolbar rather than above content.
 ---
 
 ### FIX-004 — No way to delete your account
-**Severity:** Critical (Play policy) · **Status:** ⚠️ Client done, server pending
+**Severity:** Critical (Play policy) · **Status:** ✅ Done — client *and* server
 
 No route, no UI, no API call existed anywhere. Google Play requires any app that
 lets someone create an account to offer deletion **in the app** and **from a
@@ -137,11 +137,15 @@ public web page**.
 **Files:** `core/api/auth.service.ts` · `features/account/account.page.{ts,html,scss}` ·
 `features/privacy-policy/privacy-policy.page.html`
 
-> **Still open — the endpoint does not exist on the server.** It lives in the
-> separate accounts repository, which was not available during this audit.
-> Specification is in [PLAY_STORE.md §5](PLAY_STORE.md). Until it ships, the
-> button clears the device but the row survives, which does not satisfy the
-> policy.
+> **Closed 2026-09-25.** The endpoint exists:
+> `api/v1/pdf-app/auth/me.ts` in the accounts repository handles `DELETE` and
+> calls `deletePdfUser`. It was unavailable during the original audit, which is
+> why this was recorded as open.
+>
+> Verified rather than assumed: `JOURNEY-FULL` deletes the account through the
+> UI and then posts the same credentials to `/auth/login`, asserting **401**.
+> Clearing the device while the row survived would pass the first half of that
+> and fail the second. It passes on both viewports.
 
 ---
 

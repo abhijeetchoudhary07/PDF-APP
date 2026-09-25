@@ -10,150 +10,171 @@
         badge="BATCH"
         badgeVariant="batch"
         backUrl="/home">
-    
-        <div actions class="header-action-group" *ngIf="items.length > 0">
-          <app-button
-            variant="ghost"
-            size="sm"
-            (clicked)="clearAll()"
-            [disabled]="isProcessing">
-            <app-icon name="trash-outline" class="btn-icon"></app-icon>
-            Clear Queue
-          </app-button>
-        </div>
+
+        @if (items.length > 0) {
+          <div actions class="header-action-group">
+            <app-button
+              variant="ghost"
+              size="sm"
+              (clicked)="clearAll()"
+              [disabled]="isProcessing">
+              <app-icon name="trash-outline" class="btn-icon"></app-icon>
+              Clear Queue
+            </app-button>
+          </div>
+        }
       </app-page-header>
 
       <div class="batch-content-container">
         <!-- CONFIGURATION CARD -->
-        <div *ngIf="items.length > 0" class="batch-config-card">
-          <div class="config-header">
-            <div>
-              <h4>Batch Settings</h4>
-              <span class="file-counter">Total Files: {{ items.length }} / {{ MAX_BATCH_SIZE }}</span>
+        @if (items.length > 0) {
+          <div class="batch-config-card">
+            <div class="config-header">
+              <div>
+                <h4>Batch Settings</h4>
+                <span class="file-counter">Total Files: {{ items.length }} / {{ MAX_BATCH_SIZE }}</span>
+              </div>
             </div>
-          </div>
-
-          <div class="config-fields-grid">
-            <div class="form-group">
-              <label class="form-label">Target Size (KB)</label>
-              <input
-                type="number"
-                [(ngModel)]="targetKB"
-                [disabled]="isProcessing"
-                class="custom-input" />
+            <div class="config-fields-grid">
+              <div class="form-group">
+                <label class="form-label">Target Size (KB)</label>
+                <input
+                  type="number"
+                  [(ngModel)]="targetKB"
+                  [disabled]="isProcessing"
+                  class="custom-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Format</label>
+                <select [(ngModel)]="targetFormat" [disabled]="isProcessing" class="custom-select">
+                  <option value="image/jpeg">JPEG</option>
+                  <option value="image/png">PNG</option>
+                  <option value="image/webp">WEBP</option>
+                </select>
+              </div>
             </div>
-
-            <div class="form-group">
-              <label class="form-label">Format</label>
-              <select [(ngModel)]="targetFormat" [disabled]="isProcessing" class="custom-select">
-                <option value="image/jpeg">JPEG</option>
-                <option value="image/png">PNG</option>
-                <option value="image/webp">WEBP</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- PROGRESS BAR -->
-          <div *ngIf="isProcessing || completedCount > 0 || errorCount > 0" class="progress-section">
-            <app-progress
-              [value]="progressPercent"
-              [label]="(completedCount + errorCount) + ' / ' + items.length + ' Processed'"
-              [variant]="errorCount > 0 ? 'warning' : 'primary'">
-            </app-progress>
-          </div>
-
-          <!-- MAIN ACTIONS -->
-          <div class="actions-group">
-            <app-button
-              variant="primary"
-              size="lg"
-              [block]="true"
-              (clicked)="processBatch()"
-              [disabled]="isProcessing">
-              <app-icon name="play" class="btn-icon"></app-icon>
-              {{ isProcessing ? 'Processing Batch...' : 'Start Batch' }}
-            </app-button>
-
-            <div *ngIf="completedCount > 0 || errorCount > 0" class="sub-actions-row">
+            <!-- PROGRESS BAR -->
+            @if (isProcessing || completedCount > 0 || errorCount > 0) {
+              <div class="progress-section">
+                <app-progress
+                  [value]="progressPercent"
+                  [label]="(completedCount + errorCount) + ' / ' + items.length + ' Processed'"
+                  [variant]="errorCount > 0 ? 'warning' : 'primary'">
+                </app-progress>
+              </div>
+            }
+            <!-- MAIN ACTIONS -->
+            <div class="actions-group">
               <app-button
-                *ngIf="errorCount > 0"
-                variant="warning"
-                size="md"
+                variant="primary"
+                size="lg"
                 [block]="true"
-                (clicked)="processBatch(true)"
+                (clicked)="processBatch()"
                 [disabled]="isProcessing">
-                Retry Failed ({{ errorCount }})
+                <app-icon name="play" class="btn-icon"></app-icon>
+                {{ isProcessing ? 'Processing Batch...' : 'Start Batch' }}
               </app-button>
-
-              <app-button
-                *ngIf="completedCount > 0"
-                variant="success"
-                size="md"
-                [block]="true"
-                (clicked)="saveAll()"
-                [disabled]="isProcessing">
-                Save All ({{ completedCount }})
-              </app-button>
+              @if (completedCount > 0 || errorCount > 0) {
+                <div class="sub-actions-row">
+                  @if (errorCount > 0) {
+                    <app-button
+                      variant="warning"
+                      size="md"
+                      [block]="true"
+                      (clicked)="processBatch(true)"
+                      [disabled]="isProcessing">
+                      Retry Failed ({{ errorCount }})
+                    </app-button>
+                  }
+                  @if (completedCount > 0) {
+                    <app-button
+                      variant="success"
+                      size="md"
+                      [block]="true"
+                      (clicked)="saveAll()"
+                      [disabled]="isProcessing">
+                      Save All ({{ completedCount }})
+                    </app-button>
+                  }
+                </div>
+              }
             </div>
           </div>
-        </div>
+        }
 
         <!-- EMPTY STATE -->
-        <div class="empty-batch-container" *ngIf="items.length === 0">
-          <div class="empty-icon-badge">
-            <app-icon name="images-outline"></app-icon>
-          </div>
-          <h3>No Files Selected</h3>
-          <p>Compress up to {{ MAX_BATCH_SIZE }} photos at once with zero quality loss.</p>
-          <app-button variant="primary" size="lg" (clicked)="selectFiles()" style="margin-top: 16px;">
-            <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
-            Select Photos
-          </app-button>
-        </div>
-
-        <!-- FILE LIST -->
-        <div *ngIf="items.length > 0" class="batch-queue-card">
-          <div class="queue-header">
-            <h4>Queue ({{ items.length }})</h4>
-            <app-button
-              size="sm"
-              variant="outline"
-              (clicked)="selectFiles()"
-              *ngIf="items.length < MAX_BATCH_SIZE"
-              [disabled]="isProcessing">
-              <app-icon name="add-outline" class="btn-icon"></app-icon>
-              + Add More
+        @if (items.length === 0) {
+          <div class="empty-batch-container">
+            <div class="empty-icon-badge">
+              <app-icon name="images-outline"></app-icon>
+            </div>
+            <h3>No Files Selected</h3>
+            <p>Compress up to {{ MAX_BATCH_SIZE }} photos at once with zero quality loss.</p>
+            <app-button variant="primary" size="lg" (clicked)="selectFiles()" style="margin-top: 16px;">
+              <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
+              Select Photos
             </app-button>
           </div>
+        }
 
-          <div class="queue-items-list">
-            <div *ngFor="let item of items" class="queue-item">
-              <div class="item-left">
-                <app-icon name="image-outline" class="item-icon"></app-icon>
-                <div class="item-info">
-                  <h5>{{ item.file.name }}</h5>
-                  <p class="meta-orig">Original: {{ (item.file.size / 1024) | number:'1.0-1' }} KB</p>
-                  <p *ngIf="item.status === 'done' && item.result?.metadata" class="meta-done">
-                    New: {{ (item.result!.metadata!.sizeBytes / 1024) | number:'1.0-1' }} KB
-                  </p>
-                  <p *ngIf="item.status === 'error'" class="meta-err">
-                    Failed: {{ item.result?.error || 'Unknown Error' }}
-                  </p>
+        <!-- FILE LIST -->
+        @if (items.length > 0) {
+          <div class="batch-queue-card">
+            <div class="queue-header">
+              <h4>Queue ({{ items.length }})</h4>
+              @if (items.length < MAX_BATCH_SIZE) {
+                <app-button
+                  size="sm"
+                  variant="outline"
+                  (clicked)="selectFiles()"
+                  [disabled]="isProcessing">
+                  <app-icon name="add-outline" class="btn-icon"></app-icon>
+                  + Add More
+                </app-button>
+              }
+            </div>
+            <div class="queue-items-list">
+              @for (item of items; track item) {
+                <div class="queue-item">
+                  <div class="item-left">
+                    <app-icon name="image-outline" class="item-icon"></app-icon>
+                    <div class="item-info">
+                      <h5>{{ item.file.name }}</h5>
+                      <p class="meta-orig">Original: {{ (item.file.size / 1024) | number:'1.0-1' }} KB</p>
+                      @if (item.status === 'done' && item.result?.metadata) {
+                        <p class="meta-done">
+                          New: {{ (item.result!.metadata!.sizeBytes / 1024) | number:'1.0-1' }} KB
+                        </p>
+                      }
+                      @if (item.status === 'error') {
+                        <p class="meta-err">
+                          Failed: {{ item.result?.error || 'Unknown Error' }}
+                        </p>
+                      }
+                    </div>
+                  </div>
+                  <div class="item-status">
+                    @if (item.status === 'processing') {
+                      <div class="custom-spinner-small"></div>
+                    }
+                    @if (item.status === 'done') {
+                      <app-icon name="checkmark-circle" class="status-done"></app-icon>
+                    }
+                    @if (item.status === 'error') {
+                      <app-icon name="close-circle" class="status-error"></app-icon>
+                    }
+                    @if (item.status === 'pending') {
+                      <app-icon name="time-outline" class="status-pending"></app-icon>
+                    }
+                    <button class="remove-btn" (click)="removeFile(item.id)" [disabled]="isProcessing">
+                      <app-icon name="trash-outline"></app-icon>
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div class="item-status">
-                <div *ngIf="item.status === 'processing'" class="custom-spinner-small"></div>
-                <app-icon *ngIf="item.status === 'done'" name="checkmark-circle" class="status-done"></app-icon>
-                <app-icon *ngIf="item.status === 'error'" name="close-circle" class="status-error"></app-icon>
-                <app-icon *ngIf="item.status === 'pending'" name="time-outline" class="status-pending"></app-icon>
-                <button class="remove-btn" (click)="removeFile(item.id)" [disabled]="isProcessing">
-                  <app-icon name="trash-outline"></app-icon>
-                </button>
-              </div>
+              }
             </div>
           </div>
-        </div>
+        }
       </div>
     </div>
   </main>

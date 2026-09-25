@@ -61,11 +61,35 @@ export const ALL_TOOLS: readonly ToolSpec[] = [
 export class AppShell {
   constructor(private readonly page: Page) {}
 
+  /**
+   * The page's banner landmark, not the `app-header` component.
+   *
+   * Every feature page but one renders `app-header`. The PDF editor is a
+   * full-screen workspace with its own toolbar — a back link, the document
+   * title as the `h1`, undo/redo/share/export — and no shared chrome, which is
+   * deliberate and is why stacking `app-header` on top of it would be wrong.
+   *
+   * Both render a top-level `<header>`, so both expose `role="banner"`. Asking
+   * for the landmark keeps what this assertion is actually for ("the page
+   * rendered its own chrome") while no longer encoding the assumption that one
+   * particular component provides it.
+   */
   get header(): Locator {
-    return this.page.locator('app-header').first();
+    return this.page.getByRole('banner').first();
   }
 
-  /** "5 left today", or absent for an unlimited account. */
+  /**
+   * The home hero's quota line — "5 of 5 free operations left today".
+   *
+   * The header's chip is desktop chrome: at phone widths it stays in the DOM
+   * but is hidden, so asserting on it fails on exactly the viewport this app
+   * ships to. This is the affordance a phone user actually sees and taps.
+   */
+  get heroQuota(): Locator {
+    return this.page.getByTestId('hero-quota');
+  }
+
+  /** "5 left today", or absent for an unlimited account. Desktop header only. */
   get quotaPill(): Locator {
     return this.page.locator('a[href*="premium"]').filter({ hasText: /left today/i }).first();
   }
@@ -185,7 +209,13 @@ export class AccountPage {
     await confirm.waitFor({ state: 'visible', timeout: 30000 });
     await expect(confirm, 'delete was enabled before the phrase was typed').toBeDisabled();
 
-    await this.page.locator('input[name="deleteConfirmation"]').fill('DELETE');
+    /*
+     * The `name` is on the `app-input` wrapper, not on the field it renders —
+     * that wrapper puts the real `<input class="native-input">` inside itself
+     * and does not forward the attribute — so `input[name=...]` matched
+     * nothing and the last step of the journey could only time out.
+     */
+    await this.page.locator('app-input[name="deleteConfirmation"] input').fill('DELETE');
     await expect(confirm).toBeEnabled();
     await confirm.click({ timeout: 30000 });
 
@@ -203,8 +233,17 @@ export class PremiumPage {
     await expect(this.page).toHaveURL(/\/features\/premium/);
   }
 
+  /**
+   * The paywall's pricing cards.
+   *
+   * `.pricing-card` is what `premium.page.html` actually renders. The previous
+   * selector here looked for `.plan-card, [class*="plan-"]`, which matches
+   * nothing on that page — the cards use `pricing-`/`package-` prefixes — so
+   * this assertion could only ever time out, and the one test that walks the
+   * whole product never got past the paywall to the grant it exists to check.
+   */
   get planCards(): Locator {
-    return this.page.locator('.plan-card, [class*="plan-"]');
+    return this.page.locator('.pricing-card');
   }
 }
 

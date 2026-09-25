@@ -1,5 +1,5 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+
 import { RouterModule } from '@angular/router';
 import { Preferences } from '@capacitor/preferences';
 
@@ -33,7 +33,6 @@ export interface StorageRecord {
   templateUrl: './local-data-storage.page.html',
   styleUrls: ['./local-data-storage.page.scss'],
   imports: [
-    CommonModule,
     RouterModule,
     AppHeaderComponent,
     AppPageHeaderComponent,
@@ -41,9 +40,13 @@ export interface StorageRecord {
     PrivacySupportNavComponent,
     AppButtonComponent,
     AppModalComponent
-  ]
+]
 })
 export class LocalDataStoragePage implements OnInit {
+  private historyService = inject(HistoryService);
+  private profileService = inject(ProfileService);
+  private toastService = inject(ToastService);
+
   storageRecords: StorageRecord[] = [];
   totalStorageBytes = 0;
   totalStorageFormatted = '0 KB';
@@ -51,12 +54,6 @@ export class LocalDataStoragePage implements OnInit {
 
   isClearHistoryModalOpen = false;
   isFactoryResetModalOpen = false;
-
-  constructor(
-    private historyService: HistoryService,
-    private profileService: ProfileService,
-    private toastService: ToastService
-  ) {}
 
   async ngOnInit(): Promise<void> {
     await this.refreshStorage();

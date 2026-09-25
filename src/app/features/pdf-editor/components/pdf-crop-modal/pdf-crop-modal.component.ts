@@ -1,8 +1,8 @@
 import { AppIconComponent } from '../../../../shared/components/ui';
-import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular/lazy';
+import { ModalController } from '@ionic/angular';
 import { PdfEditorStateService } from '../../../../core/services/pdf-editor-state.service';
 import { PdfCropBox } from '../../../../core/models/pdf-editor.types';
 
@@ -211,9 +211,14 @@ import { PdfCropBox } from '../../../../core/models/pdf-editor.types';
   `],
   standalone: true,
   imports: [
-    AppIconComponent,CommonModule, FormsModule, IonicModule]
+    AppIconComponent,
+    FormsModule
+]
 })
 export class PdfCropModalComponent implements OnInit {
+  private modalCtrl = inject(ModalController);
+  private state = inject(PdfEditorStateService);
+
   selectedPreset: 'free' | '1:1' | '4:3' | '16:9' | 'a4' | 'letter' = 'free';
   applyScope: 'current' | 'all' = 'current';
 
@@ -224,11 +229,6 @@ export class PdfCropModalComponent implements OnInit {
 
   pageWidth = 595;
   pageHeight = 842;
-
-  constructor(
-    private modalCtrl: ModalController,
-    private state: PdfEditorStateService
-  ) {}
 
   ngOnInit() {
     const page = this.state.currentPage;

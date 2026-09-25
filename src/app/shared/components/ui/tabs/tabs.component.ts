@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 export interface TabItem {
   id: string;
@@ -13,26 +13,33 @@ export interface TabItem {
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-tabs',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div class="tabs-track" [class.tabs-fullwidth]="fullWidth" [class.tabs-pills]="variant === 'pills'">
-      <button
-        *ngFor="let tab of tabs"
-        type="button"
-        class="tab-btn"
-        [class.active]="selectedTab === tab.id"
-        [disabled]="tab.disabled"
-        (click)="selectTab(tab.id)"
-        role="tab"
-        [attr.aria-selected]="selectedTab === tab.id">
-        <span *ngIf="tab.icon" class="tab-icon">
-          <svg *ngIf="tab.icon === 'grid'" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-        </span>
-        <span class="tab-label">{{ tab.label }}</span>
-        <span *ngIf="tab.badge !== undefined" class="tab-badge">{{ tab.badge }}</span>
-      </button>
+      @for (tab of tabs; track tab) {
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="selectedTab === tab.id"
+          [disabled]="tab.disabled"
+          (click)="selectTab(tab.id)"
+          role="tab"
+          [attr.aria-selected]="selectedTab === tab.id">
+          @if (tab.icon) {
+            <span class="tab-icon">
+              @if (tab.icon === 'grid') {
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              }
+            </span>
+          }
+          <span class="tab-label">{{ tab.label }}</span>
+          @if (tab.badge !== undefined) {
+            <span class="tab-badge">{{ tab.badge }}</span>
+          }
+        </button>
+      }
     </div>
-  `,
+    `,
   styles: [`
     /*
      * The host has to be a block that can shrink, otherwise it grows to the

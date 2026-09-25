@@ -11,7 +11,9 @@ import { AuthService } from '../api/auth.service';
 import { PdfApiService } from '../api/pdf-api.service';
 import type { PdfSafeUser } from '../api/pdf-api.types';
 import {
+  PLAY_PRODUCT_IDS,
   REVENUECAT_API_KEYS,
+  baseProductId,
   isStoreConfigured,
   type StoreStatus,
 } from '../config/store.config';
@@ -197,6 +199,28 @@ export class MonetizationService {
   /** True only when a purchase could actually complete right now. */
   get canPurchase(): boolean {
     return this.storeStatus$.value === 'ready';
+  }
+
+  /**
+   * The store package that sells a server plan, or null when there is none.
+   *
+   * This is the join between the catalogue the server prices (`pdf_plans`) and
+   * the catalogue Play actually sells. A null means the two have drifted — a
+   * product that was never created, is still in draft, or is not attached to
+   * the current offering — and the paywall has to say so rather than open a
+   * checkout sheet that cannot complete.
+   */
+  packageForPlan(planId: string): PurchasesPackage | null {
+    const productId = PLAY_PRODUCT_IDS[planId];
+    if (!productId) {
+      return null;
+    }
+
+    return (
+      this.packages$.value.find(
+        (pkg) => baseProductId(pkg.product.identifier) === productId,
+      ) ?? null
+    );
   }
 
   async purchasePackage(pkg: PurchasesPackage): Promise<boolean> {

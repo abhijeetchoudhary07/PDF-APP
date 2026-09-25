@@ -1,7 +1,7 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, AlertController, ToastController } from '@ionic/angular/lazy';
+import { AlertController, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { FileService } from '../../core/services/file.service';
 import { SignatureRequestService } from '../../core/services/signature-request.service';
@@ -32,7 +32,6 @@ import {
   standalone: true,
   imports: [
     AppIconComponent,
-    IonicModule,
     CommonModule,
     FormsModule,
     AppHeaderComponent,
@@ -45,6 +44,13 @@ import {
   providers: [DecimalPipe]
 })
 export class SignatureRequestPage {
+  private fileService = inject(FileService);
+  private requestService = inject(SignatureRequestService);
+  private router = inject(Router);
+  private alertCtrl = inject(AlertController);
+  private toastCtrl = inject(ToastController);
+  private toast = inject(ToastService);
+
   activeTab: 'remote' | 'local' = 'remote';
 
   requestTabs = [
@@ -75,15 +81,6 @@ export class SignatureRequestPage {
   currentPage = 1;
 
   isProcessing = false;
-
-  constructor(
-    private fileService: FileService,
-    private requestService: SignatureRequestService,
-    private router: Router,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
-    private toast: ToastService
-  ) {}
 
   switchToLocalSigning(): void {
     this.router.navigate(['/features/pdf/sign']);

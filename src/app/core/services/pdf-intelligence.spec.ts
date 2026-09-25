@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { PdfIntelligenceService } from './pdf-intelligence.service';
 
 describe('PdfIntelligenceService', () => {
@@ -24,7 +25,7 @@ Failure to provide valid identity verification documents will result in immediat
   ];
 
   beforeEach(() => {
-    service = new PdfIntelligenceService();
+    service = TestBed.inject(PdfIntelligenceService);
   });
 
   describe('Document Analysis', () => {

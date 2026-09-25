@@ -56,7 +56,32 @@ android {
             if (hasSigningConfig) {
                 signingConfig signingConfigs.release
             }
-            minifyEnabled false
+            /*
+             * R8, in shrink-and-obfuscate mode.
+             *
+             * Nearly all of this app is web assets, so the win here is modest
+             * by construction: R8 only ever sees the Capacitor bridge, the ten
+             * plugins and their transitive AndroidX/Play-Billing/RevenueCat
+             * dependencies. That is still a few thousand unused library
+             * classes and methods that were being shipped for no reason.
+             *
+             * Plugins are found by reflection -- Capacitor reads class names
+             * out of `capacitor.plugins.json` at runtime -- so shrinking them
+             * away is the obvious way for this to break. The keep rules that
+             * prevent it ship with capacitor-android as consumer rules
+             * (`-keep public class * extends com.getcapacitor.Plugin`), so
+             * they apply automatically; `proguard-rules.pro` only adds what
+             * those do not cover.
+             *
+             * `proguard-android.txt` rather than the `-optimize` variant on
+             * purpose: the extra inlining and class merging would buy almost
+             * nothing on a code base this thin, and every one of those
+             * transformations is another way for reflective plugin dispatch to
+             * stop resolving. Resource shrinking is likewise left off -- the
+             * icons and splash screens are referenced from the manifest and
+             * from JS by name, which `shrinkResources` cannot see.
+             */
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

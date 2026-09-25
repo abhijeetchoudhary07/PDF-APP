@@ -59,11 +59,6 @@ export class HomePage {
     return HomePage.CATEGORY_ICONS[category] ?? 'document';
   }
 
-  /** Used by *ngFor so filtering does not tear down and rebuild every tile. */
-  trackByToolId(_index: number, tool: ToolItem): string {
-    return tool.id;
-  }
-
   clearFilters(): void {
     this.searchQuery = '';
     this.selectedCategory = 'ALL';

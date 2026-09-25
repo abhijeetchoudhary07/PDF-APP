@@ -1,5 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { IonicModule } from '@ionic/angular/lazy';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FileService } from '../../core/services/file.service';
@@ -35,7 +34,6 @@ import {
   standalone: true,
   imports: [
     AppIconComponent,
-    IonicModule,
     CommonModule,
     FormsModule,
     AppHeaderComponent,
@@ -47,6 +45,12 @@ import {
   providers: [DecimalPipe]
 })
 export class BatchPage {
+  private fileService = inject(FileService);
+  private compressionService = inject(CompressionService);
+  private storageService = inject(StorageService);
+  private historyService = inject(HistoryService);
+  private toast = inject(ToastService);
+
   items: BatchItem[] = [];
   targetKB: number = 50;
   targetFormat: string = 'image/jpeg';
@@ -54,14 +58,6 @@ export class BatchPage {
   
   readonly MAX_BATCH_SIZE = 20;
   readonly CONCURRENCY_LIMIT = 3;
-
-  constructor(
-    private fileService: FileService,
-    private compressionService: CompressionService,
-    private storageService: StorageService,
-    private historyService: HistoryService,
-    private toast: ToastService
-  ) {}
 
   async selectFiles() {
     if (this.isProcessing) return;

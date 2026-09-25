@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
@@ -15,25 +15,26 @@ export interface PrivacySupportTab {
   selector: 'app-privacy-support-nav',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [CommonModule, RouterModule, TranslatePipe],
+  imports: [RouterModule, TranslatePipe],
   template: `
     <nav class="privacy-support-nav" aria-label="Privacy and Support Navigation">
       <div class="nav-scroll-container">
         <div class="nav-track" role="tablist">
-          <a
-            *ngFor="let tab of tabs"
-            [routerLink]="tab.route"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: tab.route === '/features/settings' }"
-            class="nav-tab-link"
-            role="tab">
-            <span class="tab-icon" [innerHTML]="getTabIcon(tab.icon)"></span>
-            <span class="tab-label">{{ ('footer.' + tab.key) | translate }}</span>
-          </a>
+          @for (tab of tabs; track tab) {
+            <a
+              [routerLink]="tab.route"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: tab.route === '/features/settings' }"
+              class="nav-tab-link"
+              role="tab">
+              <span class="tab-icon" [innerHTML]="getTabIcon(tab.icon)"></span>
+              <span class="tab-label">{{ ('footer.' + tab.key) | translate }}</span>
+            </a>
+          }
         </div>
       </div>
     </nav>
-  `,
+    `,
   styles: [`
     :host {
       display: block;

@@ -12,20 +12,24 @@ import { CommonModule } from '@angular/common';
       [class.card-hover]="hover"
       [class.card-clickable]="clickable"
       [ngClass]="variant ? 'card-' + variant : ''">
-      
-      <div *ngIf="hasHeader" class="card-header">
-        <ng-content select="[card-header]"></ng-content>
-      </div>
-
+    
+      @if (hasHeader) {
+        <div class="card-header">
+          <ng-content select="[card-header]"></ng-content>
+        </div>
+      }
+    
       <div class="card-body">
         <ng-content></ng-content>
       </div>
-
-      <div *ngIf="hasFooter" class="card-footer">
-        <ng-content select="[card-footer]"></ng-content>
-      </div>
+    
+      @if (hasFooter) {
+        <div class="card-footer">
+          <ng-content select="[card-footer]"></ng-content>
+        </div>
+      }
     </div>
-  `,
+    `,
   styles: [`
     .card {
       background-color: var(--color-surface);

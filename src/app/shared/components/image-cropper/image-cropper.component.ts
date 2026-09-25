@@ -1,6 +1,6 @@
-import { Component, Input, ViewChild, ElementRef, AfterViewInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ModalController } from '@ionic/angular/lazy';
+import { Component, Input, ViewChild, ElementRef, AfterViewInit, OnDestroy, ChangeDetectionStrategy, inject } from '@angular/core';
+
+import { ModalController } from '@ionic/angular';
 import Cropper from 'cropperjs';
 
 @Component({
@@ -9,16 +9,16 @@ import Cropper from 'cropperjs';
   templateUrl: './image-cropper.component.html',
   styleUrls: ['./image-cropper.component.scss'],
   standalone: true,
-  imports: [CommonModule]
+  imports: []
 })
 export class ImageCropperComponent implements AfterViewInit, OnDestroy {
+  private modalCtrl = inject(ModalController);
+
   @Input() imageSrc!: string;
   @ViewChild('image', { static: false }) imageElement!: ElementRef<HTMLImageElement>;
 
   selectedRatio = 0;
   private cropper?: Cropper;
-
-  constructor(private modalCtrl: ModalController) {}
 
   ngAfterViewInit() {
     setTimeout(() => {

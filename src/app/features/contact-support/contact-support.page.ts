@@ -1,5 +1,5 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -21,7 +21,6 @@ import {
   templateUrl: './contact-support.page.html',
   styleUrls: ['./contact-support.page.scss'],
   imports: [
-    CommonModule,
     FormsModule,
     RouterModule,
     AppHeaderComponent,
@@ -29,9 +28,12 @@ import {
     AppFooterComponent,
     PrivacySupportNavComponent,
     AppButtonComponent
-  ]
+]
 })
 export class ContactSupportPage implements OnInit {
+  private profileService = inject(ProfileService);
+  private toastService = inject(ToastService);
+
   category = 'bug';
   name = '';
   email = '';
@@ -58,11 +60,6 @@ export class ContactSupportPage implements OnInit {
     { name: 'NTA JEE / NEET', query: 'NTA Postcard Photo & Signature Specs' },
     { name: 'State PSCs (BPSC, UPPSC, MPSC)', query: 'State PSC Application Preset' }
   ];
-
-  constructor(
-    private profileService: ProfileService,
-    private toastService: ToastService
-  ) {}
 
   ngOnInit(): void {
     this.profileService.profile$.subscribe(p => {

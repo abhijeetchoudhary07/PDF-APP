@@ -8,432 +8,424 @@
   ></app-page-header>
 
   <!-- VIEW 1: EMPTY / CAPTURE START -->
-  <section class="scanner-card capture-start-card" *ngIf="currentView === 'empty'">
-    <div class="capture-hero">
-      <div class="camera-icon-circle">📷</div>
-      <h2>{{ 'scanner.startScanning' | translate }}</h2>
-      <p class="subtitle">{{ 'scanner.startSubtitle' | translate }}</p>
-
-      <div class="capture-actions">
-        <app-button
-          variant="primary"
-          size="lg"
-          (clicked)="captureFromCamera()"
-        >
-          📸 {{ 'scanner.openCamera' | translate }}
-        </app-button>
-        <app-button
-          variant="secondary"
-          size="lg"
-          (clicked)="importFromGallery()"
-        >
-          🖼️ {{ 'scanner.importGallery' | translate }}
-        </app-button>
-      </div>
-    </div>
-
-    <div class="scanner-tips-grid">
-      <div class="tip-card">
-        <div class="tip-icon">💡</div>
-        <div class="tip-title">{{ 'scanner.tip1Title' | translate }}</div>
-        <div class="tip-desc">{{ 'scanner.tip1Desc' | translate }}</div>
-      </div>
-      <div class="tip-card">
-        <div class="tip-icon">📐</div>
-        <div class="tip-title">{{ 'scanner.tip2Title' | translate }}</div>
-        <div class="tip-desc">{{ 'scanner.tip2Desc' | translate }}</div>
-      </div>
-      <div class="tip-card">
-        <div class="tip-icon">📑</div>
-        <div class="tip-title">{{ 'scanner.tip3Title' | translate }}</div>
-        <div class="tip-desc">{{ 'scanner.tip3Desc' | translate }}</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- VIEW 2: CROPPING & CORNER ADJUSTMENT -->
-  <section class="scanner-card crop-card" *ngIf="currentView === 'cropping'">
-    <div class="card-header">
-      <h2>{{ 'scanner.adjustCrop' | translate }}</h2>
-      <app-badge [variant]="isLowConfidence ? 'warning' : 'success'">
-        {{ isLowConfidence ? ('scanner.manualCropNeeded' | translate) : ('scanner.autoCropApplied' | translate) }}
-      </app-badge>
-    </div>
-
-    <!-- Low Confidence Warning Banner -->
-    <div class="warning-alert-banner" *ngIf="isLowConfidence">
-      <span class="alert-icon">⚠️</span>
-      <div class="alert-text">
-        <strong>{{ 'scanner.lowConfidenceTitle' | translate }}:</strong>
-        {{ 'scanner.lowConfidenceDesc' | translate }}
-      </div>
-    </div>
-
-    <div class="crop-canvas-wrapper">
-      <canvas
-        #cropCanvas
-        class="interactive-crop-canvas"
-        (mousedown)="onCanvasPointerDown($event)"
-        (mousemove)="onCanvasPointerMove($event)"
-        (mouseup)="onCanvasPointerUp()"
-        (mouseleave)="onCanvasPointerUp()"
-        (touchstart)="onCanvasPointerDown($event)"
-        (touchmove)="onCanvasPointerMove($event)"
-        (touchend)="onCanvasPointerUp()"
-      ></canvas>
-    </div>
-
-    <div class="crop-hint">
-      👆 {{ 'scanner.dragCornersHint' | translate }}
-    </div>
-
-    <div class="crop-actions-row">
-      <app-button
-        variant="ghost"
-        (clicked)="resetCropToAuto()"
-      >
-        ↺ {{ 'scanner.resetCorners' | translate }}
-      </app-button>
-      <div class="primary-actions">
-        <app-button
-          variant="ghost"
-          (clicked)="cancelCrop()"
-        >
-          {{ 'common.cancel' | translate }}
-        </app-button>
-        <app-button
-          variant="primary"
-          (clicked)="applyCrop()"
-        >
-          ✓ {{ 'scanner.applyCrop' | translate }}
-        </app-button>
-      </div>
-    </div>
-  </section>
-
-  <!-- VIEW 3: ENHANCEMENT EDITING -->
-  <section class="scanner-card enhance-card" *ngIf="currentView === 'enhancing' && activePage">
-    <div class="card-header">
-      <h2>{{ 'scanner.enhanceTitle' | translate }}</h2>
-      <span class="page-pill">Page {{ activePage.pageNumber }}</span>
-    </div>
-
-    <div class="enhance-layout">
-      <!-- Preview Image -->
-      <div class="enhance-preview-container">
-        <img
-          [src]="showBeforePreview ? activePage.originalImageUrl : activePage.processedImageUrl"
-          alt="Scanned Preview"
-          class="enhance-preview-img"
-        />
-        <button
-          type="button"
-          class="compare-pill-btn"
-          (mousedown)="showBeforePreview = true"
-          (mouseup)="showBeforePreview = false"
-          (touchstart)="showBeforePreview = true"
-          (touchend)="showBeforePreview = false"
-        >
-          👁️ {{ showBeforePreview ? ('common.before' | translate) : ('scanner.holdToCompare' | translate) }}
-        </button>
-      </div>
-
-      <!-- Enhancement Controls -->
-      <div class="enhance-controls-panel">
-        <!-- Presets -->
-        <div class="control-section">
-          <label class="section-label">{{ 'scanner.presetLabel' | translate }}</label>
-          <div class="presets-btn-group">
-            <button
-              type="button"
-              class="preset-btn"
-              [class.active]="activeEnhancement.preset === 'original'"
-              (click)="selectPreset('original')"
-            >
-              {{ 'scanner.presetOriginal' | translate }}
-            </button>
-            <button
-              type="button"
-              class="preset-btn"
-              [class.active]="activeEnhancement.preset === 'document'"
-              (click)="selectPreset('document')"
-            >
-              📄 {{ 'scanner.presetDocument' | translate }}
-            </button>
-            <button
-              type="button"
-              class="preset-btn"
-              [class.active]="activeEnhancement.preset === 'bw'"
-              (click)="selectPreset('bw')"
-            >
-              ⬛ {{ 'scanner.presetBw' | translate }}
-            </button>
-            <button
-              type="button"
-              class="preset-btn"
-              [class.active]="activeEnhancement.preset === 'grayscale'"
-              (click)="selectPreset('grayscale')"
-            >
-              🔘 {{ 'scanner.presetGrayscale' | translate }}
-            </button>
-            <button
-              type="button"
-              class="preset-btn"
-              [class.active]="activeEnhancement.preset === 'high_contrast'"
-              (click)="selectPreset('high_contrast')"
-            >
-              ⚡ {{ 'scanner.presetHighContrast' | translate }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Fine-tune Sliders -->
-        <div class="control-section">
-          <label class="section-label">{{ 'scanner.fineTune' | translate }}</label>
-
-          <div class="slider-row">
-            <span class="slider-name">{{ 'scanner.brightness' | translate }}</span>
-            <input
-              type="range"
-              min="-50"
-              max="50"
-              [(ngModel)]="activeEnhancement.brightness"
-              (change)="onFilterParamChange()"
-            />
-            <span class="slider-val">{{ activeEnhancement.brightness }}</span>
-          </div>
-
-          <div class="slider-row">
-            <span class="slider-name">{{ 'scanner.contrast' | translate }}</span>
-            <input
-              type="range"
-              min="-50"
-              max="50"
-              [(ngModel)]="activeEnhancement.contrast"
-              (change)="onFilterParamChange()"
-            />
-            <span class="slider-val">{{ activeEnhancement.contrast }}</span>
-          </div>
-
-          <div class="slider-row">
-            <span class="slider-name">{{ 'scanner.sharpen' | translate }}</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              [(ngModel)]="activeEnhancement.sharpen"
-              (change)="onFilterParamChange()"
-            />
-            <span class="slider-val">{{ activeEnhancement.sharpen }}%</span>
-          </div>
-        </div>
-
-        <div class="enhance-actions">
+  @if (currentView === 'empty') {
+    <section class="scanner-card capture-start-card">
+      <div class="capture-hero">
+        <div class="camera-icon-circle">📷</div>
+        <h2>{{ 'scanner.startScanning' | translate }}</h2>
+        <p class="subtitle">{{ 'scanner.startSubtitle' | translate }}</p>
+        <div class="capture-actions">
           <app-button
             variant="primary"
-            (clicked)="doneEnhancing()"
-          >
-            ✓ {{ 'common.apply' | translate }}
+            size="lg"
+            (clicked)="captureFromCamera()"
+            >
+            📸 {{ 'scanner.openCamera' | translate }}
+          </app-button>
+          <app-button
+            variant="secondary"
+            size="lg"
+            (clicked)="importFromGallery()"
+            >
+            🖼️ {{ 'scanner.importGallery' | translate }}
           </app-button>
         </div>
       </div>
-    </div>
-  </section>
+      <div class="scanner-tips-grid">
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <div class="tip-title">{{ 'scanner.tip1Title' | translate }}</div>
+          <div class="tip-desc">{{ 'scanner.tip1Desc' | translate }}</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">📐</div>
+          <div class="tip-title">{{ 'scanner.tip2Title' | translate }}</div>
+          <div class="tip-desc">{{ 'scanner.tip2Desc' | translate }}</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">📑</div>
+          <div class="tip-title">{{ 'scanner.tip3Title' | translate }}</div>
+          <div class="tip-desc">{{ 'scanner.tip3Desc' | translate }}</div>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- VIEW 2: CROPPING & CORNER ADJUSTMENT -->
+  @if (currentView === 'cropping') {
+    <section class="scanner-card crop-card">
+      <div class="card-header">
+        <h2>{{ 'scanner.adjustCrop' | translate }}</h2>
+        <app-badge [variant]="isLowConfidence ? 'warning' : 'success'">
+          {{ isLowConfidence ? ('scanner.manualCropNeeded' | translate) : ('scanner.autoCropApplied' | translate) }}
+        </app-badge>
+      </div>
+      <!-- Low Confidence Warning Banner -->
+      @if (isLowConfidence) {
+        <div class="warning-alert-banner">
+          <span class="alert-icon">⚠️</span>
+          <div class="alert-text">
+            <strong>{{ 'scanner.lowConfidenceTitle' | translate }}:</strong>
+            {{ 'scanner.lowConfidenceDesc' | translate }}
+          </div>
+        </div>
+      }
+      <div class="crop-canvas-wrapper">
+        <canvas
+          #cropCanvas
+          class="interactive-crop-canvas"
+          (mousedown)="onCanvasPointerDown($event)"
+          (mousemove)="onCanvasPointerMove($event)"
+          (mouseup)="onCanvasPointerUp()"
+          (mouseleave)="onCanvasPointerUp()"
+          (touchstart)="onCanvasPointerDown($event)"
+          (touchmove)="onCanvasPointerMove($event)"
+          (touchend)="onCanvasPointerUp()"
+        ></canvas>
+      </div>
+      <div class="crop-hint">
+        👆 {{ 'scanner.dragCornersHint' | translate }}
+      </div>
+      <div class="crop-actions-row">
+        <app-button
+          variant="ghost"
+          (clicked)="resetCropToAuto()"
+          >
+          ↺ {{ 'scanner.resetCorners' | translate }}
+        </app-button>
+        <div class="primary-actions">
+          <app-button
+            variant="ghost"
+            (clicked)="cancelCrop()"
+            >
+            {{ 'common.cancel' | translate }}
+          </app-button>
+          <app-button
+            variant="primary"
+            (clicked)="applyCrop()"
+            >
+            ✓ {{ 'scanner.applyCrop' | translate }}
+          </app-button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- VIEW 3: ENHANCEMENT EDITING -->
+  @if (currentView === 'enhancing' && activePage) {
+    <section class="scanner-card enhance-card">
+      <div class="card-header">
+        <h2>{{ 'scanner.enhanceTitle' | translate }}</h2>
+        <span class="page-pill">Page {{ activePage.pageNumber }}</span>
+      </div>
+      <div class="enhance-layout">
+        <!-- Preview Image -->
+        <div class="enhance-preview-container">
+          <img
+            [src]="showBeforePreview ? activePage.originalImageUrl : activePage.processedImageUrl"
+            alt="Scanned Preview"
+            class="enhance-preview-img"
+            />
+          <button
+            type="button"
+            class="compare-pill-btn"
+            (mousedown)="showBeforePreview = true"
+            (mouseup)="showBeforePreview = false"
+            (touchstart)="showBeforePreview = true"
+            (touchend)="showBeforePreview = false"
+            >
+            👁️ {{ showBeforePreview ? ('common.before' | translate) : ('scanner.holdToCompare' | translate) }}
+          </button>
+        </div>
+        <!-- Enhancement Controls -->
+        <div class="enhance-controls-panel">
+          <!-- Presets -->
+          <div class="control-section">
+            <label class="section-label">{{ 'scanner.presetLabel' | translate }}</label>
+            <div class="presets-btn-group">
+              <button
+                type="button"
+                class="preset-btn"
+                [class.active]="activeEnhancement.preset === 'original'"
+                (click)="selectPreset('original')"
+                >
+                {{ 'scanner.presetOriginal' | translate }}
+              </button>
+              <button
+                type="button"
+                class="preset-btn"
+                [class.active]="activeEnhancement.preset === 'document'"
+                (click)="selectPreset('document')"
+                >
+                📄 {{ 'scanner.presetDocument' | translate }}
+              </button>
+              <button
+                type="button"
+                class="preset-btn"
+                [class.active]="activeEnhancement.preset === 'bw'"
+                (click)="selectPreset('bw')"
+                >
+                ⬛ {{ 'scanner.presetBw' | translate }}
+              </button>
+              <button
+                type="button"
+                class="preset-btn"
+                [class.active]="activeEnhancement.preset === 'grayscale'"
+                (click)="selectPreset('grayscale')"
+                >
+                🔘 {{ 'scanner.presetGrayscale' | translate }}
+              </button>
+              <button
+                type="button"
+                class="preset-btn"
+                [class.active]="activeEnhancement.preset === 'high_contrast'"
+                (click)="selectPreset('high_contrast')"
+                >
+                ⚡ {{ 'scanner.presetHighContrast' | translate }}
+              </button>
+            </div>
+          </div>
+          <!-- Fine-tune Sliders -->
+          <div class="control-section">
+            <label class="section-label">{{ 'scanner.fineTune' | translate }}</label>
+            <div class="slider-row">
+              <span class="slider-name">{{ 'scanner.brightness' | translate }}</span>
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                [(ngModel)]="activeEnhancement.brightness"
+                (change)="onFilterParamChange()"
+                />
+              <span class="slider-val">{{ activeEnhancement.brightness }}</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-name">{{ 'scanner.contrast' | translate }}</span>
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                [(ngModel)]="activeEnhancement.contrast"
+                (change)="onFilterParamChange()"
+                />
+              <span class="slider-val">{{ activeEnhancement.contrast }}</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-name">{{ 'scanner.sharpen' | translate }}</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [(ngModel)]="activeEnhancement.sharpen"
+                (change)="onFilterParamChange()"
+                />
+              <span class="slider-val">{{ activeEnhancement.sharpen }}%</span>
+            </div>
+          </div>
+          <div class="enhance-actions">
+            <app-button
+              variant="primary"
+              (clicked)="doneEnhancing()"
+              >
+              ✓ {{ 'common.apply' | translate }}
+            </app-button>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
 
   <!-- VIEW 4: MULTI-PAGE SCANNER DASHBOARD -->
-  <section class="scanner-card pages-dashboard-card" *ngIf="currentView === 'pages_list'">
-    <div class="card-header">
-      <div class="header-left">
-        <h2>{{ 'scanner.scannedPages' | translate }} ({{ pages.length }})</h2>
-        <span class="subtitle">{{ 'scanner.reorderHint' | translate }}</span>
+  @if (currentView === 'pages_list') {
+    <section class="scanner-card pages-dashboard-card">
+      <div class="card-header">
+        <div class="header-left">
+          <h2>{{ 'scanner.scannedPages' | translate }} ({{ pages.length }})</h2>
+          <span class="subtitle">{{ 'scanner.reorderHint' | translate }}</span>
+        </div>
+        <div class="header-actions">
+          <app-button
+            variant="secondary"
+            size="sm"
+            (clicked)="captureFromCamera()"
+            >
+            ➕ 📸 {{ 'scanner.addPageCamera' | translate }}
+          </app-button>
+          <app-button
+            variant="ghost"
+            size="sm"
+            (clicked)="importFromGallery()"
+            >
+            ➕ 🖼️ {{ 'scanner.addPageGallery' | translate }}
+          </app-button>
+        </div>
       </div>
+      <!-- Multi-Page Grid -->
+      <div class="pages-grid">
+        @for (page of pages; track page; let i = $index) {
+          <div
+            class="page-card"
+            [class.active]="i === activePageIndex"
+            (click)="activePageIndex = i"
+            >
+            <div class="page-number-badge">Page {{ page.pageNumber }}</div>
+            <div class="page-thumb-wrapper">
+              <img [src]="page.processedImageUrl" [alt]="'Page ' + page.pageNumber" class="page-thumb" />
+            </div>
+            <!-- Page Actions -->
+            <div class="page-card-actions">
+              <button
+                type="button"
+                class="action-icon-btn"
+                title="Move Left/Up"
+                [disabled]="i === 0"
+                (click)="$event.stopPropagation(); movePage(i, 'up')"
+                >
+                ◀
+              </button>
+              <button
+                type="button"
+                class="action-icon-btn"
+                title="Adjust Crop"
+                (click)="$event.stopPropagation(); openCropEditor(i)"
+                >
+                ✂️
+              </button>
+              <button
+                type="button"
+                class="action-icon-btn"
+                title="Enhance Filter"
+                (click)="$event.stopPropagation(); openEnhanceEditor(i)"
+                >
+                🎨
+              </button>
+              <button
+                type="button"
+                class="action-icon-btn"
+                title="Rotate 90°"
+                (click)="$event.stopPropagation(); activePageIndex = i; rotateActivePage()"
+                >
+                🔄
+              </button>
+              <button
+                type="button"
+                class="action-icon-btn"
+                title="Move Right/Down"
+                [disabled]="i === pages.length - 1"
+                (click)="$event.stopPropagation(); movePage(i, 'down')"
+                >
+                ▶
+              </button>
+              <button
+                type="button"
+                class="action-icon-btn delete-btn"
+                title="Delete Page"
+                (click)="$event.stopPropagation(); deletePage(i)"
+                >
+                🗑️
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+      <!-- PDF Settings & Generate Bar -->
+      <div class="generate-pdf-bar">
+        <div class="pdf-options">
+          <div class="option-item">
+            <label>{{ 'scanner.pageSize' | translate }}:</label>
+            <select [(ngModel)]="pdfConfig.format" class="opt-select">
+              <option value="A4">A4 (Standard)</option>
+              <option value="Letter">US Letter</option>
+            </select>
+          </div>
+          <div class="option-item">
+            <label>{{ 'scanner.orientation' | translate }}:</label>
+            <select [(ngModel)]="pdfConfig.orientation" class="opt-select">
+              <option value="Portrait">Portrait</option>
+              <option value="Landscape">Landscape</option>
+            </select>
+          </div>
+        </div>
+        <div class="generate-actions">
+          <app-button
+            variant="primary"
+            size="lg"
+            [loading]="isGeneratingPdf"
+            (clicked)="generatePdf()"
+            >
+            📄 {{ 'scanner.generatePdfBtn' | translate:{ count: pages.length } }}
+          </app-button>
+        </div>
+      </div>
+    </section>
+  }
 
-      <div class="header-actions">
+  <!-- VIEW 5: PDF READY / EXPORT & OCR HANDOFF -->
+  @if (currentView === 'pdf_ready' && generatedPdfFile) {
+    <section class="scanner-card pdf-ready-card">
+      <div class="ready-hero">
+        <div class="success-icon-circle">✅</div>
+        <h2>{{ 'scanner.pdfReadyTitle' | translate }}</h2>
+        <p class="subtitle">
+          {{ generatedPdfFile.name }} • {{ (generatedPdfFile.size / 1024) | number:'1.0-1' }} KB • {{ pages.length }} Pages
+        </p>
+        <div class="primary-download-row">
+          <app-button
+            variant="primary"
+            size="lg"
+            (clicked)="downloadPdf()"
+            >
+            📥 {{ 'scanner.downloadPdf' | translate }}
+          </app-button>
+          <app-button
+            variant="secondary"
+            size="lg"
+            (clicked)="sharePdf()"
+            >
+            📤 {{ 'common.share' | translate }}
+          </app-button>
+        </div>
+      </div>
+      <!-- OCR Integration Handoff Box -->
+      <div class="ocr-handoff-box">
+        <div class="handoff-content">
+          <div class="handoff-icon">✨</div>
+          <div class="handoff-text">
+            <h3>{{ 'scanner.ocrHandoffTitle' | translate }}</h3>
+            <p>{{ 'scanner.ocrHandoffDesc' | translate }}</p>
+          </div>
+        </div>
+        <div class="handoff-actions-row">
+          <app-button
+            variant="primary"
+            (clicked)="makeSearchableWithOcr()"
+            >
+            🔍 {{ 'scanner.makeSearchableBtn' | translate }} →
+          </app-button>
+          <app-button
+            variant="outline"
+            (clicked)="scanForQrCodes()"
+            >
+            📷 {{ 'qrBarcode.title' | translate }} →
+          </app-button>
+        </div>
+      </div>
+      <div class="scanner-footer-actions">
         <app-button
-          variant="secondary"
-          size="sm"
-          (clicked)="captureFromCamera()"
-        >
-          ➕ 📸 {{ 'scanner.addPageCamera' | translate }}
+          variant="ghost"
+          (clicked)="currentView = 'pages_list'"
+          >
+          ‹ {{ 'scanner.backToPages' | translate }}
         </app-button>
         <app-button
           variant="ghost"
-          size="sm"
-          (clicked)="importFromGallery()"
-        >
-          ➕ 🖼️ {{ 'scanner.addPageGallery' | translate }}
+          (clicked)="resetScanner()"
+          >
+          🔄 {{ 'scanner.startNewScan' | translate }}
         </app-button>
       </div>
-    </div>
-
-    <!-- Multi-Page Grid -->
-    <div class="pages-grid">
-      <div
-        class="page-card"
-        *ngFor="let page of pages; let i = index"
-        [class.active]="i === activePageIndex"
-        (click)="activePageIndex = i"
-      >
-        <div class="page-number-badge">Page {{ page.pageNumber }}</div>
-        <div class="page-thumb-wrapper">
-          <img [src]="page.processedImageUrl" [alt]="'Page ' + page.pageNumber" class="page-thumb" />
-        </div>
-
-        <!-- Page Actions -->
-        <div class="page-card-actions">
-          <button
-            type="button"
-            class="action-icon-btn"
-            title="Move Left/Up"
-            [disabled]="i === 0"
-            (click)="$event.stopPropagation(); movePage(i, 'up')"
-          >
-            ◀
-          </button>
-          <button
-            type="button"
-            class="action-icon-btn"
-            title="Adjust Crop"
-            (click)="$event.stopPropagation(); openCropEditor(i)"
-          >
-            ✂️
-          </button>
-          <button
-            type="button"
-            class="action-icon-btn"
-            title="Enhance Filter"
-            (click)="$event.stopPropagation(); openEnhanceEditor(i)"
-          >
-            🎨
-          </button>
-          <button
-            type="button"
-            class="action-icon-btn"
-            title="Rotate 90°"
-            (click)="$event.stopPropagation(); activePageIndex = i; rotateActivePage()"
-          >
-            🔄
-          </button>
-          <button
-            type="button"
-            class="action-icon-btn"
-            title="Move Right/Down"
-            [disabled]="i === pages.length - 1"
-            (click)="$event.stopPropagation(); movePage(i, 'down')"
-          >
-            ▶
-          </button>
-          <button
-            type="button"
-            class="action-icon-btn delete-btn"
-            title="Delete Page"
-            (click)="$event.stopPropagation(); deletePage(i)"
-          >
-            🗑️
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- PDF Settings & Generate Bar -->
-    <div class="generate-pdf-bar">
-      <div class="pdf-options">
-        <div class="option-item">
-          <label>{{ 'scanner.pageSize' | translate }}:</label>
-          <select [(ngModel)]="pdfConfig.format" class="opt-select">
-            <option value="A4">A4 (Standard)</option>
-            <option value="Letter">US Letter</option>
-          </select>
-        </div>
-        <div class="option-item">
-          <label>{{ 'scanner.orientation' | translate }}:</label>
-          <select [(ngModel)]="pdfConfig.orientation" class="opt-select">
-            <option value="Portrait">Portrait</option>
-            <option value="Landscape">Landscape</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="generate-actions">
-        <app-button
-          variant="primary"
-          size="lg"
-          [loading]="isGeneratingPdf"
-          (clicked)="generatePdf()"
-        >
-          📄 {{ 'scanner.generatePdfBtn' | translate:{ count: pages.length } }}
-        </app-button>
-      </div>
-    </div>
-  </section>
-
-  <!-- VIEW 5: PDF READY / EXPORT & OCR HANDOFF -->
-  <section class="scanner-card pdf-ready-card" *ngIf="currentView === 'pdf_ready' && generatedPdfFile">
-    <div class="ready-hero">
-      <div class="success-icon-circle">✅</div>
-      <h2>{{ 'scanner.pdfReadyTitle' | translate }}</h2>
-      <p class="subtitle">
-        {{ generatedPdfFile.name }} • {{ (generatedPdfFile.size / 1024) | number:'1.0-1' }} KB • {{ pages.length }} Pages
-      </p>
-
-      <div class="primary-download-row">
-        <app-button
-          variant="primary"
-          size="lg"
-          (clicked)="downloadPdf()"
-        >
-          📥 {{ 'scanner.downloadPdf' | translate }}
-        </app-button>
-        <app-button
-          variant="secondary"
-          size="lg"
-          (clicked)="sharePdf()"
-        >
-          📤 {{ 'common.share' | translate }}
-        </app-button>
-      </div>
-    </div>
-
-    <!-- OCR Integration Handoff Box -->
-    <div class="ocr-handoff-box">
-      <div class="handoff-content">
-        <div class="handoff-icon">✨</div>
-        <div class="handoff-text">
-          <h3>{{ 'scanner.ocrHandoffTitle' | translate }}</h3>
-          <p>{{ 'scanner.ocrHandoffDesc' | translate }}</p>
-        </div>
-      </div>
-      <div class="handoff-actions-row">
-        <app-button
-          variant="primary"
-          (clicked)="makeSearchableWithOcr()"
-        >
-          🔍 {{ 'scanner.makeSearchableBtn' | translate }} →
-        </app-button>
-        <app-button
-          variant="outline"
-          (clicked)="scanForQrCodes()"
-        >
-          📷 {{ 'qrBarcode.title' | translate }} →
-        </app-button>
-      </div>
-    </div>
-
-    <div class="scanner-footer-actions">
-      <app-button
-        variant="ghost"
-        (clicked)="currentView = 'pages_list'"
-      >
-        ‹ {{ 'scanner.backToPages' | translate }}
-      </app-button>
-      <app-button
-        variant="ghost"
-        (clicked)="resetScanner()"
-      >
-        🔄 {{ 'scanner.startNewScan' | translate }}
-      </app-button>
-    </div>
-  </section>
+    </section>
+  }
 
   <app-related-tools currentToolId="document_scanner"></app-related-tools>
 </main>

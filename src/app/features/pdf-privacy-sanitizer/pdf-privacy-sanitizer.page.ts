@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule, DecimalPipe } from '@angular/common';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { PdfPrivacyService } from '../../core/services/pdf-privacy.service';
@@ -34,7 +34,6 @@ export type PrivacyStep = 'select' | 'scanning' | 'scan_result' | 'sanitizing' |
   styleUrls: ['./pdf-privacy-sanitizer.page.scss'],
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     RouterModule,
     AppHeaderComponent,
@@ -46,10 +45,17 @@ export type PrivacyStep = 'select' | 'scanning' | 'scan_result' | 'sanitizing' |
     FileDropzoneComponent,
     PdfPreviewComponent,
     TranslatePipe
-  ],
+],
   providers: [DecimalPipe]
 })
 export class PdfPrivacySanitizerPage {
+  private privacyService = inject(PdfPrivacyService);
+  private fileService = inject(FileService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
+
   currentStep: PrivacyStep = 'select';
   selectedFile?: File;
 
@@ -71,15 +77,6 @@ export class PdfPrivacySanitizerPage {
   sanitizationResult?: SanitizationResult;
   isSanitizing = false;
   sanitizedArrayBuffer?: ArrayBuffer;
-
-  constructor(
-    private privacyService: PdfPrivacyService,
-    private fileService: FileService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private toastService: ToastService,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   async onFileSelected(file: File): Promise<void> {
     if (!file.name.toLowerCase().endsWith('.pdf')) {

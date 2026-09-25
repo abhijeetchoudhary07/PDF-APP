@@ -1,15 +1,7 @@
-import { AppIconComponent } from '../../../../shared/components/ui';
-import { Component,
-  OnInit,
-  OnDestroy,
-  ViewChild,
-  ElementRef,
-  Input,
-  Output,
-  EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { AppIconComponent, TranslatePipe } from '../../../../shared/components/ui';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input, Output, EventEmitter, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular/lazy';
 import { Subscription } from 'rxjs';
 import { PdfEditorStateService } from '../../../../core/services/pdf-editor-state.service';
 import { PdfRenderService } from '../../../../core/services/pdf-render.service';
@@ -32,9 +24,12 @@ import {
   styleUrls: ['./pdf-canvas.component.scss'],
   standalone: true,
   imports: [
-    AppIconComponent,CommonModule, FormsModule, IonicModule]
+    AppIconComponent, TranslatePipe, CommonModule, FormsModule]
 })
 export class PdfCanvasComponent implements OnInit, OnDestroy {
+  state = inject(PdfEditorStateService);
+  private renderService = inject(PdfRenderService);
+
   @ViewChild('pdfCanvas', { static: true }) pdfCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('overlayContainer', { static: true }) overlayRef!: ElementRef<HTMLDivElement>;
 
@@ -66,11 +61,6 @@ export class PdfCanvasComponent implements OnInit, OnDestroy {
   editingElementId: string | null = null;
 
   private subs = new Subscription();
-
-  constructor(
-    public state: PdfEditorStateService,
-    private renderService: PdfRenderService
-  ) {}
 
   ngOnInit() {
     this.subs.add(

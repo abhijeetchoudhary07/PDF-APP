@@ -1,5 +1,5 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { IonicModule, AlertController } from '@ionic/angular/lazy';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+import { AlertController } from '@ionic/angular';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HistoryService, HistoryItem } from '../../core/services/history.service';
@@ -26,7 +26,6 @@ import {
   imports: [
     AppIconComponent,
     AppSkeletonComponent,
-    IonicModule,
     CommonModule,
     FormsModule,
     RouterModule,
@@ -40,16 +39,14 @@ import {
   providers: [DatePipe, DecimalPipe]
 })
 export class HistoryPage implements OnInit {
+  private historyService = inject(HistoryService);
+  private shareService = inject(ShareService);
+  private alertCtrl = inject(AlertController);
+
   history: HistoryItem[] = [];
   selectedFilter = 'ALL';
 
   filters = ['ALL', 'PHOTO', 'SIGNATURE', 'PDF', 'CONVERT', 'FORMS', 'SECURITY', 'OCR', 'SCAN', 'VALIDATE', 'COMPARE', 'QR', 'AI'];
-
-  constructor(
-    private historyService: HistoryService,
-    private shareService: ShareService,
-    private alertCtrl: AlertController
-  ) {}
 
   /*
    * `isLoading` exists so the empty state is not shown while storage is still

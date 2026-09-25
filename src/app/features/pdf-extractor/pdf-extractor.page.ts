@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -52,6 +52,15 @@ export type ExtractorTab = 'text' | 'images' | 'tables' | 'pages' | 'attachments
   providers: [DecimalPipe]
 })
 export class PdfExtractorPage {
+  extractorService = inject(PdfExtractorService);
+  private fileService = inject(FileService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private toastService = inject(ToastService);
+  private bridgeService = inject(DocumentBridgeService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
   currentStep: ExtractorStep = 'select';
   selectedFile?: File;
 
@@ -90,17 +99,6 @@ export class PdfExtractorPage {
   // Page extraction state (reusing pageManager)
   selectedPageNumbers: Set<number> = new Set();
   isExportingPages = false;
-
-  constructor(
-    public extractorService: PdfExtractorService,
-    private fileService: FileService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private toastService: ToastService,
-    private bridgeService: DocumentBridgeService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   handoffToIntelligence(): void {
     if (this.selectedFile) {

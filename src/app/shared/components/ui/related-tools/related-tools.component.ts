@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-registry.service';
@@ -9,57 +9,74 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <section class="related-tools-section" *ngIf="relatedTools.length > 0">
-      <div class="section-header">
-        <div class="header-text">
-          <h3 class="section-title">{{ title }}</h3>
-          <p *ngIf="subtitle" class="section-subtitle">{{ subtitle }}</p>
-        </div>
-        <a routerLink="/home" class="browse-all-link">
-          <span>All Tools</span>
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </a>
-      </div>
-
-      <div class="tools-grid">
-        <a
-          *ngFor="let tool of relatedTools"
-          [routerLink]="tool.route"
-          (click)="onToolClick(tool)"
-          class="related-card"
-          [ngClass]="'card-' + tool.color">
-          
-          <div class="card-icon-box" [ngClass]="'icon-' + tool.color">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
-              <path *ngIf="tool.category === 'PHOTO'" d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path>
-              <path *ngIf="tool.category === 'SIGNATURE' || tool.category === 'SIGN'" d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-              <path *ngIf="tool.category === 'PDF' || tool.category === 'ORGANIZE' || tool.category === 'EDIT'" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8"></path>
-              <path *ngIf="tool.category === 'CONVERT'" d="M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              <path *ngIf="tool.category === 'PROTECT'" d="M3 11h18v11H3z M7 11V7a5 5 0 0 1 10 0v4"></path>
-              <path *ngIf="tool.category === 'BATCH'" d="M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5"></path>
-              <path *ngIf="tool.category === 'PRESETS'" d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-            </svg>
+    @if (relatedTools.length > 0) {
+      <section class="related-tools-section">
+        <div class="section-header">
+          <div class="header-text">
+            <h3 class="section-title">{{ title }}</h3>
+            @if (subtitle) {
+              <p class="section-subtitle">{{ subtitle }}</p>
+            }
           </div>
-
-          <div class="card-content">
-            <div class="title-row">
-              <span class="card-title">{{ tool.title }}</span>
-              <span *ngIf="tool.badge" class="badge-mini">{{ tool.badge }}</span>
-            </div>
-            <p class="card-desc">{{ tool.description }}</p>
-          </div>
-
-          <div class="card-arrow">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+          <a routerLink="/home" class="browse-all-link">
+            <span>All Tools</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
-          </div>
-        </a>
-      </div>
-    </section>
-  `,
+          </a>
+        </div>
+        <div class="tools-grid">
+          @for (tool of relatedTools; track tool) {
+            <a
+              [routerLink]="tool.route"
+              (click)="onToolClick(tool)"
+              class="related-card"
+              [ngClass]="'card-' + tool.color">
+              <div class="card-icon-box" [ngClass]="'icon-' + tool.color">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  @if (tool.category === 'PHOTO') {
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path>
+                  }
+                  @if (tool.category === 'SIGNATURE' || tool.category === 'SIGN') {
+                    <path d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  }
+                  @if (tool.category === 'PDF' || tool.category === 'ORGANIZE' || tool.category === 'EDIT') {
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8"></path>
+                  }
+                  @if (tool.category === 'CONVERT') {
+                    <path d="M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  }
+                  @if (tool.category === 'PROTECT') {
+                    <path d="M3 11h18v11H3z M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  }
+                  @if (tool.category === 'BATCH') {
+                    <path d="M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5"></path>
+                  }
+                  @if (tool.category === 'PRESETS') {
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                  }
+                </svg>
+              </div>
+              <div class="card-content">
+                <div class="title-row">
+                  <span class="card-title">{{ tool.title }}</span>
+                  @if (tool.badge) {
+                    <span class="badge-mini">{{ tool.badge }}</span>
+                  }
+                </div>
+                <p class="card-desc">{{ tool.description }}</p>
+              </div>
+              <div class="card-arrow">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </div>
+            </a>
+          }
+        </div>
+      </section>
+    }
+    `,
   styles: [`
     .related-tools-section {
       margin-top: var(--space-8, 32px);
@@ -211,6 +228,8 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
   `]
 })
 export class AppRelatedToolsComponent implements OnInit {
+  private toolRegistry = inject(ToolRegistryService);
+
   @Input() currentToolId?: string;
   @Input() category?: string;
   @Input() title = 'Related Tools';
@@ -218,8 +237,6 @@ export class AppRelatedToolsComponent implements OnInit {
   @Input() limit = 4;
 
   relatedTools: ToolItem[] = [];
-
-  constructor(private toolRegistry: ToolRegistryService) {}
 
   ngOnInit() {
     const key = this.currentToolId || this.category || '';

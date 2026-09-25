@@ -1,14 +1,13 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import {
-  IonicModule,
   ModalController,
   ToastController,
   AlertController,
   ActionSheetController
-} from '@ionic/angular/lazy';
+} from '@ionic/angular';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { Subscription } from 'rxjs';
@@ -35,8 +34,11 @@ import { PdfCropModalComponent } from './components/pdf-crop-modal/pdf-crop-moda
 import { PdfWatermarkModalComponent } from './components/pdf-watermark-modal/pdf-watermark-modal.component';
 import { PdfPageNumberModalComponent } from './components/pdf-page-number-modal/pdf-page-number-modal.component';
 import { PdfRedactionModalComponent } from './components/pdf-redaction-modal/pdf-redaction-modal.component';
-import { AppButtonComponent,
-  AppIconComponent
+import {
+  AppButtonComponent,
+  AppIconComponent,
+  AppLanguageSelectorComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -53,13 +55,27 @@ import { AppButtonComponent,
     CommonModule,
     FormsModule,
     RouterModule,
-    IonicModule,
     PdfReaderComponent,
     PdfCanvasComponent,
-    AppButtonComponent
+    AppButtonComponent,
+    AppLanguageSelectorComponent,
+    TranslatePipe
   ]
 })
 export class PdfEditorPage implements OnInit, OnDestroy {
+  state = inject(PdfEditorStateService);
+  private renderService = inject(PdfRenderService);
+  private exportPipeline = inject(PdfExportPipelineService);
+  private fileService = inject(FileService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private modalCtrl = inject(ModalController);
+  private toastCtrl = inject(ToastController);
+  private alertCtrl = inject(AlertController);
+  private actionSheetCtrl = inject(ActionSheetController);
+  private router = inject(Router);
+
   showThumbnails = false;
   showSearch = false;
   mobileActiveGroup: 'view' | 'annotate' | 'shapes' | 'insert' | 'tools' = 'view';
@@ -70,21 +86,6 @@ export class PdfEditorPage implements OnInit, OnDestroy {
   exportStage = '';
 
   private subs = new Subscription();
-
-  constructor(
-    public state: PdfEditorStateService,
-    private renderService: PdfRenderService,
-    private exportPipeline: PdfExportPipelineService,
-    private fileService: FileService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private modalCtrl: ModalController,
-    private toastCtrl: ToastController,
-    private alertCtrl: AlertController,
-    private actionSheetCtrl: ActionSheetController,
-    private router: Router
-  ) {}
 
   ngOnInit() {
     this.subs.add(

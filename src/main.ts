@@ -1,4 +1,4 @@
-import { enableProdMode, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
+import { enableProdMode, provideZoneChangeDetection } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { bootstrapApplication } from '@angular/platform-browser';
 import {
@@ -7,7 +7,7 @@ import {
   provideRouter,
   withPreloading,
 } from '@angular/router';
-import { IonicModule, IonicRouteStrategy } from '@ionic/angular/lazy';
+import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular';
 
 import { AppComponent } from './app/app.component';
 import { APP_ROUTES } from './app/app.routes';
@@ -33,7 +33,26 @@ bootstrapApplication(AppComponent, {
      * of events and microtasks into a single pass to keep the cost down.
      */
     provideZoneChangeDetection({ eventCoalescing: true, runCoalescing: true }),
-    importProvidersFrom(IonicModule.forRoot()),
+
+    /*
+     * Ionic, in standalone mode.
+     *
+     * This used to be `importProvidersFrom(IonicModule.forRoot())`.
+     * `IonicModule` is deprecated and slated for removal in a future Ionic
+     * major, and the two builds cannot coexist — `@ionic/angular/lazy` registers
+     * every custom element through a lazy loader, while `@ionic/angular`
+     * defines each one eagerly as it is imported, so a single import from the
+     * wrong entry point redefines elements that are already defined. The app
+     * was already half over the line — `MonetizationService` took `Platform`
+     * from the standalone entry — so the whole of it now uses that one.
+     *
+     * The practical difference is that components are no longer ambient.
+     * `ion-app` and `ion-router-outlet` in `app.component.html` are the only
+     * Ionic elements this app renders; `AppComponent` imports those two by
+     * name, and the overlay controllers (`AlertController`, `ToastController`,
+     * `ModalController`, ...) define their own elements when injected.
+     */
+    provideIonicAngular(),
 
     /*
      * HttpClient reaches exactly two things: bundled JSON under `assets/`

@@ -1,8 +1,8 @@
 import { AppIconComponent } from '../../../../shared/components/ui';
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular/lazy';
+import { ModalController } from '@ionic/angular';
 import { PdfEditorStateService } from '../../../../core/services/pdf-editor-state.service';
 import { PdfRedaction } from '../../../../core/models/pdf-editor.types';
 
@@ -17,7 +17,7 @@ import { PdfRedaction } from '../../../../core/models/pdf-editor.types';
           <app-icon name="close"></app-icon>
         </button>
       </div>
-
+    
       <div class="redaction-modal-content">
         <!-- SECURITY NOTICE BANNER -->
         <div class="security-banner">
@@ -31,7 +31,7 @@ import { PdfRedaction } from '../../../../core/models/pdf-editor.types';
             </p>
           </div>
         </div>
-
+    
         <!-- PREVIEW TOGGLE -->
         <div class="preview-toggle-card">
           <div>
@@ -43,54 +43,60 @@ import { PdfRedaction } from '../../../../core/models/pdf-editor.types';
             <span class="slider round"></span>
           </label>
         </div>
-
+    
         <!-- PENDING REDACTIONS LIST -->
         <div class="redactions-list-section">
           <div class="section-title-row">
             <h4>Marked Areas ({{ totalRedactions }})</h4>
           </div>
-
-          <p *ngIf="totalRedactions === 0" class="no-redactions">
-            No redaction marks placed yet. Select the Redaction tool and drag over sensitive content to mark it.
-          </p>
-
-          <div *ngIf="totalRedactions > 0" class="redactions-list">
-            <ng-container *ngFor="let page of state.document?.pages">
-              <div *ngFor="let red of page.redactions" class="redaction-item">
-                <div class="item-left">
-                  <app-icon
-                    [name]="red.isApplied ? 'checkmark-circle' : 'time-outline'"
-                    [class.text-success]="red.isApplied"
-                    [class.text-warning]="!red.isApplied"
-                    class="status-icon"
-                  ></app-icon>
-                  <div class="item-details">
-                    <h5>Page {{ red.pageNumber }} Redaction</h5>
-                    <p>{{ red.width | number:'1.0-0' }} x {{ red.height | number:'1.0-0' }} pt &bull; {{ red.isApplied ? 'Applied' : 'Pending' }}</p>
+    
+          @if (totalRedactions === 0) {
+            <p class="no-redactions">
+              No redaction marks placed yet. Select the Redaction tool and drag over sensitive content to mark it.
+            </p>
+          }
+    
+          @if (totalRedactions > 0) {
+            <div class="redactions-list">
+              @for (page of state.document?.pages; track page) {
+                @for (red of page.redactions; track red) {
+                  <div class="redaction-item">
+                    <div class="item-left">
+                      <app-icon
+                        [name]="red.isApplied ? 'checkmark-circle' : 'time-outline'"
+                        [class.text-success]="red.isApplied"
+                        [class.text-warning]="!red.isApplied"
+                        class="status-icon"
+                      ></app-icon>
+                      <div class="item-details">
+                        <h5>Page {{ red.pageNumber }} Redaction</h5>
+                        <p>{{ red.width | number:'1.0-0' }} x {{ red.height | number:'1.0-0' }} pt &bull; {{ red.isApplied ? 'Applied' : 'Pending' }}</p>
+                      </div>
+                    </div>
+                    <button class="delete-btn" (click)="deleteRedaction(page.pageNumber, red.id)">
+                      <app-icon name="trash-outline"></app-icon>
+                    </button>
                   </div>
-                </div>
-                <button class="delete-btn" (click)="deleteRedaction(page.pageNumber, red.id)">
-                  <app-icon name="trash-outline"></app-icon>
-                </button>
-              </div>
-            </ng-container>
-          </div>
+                }
+              }
+            </div>
+          }
         </div>
-
+    
         <!-- ACTIONS -->
         <div class="actions">
           <button
             class="btn btn-danger"
             (click)="applyAll()"
             [disabled]="pendingRedactionsCount === 0"
-          >
+            >
             <app-icon name="lock-closed"></app-icon>
             Permanently Apply Redactions ({{ pendingRedactionsCount }})
           </button>
         </div>
       </div>
     </div>
-  `,
+    `,
   styles: [`
     .redaction-modal-wrapper {
       background: var(--color-surface, #ffffff);
@@ -311,13 +317,12 @@ import { PdfRedaction } from '../../../../core/models/pdf-editor.types';
   `],
   standalone: true,
   imports: [
-    AppIconComponent,CommonModule, FormsModule, IonicModule]
+    AppIconComponent,CommonModule, FormsModule]
 })
 export class PdfRedactionModalComponent {
-  constructor(
-    private modalCtrl: ModalController,
-    public state: PdfEditorStateService
-  ) {}
+  private modalCtrl = inject(ModalController);
+  state = inject(PdfEditorStateService);
+
 
   get totalRedactions(): number {
     const doc = this.state.document;

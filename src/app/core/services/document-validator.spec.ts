@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { DocumentValidatorService } from './document-validator.service';
 import { PresetService, PresetRequirement, Preset } from './preset.service';
 import { ImageService } from './image.service';
@@ -42,13 +43,21 @@ describe('DocumentValidatorService', () => {
       )
     } as any;
 
-    service = new DocumentValidatorService(
-      mockPresetService,
-      mockImageService,
-      mockCompressionService,
-      mockPdfService,
-      mockSignatureService
-    );
+    /*
+     * The mocks go in as providers rather than constructor arguments: the
+     * service takes its collaborators from `inject()`, so there is no
+     * constructor left to pass them to.
+     */
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: PresetService, useValue: mockPresetService },
+        { provide: ImageService, useValue: mockImageService },
+        { provide: CompressionService, useValue: mockCompressionService },
+        { provide: PdfService, useValue: mockPdfService },
+        { provide: SignatureProcessingService, useValue: mockSignatureService },
+      ],
+    });
+    service = TestBed.inject(DocumentValidatorService);
   });
 
   describe('Photo Validation', () => {

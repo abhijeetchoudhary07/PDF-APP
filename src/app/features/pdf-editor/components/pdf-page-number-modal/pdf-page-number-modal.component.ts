@@ -1,8 +1,8 @@
 import { AppIconComponent } from '../../../../shared/components/ui';
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular/lazy';
+import { ModalController } from '@ionic/angular';
 import { PdfEditorStateService } from '../../../../core/services/pdf-editor-state.service';
 import {
   PdfPageNumberingConfig,
@@ -302,9 +302,14 @@ import {
   `],
   standalone: true,
   imports: [
-    AppIconComponent,CommonModule, FormsModule, IonicModule]
+    AppIconComponent,
+    FormsModule
+]
 })
 export class PdfPageNumberModalComponent implements OnInit {
+  private modalCtrl = inject(ModalController);
+  state = inject(PdfEditorStateService);
+
   position: PageNumberPosition = 'bottom-center';
   startingNumber = 1;
   fontSize = 11;
@@ -313,11 +318,6 @@ export class PdfPageNumberModalComponent implements OnInit {
   prefix = 'Page ';
   suffix = ' of {total}';
   targetPages: 'all' | 'custom' = 'all';
-
-  constructor(
-    private modalCtrl: ModalController,
-    public state: PdfEditorStateService
-  ) {}
 
   ngOnInit() {
     const existing = this.state.document?.pageNumbering;

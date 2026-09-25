@@ -1,5 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { IonicModule } from '@ionic/angular/lazy';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -55,6 +54,18 @@ import {
   providers: [DecimalPipe]
 })
 export class PdfPage implements OnInit, OnDestroy {
+  private fileService = inject(FileService);
+  private pdfService = inject(PdfService);
+  private pdfRenderService = inject(PdfRenderService);
+  private validationService = inject(ValidationService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private cdr = inject(ChangeDetectorRef);
+  translationService = inject(TranslationService);
+  private route = inject(ActivatedRoute);
+  private toast = inject(ToastService);
+
   mode: 'dashboard' | 'compress' | 'create' | 'extract' = 'dashboard';
   workflowState: SingleFileWorkflowState = 'EMPTY';
 
@@ -89,20 +100,6 @@ export class PdfPage implements OnInit, OnDestroy {
   extractedImages: File[] = [];
   extractedImageUrls: string[] = [];
   extractPageThumbnails: Map<number, string> = new Map();
-
-  constructor(
-    private fileService: FileService,
-    private pdfService: PdfService,
-    private pdfRenderService: PdfRenderService,
-    private validationService: ValidationService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private cdr: ChangeDetectorRef,
-    public translationService: TranslationService,
-    private route: ActivatedRoute,
-    private toast: ToastService
-  ) {}
 
   ngOnInit(): void {
     const routeMode = this.route.snapshot.data['mode'] || this.route.snapshot.queryParams['mode'];

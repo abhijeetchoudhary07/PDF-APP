@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { AppButtonComponent } from '../ui/button/button.component';
 import { AppBadgeComponent } from '../ui/badge/badge.component';
@@ -26,6 +26,8 @@ export interface PreviewData {
   providers: [DecimalPipe]
 })
 export class ResultPreviewComponent implements OnInit, OnChanges {
+  private shareService = inject(ShareService);
+
   @Input() beforeData?: PreviewData;
   @Input() afterData?: PreviewData;
   @Input() file?: File;
@@ -65,8 +67,6 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
     linkedin: '',
     email: ''
   };
-
-  constructor(private shareService: ShareService) {}
 
   ngOnInit(): void {
     this.initData();

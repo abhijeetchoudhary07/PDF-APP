@@ -1,5 +1,7 @@
 import '../utilities/pdf-iterator-polyfill';
 import { describe, it, expect, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { AlertController, ToastController } from '@ionic/angular';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { PdfFormService } from '../services/pdf-form.service';
 import { PdfSignService, PlacedSignature } from '../services/pdf-sign.service';
@@ -7,8 +9,6 @@ import { PdfSecurityService } from '../services/pdf-security.service';
 import { PdfFlattenService } from '../services/pdf-flatten.service';
 import { SignatureRequestService } from '../services/signature-request.service';
 import { AppErrorService } from '../services/app-error.service';
-import { ImageService } from '../services/image.service';
-import { SignatureProcessingService } from '../services/signature-processing.service';
 import { DEFAULT_PERMISSIONS } from '../models/pdf-security.types';
 
 // Helper to create sample PDF with AcroForm fields in memory
@@ -64,12 +64,24 @@ describe('Phase 4 & 5 Regression Suite: Forms, Signing, Security, Flattening & E
   let errorService: AppErrorService;
 
   beforeEach(() => {
-    formService = new PdfFormService();
-    signService = new PdfSignService(new ImageService(), new SignatureProcessingService());
-    securityService = new PdfSecurityService();
-    flattenService = new PdfFlattenService();
-    sigReqService = new SignatureRequestService();
-    errorService = new AppErrorService({ create: () => Promise.resolve({ present: () => Promise.resolve() }) } as any, {} as any);
+    /*
+     * AppErrorService reaches Ionic's AlertController and ToastController,
+     * which want a real overlay host; the stubs stand in for both. Everything
+     * else is `providedIn: 'root'` and TestBed builds the real object graph.
+     */
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AlertController, useValue: { create: () => Promise.resolve({ present: () => Promise.resolve() }) } },
+        { provide: ToastController, useValue: { create: () => Promise.resolve({ present: () => Promise.resolve() }) } },
+      ],
+    });
+
+    formService = TestBed.inject(PdfFormService);
+    signService = TestBed.inject(PdfSignService);
+    securityService = TestBed.inject(PdfSecurityService);
+    flattenService = TestBed.inject(PdfFlattenService);
+    sigReqService = TestBed.inject(SignatureRequestService);
+    errorService = TestBed.inject(AppErrorService);
   });
 
   // ==========================================

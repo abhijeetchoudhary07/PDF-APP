@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
@@ -49,6 +49,17 @@ import {
   providers: [DecimalPipe]
 })
 export class DocumentValidatorPage implements OnInit {
+  private presetService = inject(PresetService);
+  private validatorService = inject(DocumentValidatorService);
+  private fileService = inject(FileService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private toastService = inject(ToastService);
+  private translationService = inject(TranslationService);
+  private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
+
   groupedPresets: { category: string; presets: Preset[] }[] = [];
   selectedPreset?: Preset;
   presetSearchQuery = '';
@@ -74,19 +85,6 @@ export class DocumentValidatorPage implements OnInit {
   hasValidated = false;
   totalErrors = 0;
   totalWarnings = 0;
-
-  constructor(
-    private presetService: PresetService,
-    private validatorService: DocumentValidatorService,
-    private fileService: FileService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private toastService: ToastService,
-    private translationService: TranslationService,
-    private route: ActivatedRoute,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   async ngOnInit(): Promise<void> {
     await this.loadPresets();

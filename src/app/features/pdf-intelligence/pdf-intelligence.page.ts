@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -55,6 +55,18 @@ export type IntelligenceTab = 'overview' | 'summary' | 'search' | 'qa' | 'transl
   providers: [DecimalPipe]
 })
 export class PdfIntelligencePage implements OnInit {
+  intelligenceService = inject(PdfIntelligenceService);
+  private extractorService = inject(PdfExtractorService);
+  private renderService = inject(PdfRenderService);
+  private fileService = inject(FileService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private toastService = inject(ToastService);
+  private analyticsService = inject(AnalyticsService);
+  private bridgeService = inject(DocumentBridgeService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
   currentStep: 'select' | 'analyzing' | 'workspace' = 'select';
   selectedFile?: File;
 
@@ -113,20 +125,6 @@ export class PdfIntelligencePage implements OnInit {
   @ViewChild('previewCanvas') previewCanvas?: ElementRef<HTMLCanvasElement>;
   currentPagePreview = 1;
   isRenderingPreview = false;
-
-  constructor(
-    public intelligenceService: PdfIntelligenceService,
-    private extractorService: PdfExtractorService,
-    private renderService: PdfRenderService,
-    private fileService: FileService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private toastService: ToastService,
-    private analyticsService: AnalyticsService,
-    private bridgeService: DocumentBridgeService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   async ngOnInit() {
     // Check for incoming target from bridge (e.g. from OCR or Extractor)

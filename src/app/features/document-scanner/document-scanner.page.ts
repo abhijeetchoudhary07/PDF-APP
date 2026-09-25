@@ -1,12 +1,4 @@
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  ElementRef,
-  ViewChild,
-  ChangeDetectorRef,
-  ChangeDetectionStrategy
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -60,6 +52,18 @@ export type ScannerView = 'empty' | 'cropping' | 'enhancing' | 'pages_list' | 'p
   ]
 })
 export class DocumentScannerPage implements OnDestroy {
+  private scannerService = inject(DocumentScannerService);
+  private pdfService = inject(PdfService);
+  private fileService = inject(FileService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private documentBridgeService = inject(DocumentBridgeService);
+  private toastService = inject(ToastService);
+  private translationService = inject(TranslationService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
   @ViewChild('cropCanvas', { static: false }) cropCanvasRef?: ElementRef<HTMLCanvasElement>;
 
   currentView: ScannerView = 'empty';
@@ -102,20 +106,6 @@ export class DocumentScannerPage implements OnDestroy {
   private canvasScale = 1;
   private canvasOffsetX = 0;
   private canvasOffsetY = 0;
-
-  constructor(
-    private scannerService: DocumentScannerService,
-    private pdfService: PdfService,
-    private fileService: FileService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private documentBridgeService: DocumentBridgeService,
-    private toastService: ToastService,
-    private translationService: TranslationService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   ngOnDestroy(): void {
     // Revoke all object URLs

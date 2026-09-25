@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 
 import {
@@ -26,14 +26,13 @@ export interface TechModule {
   templateUrl: './about-engine.page.html',
   styleUrls: ['./about-engine.page.scss'],
   imports: [
-    CommonModule,
     RouterModule,
     AppHeaderComponent,
     AppPageHeaderComponent,
     AppFooterComponent,
     PrivacySupportNavComponent,
     AppGovDisclaimerComponent
-  ]
+]
 })
 export class AboutEnginePage {
   readonly engineVersion = '2026.9.1';

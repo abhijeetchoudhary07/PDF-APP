@@ -11,328 +11,332 @@
   ></app-page-header>
 
   <!-- STEP 1: SELECT FILE -->
-  <section *ngIf="currentStep === 'select'" class="select-section">
-    <div class="dropzone-wrapper">
-      <app-file-dropzone
-        [accept]="'.pdf,application/pdf'"
-        [title]="'headerFooter.selectPrompt' | translate"
-        [description]="'headerFooter.dropPrompt' | translate"
-        (fileSelected)="onFileSelected($event)"
-      ></app-file-dropzone>
-    </div>
-
-    <!-- Presets / Quick Templates Preview -->
-    <div class="templates-showcase">
-      <div class="template-card">
-        <span class="tpl-icon">🔢</span>
-        <h4>{{ 'headerFooter.tplPageNum' | translate }}</h4>
-        <p>{{ 'headerFooter.tplPageNumDesc' | translate }}</p>
-        <code>Page &#123;page&#125; of &#123;totalPages&#125;</code>
+  @if (currentStep === 'select') {
+    <section class="select-section">
+      <div class="dropzone-wrapper">
+        <app-file-dropzone
+          [accept]="'.pdf,application/pdf'"
+          [title]="'headerFooter.selectPrompt' | translate"
+          [description]="'headerFooter.dropPrompt' | translate"
+          (fileSelected)="onFileSelected($event)"
+        ></app-file-dropzone>
       </div>
-      <div class="template-card">
-        <span class="tpl-icon">📅</span>
-        <h4>{{ 'headerFooter.tplDateTitle' | translate }}</h4>
-        <p>{{ 'headerFooter.tplDateTitleDesc' | translate }}</p>
-        <code>&#123;title&#125; • &#123;date&#125;</code>
+      <!-- Presets / Quick Templates Preview -->
+      <div class="templates-showcase">
+        <div class="template-card">
+          <span class="tpl-icon">🔢</span>
+          <h4>{{ 'headerFooter.tplPageNum' | translate }}</h4>
+          <p>{{ 'headerFooter.tplPageNumDesc' | translate }}</p>
+          <code>Page &#123;page&#125; of &#123;totalPages&#125;</code>
+        </div>
+        <div class="template-card">
+          <span class="tpl-icon">📅</span>
+          <h4>{{ 'headerFooter.tplDateTitle' | translate }}</h4>
+          <p>{{ 'headerFooter.tplDateTitleDesc' | translate }}</p>
+          <code>&#123;title&#125; • &#123;date&#125;</code>
+        </div>
+        <div class="template-card">
+          <span class="tpl-icon">🔒</span>
+          <h4>{{ 'headerFooter.tplConfidential' | translate }}</h4>
+          <p>{{ 'headerFooter.tplConfidentialDesc' | translate }}</p>
+          <code>CONFIDENTIAL - Page &#123;page&#125;</code>
+        </div>
       </div>
-      <div class="template-card">
-        <span class="tpl-icon">🔒</span>
-        <h4>{{ 'headerFooter.tplConfidential' | translate }}</h4>
-        <p>{{ 'headerFooter.tplConfidentialDesc' | translate }}</p>
-        <code>CONFIDENTIAL - Page &#123;page&#125;</code>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- STEP 2: CONFIGURE STUDIO -->
-  <section *ngIf="currentStep === 'configure'" class="configure-section">
-    <div class="studio-grid">
-      <!-- Controls Column -->
-      <div class="controls-panel">
-        <div class="tabs-bar">
-          <app-tabs
-            [tabs]="tabs"
-            [selectedTab]="activeTab"
-            (tabChange)="activeTab = $any($event)"
-          ></app-tabs>
-        </div>
-
-        <!-- Dynamic Tag Helper Bar -->
-        <div class="dynamic-tags-bar">
-          <span class="tags-label">{{ 'headerFooter.insertVariable' | translate }}:</span>
-          <div class="tags-list">
-            <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{page}')">&#123;page&#125;</button>
-            <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{totalPages}')">&#123;totalPages&#125;</button>
-            <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{date}')">&#123;date&#125;</button>
-            <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{filename}')">&#123;filename&#125;</button>
-            <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{title}')">&#123;title&#125;</button>
+  @if (currentStep === 'configure') {
+    <section class="configure-section">
+      <div class="studio-grid">
+        <!-- Controls Column -->
+        <div class="controls-panel">
+          <div class="tabs-bar">
+            <app-tabs
+              [tabs]="tabs"
+              [selectedTab]="activeTab"
+              (tabChange)="activeTab = $any($event)"
+            ></app-tabs>
           </div>
-        </div>
-
-        <!-- TAB: FOOTER -->
-        <div *ngIf="activeTab === 'footer'" class="tab-content">
-          <div class="input-group">
-            <label>{{ 'headerFooter.footerLeft' | translate }}</label>
-            <input
-              type="text"
-              class="form-input"
-              [(ngModel)]="config.footer.leftText"
-              (ngModelChange)="updatePreviewOverlay()"
-              [placeholder]="'headerFooter.placeholderLeft' | translate"
-            />
-          </div>
-
-          <div class="input-group">
-            <label>{{ 'headerFooter.footerCenter' | translate }}</label>
-            <input
-              type="text"
-              class="form-input"
-              [(ngModel)]="config.footer.centerText"
-              (ngModelChange)="updatePreviewOverlay()"
-              [placeholder]="'headerFooter.placeholderCenter' | translate"
-            />
-          </div>
-
-          <div class="input-group">
-            <label>{{ 'headerFooter.footerRight' | translate }}</label>
-            <input
-              type="text"
-              class="form-input"
-              [(ngModel)]="config.footer.rightText"
-              (ngModelChange)="updatePreviewOverlay()"
-              [placeholder]="'headerFooter.placeholderRight' | translate"
-            />
-          </div>
-        </div>
-
-        <!-- TAB: HEADER -->
-        <div *ngIf="activeTab === 'header'" class="tab-content">
-          <div class="input-group">
-            <label>{{ 'headerFooter.headerLeft' | translate }}</label>
-            <input
-              type="text"
-              class="form-input"
-              [(ngModel)]="config.header.leftText"
-              (ngModelChange)="updatePreviewOverlay()"
-              [placeholder]="'headerFooter.placeholderLeft' | translate"
-            />
-          </div>
-
-          <div class="input-group">
-            <label>{{ 'headerFooter.headerCenter' | translate }}</label>
-            <input
-              type="text"
-              class="form-input"
-              [(ngModel)]="config.header.centerText"
-              (ngModelChange)="updatePreviewOverlay()"
-              [placeholder]="'headerFooter.placeholderCenter' | translate"
-            />
-          </div>
-
-          <div class="input-group">
-            <label>{{ 'headerFooter.headerRight' | translate }}</label>
-            <input
-              type="text"
-              class="form-input"
-              [(ngModel)]="config.header.rightText"
-              (ngModelChange)="updatePreviewOverlay()"
-              [placeholder]="'headerFooter.placeholderRight' | translate"
-            />
-          </div>
-        </div>
-
-        <!-- TAB: TYPOGRAPHY & MARGINS -->
-        <div *ngIf="activeTab === 'settings'" class="tab-content">
-          <div class="settings-row">
-            <div class="input-group">
-              <label>{{ 'headerFooter.fontFamily' | translate }}</label>
-              <select class="form-select" [(ngModel)]="config.fontFamily" (ngModelChange)="updatePreviewOverlay()">
-                <option value="Helvetica">Helvetica (Standard)</option>
-                <option value="Helvetica-Bold">Helvetica Bold</option>
-                <option value="Times-Roman">Times New Roman</option>
-                <option value="Courier">Courier Monospace</option>
-              </select>
-            </div>
-
-            <div class="input-group">
-              <label>{{ 'headerFooter.fontSize' | translate }}: {{ config.fontSize }}pt</label>
-              <input
-                type="range"
-                min="8"
-                max="24"
-                step="1"
-                class="form-range"
-                [(ngModel)]="config.fontSize"
-                (ngModelChange)="updatePreviewOverlay()"
-              />
+          <!-- Dynamic Tag Helper Bar -->
+          <div class="dynamic-tags-bar">
+            <span class="tags-label">{{ 'headerFooter.insertVariable' | translate }}:</span>
+            <div class="tags-list">
+              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{page}')">&#123;page&#125;</button>
+              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{totalPages}')">&#123;totalPages&#125;</button>
+              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{date}')">&#123;date&#125;</button>
+              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{filename}')">&#123;filename&#125;</button>
+              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{title}')">&#123;title&#125;</button>
             </div>
           </div>
-
-          <div class="input-group">
-            <label>{{ 'headerFooter.fontColor' | translate }}</label>
-            <div class="color-picker-row">
-              <input type="color" class="color-input" [(ngModel)]="config.fontColor" (ngModelChange)="updatePreviewOverlay()" />
-              <div class="color-swatches">
-                <button
-                  *ngFor="let c of colorPresets"
-                  type="button"
-                  class="swatch"
-                  [style.background]="c"
-                  [class.active]="config.fontColor === c"
-                  (click)="config.fontColor = c; updatePreviewOverlay()"
-                ></button>
+          <!-- TAB: FOOTER -->
+          @if (activeTab === 'footer') {
+            <div class="tab-content">
+              <div class="input-group">
+                <label>{{ 'headerFooter.footerLeft' | translate }}</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  [(ngModel)]="config.footer.leftText"
+                  (ngModelChange)="updatePreviewOverlay()"
+                  [placeholder]="'headerFooter.placeholderLeft' | translate"
+                  />
+              </div>
+              <div class="input-group">
+                <label>{{ 'headerFooter.footerCenter' | translate }}</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  [(ngModel)]="config.footer.centerText"
+                  (ngModelChange)="updatePreviewOverlay()"
+                  [placeholder]="'headerFooter.placeholderCenter' | translate"
+                  />
+              </div>
+              <div class="input-group">
+                <label>{{ 'headerFooter.footerRight' | translate }}</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  [(ngModel)]="config.footer.rightText"
+                  (ngModelChange)="updatePreviewOverlay()"
+                  [placeholder]="'headerFooter.placeholderRight' | translate"
+                  />
               </div>
             </div>
-          </div>
-
-          <div class="settings-row margins-grid">
-            <div class="input-group">
-              <label>{{ 'headerFooter.topMargin' | translate }} (pt)</label>
-              <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.topMargin" (ngModelChange)="updatePreviewOverlay()" />
+          }
+          <!-- TAB: HEADER -->
+          @if (activeTab === 'header') {
+            <div class="tab-content">
+              <div class="input-group">
+                <label>{{ 'headerFooter.headerLeft' | translate }}</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  [(ngModel)]="config.header.leftText"
+                  (ngModelChange)="updatePreviewOverlay()"
+                  [placeholder]="'headerFooter.placeholderLeft' | translate"
+                  />
+              </div>
+              <div class="input-group">
+                <label>{{ 'headerFooter.headerCenter' | translate }}</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  [(ngModel)]="config.header.centerText"
+                  (ngModelChange)="updatePreviewOverlay()"
+                  [placeholder]="'headerFooter.placeholderCenter' | translate"
+                  />
+              </div>
+              <div class="input-group">
+                <label>{{ 'headerFooter.headerRight' | translate }}</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  [(ngModel)]="config.header.rightText"
+                  (ngModelChange)="updatePreviewOverlay()"
+                  [placeholder]="'headerFooter.placeholderRight' | translate"
+                  />
+              </div>
             </div>
-            <div class="input-group">
-              <label>{{ 'headerFooter.bottomMargin' | translate }} (pt)</label>
-              <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.bottomMargin" (ngModelChange)="updatePreviewOverlay()" />
+          }
+          <!-- TAB: TYPOGRAPHY & MARGINS -->
+          @if (activeTab === 'settings') {
+            <div class="tab-content">
+              <div class="settings-row">
+                <div class="input-group">
+                  <label>{{ 'headerFooter.fontFamily' | translate }}</label>
+                  <select class="form-select" [(ngModel)]="config.fontFamily" (ngModelChange)="updatePreviewOverlay()">
+                    <option value="Helvetica">Helvetica (Standard)</option>
+                    <option value="Helvetica-Bold">Helvetica Bold</option>
+                    <option value="Times-Roman">Times New Roman</option>
+                    <option value="Courier">Courier Monospace</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.fontSize' | translate }}: {{ config.fontSize }}pt</label>
+                  <input
+                    type="range"
+                    min="8"
+                    max="24"
+                    step="1"
+                    class="form-range"
+                    [(ngModel)]="config.fontSize"
+                    (ngModelChange)="updatePreviewOverlay()"
+                    />
+                </div>
+              </div>
+              <div class="input-group">
+                <label>{{ 'headerFooter.fontColor' | translate }}</label>
+                <div class="color-picker-row">
+                  <input type="color" class="color-input" [(ngModel)]="config.fontColor" (ngModelChange)="updatePreviewOverlay()" />
+                  <div class="color-swatches">
+                    @for (c of colorPresets; track c) {
+                      <button
+                        type="button"
+                        class="swatch"
+                        [style.background]="c"
+                        [class.active]="config.fontColor === c"
+                        (click)="config.fontColor = c; updatePreviewOverlay()"
+                      ></button>
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="settings-row margins-grid">
+                <div class="input-group">
+                  <label>{{ 'headerFooter.topMargin' | translate }} (pt)</label>
+                  <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.topMargin" (ngModelChange)="updatePreviewOverlay()" />
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.bottomMargin' | translate }} (pt)</label>
+                  <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.bottomMargin" (ngModelChange)="updatePreviewOverlay()" />
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.leftMargin' | translate }} (pt)</label>
+                  <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.leftMargin" (ngModelChange)="updatePreviewOverlay()" />
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.rightMargin' | translate }} (pt)</label>
+                  <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.rightMargin" (ngModelChange)="updatePreviewOverlay()" />
+                </div>
+              </div>
             </div>
-            <div class="input-group">
-              <label>{{ 'headerFooter.leftMargin' | translate }} (pt)</label>
-              <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.leftMargin" (ngModelChange)="updatePreviewOverlay()" />
+          }
+          <!-- TAB: FIRST PAGE RULES & TARGETING -->
+          @if (activeTab === 'firstPage') {
+            <div class="tab-content">
+              <div class="input-group">
+                <label>{{ 'headerFooter.firstPageBehavior' | translate }}</label>
+                <div class="radio-options">
+                  <label class="radio-label">
+                    <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="include" />
+                    <span>{{ 'headerFooter.firstPageInclude' | translate }}</span>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="skip" />
+                    <span>{{ 'headerFooter.firstPageSkip' | translate }}</span>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="different" />
+                    <span>{{ 'headerFooter.firstPageDifferent' | translate }}</span>
+                  </label>
+                </div>
+              </div>
+              <!-- Different first page header/footer inputs if selected -->
+              @if (config.firstPageMode === 'different') {
+                <div class="different-first-page-box">
+                  <h4>{{ 'headerFooter.firstPageCustomText' | translate }}</h4>
+                  <div class="input-group">
+                    <label>{{ 'headerFooter.firstPageHeaderCenter' | translate }}</label>
+                    <input type="text" class="form-input" [(ngModel)]="config.firstPageHeader!.centerText" (ngModelChange)="updatePreviewOverlay()" />
+                  </div>
+                  <div class="input-group">
+                    <label>{{ 'headerFooter.firstPageFooterCenter' | translate }}</label>
+                    <input type="text" class="form-input" [(ngModel)]="config.firstPageFooter!.centerText" (ngModelChange)="updatePreviewOverlay()" />
+                  </div>
+                </div>
+              }
+              <div class="input-group">
+                <label>{{ 'headerFooter.pageTargetMode' | translate }}</label>
+                <select class="form-select" [(ngModel)]="config.pageTargetMode">
+                  <option value="all">{{ 'headerFooter.targetAll' | translate }}</option>
+                  <option value="odd">{{ 'headerFooter.targetOdd' | translate }}</option>
+                  <option value="even">{{ 'headerFooter.targetEven' | translate }}</option>
+                  <option value="custom">{{ 'headerFooter.targetCustom' | translate }}</option>
+                </select>
+              </div>
+              @if (config.pageTargetMode === 'custom') {
+                <div class="input-group">
+                  <label>{{ 'headerFooter.customPageRange' | translate }} (e.g. 2-5, 8)</label>
+                  <input type="text" class="form-input" [(ngModel)]="config.customPageRange" placeholder="2-5, 8" />
+                </div>
+              }
+              <div class="input-group">
+                <label>{{ 'headerFooter.startPageNumber' | translate }}</label>
+                <input type="number" min="1" class="form-input" [(ngModel)]="config.startPageNumber" />
+              </div>
             </div>
-            <div class="input-group">
-              <label>{{ 'headerFooter.rightMargin' | translate }} (pt)</label>
-              <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.rightMargin" (ngModelChange)="updatePreviewOverlay()" />
-            </div>
+          }
+          <div class="apply-action-bar">
+            <app-button
+              variant="primary"
+              size="lg"
+              (clicked)="applyAndGenerate()"
+            >{{ 'headerFooter.applyBtn' | translate }}</app-button>
+            <app-button
+              variant="outline"
+              size="md"
+              (clicked)="reset()"
+            >{{ 'common.chooseAnother' | translate }}</app-button>
           </div>
         </div>
-
-        <!-- TAB: FIRST PAGE RULES & TARGETING -->
-        <div *ngIf="activeTab === 'firstPage'" class="tab-content">
-          <div class="input-group">
-            <label>{{ 'headerFooter.firstPageBehavior' | translate }}</label>
-            <div class="radio-options">
-              <label class="radio-label">
-                <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="include" />
-                <span>{{ 'headerFooter.firstPageInclude' | translate }}</span>
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="skip" />
-                <span>{{ 'headerFooter.firstPageSkip' | translate }}</span>
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="different" />
-                <span>{{ 'headerFooter.firstPageDifferent' | translate }}</span>
-              </label>
+        <!-- Live Preview Column -->
+        <div class="preview-panel">
+          <div class="preview-panel-header">
+            <h4>{{ 'headerFooter.livePreview' | translate }}</h4>
+            <span class="preview-hint">{{ 'headerFooter.livePreviewHint' | translate }}</span>
+          </div>
+          @if (originalArrayBuffer) {
+            <div class="preview-canvas-wrapper">
+              <app-pdf-preview
+                [arrayBuffer]="originalArrayBuffer"
+                [initialPage]="1"
+                [overlays]="previewOverlay"
+              ></app-pdf-preview>
             </div>
-          </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
 
-          <!-- Different first page header/footer inputs if selected -->
-          <div *ngIf="config.firstPageMode === 'different'" class="different-first-page-box">
-            <h4>{{ 'headerFooter.firstPageCustomText' | translate }}</h4>
-            <div class="input-group">
-              <label>{{ 'headerFooter.firstPageHeaderCenter' | translate }}</label>
-              <input type="text" class="form-input" [(ngModel)]="config.firstPageHeader!.centerText" (ngModelChange)="updatePreviewOverlay()" />
-            </div>
-            <div class="input-group">
-              <label>{{ 'headerFooter.firstPageFooterCenter' | translate }}</label>
-              <input type="text" class="form-input" [(ngModel)]="config.firstPageFooter!.centerText" (ngModelChange)="updatePreviewOverlay()" />
-            </div>
-          </div>
+  <!-- STEP 3: PROCESSING SPINNER -->
+  @if (currentStep === 'processing') {
+    <section class="processing-section">
+      <div class="proc-card">
+        <div class="spinner"></div>
+        <h3>{{ 'headerFooter.processingTitle' | translate }}</h3>
+        <p>{{ 'headerFooter.processingDesc' | translate }}</p>
+      </div>
+    </section>
+  }
 
-          <div class="input-group">
-            <label>{{ 'headerFooter.pageTargetMode' | translate }}</label>
-            <select class="form-select" [(ngModel)]="config.pageTargetMode">
-              <option value="all">{{ 'headerFooter.targetAll' | translate }}</option>
-              <option value="odd">{{ 'headerFooter.targetOdd' | translate }}</option>
-              <option value="even">{{ 'headerFooter.targetEven' | translate }}</option>
-              <option value="custom">{{ 'headerFooter.targetCustom' | translate }}</option>
-            </select>
-          </div>
-
-          <div *ngIf="config.pageTargetMode === 'custom'" class="input-group">
-            <label>{{ 'headerFooter.customPageRange' | translate }} (e.g. 2-5, 8)</label>
-            <input type="text" class="form-input" [(ngModel)]="config.customPageRange" placeholder="2-5, 8" />
-          </div>
-
-          <div class="input-group">
-            <label>{{ 'headerFooter.startPageNumber' | translate }}</label>
-            <input type="number" min="1" class="form-input" [(ngModel)]="config.startPageNumber" />
+  <!-- STEP 4: RESULT -->
+  @if (currentStep === 'result' && outputFile) {
+    <section class="result-section">
+      <div class="result-card">
+        <div class="success-banner">
+          <span class="check-icon">✓</span>
+          <div class="success-text">
+            <h3>{{ 'headerFooter.resultSuccess' | translate }}</h3>
+            <p>{{ pagesModifiedCount }} {{ 'headerFooter.pagesUpdated' | translate }}</p>
           </div>
         </div>
-
-        <div class="apply-action-bar">
+        @if (outputArrayBuffer) {
+          <div class="preview-result-wrapper">
+            <app-pdf-preview [arrayBuffer]="outputArrayBuffer" [initialPage]="1"></app-pdf-preview>
+          </div>
+        }
+        <div class="result-actions">
           <app-button
             variant="primary"
             size="lg"
-            (clicked)="applyAndGenerate()"
-          >{{ 'headerFooter.applyBtn' | translate }}</app-button>
+            (clicked)="downloadResult()"
+          >{{ 'common.download' | translate }}</app-button>
           <app-button
             variant="outline"
+            size="lg"
+            (clicked)="shareResult()"
+          >{{ 'common.share' | translate }}</app-button>
+          <app-button
+            variant="ghost"
             size="md"
             (clicked)="reset()"
           >{{ 'common.chooseAnother' | translate }}</app-button>
         </div>
       </div>
-
-      <!-- Live Preview Column -->
-      <div class="preview-panel">
-        <div class="preview-panel-header">
-          <h4>{{ 'headerFooter.livePreview' | translate }}</h4>
-          <span class="preview-hint">{{ 'headerFooter.livePreviewHint' | translate }}</span>
-        </div>
-        <div class="preview-canvas-wrapper" *ngIf="originalArrayBuffer">
-          <app-pdf-preview
-            [arrayBuffer]="originalArrayBuffer"
-            [initialPage]="1"
-            [overlays]="previewOverlay"
-          ></app-pdf-preview>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- STEP 3: PROCESSING SPINNER -->
-  <section *ngIf="currentStep === 'processing'" class="processing-section">
-    <div class="proc-card">
-      <div class="spinner"></div>
-      <h3>{{ 'headerFooter.processingTitle' | translate }}</h3>
-      <p>{{ 'headerFooter.processingDesc' | translate }}</p>
-    </div>
-  </section>
-
-  <!-- STEP 4: RESULT -->
-  <section *ngIf="currentStep === 'result' && outputFile" class="result-section">
-    <div class="result-card">
-      <div class="success-banner">
-        <span class="check-icon">✓</span>
-        <div class="success-text">
-          <h3>{{ 'headerFooter.resultSuccess' | translate }}</h3>
-          <p>{{ pagesModifiedCount }} {{ 'headerFooter.pagesUpdated' | translate }}</p>
-        </div>
-      </div>
-
-      <div *ngIf="outputArrayBuffer" class="preview-result-wrapper">
-        <app-pdf-preview [arrayBuffer]="outputArrayBuffer" [initialPage]="1"></app-pdf-preview>
-      </div>
-
-      <div class="result-actions">
-        <app-button
-          variant="primary"
-          size="lg"
-          (clicked)="downloadResult()"
-        >{{ 'common.download' | translate }}</app-button>
-        <app-button
-          variant="outline"
-          size="lg"
-          (clicked)="shareResult()"
-        >{{ 'common.share' | translate }}</app-button>
-        <app-button
-          variant="ghost"
-          size="md"
-          (clicked)="reset()"
-        >{{ 'common.chooseAnother' | translate }}</app-button>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- Related Tools -->
   <app-related-tools [currentToolId]="'pdf_header_footer'"></app-related-tools>

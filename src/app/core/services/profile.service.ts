@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
 import { BehaviorSubject } from 'rxjs';
 import { HistoryService, HistoryItem } from './history.service';
@@ -28,6 +28,8 @@ const PROFILE_STORAGE_KEY = 'IFH_LOCAL_PROFILE_V1';
   providedIn: 'root'
 })
 export class ProfileService {
+  private historyService = inject(HistoryService);
+
   public profile$ = new BehaviorSubject<UserProfile>({
     displayName: 'Offline User',
     email: '',
@@ -39,7 +41,7 @@ export class ProfileService {
     autoSaveHistory: true
   });
 
-  constructor(private historyService: HistoryService) {
+  constructor() {
     this.loadProfile();
   }
 

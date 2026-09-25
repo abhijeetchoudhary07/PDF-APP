@@ -22,559 +22,568 @@
   <!-- ========================================================================= -->
   <!-- TAB 1: SCAN & DECODE -->
   <!-- ========================================================================= -->
-  <section *ngIf="activeTab === 'scan'" class="scan-section">
-    <!-- SOURCE PICKER BUTTONS -->
-    <div class="source-picker-card">
-      <span class="picker-label">{{ 'qrBarcode.selectSourcePrompt' | translate }}</span>
-      <div class="source-button-group">
-        <button
-          type="button"
-          class="source-btn"
-          [class.active]="scanSource === 'camera'"
-          (click)="setScanSource('camera')"
-        >
-          <span class="btn-icon">📷</span>
-          <span class="btn-text">{{ 'qrBarcode.sourceCamera' | translate }}</span>
-        </button>
-
-        <button
-          type="button"
-          class="source-btn"
-          [class.active]="scanSource === 'image'"
-          (click)="setScanSource('image')"
-        >
-          <span class="btn-icon">🖼️</span>
-          <span class="btn-text">{{ 'qrBarcode.sourceImage' | translate }}</span>
-        </button>
-
-        <button
-          type="button"
-          class="source-btn"
-          [class.active]="scanSource === 'pdf'"
-          (click)="setScanSource('pdf')"
-        >
-          <span class="btn-icon">📄</span>
-          <span class="btn-text">{{ 'qrBarcode.sourcePdf' | translate }}</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- SOURCE: CAMERA -->
-    <div *ngIf="scanSource === 'camera'" class="input-panel camera-panel">
-      <div class="camera-prompt-card">
-        <div class="camera-icon-large">📷</div>
-        <h3>{{ 'qrBarcode.cameraTitle' | translate }}</h3>
-        <p>{{ 'qrBarcode.cameraDesc' | translate }}</p>
-        <app-button
-          variant="primary"
-          size="lg"
-          (clicked)="scanFromCamera()"
-          [disabled]="isScanning"
-        >
-          {{ 'qrBarcode.openCameraBtn' | translate }}
-        </app-button>
-      </div>
-    </div>
-
-    <!-- SOURCE: IMAGE -->
-    <div *ngIf="scanSource === 'image'" class="input-panel image-panel">
-      <app-file-dropzone
-        [accept]="'image/*'"
-        [title]="'qrBarcode.dropImageTitle' | translate"
-        [description]="'qrBarcode.dropImageDesc' | translate"
-        (fileSelected)="onImageSelected($event)"
-      ></app-file-dropzone>
-    </div>
-
-    <!-- SOURCE: PDF -->
-    <div *ngIf="scanSource === 'pdf'" class="input-panel pdf-panel">
-      <app-file-dropzone
-        *ngIf="!selectedPdfFile"
-        [accept]="'.pdf,application/pdf'"
-        [title]="'qrBarcode.dropPdfTitle' | translate"
-        [description]="'qrBarcode.dropPdfDesc' | translate"
-        (fileSelected)="onPdfSelected($event)"
-      ></app-file-dropzone>
-
-      <div *ngIf="selectedPdfFile" class="pdf-config-card">
-        <div class="file-summary-row">
-          <span class="pdf-icon">📄</span>
-          <div class="file-meta">
-            <span class="file-name">{{ selectedPdfFile.name }}</span>
-            <span class="file-pages">{{ pdfTotalPages }} {{ 'common.pages' | translate }}</span>
-          </div>
-          <app-button variant="outline" size="sm" (clicked)="selectedPdfFile = undefined">
-            {{ 'common.chooseAnother' | translate }}
-          </app-button>
+  @if (activeTab === 'scan') {
+    <section class="scan-section">
+      <!-- SOURCE PICKER BUTTONS -->
+      <div class="source-picker-card">
+        <span class="picker-label">{{ 'qrBarcode.selectSourcePrompt' | translate }}</span>
+        <div class="source-button-group">
+          <button
+            type="button"
+            class="source-btn"
+            [class.active]="scanSource === 'camera'"
+            (click)="setScanSource('camera')"
+            >
+            <span class="btn-icon">📷</span>
+            <span class="btn-text">{{ 'qrBarcode.sourceCamera' | translate }}</span>
+          </button>
+          <button
+            type="button"
+            class="source-btn"
+            [class.active]="scanSource === 'image'"
+            (click)="setScanSource('image')"
+            >
+            <span class="btn-icon">🖼️</span>
+            <span class="btn-text">{{ 'qrBarcode.sourceImage' | translate }}</span>
+          </button>
+          <button
+            type="button"
+            class="source-btn"
+            [class.active]="scanSource === 'pdf'"
+            (click)="setScanSource('pdf')"
+            >
+            <span class="btn-icon">📄</span>
+            <span class="btn-text">{{ 'qrBarcode.sourcePdf' | translate }}</span>
+          </button>
         </div>
-
-        <div class="page-selection-controls">
-          <label class="radio-label">
-            <input
-              type="radio"
-              name="pdfPages"
-              [value]="true"
-              [(ngModel)]="pdfScanAllPages"
-            />
-            <span>{{ 'qrBarcode.scanAllPages' | translate:{ total: pdfTotalPages } }}</span>
-          </label>
-
-          <label class="radio-label">
-            <input
-              type="radio"
-              name="pdfPages"
-              [value]="false"
-              [(ngModel)]="pdfScanAllPages"
-            />
-            <span>{{ 'qrBarcode.scanSpecificPage' | translate }}</span>
-          </label>
-
-          <div *ngIf="!pdfScanAllPages" class="specific-page-input">
-            <span>{{ 'common.pages' | translate }}:</span>
-            <input
-              type="number"
-              min="1"
-              [max]="pdfTotalPages"
-              [(ngModel)]="pdfSelectedPage"
-              class="page-number-input"
-            />
-            <span>/ {{ pdfTotalPages }}</span>
+      </div>
+      <!-- SOURCE: CAMERA -->
+      @if (scanSource === 'camera') {
+        <div class="input-panel camera-panel">
+          <div class="camera-prompt-card">
+            <div class="camera-icon-large">📷</div>
+            <h3>{{ 'qrBarcode.cameraTitle' | translate }}</h3>
+            <p>{{ 'qrBarcode.cameraDesc' | translate }}</p>
+            <app-button
+              variant="primary"
+              size="lg"
+              (clicked)="scanFromCamera()"
+              [disabled]="isScanning"
+              >
+              {{ 'qrBarcode.openCameraBtn' | translate }}
+            </app-button>
           </div>
         </div>
-
-        <app-button
-          variant="primary"
-          size="md"
-          (clicked)="runPdfScan()"
-          [disabled]="isScanning"
-        >
-          {{ 'qrBarcode.startPdfScanBtn' | translate }}
-        </app-button>
-      </div>
-    </div>
-
-    <!-- LOADING / SCAN PROGRESS -->
-    <div *ngIf="isScanning" class="scanning-loader-card">
-      <div class="spinner"></div>
-      <h4>{{ 'common.processing' | translate }}</h4>
-      <p>{{ scanProgressMsg }}</p>
-      <div *ngIf="scanProgressPct > 0" class="progress-bar-wrap">
-        <div class="progress-bar-fill" [style.width.%]="scanProgressPct"></div>
-      </div>
-    </div>
-
-    <!-- SCAN RESULTS CARD -->
-    <div *ngIf="!isScanning && scanResults.length > 0" class="results-card">
-      <div class="results-header">
-        <div class="results-title-area">
-          <h3>{{ 'qrBarcode.detectedCodesTitle' | translate }} ({{ scanResults.length }})</h3>
-          <span class="timestamp-label">{{ 'qrBarcode.detectedAt' | translate }}: {{ scanResults[0].timestamp | date:'short' }}</span>
+      }
+      <!-- SOURCE: IMAGE -->
+      @if (scanSource === 'image') {
+        <div class="input-panel image-panel">
+          <app-file-dropzone
+            [accept]="'image/*'"
+            [title]="'qrBarcode.dropImageTitle' | translate"
+            [description]="'qrBarcode.dropImageDesc' | translate"
+            (fileSelected)="onImageSelected($event)"
+          ></app-file-dropzone>
         </div>
-
-        <div class="results-top-actions">
-          <app-button variant="outline" size="sm" (clicked)="toggleSelectAll()">
-            {{ selectedResultIds.size === scanResults.length ? ('qrBarcode.deselectAll' | translate) : ('qrBarcode.selectAll' | translate) }}
-          </app-button>
-          <app-button variant="ghost" size="sm" (clicked)="resetScan()">
-            {{ 'common.reset' | translate }}
-          </app-button>
+      }
+      <!-- SOURCE: PDF -->
+      @if (scanSource === 'pdf') {
+        <div class="input-panel pdf-panel">
+          @if (!selectedPdfFile) {
+            <app-file-dropzone
+              [accept]="'.pdf,application/pdf'"
+              [title]="'qrBarcode.dropPdfTitle' | translate"
+              [description]="'qrBarcode.dropPdfDesc' | translate"
+              (fileSelected)="onPdfSelected($event)"
+            ></app-file-dropzone>
+          }
+          @if (selectedPdfFile) {
+            <div class="pdf-config-card">
+              <div class="file-summary-row">
+                <span class="pdf-icon">📄</span>
+                <div class="file-meta">
+                  <span class="file-name">{{ selectedPdfFile.name }}</span>
+                  <span class="file-pages">{{ pdfTotalPages }} {{ 'common.pages' | translate }}</span>
+                </div>
+                <app-button variant="outline" size="sm" (clicked)="selectedPdfFile = undefined">
+                  {{ 'common.chooseAnother' | translate }}
+                </app-button>
+              </div>
+              <div class="page-selection-controls">
+                <label class="radio-label">
+                  <input
+                    type="radio"
+                    name="pdfPages"
+                    [value]="true"
+                    [(ngModel)]="pdfScanAllPages"
+                    />
+                  <span>{{ 'qrBarcode.scanAllPages' | translate:{ total: pdfTotalPages } }}</span>
+                </label>
+                <label class="radio-label">
+                  <input
+                    type="radio"
+                    name="pdfPages"
+                    [value]="false"
+                    [(ngModel)]="pdfScanAllPages"
+                    />
+                  <span>{{ 'qrBarcode.scanSpecificPage' | translate }}</span>
+                </label>
+                @if (!pdfScanAllPages) {
+                  <div class="specific-page-input">
+                    <span>{{ 'common.pages' | translate }}:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      [max]="pdfTotalPages"
+                      [(ngModel)]="pdfSelectedPage"
+                      class="page-number-input"
+                      />
+                    <span>/ {{ pdfTotalPages }}</span>
+                  </div>
+                }
+              </div>
+              <app-button
+                variant="primary"
+                size="md"
+                (clicked)="runPdfScan()"
+                [disabled]="isScanning"
+                >
+                {{ 'qrBarcode.startPdfScanBtn' | translate }}
+              </app-button>
+            </div>
+          }
         </div>
-      </div>
-
-      <!-- RESULTS LIST -->
-      <div class="codes-list">
-        <div
-          *ngFor="let result of scanResults; let i = index"
-          class="code-item-card"
-          [class.selected]="selectedResultIds.has(result.id)"
-        >
-          <div class="code-item-header">
-            <label class="code-checkbox">
-              <input
-                type="checkbox"
-                [checked]="selectedResultIds.has(result.id)"
-                (change)="toggleSelectResult(result.id)"
-              />
-              <span class="code-number">{{ 'qrBarcode.codeNumber' | translate:{ number: i + 1 } }}</span>
-            </label>
-
-            <div class="code-badges">
-              <app-badge variant="primary">{{ result.format }}</app-badge>
-              <app-badge *ngIf="result.pageNumber !== undefined" variant="neutral">
-                {{ 'common.pages' | translate }} {{ result.pageNumber }}
-              </app-badge>
-              <app-badge *ngIf="result.isUrl" variant="success">URL</app-badge>
+      }
+      <!-- LOADING / SCAN PROGRESS -->
+      @if (isScanning) {
+        <div class="scanning-loader-card">
+          <div class="spinner"></div>
+          <h4>{{ 'common.processing' | translate }}</h4>
+          <p>{{ scanProgressMsg }}</p>
+          @if (scanProgressPct > 0) {
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" [style.width.%]="scanProgressPct"></div>
+            </div>
+          }
+        </div>
+      }
+      <!-- SCAN RESULTS CARD -->
+      @if (!isScanning && scanResults.length > 0) {
+        <div class="results-card">
+          <div class="results-header">
+            <div class="results-title-area">
+              <h3>{{ 'qrBarcode.detectedCodesTitle' | translate }} ({{ scanResults.length }})</h3>
+              <span class="timestamp-label">{{ 'qrBarcode.detectedAt' | translate }}: {{ scanResults[0].timestamp | date:'short' }}</span>
+            </div>
+            <div class="results-top-actions">
+              <app-button variant="outline" size="sm" (clicked)="toggleSelectAll()">
+                {{ selectedResultIds.size === scanResults.length ? ('qrBarcode.deselectAll' | translate) : ('qrBarcode.selectAll' | translate) }}
+              </app-button>
+              <app-button variant="ghost" size="sm" (clicked)="resetScan()">
+                {{ 'common.reset' | translate }}
+              </app-button>
             </div>
           </div>
-
-          <div class="code-content-box">
-            <code class="raw-content-text">{{ result.rawContent }}</code>
+          <!-- RESULTS LIST -->
+          <div class="codes-list">
+            @for (result of scanResults; track result; let i = $index) {
+              <div
+                class="code-item-card"
+                [class.selected]="selectedResultIds.has(result.id)"
+                >
+                <div class="code-item-header">
+                  <label class="code-checkbox">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedResultIds.has(result.id)"
+                      (change)="toggleSelectResult(result.id)"
+                      />
+                    <span class="code-number">{{ 'qrBarcode.codeNumber' | translate:{ number: i + 1 } }}</span>
+                  </label>
+                  <div class="code-badges">
+                    <app-badge variant="primary">{{ result.format }}</app-badge>
+                    @if (result.pageNumber !== undefined) {
+                      <app-badge variant="neutral">
+                        {{ 'common.pages' | translate }} {{ result.pageNumber }}
+                      </app-badge>
+                    }
+                    @if (result.isUrl) {
+                      <app-badge variant="success">URL</app-badge>
+                    }
+                  </div>
+                </div>
+                <div class="code-content-box">
+                  <code class="raw-content-text">{{ result.rawContent }}</code>
+                </div>
+                <div class="code-actions-row">
+                  <app-button variant="outline" size="sm" (clicked)="copyContent(result.rawContent)">
+                    📋 {{ 'common.copy' | translate }}
+                  </app-button>
+                  @if (result.isUrl) {
+                    <app-button
+                      variant="primary"
+                      size="sm"
+                      (clicked)="openSafeUrlPrompt(result.rawContent)"
+                      >
+                      🔗 {{ 'qrBarcode.openUrlBtn' | translate }}
+                    </app-button>
+                  }
+                  <app-button variant="ghost" size="sm" (clicked)="shareResult(result)">
+                    📤 {{ 'common.share' | translate }}
+                  </app-button>
+                </div>
+              </div>
+            }
           </div>
-
-          <div class="code-actions-row">
-            <app-button variant="outline" size="sm" (clicked)="copyContent(result.rawContent)">
-              📋 {{ 'common.copy' | translate }}
-            </app-button>
-
-            <app-button
-              *ngIf="result.isUrl"
-              variant="primary"
-              size="sm"
-              (clicked)="openSafeUrlPrompt(result.rawContent)"
-            >
-              🔗 {{ 'qrBarcode.openUrlBtn' | translate }}
-            </app-button>
-
-            <app-button variant="ghost" size="sm" (clicked)="shareResult(result)">
-              📤 {{ 'common.share' | translate }}
-            </app-button>
+          <!-- EXPORT REPORT BAR -->
+          <div class="export-report-bar">
+            <span class="export-label">{{ 'qrBarcode.exportReportPrompt' | translate }}</span>
+            <div class="export-buttons">
+              <app-button variant="outline" size="sm" (clicked)="exportReport('txt')">
+                TXT
+              </app-button>
+              <app-button variant="outline" size="sm" (clicked)="exportReport('csv')">
+                CSV
+              </app-button>
+              <app-button variant="outline" size="sm" (clicked)="exportReport('json')">
+                JSON
+              </app-button>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- EXPORT REPORT BAR -->
-      <div class="export-report-bar">
-        <span class="export-label">{{ 'qrBarcode.exportReportPrompt' | translate }}</span>
-        <div class="export-buttons">
-          <app-button variant="outline" size="sm" (clicked)="exportReport('txt')">
-            TXT
-          </app-button>
-          <app-button variant="outline" size="sm" (clicked)="exportReport('csv')">
-            CSV
-          </app-button>
-          <app-button variant="outline" size="sm" (clicked)="exportReport('json')">
-            JSON
-          </app-button>
-        </div>
-      </div>
-    </div>
-  </section>
+      }
+    </section>
+  }
 
   <!-- ========================================================================= -->
   <!-- TAB 2: QR GENERATOR -->
   <!-- ========================================================================= -->
-  <section *ngIf="activeTab === 'generate'" class="generator-section">
-    <div class="generator-grid">
-      <!-- FORM SETTINGS COLUMN -->
-      <div class="generator-form-card">
-        <h3>{{ 'qrBarcode.generatorTitle' | translate }}</h3>
-        <p class="form-desc">{{ 'qrBarcode.generatorDesc' | translate }}</p>
-
-        <!-- TYPE PILLS -->
-        <div class="type-pills-row">
-          <button
-            type="button"
-            class="type-pill"
-            [class.active]="generatorOptions.contentType === 'url'"
-            (click)="setContentType('url')"
-          >
-            🔗 URL
-          </button>
-          <button
-            type="button"
-            class="type-pill"
-            [class.active]="generatorOptions.contentType === 'text'"
-            (click)="setContentType('text')"
-          >
-            📝 {{ 'qrBarcode.typeText' | translate }}
-          </button>
-          <button
-            type="button"
-            class="type-pill"
-            [class.active]="generatorOptions.contentType === 'email'"
-            (click)="setContentType('email')"
-          >
-            ✉️ Email
-          </button>
-          <button
-            type="button"
-            class="type-pill"
-            [class.active]="generatorOptions.contentType === 'phone'"
-            (click)="setContentType('phone')"
-          >
-            📞 Phone
-          </button>
-          <button
-            type="button"
-            class="type-pill"
-            [class.active]="generatorOptions.contentType === 'wifi'"
-            (click)="setContentType('wifi')"
-          >
-            📶 Wi-Fi
-          </button>
-          <button
-            type="button"
-            class="type-pill"
-            [class.active]="generatorOptions.contentType === 'vcard'"
-            (click)="setContentType('vcard')"
-          >
-            👤 Contact (vCard)
-          </button>
-        </div>
-
-        <!-- TYPE SPECIFIC FIELDS -->
-        <div class="type-fields-container">
-          <!-- URL -->
-          <div *ngIf="generatorOptions.contentType === 'url'" class="form-group">
-            <label>{{ 'qrBarcode.urlFieldLabel' | translate }}</label>
-            <input
-              type="url"
-              [(ngModel)]="generatorOptions.urlPayload"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="https://example.com"
-              class="form-input"
-            />
-          </div>
-
-          <!-- TEXT -->
-          <div *ngIf="generatorOptions.contentType === 'text'" class="form-group">
-            <label>{{ 'qrBarcode.textFieldLabel' | translate }}</label>
-            <textarea
-              [(ngModel)]="generatorOptions.content"
-              (ngModelChange)="updateQrPreview()"
-              rows="4"
-              placeholder="Type plain text message..."
-              class="form-textarea"
-            ></textarea>
-          </div>
-
-          <!-- EMAIL -->
-          <div *ngIf="generatorOptions.contentType === 'email' && generatorOptions.emailPayload" class="form-group">
-            <label>{{ 'qrBarcode.emailAddressLabel' | translate }}</label>
-            <input
-              type="email"
-              [(ngModel)]="generatorOptions.emailPayload.address"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="contact@example.com"
-              class="form-input"
-            />
-            <label>{{ 'qrBarcode.emailSubjectLabel' | translate }}</label>
-            <input
-              type="text"
-              [(ngModel)]="generatorOptions.emailPayload.subject"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="Subject (optional)"
-              class="form-input"
-            />
-            <label>{{ 'qrBarcode.emailBodyLabel' | translate }}</label>
-            <textarea
-              [(ngModel)]="generatorOptions.emailPayload.body"
-              (ngModelChange)="updateQrPreview()"
-              rows="2"
-              placeholder="Message body (optional)"
-              class="form-textarea"
-            ></textarea>
-          </div>
-
-          <!-- PHONE -->
-          <div *ngIf="generatorOptions.contentType === 'phone'" class="form-group">
-            <label>{{ 'qrBarcode.phoneLabel' | translate }}</label>
-            <input
-              type="tel"
-              [(ngModel)]="generatorOptions.phonePayload"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="+91 9876543210"
-              class="form-input"
-            />
-          </div>
-
-          <!-- WI-FI -->
-          <div *ngIf="generatorOptions.contentType === 'wifi' && generatorOptions.wifiPayload" class="form-group">
-            <label>{{ 'qrBarcode.wifiSsidLabel' | translate }}</label>
-            <input
-              type="text"
-              [(ngModel)]="generatorOptions.wifiPayload.ssid"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="Network Name (SSID)"
-              class="form-input"
-            />
-            <label>{{ 'qrBarcode.wifiPasswordLabel' | translate }}</label>
-            <input
-              type="password"
-              [(ngModel)]="generatorOptions.wifiPayload.password"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="Network Password"
-              class="form-input"
-            />
-            <div class="wifi-options-row">
-              <label class="select-label">
-                <span>{{ 'qrBarcode.wifiSecurityLabel' | translate }}:</span>
-                <select
-                  [(ngModel)]="generatorOptions.wifiPayload.encryption"
-                  (ngModelChange)="updateQrPreview()"
-                  class="form-select"
-                >
-                  <option value="WPA">WPA / WPA2 / WPA3</option>
-                  <option value="WEP">WEP</option>
-                  <option value="nopass">None (Open)</option>
-                </select>
-              </label>
-
-              <label class="check-label">
-                <input
-                  type="checkbox"
-                  [(ngModel)]="generatorOptions.wifiPayload.hidden"
-                  (ngModelChange)="updateQrPreview()"
-                />
-                <span>{{ 'qrBarcode.wifiHiddenLabel' | translate }}</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- VCARD -->
-          <div *ngIf="generatorOptions.contentType === 'vcard' && generatorOptions.vcardPayload" class="form-group">
-            <label>{{ 'qrBarcode.vcardNameLabel' | translate }}</label>
-            <input
-              type="text"
-              [(ngModel)]="generatorOptions.vcardPayload.name"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="Full Name"
-              class="form-input"
-            />
-            <label>{{ 'qrBarcode.vcardPhoneLabel' | translate }}</label>
-            <input
-              type="tel"
-              [(ngModel)]="generatorOptions.vcardPayload.phone"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="Phone Number"
-              class="form-input"
-            />
-            <label>{{ 'qrBarcode.vcardEmailLabel' | translate }}</label>
-            <input
-              type="email"
-              [(ngModel)]="generatorOptions.vcardPayload.email"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="Email Address"
-              class="form-input"
-            />
-            <label>{{ 'qrBarcode.vcardOrgLabel' | translate }}</label>
-            <input
-              type="text"
-              [(ngModel)]="generatorOptions.vcardPayload.org"
-              (ngModelChange)="updateQrPreview()"
-              placeholder="Organization / Company"
-              class="form-input"
-            />
-          </div>
-        </div>
-
-        <!-- STYLING CONFIG ACCORDION -->
-        <div class="config-settings-card">
-          <h4>{{ 'qrBarcode.customizeTitle' | translate }}</h4>
-
-          <div class="config-row">
-            <label>{{ 'qrBarcode.errorCorrectionLabel' | translate }}</label>
-            <div class="ecc-button-group">
-              <button
-                type="button"
-                *ngFor="let ecc of ['L', 'M', 'Q', 'H']"
-                class="ecc-btn"
-                [class.active]="generatorOptions.errorCorrectionLevel === ecc"
-                (click)="generatorOptions.errorCorrectionLevel = $any(ecc); updateQrPreview()"
+  @if (activeTab === 'generate') {
+    <section class="generator-section">
+      <div class="generator-grid">
+        <!-- FORM SETTINGS COLUMN -->
+        <div class="generator-form-card">
+          <h3>{{ 'qrBarcode.generatorTitle' | translate }}</h3>
+          <p class="form-desc">{{ 'qrBarcode.generatorDesc' | translate }}</p>
+          <!-- TYPE PILLS -->
+          <div class="type-pills-row">
+            <button
+              type="button"
+              class="type-pill"
+              [class.active]="generatorOptions.contentType === 'url'"
+              (click)="setContentType('url')"
               >
-                {{ ecc }}
-              </button>
+              🔗 URL
+            </button>
+            <button
+              type="button"
+              class="type-pill"
+              [class.active]="generatorOptions.contentType === 'text'"
+              (click)="setContentType('text')"
+              >
+              📝 {{ 'qrBarcode.typeText' | translate }}
+            </button>
+            <button
+              type="button"
+              class="type-pill"
+              [class.active]="generatorOptions.contentType === 'email'"
+              (click)="setContentType('email')"
+              >
+              ✉️ Email
+            </button>
+            <button
+              type="button"
+              class="type-pill"
+              [class.active]="generatorOptions.contentType === 'phone'"
+              (click)="setContentType('phone')"
+              >
+              📞 Phone
+            </button>
+            <button
+              type="button"
+              class="type-pill"
+              [class.active]="generatorOptions.contentType === 'wifi'"
+              (click)="setContentType('wifi')"
+              >
+              📶 Wi-Fi
+            </button>
+            <button
+              type="button"
+              class="type-pill"
+              [class.active]="generatorOptions.contentType === 'vcard'"
+              (click)="setContentType('vcard')"
+              >
+              👤 Contact (vCard)
+            </button>
+          </div>
+          <!-- TYPE SPECIFIC FIELDS -->
+          <div class="type-fields-container">
+            <!-- URL -->
+            @if (generatorOptions.contentType === 'url') {
+              <div class="form-group">
+                <label>{{ 'qrBarcode.urlFieldLabel' | translate }}</label>
+                <input
+                  type="url"
+                  [(ngModel)]="generatorOptions.urlPayload"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="https://example.com"
+                  class="form-input"
+                  />
+              </div>
+            }
+            <!-- TEXT -->
+            @if (generatorOptions.contentType === 'text') {
+              <div class="form-group">
+                <label>{{ 'qrBarcode.textFieldLabel' | translate }}</label>
+                <textarea
+                  [(ngModel)]="generatorOptions.content"
+                  (ngModelChange)="updateQrPreview()"
+                  rows="4"
+                  placeholder="Type plain text message..."
+                  class="form-textarea"
+                ></textarea>
+              </div>
+            }
+            <!-- EMAIL -->
+            @if (generatorOptions.contentType === 'email' && generatorOptions.emailPayload) {
+              <div class="form-group">
+                <label>{{ 'qrBarcode.emailAddressLabel' | translate }}</label>
+                <input
+                  type="email"
+                  [(ngModel)]="generatorOptions.emailPayload.address"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="contact@example.com"
+                  class="form-input"
+                  />
+                <label>{{ 'qrBarcode.emailSubjectLabel' | translate }}</label>
+                <input
+                  type="text"
+                  [(ngModel)]="generatorOptions.emailPayload.subject"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="Subject (optional)"
+                  class="form-input"
+                  />
+                <label>{{ 'qrBarcode.emailBodyLabel' | translate }}</label>
+                <textarea
+                  [(ngModel)]="generatorOptions.emailPayload.body"
+                  (ngModelChange)="updateQrPreview()"
+                  rows="2"
+                  placeholder="Message body (optional)"
+                  class="form-textarea"
+                ></textarea>
+              </div>
+            }
+            <!-- PHONE -->
+            @if (generatorOptions.contentType === 'phone') {
+              <div class="form-group">
+                <label>{{ 'qrBarcode.phoneLabel' | translate }}</label>
+                <input
+                  type="tel"
+                  [(ngModel)]="generatorOptions.phonePayload"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="+91 9876543210"
+                  class="form-input"
+                  />
+              </div>
+            }
+            <!-- WI-FI -->
+            @if (generatorOptions.contentType === 'wifi' && generatorOptions.wifiPayload) {
+              <div class="form-group">
+                <label>{{ 'qrBarcode.wifiSsidLabel' | translate }}</label>
+                <input
+                  type="text"
+                  [(ngModel)]="generatorOptions.wifiPayload.ssid"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="Network Name (SSID)"
+                  class="form-input"
+                  />
+                <label>{{ 'qrBarcode.wifiPasswordLabel' | translate }}</label>
+                <input
+                  type="password"
+                  [(ngModel)]="generatorOptions.wifiPayload.password"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="Network Password"
+                  class="form-input"
+                  />
+                <div class="wifi-options-row">
+                  <label class="select-label">
+                    <span>{{ 'qrBarcode.wifiSecurityLabel' | translate }}:</span>
+                    <select
+                      [(ngModel)]="generatorOptions.wifiPayload.encryption"
+                      (ngModelChange)="updateQrPreview()"
+                      class="form-select"
+                      >
+                      <option value="WPA">WPA / WPA2 / WPA3</option>
+                      <option value="WEP">WEP</option>
+                      <option value="nopass">None (Open)</option>
+                    </select>
+                  </label>
+                  <label class="check-label">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="generatorOptions.wifiPayload.hidden"
+                      (ngModelChange)="updateQrPreview()"
+                      />
+                    <span>{{ 'qrBarcode.wifiHiddenLabel' | translate }}</span>
+                  </label>
+                </div>
+              </div>
+            }
+            <!-- VCARD -->
+            @if (generatorOptions.contentType === 'vcard' && generatorOptions.vcardPayload) {
+              <div class="form-group">
+                <label>{{ 'qrBarcode.vcardNameLabel' | translate }}</label>
+                <input
+                  type="text"
+                  [(ngModel)]="generatorOptions.vcardPayload.name"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="Full Name"
+                  class="form-input"
+                  />
+                <label>{{ 'qrBarcode.vcardPhoneLabel' | translate }}</label>
+                <input
+                  type="tel"
+                  [(ngModel)]="generatorOptions.vcardPayload.phone"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="Phone Number"
+                  class="form-input"
+                  />
+                <label>{{ 'qrBarcode.vcardEmailLabel' | translate }}</label>
+                <input
+                  type="email"
+                  [(ngModel)]="generatorOptions.vcardPayload.email"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="Email Address"
+                  class="form-input"
+                  />
+                <label>{{ 'qrBarcode.vcardOrgLabel' | translate }}</label>
+                <input
+                  type="text"
+                  [(ngModel)]="generatorOptions.vcardPayload.org"
+                  (ngModelChange)="updateQrPreview()"
+                  placeholder="Organization / Company"
+                  class="form-input"
+                  />
+              </div>
+            }
+          </div>
+          <!-- STYLING CONFIG ACCORDION -->
+          <div class="config-settings-card">
+            <h4>{{ 'qrBarcode.customizeTitle' | translate }}</h4>
+            <div class="config-row">
+              <label>{{ 'qrBarcode.errorCorrectionLabel' | translate }}</label>
+              <div class="ecc-button-group">
+                @for (ecc of ['L', 'M', 'Q', 'H']; track ecc) {
+                  <button
+                    type="button"
+                    class="ecc-btn"
+                    [class.active]="generatorOptions.errorCorrectionLevel === ecc"
+                    (click)="generatorOptions.errorCorrectionLevel = $any(ecc); updateQrPreview()"
+                    >
+                    {{ ecc }}
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="config-row">
+              <label>{{ 'qrBarcode.sizeLabel' | translate }}: {{ generatorOptions.size }}px</label>
+              <input
+                type="range"
+                min="160"
+                max="480"
+                step="20"
+                [(ngModel)]="generatorOptions.size"
+                (ngModelChange)="updateQrPreview()"
+                class="slider"
+                />
+            </div>
+            <div class="config-row colors-row">
+              <div class="color-picker-item">
+                <label>{{ 'qrBarcode.colorDark' | translate }}</label>
+                <input
+                  type="color"
+                  [(ngModel)]="generatorOptions.foregroundColor"
+                  (ngModelChange)="updateQrPreview()"
+                  class="color-input"
+                  />
+              </div>
+              <div class="color-picker-item">
+                <label>{{ 'qrBarcode.colorLight' | translate }}</label>
+                <input
+                  type="color"
+                  [(ngModel)]="generatorOptions.backgroundColor"
+                  (ngModelChange)="updateQrPreview()"
+                  class="color-input"
+                  />
+              </div>
             </div>
           </div>
-
-          <div class="config-row">
-            <label>{{ 'qrBarcode.sizeLabel' | translate }}: {{ generatorOptions.size }}px</label>
-            <input
-              type="range"
-              min="160"
-              max="480"
-              step="20"
-              [(ngModel)]="generatorOptions.size"
-              (ngModelChange)="updateQrPreview()"
-              class="slider"
-            />
+        </div>
+        <!-- LIVE PREVIEW & EXPORT COLUMN -->
+        <div class="generator-preview-card">
+          <h3>{{ 'common.preview' | translate }}</h3>
+          <div class="qr-canvas-wrapper">
+            @if (previewQrDataUrl) {
+              <img
+                [src]="previewQrDataUrl"
+                alt="Generated QR Code Preview"
+                class="qr-preview-img"
+                />
+            }
+            @if (isGenerating) {
+              <div class="preview-overlay">
+                <div class="spinner-small"></div>
+              </div>
+            }
           </div>
-
-          <div class="config-row colors-row">
-            <div class="color-picker-item">
-              <label>{{ 'qrBarcode.colorDark' | translate }}</label>
-              <input
-                type="color"
-                [(ngModel)]="generatorOptions.foregroundColor"
-                (ngModelChange)="updateQrPreview()"
-                class="color-input"
-              />
-            </div>
-            <div class="color-picker-item">
-              <label>{{ 'qrBarcode.colorLight' | translate }}</label>
-              <input
-                type="color"
-                [(ngModel)]="generatorOptions.backgroundColor"
-                (ngModelChange)="updateQrPreview()"
-                class="color-input"
-              />
+          <!-- EXPORT BUTTONS -->
+          <div class="export-actions-card">
+            <h4>{{ 'qrBarcode.downloadOptionsTitle' | translate }}</h4>
+            <div class="export-btn-grid">
+              <app-button variant="primary" size="md" (clicked)="downloadPng()">
+                📥 {{ 'qrBarcode.downloadPng' | translate }}
+              </app-button>
+              <app-button variant="outline" size="md" (clicked)="downloadSvg()">
+                🖼️ {{ 'qrBarcode.downloadSvg' | translate }}
+              </app-button>
+              <app-button variant="outline" size="md" (clicked)="downloadPdf()">
+                📑 {{ 'qrBarcode.downloadPdf' | translate }}
+              </app-button>
+              <app-button variant="ghost" size="md" (clicked)="shareQr()">
+                📤 {{ 'common.share' | translate }}
+              </app-button>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- LIVE PREVIEW & EXPORT COLUMN -->
-      <div class="generator-preview-card">
-        <h3>{{ 'common.preview' | translate }}</h3>
-        <div class="qr-canvas-wrapper">
-          <img
-            *ngIf="previewQrDataUrl"
-            [src]="previewQrDataUrl"
-            alt="Generated QR Code Preview"
-            class="qr-preview-img"
-          />
-          <div *ngIf="isGenerating" class="preview-overlay">
-            <div class="spinner-small"></div>
-          </div>
-        </div>
-
-        <!-- EXPORT BUTTONS -->
-        <div class="export-actions-card">
-          <h4>{{ 'qrBarcode.downloadOptionsTitle' | translate }}</h4>
-          <div class="export-btn-grid">
-            <app-button variant="primary" size="md" (clicked)="downloadPng()">
-              📥 {{ 'qrBarcode.downloadPng' | translate }}
-            </app-button>
-            <app-button variant="outline" size="md" (clicked)="downloadSvg()">
-              🖼️ {{ 'qrBarcode.downloadSvg' | translate }}
-            </app-button>
-            <app-button variant="outline" size="md" (clicked)="downloadPdf()">
-              📑 {{ 'qrBarcode.downloadPdf' | translate }}
-            </app-button>
-            <app-button variant="ghost" size="md" (clicked)="shareQr()">
-              📤 {{ 'common.share' | translate }}
-            </app-button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- URL SAFETY CONFIRMATION MODAL -->
-  <div *ngIf="pendingUrl" class="safe-url-modal-backdrop">
-    <div class="safe-url-modal-card">
-      <div class="modal-icon-alert">⚠️</div>
-      <h3>{{ 'qrBarcode.externalUrlWarningTitle' | translate }}</h3>
-      <p class="modal-warning-desc">
-        {{ 'qrBarcode.externalUrlWarningDesc' | translate }}
-      </p>
-
-      <div class="url-details-box">
-        <span class="url-domain-label">{{ 'qrBarcode.targetDomain' | translate }}:</span>
-        <strong class="domain-text">{{ pendingUrlDomain }}</strong>
-        <p class="full-url-text">{{ pendingUrl }}</p>
-      </div>
-
-      <div class="modal-actions">
-        <app-button variant="outline" size="md" (clicked)="cancelSafeUrl()">
-          {{ 'common.cancel' | translate }}
-        </app-button>
-        <app-button variant="primary" size="md" (clicked)="confirmOpenUrl()">
-          {{ 'qrBarcode.proceedToUrl' | translate }}
-        </app-button>
+  @if (pendingUrl) {
+    <div class="safe-url-modal-backdrop">
+      <div class="safe-url-modal-card">
+        <div class="modal-icon-alert">⚠️</div>
+        <h3>{{ 'qrBarcode.externalUrlWarningTitle' | translate }}</h3>
+        <p class="modal-warning-desc">
+          {{ 'qrBarcode.externalUrlWarningDesc' | translate }}
+        </p>
+        <div class="url-details-box">
+          <span class="url-domain-label">{{ 'qrBarcode.targetDomain' | translate }}:</span>
+          <strong class="domain-text">{{ pendingUrlDomain }}</strong>
+          <p class="full-url-text">{{ pendingUrl }}</p>
+        </div>
+        <div class="modal-actions">
+          <app-button variant="outline" size="md" (clicked)="cancelSafeUrl()">
+            {{ 'common.cancel' | translate }}
+          </app-button>
+          <app-button variant="primary" size="md" (clicked)="confirmOpenUrl()">
+            {{ 'qrBarcode.proceedToUrl' | translate }}
+          </app-button>
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- CONNECTED / RELATED TOOLS -->
   <app-related-tools [currentToolId]="'qr_barcode'"></app-related-tools>

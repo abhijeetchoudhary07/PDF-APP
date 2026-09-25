@@ -42,3 +42,39 @@ export type StoreStatus =
   | 'ready'
   /** Configured, but the store could not be reached at all. */
   | 'error';
+
+/**
+ * The Play Console product id that sells each server plan.
+ *
+ * The keys are `pdf_plans.plan_id` as the server serves them; the values are
+ * the product ids created in **Play Console → Monetise → Products**. They are
+ * deliberately the same strings — there is no reason for them to differ, and a
+ * mapping nobody can hold in their head is how a paywall ends up selling the
+ * annual plan at the monthly price.
+ *
+ * `pro_monthly` and `pro_annual` are **subscriptions**; `lifetime` is a
+ * **one-time in-app product**. The distinction is made in the Console, not
+ * here, and it decides which of the two Play product catalogues you create it
+ * in.
+ *
+ * `free` is absent on purpose: it is not sold.
+ */
+export const PLAY_PRODUCT_IDS: Readonly<Record<string, string>> = {
+  pro_monthly: 'pro_monthly',
+  pro_annual: 'pro_annual',
+  lifetime: 'lifetime',
+};
+
+/**
+ * Strips the base-plan suffix Play appends to subscription products.
+ *
+ * A Play subscription is a product plus a base plan, and RevenueCat reports the
+ * pair as `pro_monthly:monthly` in `product.identifier` while the Console shows
+ * the product as `pro_monthly`. Matching the two strings directly therefore
+ * finds every one-time product and no subscription at all — a paywall where
+ * only the lifetime button works, which is a miserable thing to diagnose from a
+ * store report.
+ */
+export function baseProductId(productIdentifier: string): string {
+  return productIdentifier.split(':')[0];
+}

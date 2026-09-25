@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { SupportedLanguage } from '../i18n/i18n.types';
 import {
@@ -47,10 +47,10 @@ export class PdfIntelligenceService {
   public localProvider: LocalIntelligenceProvider;
   public remoteProvider: RemoteAIProvider;
 
-  constructor(
-    localProvider?: LocalIntelligenceProvider,
-    remoteProvider?: RemoteAIProvider
-  ) {
+  constructor() {
+    const localProvider = inject(LocalIntelligenceProvider);
+    const remoteProvider = inject(RemoteAIProvider);
+
     this.localProvider = localProvider || new LocalIntelligenceProvider();
     this.remoteProvider = remoteProvider || new RemoteAIProvider();
   }

@@ -10,11 +10,11 @@ import { UsageQuotaService } from './usage-quota.service';
   providedIn: 'root'
 })
 export class StorageService {
+  private fileService = inject(FileService);
+
   private readonly quota = inject(UsageQuotaService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
-
-  constructor(private fileService: FileService) {}
 
   /**
    * Writes a finished file to the device, and meters it.

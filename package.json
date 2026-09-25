@@ -15,7 +15,8 @@
     "lint": "ng lint",
     "serve:www": "node tools/serve-www.mjs 4173",
     "test:e2e:prod": "E2E_TARGET=prod playwright test",
-    "test:unit": "vitest run --dir src"
+    "test:unit": "vitest run --dir src",
+    "test:e2e:accounts": "playwright test e2e/account e2e/release/user-journey.spec.ts e2e/release/full-journey.spec.ts"
   },
   "private": true,
   "dependencies": {

@@ -10,7 +10,7 @@
         badge="PRESETS"
         badgeVariant="presets"
         backUrl="/home">
-    
+
         <div actions class="header-action-group">
           <app-button
             variant="primary"
@@ -35,115 +35,146 @@
         </div>
 
         <!-- LOADING: rows shaped like the collapsed preset accordion items -->
-        <div *ngIf="isLoading" class="preset-skeleton-list">
-          <app-skeleton variant="list-row" *ngFor="let s of [1,2,3,4,5]"></app-skeleton>
-        </div>
+        @if (isLoading) {
+          <div class="preset-skeleton-list">
+            @for (s of [1,2,3,4,5]; track s) {
+              <app-skeleton variant="list-row"></app-skeleton>
+            }
+          </div>
+        }
 
         <!-- PRESET GROUPS -->
-        <div *ngIf="!isLoading" class="preset-groups">
-        <div *ngFor="let group of groupedPresets" class="preset-group">
-          <h3 class="group-title">{{ group.category }}</h3>
-
-          <div class="presets-accordion-list">
-            <div *ngFor="let preset of group.presets" class="preset-accordion-item" [class.expanded]="selectedPreset === preset">
-              <div class="preset-header" (click)="selectPreset(preset)">
-                <div class="preset-header-title">
-                  <span class="preset-name">{{ preset.name }}</span>
-                  <app-badge *ngIf="preset.isCustom" variant="primary" size="sm">Custom</app-badge>
+        @if (!isLoading) {
+          <div class="preset-groups">
+            @for (group of groupedPresets; track group) {
+              <div class="preset-group">
+                <h3 class="group-title">{{ group.category }}</h3>
+                <div class="presets-accordion-list">
+                  @for (preset of group.presets; track preset) {
+                    <div class="preset-accordion-item" [class.expanded]="selectedPreset === preset">
+                      <div class="preset-header" (click)="selectPreset(preset)">
+                        <div class="preset-header-title">
+                          <span class="preset-name">{{ preset.name }}</span>
+                          @if (preset.isCustom) {
+                            <app-badge variant="primary" size="sm">Custom</app-badge>
+                          }
+                        </div>
+                        <app-icon [name]="selectedPreset === preset ? 'chevron-up' : 'chevron-down'" class="chevron-icon"></app-icon>
+                      </div>
+                      @if (selectedPreset === preset) {
+                        <div class="preset-details">
+                          <!-- Photo Req -->
+                          @if (preset.photo) {
+                            <div class="req-section">
+                              <div class="req-header">
+                                <app-icon name="camera-outline" class="req-icon photo"></app-icon>
+                                <h4>{{ 'presetsPage.photoReqs' | translate }}</h4>
+                              </div>
+                              <div class="req-details-grid">
+                                <p><strong>{{ 'common.size' | translate }}:</strong> {{ preset.photo.minKb }}KB - {{ preset.photo.maxKb }}KB</p>
+                                @if (preset.photo.width) {
+                                  <p><strong>{{ 'common.dimensions' | translate }}:</strong> {{ preset.photo.width }} x {{ preset.photo.height }} px</p>
+                                }
+                                @if (preset.photo.aspectRatio) {
+                                  <p><strong>Aspect Ratio:</strong> {{ preset.photo.aspectRatio }}</p>
+                                }
+                                <p><strong>{{ 'common.format' | translate }}:</strong> {{ preset.photo.format || 'JPEG' }}</p>
+                                @if (preset.photo.backgroundGuidance) {
+                                  <p><strong>Background:</strong> {{ preset.photo.backgroundGuidance }}</p>
+                                }
+                              </div>
+                              <div class="source-badge-row">
+                                @if (preset.photo.verifiedSource) {
+                                  <app-badge variant="success" size="sm">
+                                    Verified: {{ preset.photo.verifiedSource }}
+                                  </app-badge>
+                                }
+                                @if (!preset.photo.verifiedSource) {
+                                  <app-badge variant="warning" size="sm">
+                                    Unverified - Check Official Guidelines
+                                  </app-badge>
+                                }
+                              </div>
+                              <app-button size="sm" variant="outline" (clicked)="goToTool('photo', preset.id)" style="margin-top: 10px;">
+                                {{ 'presetsPage.processPhoto' | translate }}
+                              </app-button>
+                            </div>
+                          }
+                          <!-- Signature Req -->
+                          @if (preset.signature) {
+                            <div class="req-section">
+                              <div class="req-header">
+                                <app-icon name="create-outline" class="req-icon sig"></app-icon>
+                                <h4>{{ 'presetsPage.sigReqs' | translate }}</h4>
+                              </div>
+                              <div class="req-details-grid">
+                                <p><strong>{{ 'common.size' | translate }}:</strong> {{ preset.signature.minKb }}KB - {{ preset.signature.maxKb }}KB</p>
+                                @if (preset.signature.width) {
+                                  <p><strong>{{ 'common.dimensions' | translate }}:</strong> {{ preset.signature.width }} x {{ preset.signature.height }} px</p>
+                                }
+                                <p><strong>{{ 'common.format' | translate }}:</strong> {{ preset.signature.format || 'JPEG' }}</p>
+                              </div>
+                              <div class="source-badge-row">
+                                @if (preset.signature.verifiedSource) {
+                                  <app-badge variant="success" size="sm">
+                                    Verified: {{ preset.signature.verifiedSource }}
+                                  </app-badge>
+                                }
+                                @if (!preset.signature.verifiedSource) {
+                                  <app-badge variant="warning" size="sm">
+                                    Unverified - Check Official Guidelines
+                                  </app-badge>
+                                }
+                              </div>
+                              <app-button size="sm" variant="outline" (clicked)="goToTool('signature', preset.id)" style="margin-top: 10px;">
+                                {{ 'presetsPage.processSig' | translate }}
+                              </app-button>
+                            </div>
+                          }
+                          <!-- PDF Req -->
+                          @if (preset.pdf) {
+                            <div class="req-section">
+                              <div class="req-header">
+                                <app-icon name="document-outline" class="req-icon pdf"></app-icon>
+                                <h4>{{ 'presetsPage.docReqs' | translate }}</h4>
+                              </div>
+                              <div class="req-details-grid">
+                                <p><strong>{{ 'common.size' | translate }}:</strong> {{ preset.pdf.minKb }}KB - {{ preset.pdf.maxKb }}KB</p>
+                                <p><strong>{{ 'common.format' | translate }}:</strong> PDF</p>
+                              </div>
+                              <div class="source-badge-row">
+                                @if (preset.pdf.verifiedSource) {
+                                  <app-badge variant="success" size="sm">
+                                    Verified: {{ preset.pdf.verifiedSource }}
+                                  </app-badge>
+                                }
+                                @if (!preset.pdf.verifiedSource) {
+                                  <app-badge variant="warning" size="sm">
+                                    Unverified - Check Official Guidelines
+                                  </app-badge>
+                                }
+                              </div>
+                              <app-button size="sm" variant="outline" (clicked)="goToTool('pdf', preset.id)" style="margin-top: 10px;">
+                                {{ 'presetsPage.processDoc' | translate }}
+                              </app-button>
+                            </div>
+                          }
+                          @if (preset.isCustom) {
+                            <div class="custom-preset-actions">
+                              <app-button size="sm" variant="ghost" (clicked)="openEditModal(preset)">{{ 'common.edit' | translate }}</app-button>
+                              <app-button size="sm" variant="ghost" (clicked)="duplicatePreset(preset)">Duplicate</app-button>
+                              <app-button size="sm" variant="danger" (clicked)="deletePreset(preset)">{{ 'common.delete' | translate }}</app-button>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
                 </div>
-                <app-icon [name]="selectedPreset === preset ? 'chevron-up' : 'chevron-down'" class="chevron-icon"></app-icon>
               </div>
-
-              <div *ngIf="selectedPreset === preset" class="preset-details">
-                <!-- Photo Req -->
-                <div *ngIf="preset.photo" class="req-section">
-                  <div class="req-header">
-                    <app-icon name="camera-outline" class="req-icon photo"></app-icon>
-                    <h4>{{ 'presetsPage.photoReqs' | translate }}</h4>
-                  </div>
-                  <div class="req-details-grid">
-                    <p><strong>{{ 'common.size' | translate }}:</strong> {{ preset.photo.minKb }}KB - {{ preset.photo.maxKb }}KB</p>
-                    <p *ngIf="preset.photo.width"><strong>{{ 'common.dimensions' | translate }}:</strong> {{ preset.photo.width }} x {{ preset.photo.height }} px</p>
-                    <p *ngIf="preset.photo.aspectRatio"><strong>Aspect Ratio:</strong> {{ preset.photo.aspectRatio }}</p>
-                    <p><strong>{{ 'common.format' | translate }}:</strong> {{ preset.photo.format || 'JPEG' }}</p>
-                    <p *ngIf="preset.photo.backgroundGuidance"><strong>Background:</strong> {{ preset.photo.backgroundGuidance }}</p>
-                  </div>
-
-                  <div class="source-badge-row">
-                    <app-badge *ngIf="preset.photo.verifiedSource" variant="success" size="sm">
-                      Verified: {{ preset.photo.verifiedSource }}
-                    </app-badge>
-                    <app-badge *ngIf="!preset.photo.verifiedSource" variant="warning" size="sm">
-                      Unverified - Check Official Guidelines
-                    </app-badge>
-                  </div>
-
-                  <app-button size="sm" variant="outline" (clicked)="goToTool('photo', preset.id)" style="margin-top: 10px;">
-                    {{ 'presetsPage.processPhoto' | translate }}
-                  </app-button>
-                </div>
-
-                <!-- Signature Req -->
-                <div *ngIf="preset.signature" class="req-section">
-                  <div class="req-header">
-                    <app-icon name="create-outline" class="req-icon sig"></app-icon>
-                    <h4>{{ 'presetsPage.sigReqs' | translate }}</h4>
-                  </div>
-                  <div class="req-details-grid">
-                    <p><strong>{{ 'common.size' | translate }}:</strong> {{ preset.signature.minKb }}KB - {{ preset.signature.maxKb }}KB</p>
-                    <p *ngIf="preset.signature.width"><strong>{{ 'common.dimensions' | translate }}:</strong> {{ preset.signature.width }} x {{ preset.signature.height }} px</p>
-                    <p><strong>{{ 'common.format' | translate }}:</strong> {{ preset.signature.format || 'JPEG' }}</p>
-                  </div>
-
-                  <div class="source-badge-row">
-                    <app-badge *ngIf="preset.signature.verifiedSource" variant="success" size="sm">
-                      Verified: {{ preset.signature.verifiedSource }}
-                    </app-badge>
-                    <app-badge *ngIf="!preset.signature.verifiedSource" variant="warning" size="sm">
-                      Unverified - Check Official Guidelines
-                    </app-badge>
-                  </div>
-
-                  <app-button size="sm" variant="outline" (clicked)="goToTool('signature', preset.id)" style="margin-top: 10px;">
-                    {{ 'presetsPage.processSig' | translate }}
-                  </app-button>
-                </div>
-
-                <!-- PDF Req -->
-                <div *ngIf="preset.pdf" class="req-section">
-                  <div class="req-header">
-                    <app-icon name="document-outline" class="req-icon pdf"></app-icon>
-                    <h4>{{ 'presetsPage.docReqs' | translate }}</h4>
-                  </div>
-                  <div class="req-details-grid">
-                    <p><strong>{{ 'common.size' | translate }}:</strong> {{ preset.pdf.minKb }}KB - {{ preset.pdf.maxKb }}KB</p>
-                    <p><strong>{{ 'common.format' | translate }}:</strong> PDF</p>
-                  </div>
-
-                  <div class="source-badge-row">
-                    <app-badge *ngIf="preset.pdf.verifiedSource" variant="success" size="sm">
-                      Verified: {{ preset.pdf.verifiedSource }}
-                    </app-badge>
-                    <app-badge *ngIf="!preset.pdf.verifiedSource" variant="warning" size="sm">
-                      Unverified - Check Official Guidelines
-                    </app-badge>
-                  </div>
-
-                  <app-button size="sm" variant="outline" (clicked)="goToTool('pdf', preset.id)" style="margin-top: 10px;">
-                    {{ 'presetsPage.processDoc' | translate }}
-                  </app-button>
-                </div>
-
-                <div *ngIf="preset.isCustom" class="custom-preset-actions">
-                  <app-button size="sm" variant="ghost" (clicked)="openEditModal(preset)">{{ 'common.edit' | translate }}</app-button>
-                  <app-button size="sm" variant="ghost" (clicked)="duplicatePreset(preset)">Duplicate</app-button>
-                  <app-button size="sm" variant="danger" (clicked)="deletePreset(preset)">{{ 'common.delete' | translate }}</app-button>
-                </div>
-              </div>
-            </div>
+            }
           </div>
-        </div>
-        </div>
+        }
       </div>
 
       <!-- CUSTOM PRESET MODAL -->
@@ -152,7 +183,7 @@
         (closeModal)="showModal = false"
         [title]="'presetsPage.createModalTitle' | translate"
         size="md">
-    
+
         <div class="preset-modal-content">
           <div class="form-group">
             <label class="form-label">Preset Name</label>
@@ -168,28 +199,30 @@
                 <span class="slider round"></span>
               </label>
             </div>
-            <div *ngIf="enablePhoto" class="nested-fields-grid">
-              <div class="form-group">
-                <label class="form-label">Min KB</label>
-                <input type="number" [(ngModel)]="editingPreset.photo!.minKb" class="custom-input" />
+            @if (enablePhoto) {
+              <div class="nested-fields-grid">
+                <div class="form-group">
+                  <label class="form-label">Min KB</label>
+                  <input type="number" [(ngModel)]="editingPreset.photo!.minKb" class="custom-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Max KB</label>
+                  <input type="number" [(ngModel)]="editingPreset.photo!.maxKb" class="custom-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">{{ 'photoPage.widthLabel' | translate }}</label>
+                  <input type="number" [(ngModel)]="editingPreset.photo!.width" class="custom-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">{{ 'photoPage.heightLabel' | translate }}</label>
+                  <input type="number" [(ngModel)]="editingPreset.photo!.height" class="custom-input" />
+                </div>
+                <div class="form-group span-2">
+                  <label class="form-label">{{ 'common.format' | translate }}</label>
+                  <input type="text" [(ngModel)]="editingPreset.photo!.format" placeholder="e.g. JPEG" class="custom-input" />
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Max KB</label>
-                <input type="number" [(ngModel)]="editingPreset.photo!.maxKb" class="custom-input" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">{{ 'photoPage.widthLabel' | translate }}</label>
-                <input type="number" [(ngModel)]="editingPreset.photo!.width" class="custom-input" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">{{ 'photoPage.heightLabel' | translate }}</label>
-                <input type="number" [(ngModel)]="editingPreset.photo!.height" class="custom-input" />
-              </div>
-              <div class="form-group span-2">
-                <label class="form-label">{{ 'common.format' | translate }}</label>
-                <input type="text" [(ngModel)]="editingPreset.photo!.format" placeholder="e.g. JPEG" class="custom-input" />
-              </div>
-            </div>
+            }
           </div>
 
           <!-- SIGNATURE -->
@@ -201,28 +234,30 @@
                 <span class="slider round"></span>
               </label>
             </div>
-            <div *ngIf="enableSig" class="nested-fields-grid">
-              <div class="form-group">
-                <label class="form-label">Min KB</label>
-                <input type="number" [(ngModel)]="editingPreset.signature!.minKb" class="custom-input" />
+            @if (enableSig) {
+              <div class="nested-fields-grid">
+                <div class="form-group">
+                  <label class="form-label">Min KB</label>
+                  <input type="number" [(ngModel)]="editingPreset.signature!.minKb" class="custom-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Max KB</label>
+                  <input type="number" [(ngModel)]="editingPreset.signature!.maxKb" class="custom-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">{{ 'photoPage.widthLabel' | translate }}</label>
+                  <input type="number" [(ngModel)]="editingPreset.signature!.width" class="custom-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">{{ 'photoPage.heightLabel' | translate }}</label>
+                  <input type="number" [(ngModel)]="editingPreset.signature!.height" class="custom-input" />
+                </div>
+                <div class="form-group span-2">
+                  <label class="form-label">{{ 'common.format' | translate }}</label>
+                  <input type="text" [(ngModel)]="editingPreset.signature!.format" placeholder="e.g. JPEG" class="custom-input" />
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Max KB</label>
-                <input type="number" [(ngModel)]="editingPreset.signature!.maxKb" class="custom-input" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">{{ 'photoPage.widthLabel' | translate }}</label>
-                <input type="number" [(ngModel)]="editingPreset.signature!.width" class="custom-input" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">{{ 'photoPage.heightLabel' | translate }}</label>
-                <input type="number" [(ngModel)]="editingPreset.signature!.height" class="custom-input" />
-              </div>
-              <div class="form-group span-2">
-                <label class="form-label">{{ 'common.format' | translate }}</label>
-                <input type="text" [(ngModel)]="editingPreset.signature!.format" placeholder="e.g. JPEG" class="custom-input" />
-              </div>
-            </div>
+            }
           </div>
 
           <!-- PDF -->
@@ -234,16 +269,18 @@
                 <span class="slider round"></span>
               </label>
             </div>
-            <div *ngIf="enablePdf" class="nested-fields-grid">
-              <div class="form-group">
-                <label class="form-label">Min KB</label>
-                <input type="number" [(ngModel)]="editingPreset.pdf!.minKb" class="custom-input" />
+            @if (enablePdf) {
+              <div class="nested-fields-grid">
+                <div class="form-group">
+                  <label class="form-label">Min KB</label>
+                  <input type="number" [(ngModel)]="editingPreset.pdf!.minKb" class="custom-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Max KB</label>
+                  <input type="number" [(ngModel)]="editingPreset.pdf!.maxKb" class="custom-input" />
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Max KB</label>
-                <input type="number" [(ngModel)]="editingPreset.pdf!.maxKb" class="custom-input" />
-              </div>
-            </div>
+            }
           </div>
         </div>
 

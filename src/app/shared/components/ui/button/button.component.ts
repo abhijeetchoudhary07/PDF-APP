@@ -23,31 +23,37 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       (click)="onClick($event)"
       [attr.aria-disabled]="disabled || loading"
       [attr.aria-busy]="loading">
-      
+    
       <!-- Loading Spinner -->
-      <span *ngIf="loading" class="spinner" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"></circle>
-          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path>
-        </svg>
-      </span>
-
+      @if (loading) {
+        <span class="spinner" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"></circle>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path>
+          </svg>
+        </span>
+      }
+    
       <!-- Icon Prefix -->
-      <span *ngIf="icon && iconPosition === 'start' && !loading" class="btn-icon icon-start">
-        <ng-content select="[icon-start]"></ng-content>
-      </span>
-
+      @if (icon && iconPosition === 'start' && !loading) {
+        <span class="btn-icon icon-start">
+          <ng-content select="[icon-start]"></ng-content>
+        </span>
+      }
+    
       <!-- Button Content -->
       <span class="btn-text">
         <ng-content></ng-content>
       </span>
-
+    
       <!-- Icon Suffix -->
-      <span *ngIf="icon && iconPosition === 'end' && !loading" class="btn-icon icon-end">
-        <ng-content select="[icon-end]"></ng-content>
-      </span>
+      @if (icon && iconPosition === 'end' && !loading) {
+        <span class="btn-icon icon-end">
+          <ng-content select="[icon-end]"></ng-content>
+        </span>
+      }
     </button>
-  `,
+    `,
   styles: [`
     :host {
       display: inline-block;

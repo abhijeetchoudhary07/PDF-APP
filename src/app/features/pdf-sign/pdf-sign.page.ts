@@ -1,7 +1,7 @@
-import { Component, ElementRef, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ElementRef, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy, inject } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
-import { IonicModule, AlertController, ToastController, ModalController } from '@ionic/angular/lazy';
+import { AlertController, ToastController, ModalController } from '@ionic/angular';
 import { FileService } from '../../core/services/file.service';
 import { PdfSignService, PlacedSignature } from '../../core/services/pdf-sign.service';
 import { StorageService } from '../../core/services/storage.service';
@@ -28,8 +28,6 @@ import {
   standalone: true,
   imports: [
     AppIconComponent,
-    IonicModule,
-    CommonModule,
     FormsModule,
     AppHeaderComponent,
     AppPageHeaderComponent,
@@ -37,9 +35,18 @@ import {
     AppButtonComponent,
     AppBadgeComponent,
     AppTabsComponent
-  ]
+]
 })
 export class PdfSignPage implements AfterViewInit {
+  private fileService = inject(FileService);
+  private pdfSignService = inject(PdfSignService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private alertCtrl = inject(AlertController);
+  private toastCtrl = inject(ToastController);
+  private toast = inject(ToastService);
+
   @ViewChild('pdfCanvas') pdfCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('drawCanvas') drawCanvas?: ElementRef<HTMLCanvasElement>;
 
@@ -82,17 +89,6 @@ export class PdfSignPage implements AfterViewInit {
       this.selectedSignature.height = Math.round(width * 0.43);
     }
   }
-
-  constructor(
-    private fileService: FileService,
-    private pdfSignService: PdfSignService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
-    private toast: ToastService
-  ) {}
 
   ngAfterViewInit(): void {
     this.initDrawCanvas();

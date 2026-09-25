@@ -1,5 +1,5 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule, Location } from '@angular/common';
+import { Component, Input, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Location } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AppBadgeComponent, BadgeVariant } from '../badge/badge.component';
 import { AppBreadcrumbsComponent, BreadcrumbItem } from '../breadcrumbs/breadcrumbs.component';
@@ -8,49 +8,57 @@ import { AppBreadcrumbsComponent, BreadcrumbItem } from '../breadcrumbs/breadcru
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-page-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, AppBadgeComponent, AppBreadcrumbsComponent],
+  imports: [RouterModule, AppBadgeComponent, AppBreadcrumbsComponent],
   template: `
     <div class="page-header-wrapper">
-      <app-breadcrumbs *ngIf="breadcrumbs && breadcrumbs.length > 0" [items]="breadcrumbs"></app-breadcrumbs>
-      
+      @if (breadcrumbs && breadcrumbs.length > 0) {
+        <app-breadcrumbs [items]="breadcrumbs"></app-breadcrumbs>
+      }
+    
       <div class="page-header">
         <div class="header-left">
-          <a
-            *ngIf="backUrl"
-            [routerLink]="backUrl"
-            class="back-btn"
-            aria-label="Back">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </a>
-
-          <button
-            *ngIf="!backUrl && showBack"
-            (click)="goBack()"
-            class="back-btn"
-            type="button"
-            aria-label="Back">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-
+          @if (backUrl) {
+            <a
+              [routerLink]="backUrl"
+              class="back-btn"
+              aria-label="Back">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </a>
+          }
+    
+          @if (!backUrl && showBack) {
+            <button
+              (click)="goBack()"
+              class="back-btn"
+              type="button"
+              aria-label="Back">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+          }
+    
           <div class="title-group">
             <div class="title-row">
               <h1 class="page-title">{{ title }}</h1>
-              <app-badge *ngIf="badge" [variant]="badgeVariant" size="sm">{{ badge }}</app-badge>
+              @if (badge) {
+                <app-badge [variant]="badgeVariant" size="sm">{{ badge }}</app-badge>
+              }
             </div>
-            <p *ngIf="subtitle" class="page-subtitle">{{ subtitle }}</p>
+            @if (subtitle) {
+              <p class="page-subtitle">{{ subtitle }}</p>
+            }
           </div>
         </div>
-
+    
         <div class="header-actions">
           <ng-content select="[actions]"></ng-content>
         </div>
       </div>
     </div>
-  `,
+    `,
   styles: [`
     .page-header-wrapper {
       margin-bottom: var(--space-4, 16px);
@@ -167,6 +175,8 @@ import { AppBreadcrumbsComponent, BreadcrumbItem } from '../breadcrumbs/breadcru
   `]
 })
 export class AppPageHeaderComponent {
+  private location = inject(Location);
+
   @Input() title = '';
   @Input() subtitle?: string;
   @Input() backUrl?: string;
@@ -174,8 +184,6 @@ export class AppPageHeaderComponent {
   @Input() badge?: string;
   @Input() badgeVariant: BadgeVariant = 'primary';
   @Input() breadcrumbs?: BreadcrumbItem[];
-
-  constructor(private location: Location) {}
 
   goBack() {
     this.location.back();

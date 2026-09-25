@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule, DecimalPipe } from '@angular/common';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { FileService } from '../../core/services/file.service';
@@ -41,7 +41,6 @@ export type OcrWorkflowStep = 'select' | 'detect' | 'configure' | 'processing' |
   styleUrls: ['./pdf-ocr.page.scss'],
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     RouterModule,
     AppHeaderComponent,
@@ -52,10 +51,22 @@ export type OcrWorkflowStep = 'select' | 'detect' | 'configure' | 'processing' |
     AppRelatedToolsComponent,
     FileDropzoneComponent,
     TranslatePipe
-  ],
+],
   providers: [DecimalPipe]
 })
 export class PdfOcrPage implements OnInit, OnDestroy {
+  private fileService = inject(FileService);
+  private validationService = inject(ValidationService);
+  private ocrService = inject(OcrService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private documentBridgeService = inject(DocumentBridgeService);
+  private translationService = inject(TranslationService);
+  private toastService = inject(ToastService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
   currentStep: OcrWorkflowStep = 'select';
   selectedFile?: File;
   previewUrl?: string;
@@ -90,20 +101,6 @@ export class PdfOcrPage implements OnInit, OnDestroy {
   searchQuery = '';
   isCopied = false;
   isExporting = false;
-
-  constructor(
-    private fileService: FileService,
-    private validationService: ValidationService,
-    private ocrService: OcrService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private documentBridgeService: DocumentBridgeService,
-    private translationService: TranslationService,
-    private toastService: ToastService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   analyzeWithIntelligence(): void {
     if (this.selectedFile) {

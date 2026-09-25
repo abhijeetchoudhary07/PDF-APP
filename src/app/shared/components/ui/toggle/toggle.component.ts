@@ -1,12 +1,12 @@
 import { Component, Input, Output, EventEmitter, forwardRef, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-toggle',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -27,13 +27,17 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
         (keydown.enter)="$event.preventDefault(); toggle()">
         <div class="toggle-thumb"></div>
       </div>
-
-      <div *ngIf="label" class="toggle-label-group">
-        <span class="toggle-label">{{ label }}</span>
-        <span *ngIf="description" class="toggle-desc">{{ description }}</span>
-      </div>
+    
+      @if (label) {
+        <div class="toggle-label-group">
+          <span class="toggle-label">{{ label }}</span>
+          @if (description) {
+            <span class="toggle-desc">{{ description }}</span>
+          }
+        </div>
+      }
     </div>
-  `,
+    `,
   styles: [`
     .toggle-wrapper {
       display: inline-flex;

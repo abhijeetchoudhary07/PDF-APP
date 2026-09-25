@@ -1,13 +1,8 @@
-import { Component, OnInit, OnDestroy, HostListener, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
-import {
-  IonicModule,
-  AlertController,
-  LoadingController,
-  ToastController
-} from '@ionic/angular/lazy';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import JSZip from 'jszip';
 
 import { PdfPageManagerService } from '../../core/services/pdf-page-manager.service';
@@ -51,7 +46,6 @@ import {
     CommonModule,
     FormsModule,
     RouterModule,
-    IonicModule,
     ResultPreviewComponent,
     AppHeaderComponent,
     AppPageHeaderComponent,
@@ -66,6 +60,16 @@ import {
   providers: [DecimalPipe]
 })
 export class PdfOrganizerPage implements OnInit, OnDestroy {
+  pageManager = inject(PdfPageManagerService);
+  private fileService = inject(FileService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private alertCtrl = inject(AlertController);
+  private toastCtrl = inject(ToastController);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
   mode: PdfWorkspaceMode = 'organize';
 
   modeTabs = [
@@ -114,18 +118,6 @@ export class PdfOrganizerPage implements OnInit, OnDestroy {
   zoomPage?: PdfPageItem;
   zoomImageUrl?: string;
   isZoomLoading = false;
-
-  constructor(
-    public pageManager: PdfPageManagerService,
-    private fileService: FileService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
-    private route: ActivatedRoute,
-    private router: Router
-  ) {}
 
   ngOnInit() {
     // Read route param or query param for mode

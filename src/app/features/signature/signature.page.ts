@@ -1,6 +1,6 @@
-import { Component, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
-import { IonicModule, ModalController } from '@ionic/angular/lazy';
-import { CommonModule, DecimalPipe } from '@angular/common';
+import { Component, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
+import { ModalController } from '@ionic/angular';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FileService } from '../../core/services/file.service';
 import { ValidationService } from '../../core/services/validation.service';
@@ -36,7 +36,6 @@ import {
   styleUrls: ['./signature.page.scss'],
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     ResultPreviewComponent,
     AppHeaderComponent,
@@ -48,10 +47,22 @@ import {
     FileDropzoneComponent,
     FilePreviewComponent,
     TranslatePipe
-  ],
+],
   providers: [DecimalPipe]
 })
 export class SignaturePage implements OnDestroy {
+  private fileService = inject(FileService);
+  private validationService = inject(ValidationService);
+  private imageService = inject(ImageService);
+  private compressionService = inject(CompressionService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private modalCtrl = inject(ModalController);
+  private cdr = inject(ChangeDetectorRef);
+  translationService = inject(TranslationService);
+  private toast = inject(ToastService);
+
   workflowState: SingleFileWorkflowState = 'EMPTY';
   mode: 'kb' | 'pixels' = 'kb';
 
@@ -110,20 +121,6 @@ export class SignaturePage implements OnDestroy {
       height: this.processedResult.dimensions?.height || this.processedImageDims?.height || this.targetHeight
     };
   }
-
-  constructor(
-    private fileService: FileService,
-    private validationService: ValidationService,
-    private imageService: ImageService,
-    private compressionService: CompressionService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private modalCtrl: ModalController,
-    private cdr: ChangeDetectorRef,
-    public translationService: TranslationService,
-    private toast: ToastService
-  ) {}
 
   ngOnDestroy(): void {
     this.cleanupUrls();

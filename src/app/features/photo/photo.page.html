@@ -3,7 +3,7 @@
 
   <main class="app-main-content">
     <div class="tool-page-container">
-      
+
       <!-- PAGE HEADER -->
       <app-page-header
         [title]="'photoPage.title' | translate"
@@ -30,318 +30,320 @@
       <!-- WORKSPACE CONTAINER -->
       <div class="workspace-panel">
         <!-- 1. EMPTY / UPLOAD STATE -->
-        <div *ngIf="workflowState === 'EMPTY' || (!originalFile && workflowState === 'ERROR')">
-          <app-file-dropzone
-            icon="camera"
-            [title]="'dropzone.photoTitle' | translate"
-            [description]="'dropzone.photoDesc' | translate"
-            accept="image/jpeg,image/png,image/webp"
-            [errorMessage]="errorMessage"
-            (fileSelected)="onFileSelected($event)">
-          </app-file-dropzone>
-        </div>
+        @if (workflowState === 'EMPTY' || (!originalFile && workflowState === 'ERROR')) {
+          <div>
+            <app-file-dropzone
+              icon="camera"
+              [title]="'dropzone.photoTitle' | translate"
+              [description]="'dropzone.photoDesc' | translate"
+              accept="image/jpeg,image/png,image/webp"
+              [errorMessage]="errorMessage"
+              (fileSelected)="onFileSelected($event)">
+            </app-file-dropzone>
+          </div>
+        }
 
         <!-- 2. SELECTED FILE & CONFIGURATION STATE -->
-        <div *ngIf="originalFile && workflowState !== 'SUCCESS'" class="configuring-section">
-          <!-- File Preview Card -->
-          <app-file-preview
-            [file]="originalFile"
-            [thumbnailUrl]="originalPreviewUrl"
-            [dimensions]="originalWidth ? { width: originalWidth, height: originalHeight } : undefined"
-            (preview)="openCropper()"
-            (replace)="selectPhoto()"
-            (remove)="removePhoto()">
-          </app-file-preview>
-
-          <!-- SMART GOVERNMENT FORM PRESETS -->
-          <div class="smart-presets-card">
-            <label class="control-label">{{ 'photoPage.quickPresetsTitle' | translate }}</label>
-            <div class="preset-cards-grid">
-              <button
-                *ngFor="let preset of formPresets"
-                type="button"
-                class="smart-preset-btn"
-                [class.active]="selectedPresetId === preset.id"
-                (click)="applyPreset(preset)">
-                <strong class="preset-name">{{ preset.name }}</strong>
-                <span class="preset-desc">{{ preset.description }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- CONFIGURATION: EXACT KB -->
-          <div *ngIf="mode === 'kb'" class="config-card">
-            <div class="card-header-flex">
-              <label class="control-label">{{ 'photoPage.targetSizeTitle' | translate }}</label>
-              <span class="selected-target-pill">{{ selectedTargetKB }} KB</span>
-            </div>
-
-            <div class="preset-chips">
-              <button
-                *ngFor="let size of targetSizes"
-                type="button"
-                class="preset-chip"
-                [class.active]="selectedTargetKB === size && !isCustomKB && !selectedPresetId"
-                (click)="selectPresetSize(size)">
-                {{ size }} KB
-              </button>
-
-              <button
-                type="button"
-                class="preset-chip custom-chip"
-                [class.active]="isCustomKB"
-                (click)="enableCustomSize()">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 4px;">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-                Custom KB
-              </button>
-            </div>
-
-            <!-- Custom Size Input & Slider (when Custom is selected) -->
-            <div *ngIf="isCustomKB" class="custom-kb-panel">
-              <div class="custom-kb-input-row">
-                <div class="kb-input-wrap">
-                  <input
-                    type="number"
-                    min="5"
-                    max="5000"
-                    [(ngModel)]="selectedTargetKB"
-                    (input)="onCustomKBInput()"
-                    class="field-input custom-kb-input"
-                    placeholder="Enter KB" />
-                  <span class="kb-unit-badge">KB</span>
-                </div>
-                <div class="kb-steppers">
-                  <button type="button" class="stepper-btn" (click)="adjustTargetKB(-10)">-10</button>
-                  <button type="button" class="stepper-btn" (click)="adjustTargetKB(-5)">-5</button>
-                  <button type="button" class="stepper-btn" (click)="adjustTargetKB(5)">+5</button>
-                  <button type="button" class="stepper-btn" (click)="adjustTargetKB(10)">+10</button>
-                </div>
-              </div>
-
-              <!-- Interactive slider -->
-              <div class="kb-slider-wrap">
-                <input
-                  type="range"
-                  min="10"
-                  max="1000"
-                  step="5"
-                  [(ngModel)]="selectedTargetKB"
-                  (input)="onCustomKBSlider()"
-                  class="custom-range-slider" />
-                <div class="slider-marks">
-                  <span>10 KB</span>
-                  <span>100 KB</span>
-                  <span>500 KB</span>
-                  <span>1000 KB</span>
-                </div>
+        @if (originalFile && workflowState !== 'SUCCESS') {
+          <div class="configuring-section">
+            <!-- File Preview Card -->
+            <app-file-preview
+              [file]="originalFile"
+              [thumbnailUrl]="originalPreviewUrl"
+              [dimensions]="originalWidth ? { width: originalWidth, height: originalHeight } : undefined"
+              (preview)="openCropper()"
+              (replace)="selectPhoto()"
+              (remove)="removePhoto()">
+            </app-file-preview>
+            <!-- SMART GOVERNMENT FORM PRESETS -->
+            <div class="smart-presets-card">
+              <label class="control-label">{{ 'photoPage.quickPresetsTitle' | translate }}</label>
+              <div class="preset-cards-grid">
+                @for (preset of formPresets; track preset) {
+                  <button
+                    type="button"
+                    class="smart-preset-btn"
+                    [class.active]="selectedPresetId === preset.id"
+                    (click)="applyPreset(preset)">
+                    <strong class="preset-name">{{ preset.name }}</strong>
+                    <span class="preset-desc">{{ preset.description }}</span>
+                  </button>
+                }
               </div>
             </div>
-
-            <p class="config-hint">{{ 'photoPage.targetSizeHint' | translate }}</p>
-
-            <!-- CUSTOMIZE COMPLETE STYLE SECTION -->
-            <div class="customize-style-section">
-              <button
-                type="button"
-                class="style-toggle-btn"
-                (click)="showCustomStyleOptions = !showCustomStyleOptions">
-                <span class="style-toggle-title">
-                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  Customize Complete Style & Formatting
-                </span>
-                <span class="toggle-indicator">{{ showCustomStyleOptions ? '▲ Hide' : '▼ Customize' }}</span>
-              </button>
-
-              <div *ngIf="showCustomStyleOptions" class="style-options-panel">
-                <!-- Output Format -->
-                <div class="style-option-group">
-                  <label class="style-sublabel">Output Format</label>
-                  <div class="style-chips-row">
-                    <button
-                      type="button"
-                      class="format-chip"
-                      [class.active]="targetFormat === 'image/jpeg'"
-                      (click)="targetFormat = 'image/jpeg'">
-                      JPEG (Gov Forms)
-                    </button>
-                    <button
-                      type="button"
-                      class="format-chip"
-                      [class.active]="targetFormat === 'image/png'"
-                      (click)="targetFormat = 'image/png'">
-                      PNG
-                    </button>
-                    <button
-                      type="button"
-                      class="format-chip"
-                      [class.active]="targetFormat === 'image/webp'"
-                      (click)="targetFormat = 'image/webp'">
-                      WebP
-                    </button>
-                  </div>
+            <!-- CONFIGURATION: EXACT KB -->
+            @if (mode === 'kb') {
+              <div class="config-card">
+                <div class="card-header-flex">
+                  <label class="control-label">{{ 'photoPage.targetSizeTitle' | translate }}</label>
+                  <span class="selected-target-pill">{{ selectedTargetKB }} KB</span>
                 </div>
-
-                <!-- Border Styling -->
-                <div class="style-option-group">
-                  <label class="style-sublabel">Border & Frame Style</label>
-                  <div class="style-chips-row">
+                <div class="preset-chips">
+                  @for (size of targetSizes; track size) {
                     <button
                       type="button"
-                      class="format-chip"
-                      [class.active]="photoBorderStyle === 'none'"
-                      (click)="photoBorderStyle = 'none'">
-                      No Border
+                      class="preset-chip"
+                      [class.active]="selectedTargetKB === size && !isCustomKB && !selectedPresetId"
+                      (click)="selectPresetSize(size)">
+                      {{ size }} KB
                     </button>
-                    <button
-                      type="button"
-                      class="format-chip"
-                      [class.active]="photoBorderStyle === 'thin-black'"
-                      (click)="photoBorderStyle = 'thin-black'">
-                      Thin Black Border (UPSC/SSC)
-                    </button>
-                    <button
-                      type="button"
-                      class="format-chip"
-                      [class.active]="photoBorderStyle === 'passport-white'"
-                      (click)="photoBorderStyle = 'passport-white'">
-                      Passport White Frame
-                    </button>
-                  </div>
+                  }
+                  <button
+                    type="button"
+                    class="preset-chip custom-chip"
+                    [class.active]="isCustomKB"
+                    (click)="enableCustomSize()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 4px;">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Custom KB
+                  </button>
                 </div>
-
-                <!-- Name & Date of Photo (DOP) Stamp -->
-                <div class="style-option-group">
-                  <div class="toggle-row">
-                    <label class="toggle-label-wrap">
-                      <input type="checkbox" [(ngModel)]="addDateAndNameStamp" class="native-toggle-check" />
-                      <span class="custom-toggle-track">
-                        <span class="custom-toggle-thumb"></span>
-                      </span>
-                      <strong class="toggle-title">Add Name & Date of Photo (DOP) Strip</strong>
-                    </label>
-                  </div>
-                  <p class="style-hint">Mandatory for many Indian competitive exams (e.g. SSC, Police, State PSC).</p>
-
-                  <div *ngIf="addDateAndNameStamp" class="stamp-fields-grid">
-                    <div class="field-group">
-                      <label class="field-label">Candidate Name</label>
-                      <input
-                        type="text"
-                        [(ngModel)]="candidateName"
-                        placeholder="e.g. RAHUL SHARMA"
-                        class="field-input uppercase-input" />
+                <!-- Custom Size Input & Slider (when Custom is selected) -->
+                @if (isCustomKB) {
+                  <div class="custom-kb-panel">
+                    <div class="custom-kb-input-row">
+                      <div class="kb-input-wrap">
+                        <input
+                          type="number"
+                          min="5"
+                          max="5000"
+                          [(ngModel)]="selectedTargetKB"
+                          (input)="onCustomKBInput()"
+                          class="field-input custom-kb-input"
+                          placeholder="Enter KB" />
+                        <span class="kb-unit-badge">KB</span>
+                      </div>
+                      <div class="kb-steppers">
+                        <button type="button" class="stepper-btn" (click)="adjustTargetKB(-10)">-10</button>
+                        <button type="button" class="stepper-btn" (click)="adjustTargetKB(-5)">-5</button>
+                        <button type="button" class="stepper-btn" (click)="adjustTargetKB(5)">+5</button>
+                        <button type="button" class="stepper-btn" (click)="adjustTargetKB(10)">+10</button>
+                      </div>
                     </div>
-                    <div class="field-group">
-                      <label class="field-label">Date of Photo (DOP)</label>
+                    <!-- Interactive slider -->
+                    <div class="kb-slider-wrap">
                       <input
-                        type="text"
-                        [(ngModel)]="photoDate"
-                        placeholder="e.g. 23.09.2026"
-                        class="field-input" />
+                        type="range"
+                        min="10"
+                        max="1000"
+                        step="5"
+                        [(ngModel)]="selectedTargetKB"
+                        (input)="onCustomKBSlider()"
+                        class="custom-range-slider" />
+                      <div class="slider-marks">
+                        <span>10 KB</span>
+                        <span>100 KB</span>
+                        <span>500 KB</span>
+                        <span>1000 KB</span>
+                      </div>
                     </div>
                   </div>
+                }
+                <p class="config-hint">{{ 'photoPage.targetSizeHint' | translate }}</p>
+                <!-- CUSTOMIZE COMPLETE STYLE SECTION -->
+                <div class="customize-style-section">
+                  <button
+                    type="button"
+                    class="style-toggle-btn"
+                    (click)="showCustomStyleOptions = !showCustomStyleOptions">
+                    <span class="style-toggle-title">
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                      </svg>
+                      Customize Complete Style & Formatting
+                    </span>
+                    <span class="toggle-indicator">{{ showCustomStyleOptions ? '▲ Hide' : '▼ Customize' }}</span>
+                  </button>
+                  @if (showCustomStyleOptions) {
+                    <div class="style-options-panel">
+                      <!-- Output Format -->
+                      <div class="style-option-group">
+                        <label class="style-sublabel">Output Format</label>
+                        <div class="style-chips-row">
+                          <button
+                            type="button"
+                            class="format-chip"
+                            [class.active]="targetFormat === 'image/jpeg'"
+                            (click)="targetFormat = 'image/jpeg'">
+                            JPEG (Gov Forms)
+                          </button>
+                          <button
+                            type="button"
+                            class="format-chip"
+                            [class.active]="targetFormat === 'image/png'"
+                            (click)="targetFormat = 'image/png'">
+                            PNG
+                          </button>
+                          <button
+                            type="button"
+                            class="format-chip"
+                            [class.active]="targetFormat === 'image/webp'"
+                            (click)="targetFormat = 'image/webp'">
+                            WebP
+                          </button>
+                        </div>
+                      </div>
+                      <!-- Border Styling -->
+                      <div class="style-option-group">
+                        <label class="style-sublabel">Border & Frame Style</label>
+                        <div class="style-chips-row">
+                          <button
+                            type="button"
+                            class="format-chip"
+                            [class.active]="photoBorderStyle === 'none'"
+                            (click)="photoBorderStyle = 'none'">
+                            No Border
+                          </button>
+                          <button
+                            type="button"
+                            class="format-chip"
+                            [class.active]="photoBorderStyle === 'thin-black'"
+                            (click)="photoBorderStyle = 'thin-black'">
+                            Thin Black Border (UPSC/SSC)
+                          </button>
+                          <button
+                            type="button"
+                            class="format-chip"
+                            [class.active]="photoBorderStyle === 'passport-white'"
+                            (click)="photoBorderStyle = 'passport-white'">
+                            Passport White Frame
+                          </button>
+                        </div>
+                      </div>
+                      <!-- Name & Date of Photo (DOP) Stamp -->
+                      <div class="style-option-group">
+                        <div class="toggle-row">
+                          <label class="toggle-label-wrap">
+                            <input type="checkbox" [(ngModel)]="addDateAndNameStamp" class="native-toggle-check" />
+                            <span class="custom-toggle-track">
+                              <span class="custom-toggle-thumb"></span>
+                            </span>
+                            <strong class="toggle-title">Add Name & Date of Photo (DOP) Strip</strong>
+                          </label>
+                        </div>
+                        <p class="style-hint">Mandatory for many Indian competitive exams (e.g. SSC, Police, State PSC).</p>
+                        @if (addDateAndNameStamp) {
+                          <div class="stamp-fields-grid">
+                            <div class="field-group">
+                              <label class="field-label">Candidate Name</label>
+                              <input
+                                type="text"
+                                [(ngModel)]="candidateName"
+                                placeholder="e.g. RAHUL SHARMA"
+                                class="field-input uppercase-input" />
+                            </div>
+                            <div class="field-group">
+                              <label class="field-label">Date of Photo (DOP)</label>
+                              <input
+                                type="text"
+                                [(ngModel)]="photoDate"
+                                placeholder="e.g. 23.09.2026"
+                                class="field-input" />
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
                 </div>
               </div>
-            </div>
-          </div>
-
-          <!-- CONFIGURATION: EXACT PIXELS -->
-          <div *ngIf="mode === 'pixels'" class="config-card">
-            <label class="control-label">{{ 'photoPage.pixelPresetsTitle' | translate }}</label>
-            <div class="preset-chips">
-              <button
-                *ngFor="let p of pixelPresets"
-                type="button"
-                class="preset-chip"
-                [class.active]="targetWidth === p.w && targetHeight === p.h"
-                (click)="applyPixelPreset(p.w, p.h)">
-                {{ p.label }} px
-              </button>
-            </div>
-
-            <div class="dims-grid">
-              <div class="field-group">
-                <label class="field-label">{{ 'photoPage.widthLabel' | translate }}</label>
-                <input
-                  type="number"
-                  [(ngModel)]="targetWidth"
-                  (input)="onWidthChange()"
-                  class="field-input" />
+            }
+            <!-- CONFIGURATION: EXACT PIXELS -->
+            @if (mode === 'pixels') {
+              <div class="config-card">
+                <label class="control-label">{{ 'photoPage.pixelPresetsTitle' | translate }}</label>
+                <div class="preset-chips">
+                  @for (p of pixelPresets; track p) {
+                    <button
+                      type="button"
+                      class="preset-chip"
+                      [class.active]="targetWidth === p.w && targetHeight === p.h"
+                      (click)="applyPixelPreset(p.w, p.h)">
+                      {{ p.label }} px
+                    </button>
+                  }
+                </div>
+                <div class="dims-grid">
+                  <div class="field-group">
+                    <label class="field-label">{{ 'photoPage.widthLabel' | translate }}</label>
+                    <input
+                      type="number"
+                      [(ngModel)]="targetWidth"
+                      (input)="onWidthChange()"
+                      class="field-input" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">{{ 'photoPage.heightLabel' | translate }}</label>
+                    <input
+                      type="number"
+                      [(ngModel)]="targetHeight"
+                      (input)="onHeightChange()"
+                      class="field-input" />
+                  </div>
+                </div>
+                <div class="toggle-row">
+                  <label class="toggle-label-wrap">
+                    <input type="checkbox" [(ngModel)]="lockAspectRatio" class="native-toggle-check" />
+                    <span class="custom-toggle-track">
+                      <span class="custom-toggle-thumb"></span>
+                    </span>
+                    <span>{{ 'photoPage.lockAspectRatio' | translate }}</span>
+                  </label>
+                </div>
               </div>
-
-              <div class="field-group">
-                <label class="field-label">{{ 'photoPage.heightLabel' | translate }}</label>
-                <input
-                  type="number"
-                  [(ngModel)]="targetHeight"
-                  (input)="onHeightChange()"
-                  class="field-input" />
+            }
+            <!-- PROCESSING INDICATOR (IF IN PROGRESS) -->
+            @if (isProcessing) {
+              <div class="processing-banner">
+                <div class="spinner-box">
+                  <div class="loading-spinner"></div>
+                </div>
+                <div class="stage-info">
+                  <strong>{{ stageText }}</strong>
+                  <span>{{ 'common.processing' | translate }}</span>
+                </div>
+                <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">{{ 'common.cancel' | translate }}</button>
               </div>
-            </div>
-
-            <div class="toggle-row">
-              <label class="toggle-label-wrap">
-                <input type="checkbox" [(ngModel)]="lockAspectRatio" class="native-toggle-check" />
-                <span class="custom-toggle-track">
-                  <span class="custom-toggle-thumb"></span>
-                </span>
-                <span>{{ 'photoPage.lockAspectRatio' | translate }}</span>
-              </label>
+            }
+            <!-- PRIMARY ACTION -->
+            <div class="action-submit-wrap">
+              <app-button
+                variant="primary"
+                size="lg"
+                [block]="true"
+                [loading]="isProcessing"
+                (clicked)="compressPhoto()">
+                {{ isProcessing ? stageText : (mode === 'kb' ? ('photoPage.compressBtn' | translate:{ size: selectedTargetKB }) : ('photoPage.resizeBtn' | translate:{ width: targetWidth, height: targetHeight })) }}
+              </app-button>
             </div>
           </div>
-
-          <!-- PROCESSING INDICATOR (IF IN PROGRESS) -->
-          <div *ngIf="isProcessing" class="processing-banner">
-            <div class="spinner-box">
-              <div class="loading-spinner"></div>
-            </div>
-            <div class="stage-info">
-              <strong>{{ stageText }}</strong>
-              <span>{{ 'common.processing' | translate }}</span>
-            </div>
-            <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">{{ 'common.cancel' | translate }}</button>
-          </div>
-
-          <!-- PRIMARY ACTION -->
-          <div class="action-submit-wrap">
-            <app-button
-              variant="primary"
-              size="lg"
-              [block]="true"
-              [loading]="isProcessing"
-              (clicked)="compressPhoto()">
-              {{ isProcessing ? stageText : (mode === 'kb' ? ('photoPage.compressBtn' | translate:{ size: selectedTargetKB }) : ('photoPage.resizeBtn' | translate:{ width: targetWidth, height: targetHeight })) }}
-            </app-button>
-          </div>
-        </div>
+        }
 
         <!-- 3. SUCCESS / RESULT STATE -->
-        <div *ngIf="workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData" class="result-section">
-          <app-result-preview
-            [file]="processedResult?.file"
-            [beforeData]="beforePreviewData"
-            [afterData]="afterPreviewData"
-            [beforeUrl]="originalPreviewUrl"
-            [afterUrl]="processedPreviewUrl"
-            [outputFilename]="processedResult?.file?.name"
-            (saved)="savePhoto()"
-            (shared)="sharePhoto()"
-            (resetRequested)="workflowState = 'CONFIGURING'">
-          </app-result-preview>
-
-          <app-related-tools
-            currentToolId="photo_tools"
-            category="PHOTO"
-            [title]="'results.relatedToolsTitle' | translate"
-            [subtitle]="'results.relatedToolsSubtitle' | translate">
-          </app-related-tools>
-        </div>
+        @if (workflowState === 'SUCCESS' && beforePreviewData && afterPreviewData) {
+          <div class="result-section">
+            <app-result-preview
+              [file]="processedResult?.file"
+              [beforeData]="beforePreviewData"
+              [afterData]="afterPreviewData"
+              [beforeUrl]="originalPreviewUrl"
+              [afterUrl]="processedPreviewUrl"
+              [outputFilename]="processedResult?.file?.name"
+              (saved)="savePhoto()"
+              (shared)="sharePhoto()"
+              (resetRequested)="workflowState = 'CONFIGURING'">
+            </app-result-preview>
+            <app-related-tools
+              currentToolId="photo_tools"
+              category="PHOTO"
+              [title]="'results.relatedToolsTitle' | translate"
+              [subtitle]="'results.relatedToolsSubtitle' | translate">
+            </app-related-tools>
+          </div>
+        }
       </div>
     </div>
   </main>

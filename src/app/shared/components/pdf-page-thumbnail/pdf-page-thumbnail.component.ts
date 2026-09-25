@@ -1,6 +1,6 @@
 import { AppSkeletonComponent } from '../ui/skeleton/skeleton.component';
 import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -9,7 +9,8 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./pdf-page-thumbnail.component.scss'],
   standalone: true,
   imports: [
-    AppSkeletonComponent,CommonModule]
+    AppSkeletonComponent
+]
 })
 export class PdfPageThumbnailComponent {
   @Input() pageNumber!: number;

@@ -1,11 +1,5 @@
-import {
-  Component,
-  Input,
-  ElementRef,
-  HostListener,
-  ChangeDetectionStrategy
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, ElementRef, HostListener, ChangeDetectionStrategy, inject } from '@angular/core';
+
 import { TranslationService } from '../../../../core/services/translation.service';
 import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.types';
 
@@ -13,94 +7,107 @@ import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.ty
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-language-selector',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <!-- 1. DROPDOWN MODE (Header & Compact Toolbars) -->
-    <div *ngIf="mode === 'dropdown'" class="lang-dropdown-wrapper">
-      <button
-        type="button"
-        class="lang-trigger-btn"
-        [class.is-open]="isOpen"
-        (click)="toggleDropdown()"
-        [attr.aria-expanded]="isOpen"
-        aria-haspopup="listbox"
-        [attr.aria-label]="'Select language. Current: ' + currentOption.label">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="globe-icon">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="2" y1="12" x2="22" y2="12"></line>
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-        </svg>
-        <span class="lang-name">{{ currentOption.nativeName }}</span>
-        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none" class="chevron-icon">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-
-      <div *ngIf="isOpen" class="lang-dropdown-menu" role="listbox" (click)="$event.stopPropagation()">
-        <div class="menu-header">
-          <span>Choose Language / भाषा</span>
-        </div>
-        <div class="options-list">
-          <button
-            *ngFor="let opt of languages"
-            type="button"
-            class="lang-option-item"
-            [class.is-selected]="opt.code === currentLang"
-            (click)="selectLanguage(opt.code)"
-            role="option"
-            [attr.aria-selected]="opt.code === currentLang">
-            <div class="lang-info">
-              <span class="native-name">{{ opt.nativeName }}</span>
-              <span class="english-label">{{ opt.label }}</span>
+    @if (mode === 'dropdown') {
+      <div class="lang-dropdown-wrapper">
+        <button
+          type="button"
+          class="lang-trigger-btn"
+          [class.is-open]="isOpen"
+          (click)="toggleDropdown()"
+          [attr.aria-expanded]="isOpen"
+          aria-haspopup="listbox"
+          [attr.aria-label]="'Select language. Current: ' + currentOption.label">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="globe-icon">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span class="lang-name">{{ currentOption.nativeName }}</span>
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none" class="chevron-icon">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        @if (isOpen) {
+          <div class="lang-dropdown-menu" role="listbox" (click)="$event.stopPropagation()">
+            <div class="menu-header">
+              <span>Choose Language / भाषा</span>
             </div>
-            <svg
-              *ngIf="opt.code === currentLang"
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              stroke="currentColor"
-              stroke-width="2.5"
-              fill="none"
-              class="check-icon">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </button>
-        </div>
+            <div class="options-list">
+              @for (opt of languages; track opt) {
+                <button
+                  type="button"
+                  class="lang-option-item"
+                  [class.is-selected]="opt.code === currentLang"
+                  (click)="selectLanguage(opt.code)"
+                  role="option"
+                  [attr.aria-selected]="opt.code === currentLang">
+                  <div class="lang-info">
+                    <span class="native-name">{{ opt.nativeName }}</span>
+                    <span class="english-label">{{ opt.label }}</span>
+                  </div>
+                  @if (opt.code === currentLang) {
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      fill="none"
+                      class="check-icon">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
       </div>
-    </div>
-
+    }
+    
     <!-- 2. SEGMENTED / CARDS MODE (Settings & Mobile Drawer) -->
-    <div *ngIf="mode === 'segmented'" class="lang-segmented-grid" role="radiogroup" aria-label="Language selection">
-      <button
-        *ngFor="let opt of languages"
-        type="button"
-        class="lang-card-btn"
-        [class.active]="opt.code === currentLang"
-        (click)="selectLanguage(opt.code)"
-        role="radio"
-        [attr.aria-checked]="opt.code === currentLang">
-        <div class="lang-card-inner">
-          <span class="card-native">{{ opt.nativeName }}</span>
-          <span class="card-label">{{ opt.label }}</span>
-        </div>
-        <div class="radio-indicator">
-          <div class="radio-dot" *ngIf="opt.code === currentLang"></div>
-        </div>
-      </button>
-    </div>
-
+    @if (mode === 'segmented') {
+      <div class="lang-segmented-grid" role="radiogroup" aria-label="Language selection">
+        @for (opt of languages; track opt) {
+          <button
+            type="button"
+            class="lang-card-btn"
+            [class.active]="opt.code === currentLang"
+            (click)="selectLanguage(opt.code)"
+            role="radio"
+            [attr.aria-checked]="opt.code === currentLang">
+            <div class="lang-card-inner">
+              <span class="card-native">{{ opt.nativeName }}</span>
+              <span class="card-label">{{ opt.label }}</span>
+            </div>
+            <div class="radio-indicator">
+              @if (opt.code === currentLang) {
+                <div class="radio-dot"></div>
+              }
+            </div>
+          </button>
+        }
+      </div>
+    }
+    
     <!-- 3. COMPACT PILLS MODE (Footer) -->
-    <div *ngIf="mode === 'compact'" class="lang-compact-pills">
-      <button
-        *ngFor="let opt of languages"
-        type="button"
-        class="compact-pill"
-        [class.active]="opt.code === currentLang"
-        (click)="selectLanguage(opt.code)">
-        {{ opt.nativeName }}
-      </button>
-    </div>
-  `,
+    @if (mode === 'compact') {
+      <div class="lang-compact-pills">
+        @for (opt of languages; track opt) {
+          <button
+            type="button"
+            class="compact-pill"
+            [class.active]="opt.code === currentLang"
+            (click)="selectLanguage(opt.code)">
+            {{ opt.nativeName }}
+          </button>
+        }
+      </div>
+    }
+    `,
   styles: [`
     :host {
       display: inline-block;
@@ -378,14 +385,12 @@ import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.ty
   `]
 })
 export class AppLanguageSelectorComponent {
+  translationService = inject(TranslationService);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
   @Input() mode: 'dropdown' | 'segmented' | 'compact' = 'dropdown';
 
   isOpen = false;
-
-  constructor(
-    public translationService: TranslationService,
-    private elementRef: ElementRef<HTMLElement>
-  ) {}
 
   get languages(): LanguageOption[] {
     return this.translationService.supportedLanguages;

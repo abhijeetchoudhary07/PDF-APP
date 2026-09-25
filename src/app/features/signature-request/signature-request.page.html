@@ -10,7 +10,7 @@
         badge="SIGN"
         badgeVariant="sign"
         backUrl="/home">
-    
+
         <div actions class="header-action-group">
           <app-button
             variant="warning"
@@ -51,180 +51,185 @@
         </div>
 
         <!-- UPLOAD DOCUMENT STATE -->
-        <div *ngIf="!request" class="upload-container">
-          <div class="upload-card">
-            <div class="upload-icon-badge">
-              <app-icon name="send-outline"></app-icon>
-            </div>
-            <h2>Prepare Signature Request</h2>
-            <p>Upload a document to configure signers, specify fields, and prepare an e-signature request manifest.</p>
-            <app-button
-              variant="primary"
-              size="lg"
-              [block]="true"
-              (clicked)="selectDocument()"
-              [disabled]="isProcessing">
-              <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
-              Select PDF Document
-            </app-button>
-          </div>
-        </div>
-
-        <!-- WORKSPACE -->
-        <div *ngIf="request" class="request-workspace">
-          <!-- Document Summary Bar -->
-          <div class="doc-bar">
-            <div class="doc-title-info">
-              <strong class="doc-name">{{ request.documentName }}</strong>
-              <app-badge variant="sign" size="sm">{{ request.pageCount }} Page(s) | {{ request.recipients.length }} Recipient(s)</app-badge>
-            </div>
-            <app-button size="sm" variant="ghost" (clicked)="request = undefined; pdfFile = undefined">
-              Change
-            </app-button>
-          </div>
-
-          <!-- STEP 1: RECIPIENT MANAGEMENT -->
-          <div class="section-card">
-            <div class="section-header">
-              <div>
-                <strong>1. Signers & Recipients</strong>
-                <p>Add the parties who need to review or sign this document.</p>
+        @if (!request) {
+          <div class="upload-container">
+            <div class="upload-card">
+              <div class="upload-icon-badge">
+                <app-icon name="send-outline"></app-icon>
               </div>
-              <app-button size="sm" variant="primary" (clicked)="openAddRecipient()">
-                <app-icon name="person-add-outline" class="btn-icon"></app-icon> + Add Recipient
+              <h2>Prepare Signature Request</h2>
+              <p>Upload a document to configure signers, specify fields, and prepare an e-signature request manifest.</p>
+              <app-button
+                variant="primary"
+                size="lg"
+                [block]="true"
+                (clicked)="selectDocument()"
+                [disabled]="isProcessing">
+                <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
+                Select PDF Document
               </app-button>
             </div>
+          </div>
+        }
 
-            <div *ngIf="request.recipients.length === 0" class="empty-list-notice">
-              No recipients added yet. Click "+ Add Recipient" to add signers.
+        <!-- WORKSPACE -->
+        @if (request) {
+          <div class="request-workspace">
+            <!-- Document Summary Bar -->
+            <div class="doc-bar">
+              <div class="doc-title-info">
+                <strong class="doc-name">{{ request.documentName }}</strong>
+                <app-badge variant="sign" size="sm">{{ request.pageCount }} Page(s) | {{ request.recipients.length }} Recipient(s)</app-badge>
+              </div>
+              <app-button size="sm" variant="ghost" (clicked)="request = undefined; pdfFile = undefined">
+                Change
+              </app-button>
             </div>
-
-            <div *ngIf="request.recipients.length > 0" class="recipient-list">
-              <div *ngFor="let r of request.recipients; let idx = index" class="recipient-item">
-                <div class="recipient-left">
-                  <div class="order-badge" [style.background]="r.color">{{ idx + 1 }}</div>
-                  <div class="recipient-details">
-                    <h4 class="recipient-name">{{ r.name }}</h4>
-                    <p class="recipient-meta">{{ r.email }} &bull; <span class="role-tag">{{ r.role | uppercase }}</span></p>
+            <!-- STEP 1: RECIPIENT MANAGEMENT -->
+            <div class="section-card">
+              <div class="section-header">
+                <div>
+                  <strong>1. Signers & Recipients</strong>
+                  <p>Add the parties who need to review or sign this document.</p>
+                </div>
+                <app-button size="sm" variant="primary" (clicked)="openAddRecipient()">
+                  <app-icon name="person-add-outline" class="btn-icon"></app-icon> + Add Recipient
+                </app-button>
+              </div>
+              @if (request.recipients.length === 0) {
+                <div class="empty-list-notice">
+                  No recipients added yet. Click "+ Add Recipient" to add signers.
+                </div>
+              }
+              @if (request.recipients.length > 0) {
+                <div class="recipient-list">
+                  @for (r of request.recipients; track r; let idx = $index) {
+                    <div class="recipient-item">
+                      <div class="recipient-left">
+                        <div class="order-badge" [style.background]="r.color">{{ idx + 1 }}</div>
+                        <div class="recipient-details">
+                          <h4 class="recipient-name">{{ r.name }}</h4>
+                          <p class="recipient-meta">{{ r.email }} &bull; <span class="role-tag">{{ r.role | uppercase }}</span></p>
+                        </div>
+                      </div>
+                      <app-button size="sm" variant="danger" (clicked)="removeRecipient(r.id)">
+                        <app-icon name="trash-outline"></app-icon>
+                      </app-button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            <!-- STEP 2: FIELD PLACEMENT -->
+            @if (request.recipients.length > 0) {
+              <div class="section-card">
+                <div class="section-header">
+                  <div>
+                    <strong>2. Field Placement</strong>
+                    <p>Assign signature, date, or text fields to specific recipients.</p>
                   </div>
                 </div>
-                <app-button size="sm" variant="danger" (clicked)="removeRecipient(r.id)">
-                  <app-icon name="trash-outline"></app-icon>
+                <div class="field-placement-toolbar">
+                  <div class="form-group inline-group">
+                    <label class="form-label">Assign to:</label>
+                    <select [(ngModel)]="selectedRecipientId" class="custom-select-control">
+                      @for (r of request.recipients; track r) {
+                        <option [value]="r.id">
+                          {{ r.name }} ({{ r.role }})
+                        </option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group inline-group">
+                    <label class="form-label">Field Type:</label>
+                    <select [(ngModel)]="selectedFieldType" class="custom-select-control">
+                      <option value="signature">Signature Field</option>
+                      <option value="date">Date Signed</option>
+                      <option value="text">Text Field</option>
+                      <option value="checkbox">Checkbox</option>
+                    </select>
+                  </div>
+                  <app-button size="sm" variant="secondary" (clicked)="addFieldToCurrentPage()">
+                    <app-icon name="add-outline" class="btn-icon"></app-icon> Place Field (Page {{ currentPage }})
+                  </app-button>
+                </div>
+                <!-- Configured Fields List -->
+                @if (request.fields.length > 0) {
+                  <div class="placed-fields-list">
+                    <h4>Configured Fields ({{ request.fields.length }})</h4>
+                    <div class="chips-flex-row">
+                      @for (f of request.fields; track f) {
+                        <div class="field-chip">
+                          <span class="field-role-dot" [style.background]="getRecipient(f.recipientId)?.color || '#666'"></span>
+                          <strong>{{ f.type | uppercase }}</strong>
+                          <span>Page {{ f.pageNumber }} &bull; {{ getRecipient(f.recipientId)?.name }}</span>
+                          <button class="remove-chip-btn" (click)="removeField(f.id)">
+                            <app-icon name="close-circle"></app-icon>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+            <!-- STEP 3: SPECIFICATION EXPORT & DISPATCH -->
+            <div class="section-card">
+              <div class="section-header">
+                <div>
+                  <strong>3. Request Package & Dispatch</strong>
+                  <p>Export the request specification package or connect a backend webhook.</p>
+                </div>
+              </div>
+              <div class="export-actions">
+                <app-button variant="primary" size="lg" [block]="true" (clicked)="exportRequestManifest()">
+                  <app-icon name="download-outline" class="btn-icon"></app-icon>
+                  Export Request Specification (JSON)
+                </app-button>
+                <app-button variant="outline" size="md" [block]="true" (clicked)="showBackendNotice()" style="margin-top: 10px;">
+                  <app-icon name="link-outline" class="btn-icon"></app-icon>
+                  Connect Backend Service / Webhook
                 </app-button>
               </div>
             </div>
           </div>
+        }
 
-          <!-- STEP 2: FIELD PLACEMENT -->
-          <div *ngIf="request.recipients.length > 0" class="section-card">
-            <div class="section-header">
-              <div>
-                <strong>2. Field Placement</strong>
-                <p>Assign signature, date, or text fields to specific recipients.</p>
+        <!-- ADD RECIPIENT MODAL -->
+        @if (showAddRecipientDialog) {
+          <div class="modal-backdrop" (click)="closeAddRecipient()">
+            <div class="add-recipient-modal" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                <h3>Add New Recipient</h3>
+                <button class="close-btn" (click)="closeAddRecipient()">
+                  <app-icon name="close"></app-icon>
+                </button>
               </div>
-            </div>
-
-            <div class="field-placement-toolbar">
-              <div class="form-group inline-group">
-                <label class="form-label">Assign to:</label>
-                <select [(ngModel)]="selectedRecipientId" class="custom-select-control">
-                  <option *ngFor="let r of request.recipients" [value]="r.id">
-                    {{ r.name }} ({{ r.role }})
-                  </option>
-                </select>
-              </div>
-
-              <div class="form-group inline-group">
-                <label class="form-label">Field Type:</label>
-                <select [(ngModel)]="selectedFieldType" class="custom-select-control">
-                  <option value="signature">Signature Field</option>
-                  <option value="date">Date Signed</option>
-                  <option value="text">Text Field</option>
-                  <option value="checkbox">Checkbox</option>
-                </select>
-              </div>
-
-              <app-button size="sm" variant="secondary" (clicked)="addFieldToCurrentPage()">
-                <app-icon name="add-outline" class="btn-icon"></app-icon> Place Field (Page {{ currentPage }})
-              </app-button>
-            </div>
-
-            <!-- Configured Fields List -->
-            <div *ngIf="request.fields.length > 0" class="placed-fields-list">
-              <h4>Configured Fields ({{ request.fields.length }})</h4>
-              <div class="chips-flex-row">
-                <div *ngFor="let f of request.fields" class="field-chip">
-                  <span class="field-role-dot" [style.background]="getRecipient(f.recipientId)?.color || '#666'"></span>
-                  <strong>{{ f.type | uppercase }}</strong>
-                  <span>Page {{ f.pageNumber }} &bull; {{ getRecipient(f.recipientId)?.name }}</span>
-                  <button class="remove-chip-btn" (click)="removeField(f.id)">
-                    <app-icon name="close-circle"></app-icon>
-                  </button>
+              <div class="modal-body">
+                <div class="form-group">
+                  <label class="form-label">Full Name</label>
+                  <input type="text" [(ngModel)]="newRecipientName" placeholder="e.g. John Doe" class="custom-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email Address</label>
+                  <input type="email" [(ngModel)]="newRecipientEmail" placeholder="e.g. john@example.com" class="custom-input" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Role</label>
+                  <select [(ngModel)]="newRecipientRole" class="custom-select">
+                    <option value="signer">Signer (Must sign document)</option>
+                    <option value="approver">Approver (Reviews and approves)</option>
+                    <option value="cc">CC (Receives completed copy)</option>
+                  </select>
+                </div>
+                <div class="modal-actions">
+                  <app-button variant="ghost" size="sm" (clicked)="closeAddRecipient()">Cancel</app-button>
+                  <app-button variant="primary" size="sm" (clicked)="addRecipient()">Add Recipient</app-button>
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- STEP 3: SPECIFICATION EXPORT & DISPATCH -->
-          <div class="section-card">
-            <div class="section-header">
-              <div>
-                <strong>3. Request Package & Dispatch</strong>
-                <p>Export the request specification package or connect a backend webhook.</p>
-              </div>
-            </div>
-
-            <div class="export-actions">
-              <app-button variant="primary" size="lg" [block]="true" (clicked)="exportRequestManifest()">
-                <app-icon name="download-outline" class="btn-icon"></app-icon>
-                Export Request Specification (JSON)
-              </app-button>
-
-              <app-button variant="outline" size="md" [block]="true" (clicked)="showBackendNotice()" style="margin-top: 10px;">
-                <app-icon name="link-outline" class="btn-icon"></app-icon>
-                Connect Backend Service / Webhook
-              </app-button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ADD RECIPIENT MODAL -->
-        <div *ngIf="showAddRecipientDialog" class="modal-backdrop" (click)="closeAddRecipient()">
-          <div class="add-recipient-modal" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h3>Add New Recipient</h3>
-              <button class="close-btn" (click)="closeAddRecipient()">
-                <app-icon name="close"></app-icon>
-              </button>
-            </div>
-
-            <div class="modal-body">
-              <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <input type="text" [(ngModel)]="newRecipientName" placeholder="e.g. John Doe" class="custom-input" />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Email Address</label>
-                <input type="email" [(ngModel)]="newRecipientEmail" placeholder="e.g. john@example.com" class="custom-input" />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Role</label>
-                <select [(ngModel)]="newRecipientRole" class="custom-select">
-                  <option value="signer">Signer (Must sign document)</option>
-                  <option value="approver">Approver (Reviews and approves)</option>
-                  <option value="cc">CC (Receives completed copy)</option>
-                </select>
-              </div>
-
-              <div class="modal-actions">
-                <app-button variant="ghost" size="sm" (clicked)="closeAddRecipient()">Cancel</app-button>
-                <app-button variant="primary" size="sm" (clicked)="addRecipient()">Add Recipient</app-button>
-              </div>
-            </div>
-          </div>
-        </div>
+        }
       </div>
     </div>
   </main>

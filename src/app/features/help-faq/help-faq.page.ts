@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -26,7 +26,6 @@ export interface FaqItem {
   templateUrl: './help-faq.page.html',
   styleUrls: ['./help-faq.page.scss'],
   imports: [
-    CommonModule,
     FormsModule,
     RouterModule,
     AppHeaderComponent,
@@ -34,7 +33,7 @@ export interface FaqItem {
     AppFooterComponent,
     PrivacySupportNavComponent,
     AppButtonComponent
-  ]
+]
 })
 export class HelpFaqPage {
   searchQuery = '';

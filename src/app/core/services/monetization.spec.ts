@@ -195,4 +195,46 @@ describe('MonetizationService restore on a device with no store configured', () 
     expect(Purchases.restorePurchases).toHaveBeenCalled();
     expect(restored).toBe(true);
   });
+
+  /**
+   * Play reports a subscription as `product:basePlan` while the Console shows
+   * only `product`. Comparing the two strings directly therefore matches every
+   * one-time product and no subscription at all — a paywall where the lifetime
+   * button works and both subscriptions are dead, which reads as a RevenueCat
+   * outage rather than a string bug.
+   */
+  describe('packageForPlan', () => {
+    function withPackages(...identifiers: string[]): void {
+      service.packages$.next(
+        identifiers.map(
+          (identifier) => ({ product: { identifier } }) as never,
+        ),
+      );
+    }
+
+    it('matches a subscription despite the base-plan suffix', () => {
+      withPackages('pro_monthly:monthly');
+
+      expect(service.packageForPlan('pro_monthly')).not.toBeNull();
+    });
+
+    it('matches a one-time product', () => {
+      withPackages('lifetime');
+
+      expect(service.packageForPlan('lifetime')).not.toBeNull();
+    });
+
+    it('does not confuse two plans that share a prefix', () => {
+      withPackages('pro_annual:annual');
+
+      expect(service.packageForPlan('pro_monthly')).toBeNull();
+    });
+
+    it('returns null for a plan the store does not sell', () => {
+      withPackages('pro_monthly:monthly');
+
+      expect(service.packageForPlan('lifetime')).toBeNull();
+      expect(service.packageForPlan('free')).toBeNull();
+    });
+  });
 });

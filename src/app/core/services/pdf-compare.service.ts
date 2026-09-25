@@ -16,7 +16,9 @@ import '../utilities/pdfjs-worker';
 export class PdfCompareService {
   private pdfRenderService: PdfRenderService;
 
-  constructor(pdfRenderService?: PdfRenderService) {
+  constructor() {
+    const pdfRenderService = inject(PdfRenderService);
+
     this.pdfRenderService = pdfRenderService ?? new PdfRenderService();
   }
 

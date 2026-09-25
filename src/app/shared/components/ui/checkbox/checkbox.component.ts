@@ -1,12 +1,12 @@
 import { Component, Input, Output, EventEmitter, forwardRef, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-checkbox',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -22,17 +22,21 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
         [checked]="checked"
         [disabled]="disabled"
         (change)="onCheckboxChange($event)" />
-      
+    
       <span class="custom-box" [class.checked]="checked" aria-hidden="true">
-        <svg *ngIf="checked" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
+        @if (checked) {
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        }
       </span>
-
-      <span *ngIf="label" class="checkbox-label">{{ label }}</span>
+    
+      @if (label) {
+        <span class="checkbox-label">{{ label }}</span>
+      }
       <ng-content></ng-content>
     </label>
-  `,
+    `,
   styles: [`
     .checkbox-wrapper {
       display: inline-flex;

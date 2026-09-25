@@ -1,12 +1,12 @@
 import { Component, Input, forwardRef, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-input',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -16,16 +16,22 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/f
   ],
   template: `
     <div class="input-wrapper" [class.input-disabled]="disabled" [class.has-error]="error">
-      <label *ngIf="label" class="input-label">
-        {{ label }}
-        <span *ngIf="required" class="required-star">*</span>
-      </label>
-
+      @if (label) {
+        <label class="input-label">
+          {{ label }}
+          @if (required) {
+            <span class="required-star">*</span>
+          }
+        </label>
+      }
+    
       <div class="input-container">
-        <span *ngIf="hasPrefix" class="input-affix prefix">
-          <ng-content select="[prefix]"></ng-content>
-        </span>
-
+        @if (hasPrefix) {
+          <span class="input-affix prefix">
+            <ng-content select="[prefix]"></ng-content>
+          </span>
+        }
+    
         <input
           [type]="type"
           [placeholder]="placeholder"
@@ -37,16 +43,22 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/f
           [attr.min]="min"
           [attr.max]="max"
           [attr.step]="step" />
-
-        <span *ngIf="hasSuffix" class="input-affix suffix">
-          <ng-content select="[suffix]"></ng-content>
-        </span>
+    
+        @if (hasSuffix) {
+          <span class="input-affix suffix">
+            <ng-content select="[suffix]"></ng-content>
+          </span>
+        }
       </div>
-
-      <p *ngIf="hint && !error" class="input-hint">{{ hint }}</p>
-      <p *ngIf="error" class="input-error">{{ error }}</p>
+    
+      @if (hint && !error) {
+        <p class="input-hint">{{ hint }}</p>
+      }
+      @if (error) {
+        <p class="input-error">{{ error }}</p>
+      }
     </div>
-  `,
+    `,
   styles: [`
     .input-wrapper {
       display: flex;

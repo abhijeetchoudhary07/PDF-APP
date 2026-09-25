@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 /**
@@ -15,7 +15,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-gov-disclaimer',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [TranslatePipe],
   template: `
     <div class="gov-disclaimer" [class.is-compact]="compact" role="note" data-testid="gov-disclaimer">
       <div class="gd-icon" aria-hidden="true">
@@ -26,11 +26,13 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
         </svg>
       </div>
       <div class="gd-body">
-        <span class="gd-title" *ngIf="!compact">{{ 'footer.govDisclaimerTitle' | translate }}</span>
+        @if (!compact) {
+          <span class="gd-title">{{ 'footer.govDisclaimerTitle' | translate }}</span>
+        }
         <p class="gd-text">{{ 'footer.govDisclaimer' | translate }}</p>
       </div>
     </div>
-  `,
+    `,
   styles: [`
     .gov-disclaimer {
       display: flex;

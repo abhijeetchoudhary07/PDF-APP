@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -47,6 +47,13 @@ export type RepairStep = 'select' | 'diagnosing' | 'diagnostic_report' | 'recove
   providers: [DecimalPipe]
 })
 export class PdfRepairPage {
+  private repairService = inject(PdfRepairService);
+  private fileService = inject(FileService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
+
   currentStep: RepairStep = 'select';
   selectedFile?: File;
 
@@ -60,15 +67,6 @@ export class PdfRepairPage {
   recoveryMessage = '';
   recoveryResult?: PdfRecoveryResult;
   recoveredArrayBuffer?: ArrayBuffer;
-
-  constructor(
-    private repairService: PdfRepairService,
-    private fileService: FileService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private toastService: ToastService,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   async onFileSelected(file: File): Promise<void> {
     this.selectedFile = file;

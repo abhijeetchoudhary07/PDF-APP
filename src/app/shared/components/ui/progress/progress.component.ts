@@ -8,11 +8,17 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <div class="progress-wrapper">
-      <div *ngIf="stage || label || (showPercentage && !indeterminate)" class="progress-meta">
-        <span *ngIf="stage || label" class="stage-text">{{ stage || label }}</span>
-        <span *ngIf="showPercentage && !indeterminate" class="percent-text">{{ value }}%</span>
-      </div>
-
+      @if (stage || label || (showPercentage && !indeterminate)) {
+        <div class="progress-meta">
+          @if (stage || label) {
+            <span class="stage-text">{{ stage || label }}</span>
+          }
+          @if (showPercentage && !indeterminate) {
+            <span class="percent-text">{{ value }}%</span>
+          }
+        </div>
+      }
+    
       <div class="progress-track" role="progressbar" [attr.aria-valuenow]="indeterminate ? null : value" aria-valuemin="0" aria-valuemax="100">
         <div
           class="progress-fill"
@@ -22,7 +28,7 @@ import { CommonModule } from '@angular/common';
         </div>
       </div>
     </div>
-  `,
+    `,
   styles: [`
     .progress-wrapper {
       width: 100%;

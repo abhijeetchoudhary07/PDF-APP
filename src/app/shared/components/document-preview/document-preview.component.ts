@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ImagePreviewComponent } from '../image-preview/image-preview.component';
 import { PdfPreviewComponent, OverlayConfig } from '../pdf-preview/pdf-preview.component';
 import { AppBadgeComponent } from '../ui/badge/badge.component';
@@ -10,7 +10,7 @@ import { AppBadgeComponent } from '../ui/badge/badge.component';
   templateUrl: './document-preview.component.html',
   styleUrls: ['./document-preview.component.scss'],
   standalone: true,
-  imports: [CommonModule, ImagePreviewComponent, PdfPreviewComponent]
+  imports: [ImagePreviewComponent, PdfPreviewComponent]
 })
 export class DocumentPreviewComponent {
   @Input() file?: File;

@@ -12,168 +12,186 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   template: `
-    <div
-      *ngIf="searchService.isOpen$ | async"
-      class="search-backdrop"
-      (click)="close()">
+    @if (searchService.isOpen$ | async) {
       <div
-        class="search-dialog"
-        (click)="$event.stopPropagation()"
-        role="dialog"
-        aria-modal="true"
-        [attr.aria-label]="'search.dialogLabel' | translate">
-        
-        <!-- Search Input Bar -->
-        <div class="search-input-header">
-          <button
-            type="button"
-            class="search-back-btn"
-            (click)="close()"
-            [attr.aria-label]="'search.closeSearch' | translate">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.4" fill="none">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" class="search-icon">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input
-            #searchInput
-            type="text"
-            [(ngModel)]="searchQuery"
-            (ngModelChange)="onQueryChange()"
-            (keydown)="onKeyDown($event)"
-            [placeholder]="'search.inputPlaceholder' | translate"
-            class="search-modal-input"
-            aria-autocomplete="list" />
-          
-          <div class="search-actions">
-            <span *ngIf="!searchQuery" class="shortcut-tag">ESC</span>
+        class="search-backdrop"
+        (click)="close()">
+        <div
+          class="search-dialog"
+          (click)="$event.stopPropagation()"
+          role="dialog"
+          aria-modal="true"
+          [attr.aria-label]="'search.dialogLabel' | translate">
+          <!-- Search Input Bar -->
+          <div class="search-input-header">
             <button
               type="button"
-              class="close-text-btn"
+              class="search-back-btn"
               (click)="close()"
               [attr.aria-label]="'search.closeSearch' | translate">
-              {{ 'common.close' | translate }}
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.4" fill="none">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
             </button>
-            <button
-              *ngIf="searchQuery"
-              type="button"
-              class="clear-btn"
-              (click)="searchQuery = ''; onQueryChange()"
-              [attr.aria-label]="'search.clearQuery' | translate">
-              &times;
-            </button>
-          </div>
-        </div>
-
-        <!-- Search Content / Results -->
-        <div class="search-results-area">
-          <!-- Active Search Results -->
-          <div *ngIf="searchQuery.trim()" class="results-list" role="listbox">
-            <div *ngIf="results.length === 0" class="no-match-box">
-              <p class="no-match-title">{{ 'search.noMatchTitle' | translate:{ query: searchQuery } }}</p>
-              <p class="no-match-sub">{{ 'search.noMatchSub' | translate }}</p>
-            </div>
-
-            <div
-              *ngFor="let tool of results; let i = index"
-              class="result-item"
-              [class.selected]="i === selectedIndex"
-              (mouseenter)="selectedIndex = i"
-              (click)="selectTool(tool)"
-              role="option"
-              [attr.aria-selected]="i === selectedIndex">
-              
-              <div class="tool-icon-circle" [ngClass]="'color-' + tool.color">
-                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-                  <path *ngIf="tool.category === 'PHOTO'" d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path>
-                  <path *ngIf="tool.category === 'SIGNATURE' || tool.category === 'SIGN'" d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  <path *ngIf="tool.category === 'PDF' || tool.category === 'ORGANIZE' || tool.category === 'EDIT'" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8"></path>
-                  <path *ngIf="tool.category === 'CONVERT'" d="M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                  <path *ngIf="tool.category === 'PROTECT'" d="M3 11h18v11H3z M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  <path *ngIf="tool.category === 'BATCH'" d="M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5"></path>
-                  <path *ngIf="tool.category === 'PRESETS'" d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                </svg>
-              </div>
-
-              <div class="result-details">
-                <div class="title-row">
-                  <span class="tool-title">{{ tool.title }}</span>
-                  <span class="cat-badge" [ngClass]="'badge-' + tool.color">{{ ('categories.' + tool.category) | translate }}</span>
-                </div>
-                <p class="tool-desc">{{ tool.description }}</p>
-              </div>
-
-              <div class="action-hint">
-                <span>{{ 'search.jumpToTool' | translate }}</span>
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empty State: Quick Recents & Suggested -->
-          <div *ngIf="!searchQuery.trim()" class="recents-section">
-            <div *ngIf="(toolRegistry.recentTools$ | async)?.length" class="section-group">
-              <span class="group-title">{{ 'search.recentlyUsed' | translate }}</span>
-              <div class="recents-grid">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.2" fill="none" class="search-icon">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              #searchInput
+              type="text"
+              [(ngModel)]="searchQuery"
+              (ngModelChange)="onQueryChange()"
+              (keydown)="onKeyDown($event)"
+              [placeholder]="'search.inputPlaceholder' | translate"
+              class="search-modal-input"
+              aria-autocomplete="list" />
+            <div class="search-actions">
+              @if (!searchQuery) {
+                <span class="shortcut-tag">ESC</span>
+              }
+              <button
+                type="button"
+                class="close-text-btn"
+                (click)="close()"
+                [attr.aria-label]="'search.closeSearch' | translate">
+                {{ 'common.close' | translate }}
+              </button>
+              @if (searchQuery) {
                 <button
-                  *ngFor="let recent of toolRegistry.recentTools$ | async"
                   type="button"
-                  class="recent-chip"
-                  (click)="selectTool(recent)">
-                  <span class="chip-dot" [ngClass]="'color-' + recent.color"></span>
-                  <span class="chip-text">{{ recent.title }}</span>
+                  class="clear-btn"
+                  (click)="searchQuery = ''; onQueryChange()"
+                  [attr.aria-label]="'search.clearQuery' | translate">
+                  &times;
                 </button>
-              </div>
+              }
             </div>
-
-            <div class="section-group">
-              <span class="group-title">{{ 'search.popularTools' | translate }}</span>
-              <div class="popular-list">
-                <div
-                  *ngFor="let pop of popularTools"
-                  class="result-item"
-                  (click)="selectTool(pop)">
-                  <div class="tool-icon-circle" [ngClass]="'color-' + pop.color">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
+          </div>
+          <!-- Search Content / Results -->
+          <div class="search-results-area">
+            <!-- Active Search Results -->
+            @if (searchQuery.trim()) {
+              <div class="results-list" role="listbox">
+                @if (results.length === 0) {
+                  <div class="no-match-box">
+                    <p class="no-match-title">{{ 'search.noMatchTitle' | translate:{ query: searchQuery } }}</p>
+                    <p class="no-match-sub">{{ 'search.noMatchSub' | translate }}</p>
                   </div>
-                  <div class="result-details">
-                    <div class="title-row">
-                      <span class="tool-title">{{ pop.title }}</span>
-                      <span class="cat-badge" [ngClass]="'badge-' + pop.color">{{ ('categories.' + pop.category) | translate }}</span>
+                }
+                @for (tool of results; track tool; let i = $index) {
+                  <div
+                    class="result-item"
+                    [class.selected]="i === selectedIndex"
+                    (mouseenter)="selectedIndex = i"
+                    (click)="selectTool(tool)"
+                    role="option"
+                    [attr.aria-selected]="i === selectedIndex">
+                    <div class="tool-icon-circle" [ngClass]="'color-' + tool.color">
+                      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                        @if (tool.category === 'PHOTO') {
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path>
+                        }
+                        @if (tool.category === 'SIGNATURE' || tool.category === 'SIGN') {
+                          <path d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        }
+                        @if (tool.category === 'PDF' || tool.category === 'ORGANIZE' || tool.category === 'EDIT') {
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8"></path>
+                        }
+                        @if (tool.category === 'CONVERT') {
+                          <path d="M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        }
+                        @if (tool.category === 'PROTECT') {
+                          <path d="M3 11h18v11H3z M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        }
+                        @if (tool.category === 'BATCH') {
+                          <path d="M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5"></path>
+                        }
+                        @if (tool.category === 'PRESETS') {
+                          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        }
+                      </svg>
                     </div>
-                    <p class="tool-desc">{{ pop.description }}</p>
+                    <div class="result-details">
+                      <div class="title-row">
+                        <span class="tool-title">{{ tool.title }}</span>
+                        <span class="cat-badge" [ngClass]="'badge-' + tool.color">{{ ('categories.' + tool.category) | translate }}</span>
+                      </div>
+                      <p class="tool-desc">{{ tool.description }}</p>
+                    </div>
+                    <div class="action-hint">
+                      <span>{{ 'search.jumpToTool' | translate }}</span>
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </div>
                   </div>
-                  <div class="action-hint">
-                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
+                }
+              </div>
+            }
+            <!-- Empty State: Quick Recents & Suggested -->
+            @if (!searchQuery.trim()) {
+              <div class="recents-section">
+                @if ((toolRegistry.recentTools$ | async)?.length) {
+                  <div class="section-group">
+                    <span class="group-title">{{ 'search.recentlyUsed' | translate }}</span>
+                    <div class="recents-grid">
+                      @for (recent of toolRegistry.recentTools$ | async; track recent) {
+                        <button
+                          type="button"
+                          class="recent-chip"
+                          (click)="selectTool(recent)">
+                          <span class="chip-dot" [ngClass]="'color-' + recent.color"></span>
+                          <span class="chip-text">{{ recent.title }}</span>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+                <div class="section-group">
+                  <span class="group-title">{{ 'search.popularTools' | translate }}</span>
+                  <div class="popular-list">
+                    @for (pop of popularTools; track pop) {
+                      <div
+                        class="result-item"
+                        (click)="selectTool(pop)">
+                        <div class="tool-icon-circle" [ngClass]="'color-' + pop.color">
+                          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                          </svg>
+                        </div>
+                        <div class="result-details">
+                          <div class="title-row">
+                            <span class="tool-title">{{ pop.title }}</span>
+                            <span class="cat-badge" [ngClass]="'badge-' + pop.color">{{ ('categories.' + pop.category) | translate }}</span>
+                          </div>
+                          <p class="tool-desc">{{ pop.description }}</p>
+                        </div>
+                        <div class="action-hint">
+                          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                          </svg>
+                        </div>
+                      </div>
+                    }
                   </div>
                 </div>
               </div>
+            }
+          </div>
+          <!-- Footer Help -->
+          <div class="search-dialog-footer">
+            <div class="footer-tips">
+              <span><kbd>&uarr;</kbd> <kbd>&darr;</kbd> to navigate</span>
+              <span><kbd>&crarr;</kbd> to select</span>
+              <span><kbd>esc</kbd> to close</span>
             </div>
+            <span class="footer-offline">100% Client-Side Engine</span>
           </div>
-        </div>
-
-        <!-- Footer Help -->
-        <div class="search-dialog-footer">
-          <div class="footer-tips">
-            <span><kbd>&uarr;</kbd> <kbd>&darr;</kbd> to navigate</span>
-            <span><kbd>&crarr;</kbd> to select</span>
-            <span><kbd>esc</kbd> to close</span>
-          </div>
-          <span class="footer-offline">100% Client-Side Engine</span>
         </div>
       </div>
-    </div>
-  `,
+    }
+    `,
   styles: [`
     .search-backdrop {
       position: fixed;

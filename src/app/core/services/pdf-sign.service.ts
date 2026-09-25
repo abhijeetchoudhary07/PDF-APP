@@ -1,5 +1,5 @@
 import '../utilities/pdf-iterator-polyfill';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { PDFDocument, degrees } from 'pdf-lib';
 import { ImageService } from './image.service';
 import { SignatureProcessingService } from './signature-processing.service';
@@ -21,12 +21,10 @@ export interface PlacedSignature {
   providedIn: 'root'
 })
 export class PdfSignService {
-  private recentSignatures: string[] = [];
+  private imageService = inject(ImageService);
+  private signatureProcessing = inject(SignatureProcessingService);
 
-  constructor(
-    private imageService: ImageService,
-    private signatureProcessing: SignatureProcessingService
-  ) {}
+  private recentSignatures: string[] = [];
 
   /**
    * Processes an uploaded signature image using the existing engine:

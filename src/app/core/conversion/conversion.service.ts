@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ConversionRegistryService } from './conversion-registry.service';
 import { StorageService } from '../services/storage.service';
 import { ShareService } from '../services/share.service';
@@ -16,16 +16,14 @@ const uuidv4 = () =>
   providedIn: 'root'
 })
 export class ConversionService {
+  private registry = inject(ConversionRegistryService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private monetizationService = inject(MonetizationService);
+
   private activeJobs = new Map<string, ConversionJob>();
   private activeUrls = new Set<string>();
-
-  constructor(
-    private registry: ConversionRegistryService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private monetizationService: MonetizationService
-  ) {}
 
   getConverter(id: string): IConverter | undefined {
     return this.registry.getConverter(id);

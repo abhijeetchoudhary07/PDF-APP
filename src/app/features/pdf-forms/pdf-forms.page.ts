@@ -1,7 +1,7 @@
-import { Component, OnDestroy, ElementRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, ElementRef, ViewChild, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, AlertController, ToastController } from '@ionic/angular/lazy';
+import { AlertController, ToastController } from '@ionic/angular';
 import { FileService } from '../../core/services/file.service';
 import { PdfFormService } from '../../core/services/pdf-form.service';
 import { StorageService } from '../../core/services/storage.service';
@@ -32,7 +32,6 @@ import {
   standalone: true,
   imports: [
     AppIconComponent,
-    IonicModule,
     CommonModule,
     FormsModule,
     AppHeaderComponent,
@@ -45,6 +44,14 @@ import {
   providers: [DecimalPipe]
 })
 export class PdfFormsPage implements OnDestroy {
+  private fileService = inject(FileService);
+  private pdfFormService = inject(PdfFormService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private alertCtrl = inject(AlertController);
+  private toastCtrl = inject(ToastController);
+
   @ViewChild('previewCanvas') previewCanvas?: ElementRef<HTMLCanvasElement>;
 
   document?: PdfFormDocument;
@@ -71,16 +78,6 @@ export class PdfFormsPage implements OnDestroy {
 
   // Manual placement tools
   selectedManualType: PdfFormFieldType = 'text';
-
-  constructor(
-    private fileService: FileService,
-    private pdfFormService: PdfFormService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController
-  ) {}
 
   ngOnDestroy(): void {
     if (this.previewUrl) {

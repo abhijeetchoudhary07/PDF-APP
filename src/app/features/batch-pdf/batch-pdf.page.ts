@@ -1,5 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { IonicModule } from '@ionic/angular/lazy';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FileService } from '../../core/services/file.service';
@@ -35,7 +34,6 @@ import {
   standalone: true,
   imports: [
     AppIconComponent,
-    IonicModule,
     CommonModule,
     FormsModule,
     AppHeaderComponent,
@@ -47,20 +45,18 @@ import {
   providers: [DecimalPipe]
 })
 export class BatchPdfPage {
+  private fileService = inject(FileService);
+  private pdfService = inject(PdfService);
+  private storageService = inject(StorageService);
+  private historyService = inject(HistoryService);
+  private toast = inject(ToastService);
+
   items: BatchPdfItem[] = [];
   targetKB: number = 200;
   isProcessing: boolean = false;
   
   readonly MAX_BATCH_SIZE = 10; // PDFs are heavy, limit to 10
-  readonly CONCURRENCY_LIMIT = 1; // Strict concurrency for PDFs to save memory
-
-  constructor(
-    private fileService: FileService,
-    private pdfService: PdfService,
-    private storageService: StorageService,
-    private historyService: HistoryService,
-    private toast: ToastService
-  ) {}
+  readonly CONCURRENCY_LIMIT = 1;
 
   async selectPdfs() {
     if (this.isProcessing) return;

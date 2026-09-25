@@ -4,7 +4,7 @@
 
   <main class="app-main-content">
     <div class="app-container">
-      
+
       <!-- HERO BANNER -->
       <section class="home-hero">
         <div class="hero-badge">
@@ -17,34 +17,34 @@
         </p>
 
         <!--
-          The free tier's daily allowance, on the screen people start from.
-          The header carries the same number, but that chip lives in the desktop
-          nav — on a phone it is behind the hamburger, which is no use as a
-          warning. Zero is rendered, not hidden, so "none left" is visible.
+        The free tier's daily allowance, on the screen people start from.
+        The header carries the same number, but that chip lives in the desktop
+        nav — on a phone it is behind the hamburger, which is no use as a
+        warning. Zero is rendered, not hidden, so "none left" is visible.
         -->
-        <ng-container *ngIf="{ remaining: quota.remaining$ | async } as q">
+        @let heroQuota = quota.remaining$ | async;
+        @if (heroQuota !== null) {
           <a
-            *ngIf="q.remaining !== null"
             routerLink="/features/premium"
             class="hero-quota"
-            [class.is-spent]="q.remaining === 0"
+            [class.is-spent]="heroQuota === 0"
             data-testid="hero-quota">
             <!--
-              One number, not two.
-              The sentence is translated whole rather than assembled from a
-              count badge plus an "of N free operations left today" fragment,
-              because Hindi, Marathi, Bengali and Punjabi all place the number
-              differently than English does and the fragment version read as
-              broken grammar in four of the five languages. The pill's own
-              colour — see .hero-quota.is-spent — is what marks the exhausted
-              state now that the badge is gone.
+            One number, not two.
+            The sentence is translated whole rather than assembled from a
+            count badge plus an "of N free operations left today" fragment,
+            because Hindi, Marathi, Bengali and Punjabi all place the number
+            differently than English does and the fragment version read as
+            broken grammar in four of the five languages. The pill's own
+            colour — see .hero-quota.is-spent — is what marks the exhausted
+            state now that the badge is gone.
             -->
             <span>
-              {{ 'quota.fullLabel' | translate: { remaining: q.remaining, limit: quota.limit } }} —
+              {{ 'quota.fullLabel' | translate: { remaining: heroQuota, limit: quota.limit } }} —
               <strong>{{ 'quota.upsell' | translate }}</strong>
             </span>
           </a>
-        </ng-container>
+        }
 
         <!-- SEARCH BAR -->
         <div class="hero-search-box">
@@ -58,14 +58,15 @@
               [(ngModel)]="searchQuery"
               [placeholder]="'home.searchPlaceholder' | translate"
               class="search-input" />
-            <button
-              *ngIf="searchQuery"
-              type="button"
-              class="clear-search-btn"
-              (click)="searchQuery = ''"
-              [attr.aria-label]="'home.clearSearch' | translate">
-              &times;
-            </button>
+            @if (searchQuery) {
+              <button
+                type="button"
+                class="clear-search-btn"
+                (click)="searchQuery = ''"
+                [attr.aria-label]="'home.clearSearch' | translate">
+                &times;
+              </button>
+            }
           </div>
         </div>
 
@@ -74,107 +75,114 @@
           <div class="category-marquee-track">
             <!-- First loop group -->
             <div class="category-marquee-group">
-              <button
-                *ngFor="let cat of marqueeCategories"
-                type="button"
-                class="cat-pill"
-                [class.active]="selectedCategory === cat"
-                (click)="setCategory(cat)">
-                {{ ('categories.' + cat) | translate }}
-              </button>
+              @for (cat of marqueeCategories; track cat) {
+                <button
+                  type="button"
+                  class="cat-pill"
+                  [class.active]="selectedCategory === cat"
+                  (click)="setCategory(cat)">
+                  {{ ('categories.' + cat) | translate }}
+                </button>
+              }
             </div>
             <!-- Second loop group (identical duplicate for seamless infinite right-to-left loop) -->
             <div class="category-marquee-group" aria-hidden="true">
-              <button
-                *ngFor="let cat of marqueeCategories"
-                type="button"
-                tabindex="-1"
-                class="cat-pill"
-                [class.active]="selectedCategory === cat"
-                (click)="setCategory(cat)">
-                {{ ('categories.' + cat) | translate }}
-              </button>
+              @for (cat of marqueeCategories; track cat) {
+                <button
+                  type="button"
+                  tabindex="-1"
+                  class="cat-pill"
+                  [class.active]="selectedCategory === cat"
+                  (click)="setCategory(cat)">
+                  {{ ('categories.' + cat) | translate }}
+                </button>
+              }
             </div>
           </div>
         </div>
 
         <!-- RECENT TOOLS BAR -->
-        <ng-container *ngIf="toolRegistry.recentTools$ | async as recents">
-          <div *ngIf="recents.length > 0" class="recent-tools-bar">
-            <span class="bar-title">{{ 'home.recentTools' | translate }}</span>
-            <div class="recent-chips-list">
-              <a
-                *ngFor="let recent of recents"
-                [routerLink]="recent.route"
-                (click)="onToolClick(recent)"
-                class="home-recent-chip">
-                <span class="chip-dot" [ngClass]="'color-' + recent.color"></span>
-                <span>{{ recent.title }}</span>
-              </a>
+        @if (toolRegistry.recentTools$ | async; as recents) {
+          @if (recents.length > 0) {
+            <div class="recent-tools-bar">
+              <span class="bar-title">{{ 'home.recentTools' | translate }}</span>
+              <div class="recent-chips-list">
+                @for (recent of recents; track recent) {
+                  <a
+                    [routerLink]="recent.route"
+                    (click)="onToolClick(recent)"
+                    class="home-recent-chip">
+                    <span class="chip-dot" [ngClass]="'color-' + recent.color"></span>
+                    <span>{{ recent.title }}</span>
+                  </a>
+                }
+              </div>
             </div>
-          </div>
-        </ng-container>
+          }
+        }
       </section>
 
       <!-- EMPTY SEARCH STATE -->
-      <div *ngIf="filteredTools.length === 0" class="no-results-box">
-        <app-empty-state
-          [title]="'home.noToolsFound' | translate"
-          [description]="'home.noToolsDesc' | translate:{ query: searchQuery }"
-          [actionLabel]="'home.resetFilters' | translate"
-          (actionClicked)="clearFilters()">
-        </app-empty-state>
-      </div>
+      @if (filteredTools.length === 0) {
+        <div class="no-results-box">
+          <app-empty-state
+            [title]="'home.noToolsFound' | translate"
+            [description]="'home.noToolsDesc' | translate:{ query: searchQuery }"
+            [actionLabel]="'home.resetFilters' | translate"
+            (actionClicked)="clearFilters()">
+          </app-empty-state>
+        </div>
+      }
 
       <!-- TOOLS GRID -->
-      <section *ngIf="filteredTools.length > 0" class="tools-grid-section">
-        <div class="tools-grid">
-          <a
-            *ngFor="let tool of filteredTools; trackBy: trackByToolId; let i = index"
-            [routerLink]="tool.route"
-            (click)="onToolClick(tool)"
-            class="tool-tile stagger-in"
-            [style.--stagger]="i"
-            [ngClass]="'category-' + tool.category.toLowerCase()">
-            
-            <div class="tile-top">
-              <div class="tile-icon-box">
-                <app-icon [name]="categoryIcon(tool.category)" [size]="22"></app-icon>
-              </div>
-
-              <div class="tile-tags">
-                <span class="category-pill">{{ ('categories.' + tool.category) | translate }}</span>
-                <span *ngIf="tool.badge" class="badge-pill">{{ tool.badge }}</span>
-                
-                <!-- Favorite Pin Button -->
-                <button
-                  type="button"
-                  class="favorite-star-btn"
-                  [class.is-fav]="isFavorite(tool.id)"
-                  (click)="toggleFavorite($event, tool)"
-                  [attr.aria-label]="isFavorite(tool.id) ? 'Remove favorite' : 'Add to favorites'">
-                  <svg viewBox="0 0 24 24" width="14" height="14" [attr.fill]="isFavorite(tool.id) ? '#f59e0b' : 'none'" [attr.stroke]="isFavorite(tool.id) ? '#f59e0b' : 'currentColor'" stroke-width="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      @if (filteredTools.length > 0) {
+        <section class="tools-grid-section">
+          <div class="tools-grid">
+            @for (tool of filteredTools; track tool.id; let i = $index) {
+              <a
+                [routerLink]="tool.route"
+                (click)="onToolClick(tool)"
+                class="tool-tile stagger-in"
+                [style.--stagger]="i"
+                [ngClass]="'category-' + tool.category.toLowerCase()">
+                <div class="tile-top">
+                  <div class="tile-icon-box">
+                    <app-icon [name]="categoryIcon(tool.category)" [size]="22"></app-icon>
+                  </div>
+                  <div class="tile-tags">
+                    <span class="category-pill">{{ ('categories.' + tool.category) | translate }}</span>
+                    @if (tool.badge) {
+                      <span class="badge-pill">{{ tool.badge }}</span>
+                    }
+                    <!-- Favorite Pin Button -->
+                    <button
+                      type="button"
+                      class="favorite-star-btn"
+                      [class.is-fav]="isFavorite(tool.id)"
+                      (click)="toggleFavorite($event, tool)"
+                      [attr.aria-label]="isFavorite(tool.id) ? 'Remove favorite' : 'Add to favorites'">
+                      <svg viewBox="0 0 24 24" width="14" height="14" [attr.fill]="isFavorite(tool.id) ? '#f59e0b' : 'none'" [attr.stroke]="isFavorite(tool.id) ? '#f59e0b' : 'currentColor'" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="tile-body">
+                  <h3 class="tile-title">{{ tool.title }}</h3>
+                  <p class="tile-desc">{{ tool.description }}</p>
+                </div>
+                <div class="tile-footer">
+                  <span class="launch-text">{{ 'home.launchTool' | translate }}</span>
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" class="launch-arrow">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
                   </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="tile-body">
-              <h3 class="tile-title">{{ tool.title }}</h3>
-              <p class="tile-desc">{{ tool.description }}</p>
-            </div>
-
-            <div class="tile-footer">
-              <span class="launch-text">{{ 'home.launchTool' | translate }}</span>
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" class="launch-arrow">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </div>
-          </a>
-        </div>
-      </section>
+                </div>
+              </a>
+            }
+          </div>
+        </section>
+      }
 
       <!-- FEATURE HIGHLIGHTS -->
       <section class="feature-highlights">

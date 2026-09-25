@@ -11,490 +11,501 @@
   ></app-page-header>
 
   <!-- STEP 1: SELECT FILE -->
-  <section *ngIf="currentStep === 'select'" class="select-step-section">
-    <div class="dropzone-wrapper">
-      <app-file-dropzone
-        [accept]="'.pdf,application/pdf'"
-        [title]="'pdfIntelligence.selectPrompt' | translate"
-        [description]="'pdfIntelligence.dropPrompt' | translate"
-        (fileSelected)="onFileSelected($event)"
-      ></app-file-dropzone>
-    </div>
-
-    <!-- PRIVACY & CAPABILITIES HIGHLIGHTS -->
-    <div class="info-cards-grid">
-      <div class="info-card">
-        <div class="card-icon">🔒</div>
-        <h4>{{ 'pdfIntelligence.featurePrivateTitle' | translate }}</h4>
-        <p>{{ 'pdfIntelligence.featurePrivateDesc' | translate }}</p>
+  @if (currentStep === 'select') {
+    <section class="select-step-section">
+      <div class="dropzone-wrapper">
+        <app-file-dropzone
+          [accept]="'.pdf,application/pdf'"
+          [title]="'pdfIntelligence.selectPrompt' | translate"
+          [description]="'pdfIntelligence.dropPrompt' | translate"
+          (fileSelected)="onFileSelected($event)"
+        ></app-file-dropzone>
       </div>
-
-      <div class="info-card">
-        <div class="card-icon">⚡</div>
-        <h4>{{ 'pdfIntelligence.featureSummarizeTitle' | translate }}</h4>
-        <p>{{ 'pdfIntelligence.featureSummarizeDesc' | translate }}</p>
+      <!-- PRIVACY & CAPABILITIES HIGHLIGHTS -->
+      <div class="info-cards-grid">
+        <div class="info-card">
+          <div class="card-icon">🔒</div>
+          <h4>{{ 'pdfIntelligence.featurePrivateTitle' | translate }}</h4>
+          <p>{{ 'pdfIntelligence.featurePrivateDesc' | translate }}</p>
+        </div>
+        <div class="info-card">
+          <div class="card-icon">⚡</div>
+          <h4>{{ 'pdfIntelligence.featureSummarizeTitle' | translate }}</h4>
+          <p>{{ 'pdfIntelligence.featureSummarizeDesc' | translate }}</p>
+        </div>
+        <div class="info-card">
+          <div class="card-icon">🎯</div>
+          <h4>{{ 'pdfIntelligence.featureQaTitle' | translate }}</h4>
+          <p>{{ 'pdfIntelligence.featureQaDesc' | translate }}</p>
+        </div>
+        <div class="info-card">
+          <div class="card-icon">🌐</div>
+          <h4>{{ 'pdfIntelligence.featureTranslateTitle' | translate }}</h4>
+          <p>{{ 'pdfIntelligence.featureTranslateDesc' | translate }}</p>
+        </div>
       </div>
-
-      <div class="info-card">
-        <div class="card-icon">🎯</div>
-        <h4>{{ 'pdfIntelligence.featureQaTitle' | translate }}</h4>
-        <p>{{ 'pdfIntelligence.featureQaDesc' | translate }}</p>
-      </div>
-
-      <div class="info-card">
-        <div class="card-icon">🌐</div>
-        <h4>{{ 'pdfIntelligence.featureTranslateTitle' | translate }}</h4>
-        <p>{{ 'pdfIntelligence.featureTranslateDesc' | translate }}</p>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- STEP 2: ANALYZING STATE -->
-  <section *ngIf="currentStep === 'analyzing'" class="analyzing-section">
-    <div class="analyzing-card">
-      <div class="spinner"></div>
-      <h3>{{ 'pdfIntelligence.analyzingTitle' | translate }}</h3>
-      <p>{{ analysisProgressMsg }}</p>
-      <div class="progress-bar-wrap">
-        <div class="progress-bar-fill" [style.width.%]="analysisProgressPct"></div>
+  @if (currentStep === 'analyzing') {
+    <section class="analyzing-section">
+      <div class="analyzing-card">
+        <div class="spinner"></div>
+        <h3>{{ 'pdfIntelligence.analyzingTitle' | translate }}</h3>
+        <p>{{ analysisProgressMsg }}</p>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" [style.width.%]="analysisProgressPct"></div>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- STEP 3: INTELLIGENCE WORKSPACE -->
-  <section *ngIf="currentStep === 'workspace' && analysis && summary" class="workspace-section">
-    <!-- TOP WORKSPACE BAR -->
-    <div class="workspace-top-bar">
-      <div class="doc-meta-block">
-        <span class="doc-icon">📄</span>
-        <div class="doc-title-info">
-          <span class="doc-name">{{ selectedFile?.name }}</span>
-          <span class="doc-sub">{{ analysis.pageCount }} {{ 'common.pages' | translate }} • {{ analysis.wordCount }} {{ 'pdfIntelligence.words' | translate }} • ~{{ analysis.readingTimeMinutes }} min read</span>
-        </div>
-      </div>
-
-      <div class="top-bar-controls">
-        <!-- MODE SWITCHER -->
-        <div class="mode-toggle-group">
-          <button
-            type="button"
-            class="mode-btn"
-            [class.active]="activeMode === 'local'"
-            (click)="toggleAiMode('local')"
-          >
-            🛡️ {{ 'pdfIntelligence.modeLocal' | translate }}
-          </button>
-          <button
-            type="button"
-            class="mode-btn"
-            [class.active]="activeMode === 'ai-assisted'"
-            (click)="toggleAiMode('ai-assisted')"
-          >
-            ✨ {{ 'pdfIntelligence.modeAiAssisted' | translate }}
-          </button>
-        </div>
-
-        <app-button variant="outline" size="sm" (click)="resetWorkspace()">
-          {{ 'common.chooseAnother' | translate }}
-        </app-button>
-      </div>
-    </div>
-
-    <!-- EXTRACTION QUALITY WARNING (IF SCANNED/POOR TEXT) -->
-    <div *ngIf="!analysis.isExtractionReliable" class="quality-alert-banner">
-      <div class="alert-icon">⚠️</div>
-      <div class="alert-content">
-        <strong>{{ 'pdfIntelligence.qualityNoticeTitle' | translate }}</strong>
-        <p>{{ analysis.extractionNotice }}</p>
-      </div>
-      <app-button variant="primary" size="sm" (clicked)="handoffToOcr()">
-        🔍 {{ 'pdfIntelligence.runOcrBtn' | translate }}
-      </app-button>
-    </div>
-
-    <!-- WORKSPACE TABS -->
-    <div class="workspace-tabs-container">
-      <app-tabs
-        [tabs]="workspaceTabs"
-        [activeTab]="activeTab"
-        (tabChange)="setTab($any($event))"
-      ></app-tabs>
-    </div>
-
-    <!-- 2-COLUMN WORKSPACE GRID (MAIN TABS + PREVIEW) -->
-    <div class="workbench-grid">
-      <!-- LEFT COLUMN: ACTIVE TAB CONTENT -->
-      <div class="tab-content-area">
-
-        <!-- ========================================== -->
-        <!-- TAB 1: OVERVIEW & STATS -->
-        <!-- ========================================== -->
-        <div *ngIf="activeTab === 'overview'" class="overview-pane">
-          <!-- METRICS ROW -->
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <span class="metric-label">{{ 'pdfIntelligence.metricWords' | translate }}</span>
-              <span class="metric-value">{{ analysis.wordCount | number }}</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-label">{{ 'pdfIntelligence.metricReadingTime' | translate }}</span>
-              <span class="metric-value">~{{ analysis.readingTimeMinutes }} min</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-label">{{ 'pdfIntelligence.metricLanguage' | translate }}</span>
-              <span class="metric-value font-sm">{{ analysis.detectedLanguage }}</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-label">{{ 'pdfIntelligence.metricSections' | translate }}</span>
-              <span class="metric-value">{{ analysis.sections.length }}</span>
-            </div>
+  @if (currentStep === 'workspace' && analysis && summary) {
+    <section class="workspace-section">
+      <!-- TOP WORKSPACE BAR -->
+      <div class="workspace-top-bar">
+        <div class="doc-meta-block">
+          <span class="doc-icon">📄</span>
+          <div class="doc-title-info">
+            <span class="doc-name">{{ selectedFile?.name }}</span>
+            <span class="doc-sub">{{ analysis.pageCount }} {{ 'common.pages' | translate }} • {{ analysis.wordCount }} {{ 'pdfIntelligence.words' | translate }} • ~{{ analysis.readingTimeMinutes }} min read</span>
           </div>
-
-          <!-- TOP KEYWORDS -->
-          <div class="card-block">
-            <h4>{{ 'pdfIntelligence.topKeywordsTitle' | translate }}</h4>
-            <div class="keywords-wrap">
-              <span *ngFor="let kw of analysis.keywords" class="keyword-chip">
-                {{ kw.word }} <small>({{ kw.count }})</small>
-              </span>
-            </div>
-          </div>
-
-          <!-- DETECTED SECTIONS LIST -->
-          <div class="card-block">
-            <h4>{{ 'pdfIntelligence.detectedSectionsTitle' | translate }}</h4>
-            <div class="sections-list">
-              <div
-                *ngFor="let sec of analysis.sections"
-                class="section-item-row"
-                (click)="jumpToPage(sec.pageNumber)"
+        </div>
+        <div class="top-bar-controls">
+          <!-- MODE SWITCHER -->
+          <div class="mode-toggle-group">
+            <button
+              type="button"
+              class="mode-btn"
+              [class.active]="activeMode === 'local'"
+              (click)="toggleAiMode('local')"
               >
-                <div class="section-title-wrap">
-                  <span class="section-badge">P.{{ sec.pageNumber }}</span>
-                  <span class="section-name">{{ sec.title }}</span>
-                </div>
-                <span class="section-meta">{{ sec.wordCount }} words</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- TAB 2: SUMMARY -->
-        <!-- ========================================== -->
-        <div *ngIf="activeTab === 'summary'" class="summary-pane">
-          <!-- QUICK SUMMARY -->
-          <div class="card-block highlight-block">
-            <div class="card-header-flex">
-              <h4>📋 {{ 'pdfIntelligence.quickSummaryTitle' | translate }}</h4>
-              <app-button variant="outline" size="sm" (clicked)="exportSummaryTxt()">
-                TXT
-              </app-button>
-            </div>
-            <p class="summary-text">{{ summary.quickSummary }}</p>
-          </div>
-
-          <!-- KEY POINTS -->
-          <div class="card-block">
-            <h4>💡 {{ 'pdfIntelligence.keyPointsTitle' | translate }}</h4>
-            <ul class="key-points-list">
-              <li *ngFor="let pt of summary.keyPoints">
-                {{ pt }}
-              </li>
-            </ul>
-          </div>
-
-          <!-- DETAILED SECTION SUMMARIES -->
-          <div *ngIf="summary.sectionSummaries.length > 0" class="card-block">
-            <h4>📑 {{ 'pdfIntelligence.sectionSummariesTitle' | translate }}</h4>
-            <div class="section-summaries-list">
-              <div *ngFor="let item of summary.sectionSummaries" class="section-summary-card">
-                <div class="sec-sum-header">
-                  <span class="sec-badge" (click)="jumpToPage(item.pageNumber)">Page {{ item.pageNumber }}</span>
-                  <strong>{{ item.sectionTitle }}</strong>
-                </div>
-                <p>{{ item.summary }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- EXPORT ACTIONS BAR -->
-          <div class="export-actions-bar">
-            <span>{{ 'pdfIntelligence.exportSummaryTitle' | translate }}:</span>
-            <div class="export-btn-group">
-              <app-button variant="primary" size="sm" (clicked)="exportSummaryPdf()">
-                📑 PDF
-              </app-button>
-              <app-button variant="outline" size="sm" (clicked)="exportSummaryTxt()">
-                📝 TXT
-              </app-button>
-              <app-button variant="outline" size="sm" (clicked)="exportStructuredJson()">
-                📊 JSON
-              </app-button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- TAB 3: SEARCH & HIGHLIGHT -->
-        <!-- ========================================== -->
-        <div *ngIf="activeTab === 'search'" class="search-pane">
-          <div class="search-input-bar">
-            <input
-              type="text"
-              [(ngModel)]="searchQuery"
-              (keyup.enter)="onSearch()"
-              placeholder="{{ 'pdfIntelligence.searchPlaceholder' | translate }}"
-              class="search-field"
-            />
-            <app-button variant="primary" size="md" (clicked)="onSearch()">
-              🔍 {{ 'common.search' | translate }}
-            </app-button>
-          </div>
-
-          <!-- MATCH CONTROLS -->
-          <div *ngIf="searchResults.length > 0" class="match-controls-bar">
-            <span class="match-count-text">
-              {{ 'pdfIntelligence.matchCountLabel' | translate:{ current: currentMatchIndex, total: searchResults.length } }}
-            </span>
-            <div class="stepper-buttons">
-              <button type="button" class="step-btn" (click)="prevMatch()">▲</button>
-              <button type="button" class="step-btn" (click)="nextMatch()">▼</button>
-            </div>
-          </div>
-
-          <!-- RESULTS SNIPPETS -->
-          <div class="search-results-list">
-            <div
-              *ngFor="let res of searchResults; let idx = index"
-              class="search-match-card"
-              [class.active]="currentMatchIndex === idx + 1"
-              (click)="currentMatchIndex = idx + 1; jumpToPage(res.pageNumber)"
-            >
-              <div class="match-header">
-                <span class="match-page-badge">Page {{ res.pageNumber }}</span>
-                <span class="match-index-label">Match #{{ idx + 1 }}</span>
-              </div>
-              <p class="match-snippet">{{ res.snippet }}</p>
-            </div>
-
-            <div *ngIf="searchQuery && searchResults.length === 0" class="empty-matches">
-              <p>{{ 'pdfIntelligence.noMatchesFound' | translate:{ query: searchQuery } }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- TAB 4: DOCUMENT Q&A -->
-        <!-- ========================================== -->
-        <div *ngIf="activeTab === 'qa'" class="qa-pane">
-          <div class="qa-guidance-banner">
-            <span class="guidance-icon">🎯</span>
-            <p>{{ 'pdfIntelligence.qaGuidance' | translate }}</p>
-          </div>
-
-          <!-- QUESTION INPUT -->
-          <div class="question-input-bar">
-            <input
-              type="text"
-              [(ngModel)]="questionInput"
-              (keyup.enter)="askQuestion()"
-              placeholder="{{ 'pdfIntelligence.questionPlaceholder' | translate }}"
-              class="question-field"
-            />
-            <app-button
-              variant="primary"
-              size="md"
-              (clicked)="askQuestion()"
-              [disabled]="isAnswering || !questionInput.trim()"
-            >
-              {{ 'pdfIntelligence.askBtn' | translate }}
-            </app-button>
-          </div>
-
-          <!-- SUGGESTED QUESTIONS -->
-          <div class="suggested-questions-row">
-            <span class="suggest-label">{{ 'pdfIntelligence.suggestedLabel' | translate }}:</span>
-            <div class="suggest-chips">
-              <button
-                *ngFor="let sq of suggestedQuestions"
-                type="button"
-                class="suggest-chip"
-                (click)="askQuestion(sq)"
+              🛡️ {{ 'pdfIntelligence.modeLocal' | translate }}
+            </button>
+            <button
+              type="button"
+              class="mode-btn"
+              [class.active]="activeMode === 'ai-assisted'"
+              (click)="toggleAiMode('ai-assisted')"
               >
-                {{ sq }}
-              </button>
-            </div>
+              ✨ {{ 'pdfIntelligence.modeAiAssisted' | translate }}
+            </button>
           </div>
-
-          <!-- Q&A THREAD -->
-          <div class="qa-thread-list">
-            <div *ngFor="let item of qaHistory" class="qa-item-card">
-              <div class="qa-question-row">
-                <span class="user-avatar">❓</span>
-                <strong>{{ item.question }}</strong>
+          <app-button variant="outline" size="sm" (click)="resetWorkspace()">
+            {{ 'common.chooseAnother' | translate }}
+          </app-button>
+        </div>
+      </div>
+      <!-- EXTRACTION QUALITY WARNING (IF SCANNED/POOR TEXT) -->
+      @if (!analysis.isExtractionReliable) {
+        <div class="quality-alert-banner">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <strong>{{ 'pdfIntelligence.qualityNoticeTitle' | translate }}</strong>
+            <p>{{ analysis.extractionNotice }}</p>
+          </div>
+          <app-button variant="primary" size="sm" (clicked)="handoffToOcr()">
+            🔍 {{ 'pdfIntelligence.runOcrBtn' | translate }}
+          </app-button>
+        </div>
+      }
+      <!-- WORKSPACE TABS -->
+      <div class="workspace-tabs-container">
+        <app-tabs
+          [tabs]="workspaceTabs"
+          [activeTab]="activeTab"
+          (tabChange)="setTab($any($event))"
+        ></app-tabs>
+      </div>
+      <!-- 2-COLUMN WORKSPACE GRID (MAIN TABS + PREVIEW) -->
+      <div class="workbench-grid">
+        <!-- LEFT COLUMN: ACTIVE TAB CONTENT -->
+        <div class="tab-content-area">
+          <!-- ========================================== -->
+          <!-- TAB 1: OVERVIEW & STATS -->
+          <!-- ========================================== -->
+          @if (activeTab === 'overview') {
+            <div class="overview-pane">
+              <!-- METRICS ROW -->
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <span class="metric-label">{{ 'pdfIntelligence.metricWords' | translate }}</span>
+                  <span class="metric-value">{{ analysis.wordCount | number }}</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-label">{{ 'pdfIntelligence.metricReadingTime' | translate }}</span>
+                  <span class="metric-value">~{{ analysis.readingTimeMinutes }} min</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-label">{{ 'pdfIntelligence.metricLanguage' | translate }}</span>
+                  <span class="metric-value font-sm">{{ analysis.detectedLanguage }}</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-label">{{ 'pdfIntelligence.metricSections' | translate }}</span>
+                  <span class="metric-value">{{ analysis.sections.length }}</span>
+                </div>
               </div>
-
-              <div class="qa-answer-row">
-                <span class="ai-avatar">🤖</span>
-                <div class="answer-body">
-                  <p class="answer-text">{{ item.answer }}</p>
-
-                  <!-- CITATIONS -->
-                  <div *ngIf="item.citations.length > 0" class="citations-row">
-                    <span class="citation-label">{{ 'pdfIntelligence.citationsLabel' | translate }}:</span>
-                    <button
-                      *ngFor="let c of item.citations"
-                      type="button"
-                      class="citation-pill"
-                      (click)="jumpToPage(c.pageNumber)"
-                      title="{{ c.passageSnippet }}"
+              <!-- TOP KEYWORDS -->
+              <div class="card-block">
+                <h4>{{ 'pdfIntelligence.topKeywordsTitle' | translate }}</h4>
+                <div class="keywords-wrap">
+                  @for (kw of analysis.keywords; track kw) {
+                    <span class="keyword-chip">
+                      {{ kw.word }} <small>({{ kw.count }})</small>
+                    </span>
+                  }
+                </div>
+              </div>
+              <!-- DETECTED SECTIONS LIST -->
+              <div class="card-block">
+                <h4>{{ 'pdfIntelligence.detectedSectionsTitle' | translate }}</h4>
+                <div class="sections-list">
+                  @for (sec of analysis.sections; track sec) {
+                    <div
+                      class="section-item-row"
+                      (click)="jumpToPage(sec.pageNumber)"
+                      >
+                      <div class="section-title-wrap">
+                        <span class="section-badge">P.{{ sec.pageNumber }}</span>
+                        <span class="section-name">{{ sec.title }}</span>
+                      </div>
+                      <span class="section-meta">{{ sec.wordCount }} words</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+          <!-- ========================================== -->
+          <!-- TAB 2: SUMMARY -->
+          <!-- ========================================== -->
+          @if (activeTab === 'summary') {
+            <div class="summary-pane">
+              <!-- QUICK SUMMARY -->
+              <div class="card-block highlight-block">
+                <div class="card-header-flex">
+                  <h4>📋 {{ 'pdfIntelligence.quickSummaryTitle' | translate }}</h4>
+                  <app-button variant="outline" size="sm" (clicked)="exportSummaryTxt()">
+                    TXT
+                  </app-button>
+                </div>
+                <p class="summary-text">{{ summary.quickSummary }}</p>
+              </div>
+              <!-- KEY POINTS -->
+              <div class="card-block">
+                <h4>💡 {{ 'pdfIntelligence.keyPointsTitle' | translate }}</h4>
+                <ul class="key-points-list">
+                  @for (pt of summary.keyPoints; track pt) {
+                    <li>
+                      {{ pt }}
+                    </li>
+                  }
+                </ul>
+              </div>
+              <!-- DETAILED SECTION SUMMARIES -->
+              @if (summary.sectionSummaries.length > 0) {
+                <div class="card-block">
+                  <h4>📑 {{ 'pdfIntelligence.sectionSummariesTitle' | translate }}</h4>
+                  <div class="section-summaries-list">
+                    @for (item of summary.sectionSummaries; track item) {
+                      <div class="section-summary-card">
+                        <div class="sec-sum-header">
+                          <span class="sec-badge" (click)="jumpToPage(item.pageNumber)">Page {{ item.pageNumber }}</span>
+                          <strong>{{ item.sectionTitle }}</strong>
+                        </div>
+                        <p>{{ item.summary }}</p>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              <!-- EXPORT ACTIONS BAR -->
+              <div class="export-actions-bar">
+                <span>{{ 'pdfIntelligence.exportSummaryTitle' | translate }}:</span>
+                <div class="export-btn-group">
+                  <app-button variant="primary" size="sm" (clicked)="exportSummaryPdf()">
+                    📑 PDF
+                  </app-button>
+                  <app-button variant="outline" size="sm" (clicked)="exportSummaryTxt()">
+                    📝 TXT
+                  </app-button>
+                  <app-button variant="outline" size="sm" (clicked)="exportStructuredJson()">
+                    📊 JSON
+                  </app-button>
+                </div>
+              </div>
+            </div>
+          }
+          <!-- ========================================== -->
+          <!-- TAB 3: SEARCH & HIGHLIGHT -->
+          <!-- ========================================== -->
+          @if (activeTab === 'search') {
+            <div class="search-pane">
+              <div class="search-input-bar">
+                <input
+                  type="text"
+                  [(ngModel)]="searchQuery"
+                  (keyup.enter)="onSearch()"
+                  placeholder="{{ 'pdfIntelligence.searchPlaceholder' | translate }}"
+                  class="search-field"
+                  />
+                <app-button variant="primary" size="md" (clicked)="onSearch()">
+                  🔍 {{ 'common.search' | translate }}
+                </app-button>
+              </div>
+              <!-- MATCH CONTROLS -->
+              @if (searchResults.length > 0) {
+                <div class="match-controls-bar">
+                  <span class="match-count-text">
+                    {{ 'pdfIntelligence.matchCountLabel' | translate:{ current: currentMatchIndex, total: searchResults.length } }}
+                  </span>
+                  <div class="stepper-buttons">
+                    <button type="button" class="step-btn" (click)="prevMatch()">▲</button>
+                    <button type="button" class="step-btn" (click)="nextMatch()">▼</button>
+                  </div>
+                </div>
+              }
+              <!-- RESULTS SNIPPETS -->
+              <div class="search-results-list">
+                @for (res of searchResults; track res; let idx = $index) {
+                  <div
+                    class="search-match-card"
+                    [class.active]="currentMatchIndex === idx + 1"
+                    (click)="currentMatchIndex = idx + 1; jumpToPage(res.pageNumber)"
                     >
-                      📄 Page {{ c.pageNumber }} <small>({{ c.confidence }}%)</small>
+                    <div class="match-header">
+                      <span class="match-page-badge">Page {{ res.pageNumber }}</span>
+                      <span class="match-index-label">Match #{{ idx + 1 }}</span>
+                    </div>
+                    <p class="match-snippet">{{ res.snippet }}</p>
+                  </div>
+                }
+                @if (searchQuery && searchResults.length === 0) {
+                  <div class="empty-matches">
+                    <p>{{ 'pdfIntelligence.noMatchesFound' | translate:{ query: searchQuery } }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          <!-- ========================================== -->
+          <!-- TAB 4: DOCUMENT Q&A -->
+          <!-- ========================================== -->
+          @if (activeTab === 'qa') {
+            <div class="qa-pane">
+              <div class="qa-guidance-banner">
+                <span class="guidance-icon">🎯</span>
+                <p>{{ 'pdfIntelligence.qaGuidance' | translate }}</p>
+              </div>
+              <!-- QUESTION INPUT -->
+              <div class="question-input-bar">
+                <input
+                  type="text"
+                  [(ngModel)]="questionInput"
+                  (keyup.enter)="askQuestion()"
+                  placeholder="{{ 'pdfIntelligence.questionPlaceholder' | translate }}"
+                  class="question-field"
+                  />
+                <app-button
+                  variant="primary"
+                  size="md"
+                  (clicked)="askQuestion()"
+                  [disabled]="isAnswering || !questionInput.trim()"
+                  >
+                  {{ 'pdfIntelligence.askBtn' | translate }}
+                </app-button>
+              </div>
+              <!-- SUGGESTED QUESTIONS -->
+              <div class="suggested-questions-row">
+                <span class="suggest-label">{{ 'pdfIntelligence.suggestedLabel' | translate }}:</span>
+                <div class="suggest-chips">
+                  @for (sq of suggestedQuestions; track sq) {
+                    <button
+                      type="button"
+                      class="suggest-chip"
+                      (click)="askQuestion(sq)"
+                      >
+                      {{ sq }}
+                    </button>
+                  }
+                </div>
+              </div>
+              <!-- Q&A THREAD -->
+              <div class="qa-thread-list">
+                @for (item of qaHistory; track item) {
+                  <div class="qa-item-card">
+                    <div class="qa-question-row">
+                      <span class="user-avatar">❓</span>
+                      <strong>{{ item.question }}</strong>
+                    </div>
+                    <div class="qa-answer-row">
+                      <span class="ai-avatar">🤖</span>
+                      <div class="answer-body">
+                        <p class="answer-text">{{ item.answer }}</p>
+                        <!-- CITATIONS -->
+                        @if (item.citations.length > 0) {
+                          <div class="citations-row">
+                            <span class="citation-label">{{ 'pdfIntelligence.citationsLabel' | translate }}:</span>
+                            @for (c of item.citations; track c) {
+                              <button
+                                type="button"
+                                class="citation-pill"
+                                (click)="jumpToPage(c.pageNumber)"
+                                title="{{ c.passageSnippet }}"
+                                >
+                                📄 Page {{ c.pageNumber }} <small>({{ c.confidence }}%)</small>
+                              </button>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          <!-- ========================================== -->
+          <!-- TAB 5: TRANSLATION -->
+          <!-- ========================================== -->
+          @if (activeTab === 'translate') {
+            <div class="translate-pane">
+              <div class="translate-config-card">
+                <h4>{{ 'pdfIntelligence.translateTitle' | translate }}</h4>
+                <p>{{ 'pdfIntelligence.translateDesc' | translate }}</p>
+                <!-- SCOPE SELECTION -->
+                <div class="scope-picker-row">
+                  <label>{{ 'pdfIntelligence.translateScopeLabel' | translate }}:</label>
+                  <div class="scope-options-group">
+                    <button
+                      type="button"
+                      class="scope-btn"
+                      [class.active]="translationScope === 'summary'"
+                      (click)="translationScope = 'summary'"
+                      >
+                      📋 {{ 'pdfIntelligence.scopeSummary' | translate }}
+                    </button>
+                    <button
+                      type="button"
+                      class="scope-btn"
+                      [class.active]="translationScope === 'full'"
+                      (click)="translationScope = 'full'"
+                      >
+                      📑 {{ 'pdfIntelligence.scopeFullDoc' | translate }}
+                    </button>
+                    <button
+                      type="button"
+                      class="scope-btn"
+                      [class.active]="translationScope === 'page'"
+                      (click)="translationScope = 'page'"
+                      >
+                      📄 {{ 'pdfIntelligence.scopeCurrentPage' | translate:{ page: currentPagePreview } }}
                     </button>
                   </div>
                 </div>
+                <div class="lang-picker-row">
+                  <label>{{ 'pdfIntelligence.targetLanguageLabel' | translate }}:</label>
+                  <select [(ngModel)]="targetLanguage" class="lang-select">
+                    @for (l of availableLanguages; track l) {
+                      <option [value]="l.code">
+                        {{ l.label }}
+                      </option>
+                    }
+                  </select>
+                  <app-button
+                    variant="primary"
+                    size="md"
+                    (clicked)="runTranslation()"
+                    [disabled]="isTranslating"
+                    >
+                    🌐 {{ 'pdfIntelligence.translateBtn' | translate }}
+                  </app-button>
+                </div>
               </div>
+              <!-- TRANSLATION RESULT -->
+              @if (translationResult) {
+                <div class="translation-result-card">
+                  <div class="res-header">
+                    <h4>{{ 'pdfIntelligence.translatedOutputTitle' | translate }} ({{ translationResult.targetLanguage | uppercase }})</h4>
+                    <app-button variant="outline" size="sm" (clicked)="exportTranslationTxt()">
+                      📥 TXT
+                    </app-button>
+                  </div>
+                  <pre class="translated-pre-wrap">{{ translationResult.translatedText }}</pre>
+                </div>
+              }
             </div>
-          </div>
+          }
         </div>
-
-        <!-- ========================================== -->
-        <!-- TAB 5: TRANSLATION -->
-        <!-- ========================================== -->
-        <div *ngIf="activeTab === 'translate'" class="translate-pane">
-          <div class="translate-config-card">
-            <h4>{{ 'pdfIntelligence.translateTitle' | translate }}</h4>
-            <p>{{ 'pdfIntelligence.translateDesc' | translate }}</p>
-
-            <!-- SCOPE SELECTION -->
-            <div class="scope-picker-row">
-              <label>{{ 'pdfIntelligence.translateScopeLabel' | translate }}:</label>
-              <div class="scope-options-group">
-                <button
-                  type="button"
-                  class="scope-btn"
-                  [class.active]="translationScope === 'summary'"
-                  (click)="translationScope = 'summary'"
-                >
-                  📋 {{ 'pdfIntelligence.scopeSummary' | translate }}
-                </button>
-                <button
-                  type="button"
-                  class="scope-btn"
-                  [class.active]="translationScope === 'full'"
-                  (click)="translationScope = 'full'"
-                >
-                  📑 {{ 'pdfIntelligence.scopeFullDoc' | translate }}
-                </button>
-                <button
-                  type="button"
-                  class="scope-btn"
-                  [class.active]="translationScope === 'page'"
-                  (click)="translationScope = 'page'"
-                >
-                  📄 {{ 'pdfIntelligence.scopeCurrentPage' | translate:{ page: currentPagePreview } }}
-                </button>
-              </div>
-            </div>
-
-            <div class="lang-picker-row">
-              <label>{{ 'pdfIntelligence.targetLanguageLabel' | translate }}:</label>
-              <select [(ngModel)]="targetLanguage" class="lang-select">
-                <option *ngFor="let l of availableLanguages" [value]="l.code">
-                  {{ l.label }}
-                </option>
-              </select>
-
-              <app-button
-                variant="primary"
-                size="md"
-                (clicked)="runTranslation()"
-                [disabled]="isTranslating"
-              >
-                🌐 {{ 'pdfIntelligence.translateBtn' | translate }}
-              </app-button>
+        <!-- RIGHT COLUMN: INTERACTIVE PDF PAGE PREVIEW -->
+        <div class="preview-column">
+          <div class="preview-header-bar">
+            <span class="preview-title">📖 {{ 'common.preview' | translate }}</span>
+            <div class="preview-stepper">
+              <button
+                type="button"
+                class="prev-page-btn"
+                [disabled]="currentPagePreview <= 1"
+                (click)="jumpToPage(currentPagePreview - 1)"
+              >‹</button>
+              <span class="page-indicator">{{ currentPagePreview }} / {{ analysis.pageCount }}</span>
+              <button
+                type="button"
+                class="next-page-btn"
+                [disabled]="currentPagePreview >= analysis.pageCount"
+                (click)="jumpToPage(currentPagePreview + 1)"
+              >›</button>
             </div>
           </div>
-
-          <!-- TRANSLATION RESULT -->
-          <div *ngIf="translationResult" class="translation-result-card">
-            <div class="res-header">
-              <h4>{{ 'pdfIntelligence.translatedOutputTitle' | translate }} ({{ translationResult.targetLanguage | uppercase }})</h4>
-              <app-button variant="outline" size="sm" (clicked)="exportTranslationTxt()">
-                📥 TXT
-              </app-button>
-            </div>
-            <pre class="translated-pre-wrap">{{ translationResult.translatedText }}</pre>
+          <div class="canvas-container">
+            <canvas #previewCanvas class="pdf-render-canvas"></canvas>
+            @if (isRenderingPreview) {
+              <div class="canvas-loading-overlay">
+                <div class="spinner-small"></div>
+              </div>
+            }
           </div>
         </div>
       </div>
-
-      <!-- RIGHT COLUMN: INTERACTIVE PDF PAGE PREVIEW -->
-      <div class="preview-column">
-        <div class="preview-header-bar">
-          <span class="preview-title">📖 {{ 'common.preview' | translate }}</span>
-          <div class="preview-stepper">
-            <button
-              type="button"
-              class="prev-page-btn"
-              [disabled]="currentPagePreview <= 1"
-              (click)="jumpToPage(currentPagePreview - 1)"
-            >‹</button>
-            <span class="page-indicator">{{ currentPagePreview }} / {{ analysis.pageCount }}</span>
-            <button
-              type="button"
-              class="next-page-btn"
-              [disabled]="currentPagePreview >= analysis.pageCount"
-              (click)="jumpToPage(currentPagePreview + 1)"
-            >›</button>
-          </div>
-        </div>
-
-        <div class="canvas-container">
-          <canvas #previewCanvas class="pdf-render-canvas"></canvas>
-          <div *ngIf="isRenderingPreview" class="canvas-loading-overlay">
-            <div class="spinner-small"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- AI PRIVACY DISCLOSURE MODAL -->
-  <div *ngIf="showPrivacyModal" class="privacy-modal-backdrop">
-    <div class="privacy-modal-card">
-      <div class="modal-icon-shield">🛡️</div>
-      <h3>{{ 'pdfIntelligence.privacyDisclosureTitle' | translate }}</h3>
-      <p class="modal-desc">
-        {{ 'pdfIntelligence.privacyDisclosureDesc' | translate }}
-      </p>
-
-      <div class="privacy-points-box">
-        <div class="point-item">
-          <span>✓</span>
-          <p>{{ 'pdfIntelligence.privacyPoint1' | translate }}</p>
+  @if (showPrivacyModal) {
+    <div class="privacy-modal-backdrop">
+      <div class="privacy-modal-card">
+        <div class="modal-icon-shield">🛡️</div>
+        <h3>{{ 'pdfIntelligence.privacyDisclosureTitle' | translate }}</h3>
+        <p class="modal-desc">
+          {{ 'pdfIntelligence.privacyDisclosureDesc' | translate }}
+        </p>
+        <div class="privacy-points-box">
+          <div class="point-item">
+            <span>✓</span>
+            <p>{{ 'pdfIntelligence.privacyPoint1' | translate }}</p>
+          </div>
+          <div class="point-item">
+            <span>✓</span>
+            <p>{{ 'pdfIntelligence.privacyPoint2' | translate }}</p>
+          </div>
+          <div class="point-item">
+            <span>✓</span>
+            <p>{{ 'pdfIntelligence.privacyPoint3' | translate }}</p>
+          </div>
         </div>
-        <div class="point-item">
-          <span>✓</span>
-          <p>{{ 'pdfIntelligence.privacyPoint2' | translate }}</p>
+        <div class="modal-actions">
+          <app-button variant="outline" size="md" (clicked)="cancelAiPrivacy()">
+            {{ 'pdfIntelligence.stayPrivateBtn' | translate }}
+          </app-button>
+          <app-button variant="primary" size="md" (clicked)="acceptAiPrivacy()">
+            {{ 'pdfIntelligence.acceptAiBtn' | translate }}
+          </app-button>
         </div>
-        <div class="point-item">
-          <span>✓</span>
-          <p>{{ 'pdfIntelligence.privacyPoint3' | translate }}</p>
-        </div>
-      </div>
-
-      <div class="modal-actions">
-        <app-button variant="outline" size="md" (clicked)="cancelAiPrivacy()">
-          {{ 'pdfIntelligence.stayPrivateBtn' | translate }}
-        </app-button>
-        <app-button variant="primary" size="md" (clicked)="acceptAiPrivacy()">
-          {{ 'pdfIntelligence.acceptAiBtn' | translate }}
-        </app-button>
       </div>
     </div>
-  </div>
+  }
 
   <!-- CONNECTED / RELATED TOOLS -->
   <app-related-tools [currentToolId]="'pdf_intelligence'"></app-related-tools>

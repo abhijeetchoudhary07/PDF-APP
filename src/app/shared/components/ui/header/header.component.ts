@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  HostListener,
-  OnDestroy,
-  OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
@@ -27,17 +19,18 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
     <header class="app-header" [class.is-scrolled]="scrolled">
       <div class="header-inner">
         <!-- 0. Back (mobile, anywhere but the dashboard) -->
-        <button
-          *ngIf="showBack"
-          type="button"
-          class="back-btn"
-          (click)="goBack()"
-          aria-label="Go back">
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.4" fill="none">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-
+        @if (showBack) {
+          <button
+            type="button"
+            class="back-btn"
+            (click)="goBack()"
+            aria-label="Go back">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.4" fill="none">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+        }
+    
         <!-- 1. Brand / Logo -->
         <a routerLink="/home" class="brand-link">
           <div class="brand-icon">
@@ -54,7 +47,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
             <span class="brand-tag">{{ 'common.brandTag' | translate }}</span>
           </div>
         </a>
-
+    
         <!-- 2. Desktop Navigation -->
         <nav class="desktop-nav">
           <!-- Tools Dropdown Trigger -->
@@ -71,86 +64,86 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
-
+    
             <!-- Tools Mega Dropdown Menu -->
-            <div *ngIf="toolsMenuOpen" class="tools-dropdown-menu" (click)="toolsMenuOpen = false">
-              <div class="dropdown-column">
-                <span class="column-title">{{ 'header.columnMedia' | translate }}</span>
-                <a routerLink="/features/photo" class="dropdown-item">
-                  <span class="item-dot color-photo"></span>
-                  <div>
-                    <span class="item-name">{{ 'tools.photo_tools.title' | translate }}</span>
-                    <span class="item-sub">{{ 'header.toolPhotoSub' | translate }}</span>
-                  </div>
-                </a>
-                <a routerLink="/features/signature" class="dropdown-item">
-                  <span class="item-dot color-signature"></span>
-                  <div>
-                    <span class="item-name">{{ 'tools.signature_tools.title' | translate }}</span>
-                    <span class="item-sub">{{ 'header.toolSigSub' | translate }}</span>
-                  </div>
-                </a>
-                <a routerLink="/features/batch" class="dropdown-item">
-                  <span class="item-dot color-batch"></span>
-                  <div>
-                    <span class="item-name">{{ 'tools.batch_images.title' | translate }}</span>
-                    <span class="item-sub">{{ 'header.toolBatchSub' | translate }}</span>
-                  </div>
-                </a>
+            @if (toolsMenuOpen) {
+              <div class="tools-dropdown-menu" (click)="toolsMenuOpen = false">
+                <div class="dropdown-column">
+                  <span class="column-title">{{ 'header.columnMedia' | translate }}</span>
+                  <a routerLink="/features/photo" class="dropdown-item">
+                    <span class="item-dot color-photo"></span>
+                    <div>
+                      <span class="item-name">{{ 'tools.photo_tools.title' | translate }}</span>
+                      <span class="item-sub">{{ 'header.toolPhotoSub' | translate }}</span>
+                    </div>
+                  </a>
+                  <a routerLink="/features/signature" class="dropdown-item">
+                    <span class="item-dot color-signature"></span>
+                    <div>
+                      <span class="item-name">{{ 'tools.signature_tools.title' | translate }}</span>
+                      <span class="item-sub">{{ 'header.toolSigSub' | translate }}</span>
+                    </div>
+                  </a>
+                  <a routerLink="/features/batch" class="dropdown-item">
+                    <span class="item-dot color-batch"></span>
+                    <div>
+                      <span class="item-name">{{ 'tools.batch_images.title' | translate }}</span>
+                      <span class="item-sub">{{ 'header.toolBatchSub' | translate }}</span>
+                    </div>
+                  </a>
+                </div>
+                <div class="dropdown-column">
+                  <span class="column-title">{{ 'header.columnPdf' | translate }}</span>
+                  <a routerLink="/features/pdf" class="dropdown-item">
+                    <span class="item-dot color-pdf"></span>
+                    <div>
+                      <span class="item-name">{{ 'header.pdf' | translate }}</span>
+                      <span class="item-sub">{{ 'header.toolPdfSub' | translate }}</span>
+                    </div>
+                  </a>
+                  <a routerLink="/features/pdf/conversion" class="dropdown-item">
+                    <span class="item-dot color-convert"></span>
+                    <div>
+                      <span class="item-name">{{ 'tools.doc_converter.title' | translate }}</span>
+                      <span class="item-sub">{{ 'header.toolConvertSub' | translate }}</span>
+                    </div>
+                  </a>
+                  <a routerLink="/features/pdf/organize" class="dropdown-item">
+                    <span class="item-dot color-organize"></span>
+                    <div>
+                      <span class="item-name">{{ 'tools.pdf_organize.title' | translate }}</span>
+                      <span class="item-sub">{{ 'header.toolOrganizeSub' | translate }}</span>
+                    </div>
+                  </a>
+                </div>
+                <div class="dropdown-column">
+                  <span class="column-title">{{ 'header.columnEdit' | translate }}</span>
+                  <a routerLink="/features/pdf/editor" class="dropdown-item">
+                    <span class="item-dot color-edit"></span>
+                    <div>
+                      <span class="item-name">{{ 'tools.pdf_editor.title' | translate }}</span>
+                      <span class="item-sub">{{ 'header.toolEditorSub' | translate }}</span>
+                    </div>
+                  </a>
+                  <a routerLink="/features/pdf/sign" class="dropdown-item">
+                    <span class="item-dot color-sign"></span>
+                    <div>
+                      <span class="item-name">{{ 'tools.sign_pdf.title' | translate }}</span>
+                      <span class="item-sub">{{ 'header.toolSignSub' | translate }}</span>
+                    </div>
+                  </a>
+                  <a routerLink="/features/pdf/security" class="dropdown-item">
+                    <span class="item-dot color-security"></span>
+                    <div>
+                      <span class="item-name">{{ 'tools.pdf_protect.title' | translate }}</span>
+                      <span class="item-sub">{{ 'header.toolSecuritySub' | translate }}</span>
+                    </div>
+                  </a>
+                </div>
               </div>
-
-              <div class="dropdown-column">
-                <span class="column-title">{{ 'header.columnPdf' | translate }}</span>
-                <a routerLink="/features/pdf" class="dropdown-item">
-                  <span class="item-dot color-pdf"></span>
-                  <div>
-                    <span class="item-name">{{ 'header.pdf' | translate }}</span>
-                    <span class="item-sub">{{ 'header.toolPdfSub' | translate }}</span>
-                  </div>
-                </a>
-                <a routerLink="/features/pdf/conversion" class="dropdown-item">
-                  <span class="item-dot color-convert"></span>
-                  <div>
-                    <span class="item-name">{{ 'tools.doc_converter.title' | translate }}</span>
-                    <span class="item-sub">{{ 'header.toolConvertSub' | translate }}</span>
-                  </div>
-                </a>
-                <a routerLink="/features/pdf/organize" class="dropdown-item">
-                  <span class="item-dot color-organize"></span>
-                  <div>
-                    <span class="item-name">{{ 'tools.pdf_organize.title' | translate }}</span>
-                    <span class="item-sub">{{ 'header.toolOrganizeSub' | translate }}</span>
-                  </div>
-                </a>
-              </div>
-
-              <div class="dropdown-column">
-                <span class="column-title">{{ 'header.columnEdit' | translate }}</span>
-                <a routerLink="/features/pdf/editor" class="dropdown-item">
-                  <span class="item-dot color-edit"></span>
-                  <div>
-                    <span class="item-name">{{ 'tools.pdf_editor.title' | translate }}</span>
-                    <span class="item-sub">{{ 'header.toolEditorSub' | translate }}</span>
-                  </div>
-                </a>
-                <a routerLink="/features/pdf/sign" class="dropdown-item">
-                  <span class="item-dot color-sign"></span>
-                  <div>
-                    <span class="item-name">{{ 'tools.sign_pdf.title' | translate }}</span>
-                    <span class="item-sub">{{ 'header.toolSignSub' | translate }}</span>
-                  </div>
-                </a>
-                <a routerLink="/features/pdf/security" class="dropdown-item">
-                  <span class="item-dot color-security"></span>
-                  <div>
-                    <span class="item-name">{{ 'tools.pdf_protect.title' | translate }}</span>
-                    <span class="item-sub">{{ 'header.toolSecuritySub' | translate }}</span>
-                  </div>
-                </a>
-              </div>
-            </div>
+            }
           </div>
-
+    
           <!-- Direct Desktop Links -->
           <a routerLink="/features/pdf" routerLinkActive="active" class="nav-item">{{ 'header.pdf' | translate }}</a>
           <a routerLink="/features/photo" routerLinkActive="active" class="nav-item nav-item-secondary">{{ 'header.photo' | translate }}</a>
@@ -162,33 +155,36 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
             <span>{{ 'header.premium' | translate }}</span>
           </a>
           <!--
-            The free tier's remaining operations, shown before they run out
-            rather than at the moment a save is refused. Null means premium,
-            and then nothing is rendered at all.
-
-            The value is unwrapped through a wrapper object because zero is
-            falsy, and the plain *ngIf-as form hid the chip at exactly the
-            moment it had something worth saying.
+          The free tier's remaining operations, shown before they run out
+          rather than at the moment a save is refused. Null means premium,
+          and then nothing is rendered at all.
+    
+          Bound with @let rather than an "as" alias. Both the old *ngIf-as
+          and @if-as forms bind the alias only when the expression is truthy,
+          so the chip vanished on zero — exactly the moment it had something
+          worth saying. That used to be worked around by wrapping the number
+          in an object literal, which is always truthy; @let binds
+          unconditionally and the wrapper is no longer needed.
           -->
-          <ng-container *ngIf="{ remaining: quota.remaining$ | async } as q">
+          @let navQuota = quota.remaining$ | async;
+          @if (navQuota !== null) {
             <a
-              *ngIf="q.remaining !== null"
               routerLink="/features/premium"
               class="quota-chip"
-              [class.is-low]="q.remaining! <= 2"
-              [attr.title]="'quota.fullLabel' | translate: { remaining: q.remaining, limit: quota.limit }"
+              [class.is-low]="navQuota <= 2"
+              [attr.title]="'quota.fullLabel' | translate: { remaining: navQuota, limit: quota.limit }"
               data-testid="quota-chip">
-              <span class="quota-count">{{ q.remaining }}</span>
+              <span class="quota-count">{{ navQuota }}</span>
               <span class="quota-label">{{ 'quota.leftToday' | translate }}</span>
             </a>
-          </ng-container>
+          }
         </nav>
-
+    
         <!-- 3. Header Actions (Desktop & Mobile) -->
         <div class="header-actions">
           <!-- Language Selector Dropdown -->
           <app-language-selector mode="dropdown"></app-language-selector>
-
+    
           <!-- Search Button (Both Desktop & Mobile) -->
           <button
             type="button"
@@ -202,7 +198,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
             <span class="search-btn-text">{{ 'common.search' | translate }}</span>
             <kbd class="search-kbd">Ctrl+K</kbd>
           </button>
-
+    
           <!-- Theme Toggle: light -> dark -> follow system -->
           <button
             type="button"
@@ -210,37 +206,46 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
             (click)="cycleTheme()"
             [attr.title]="themeLabel"
             [attr.aria-label]="themeLabel">
-            <svg *ngIf="(themeService.currentTheme$ | async) === 'light'" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="theme-glyph">
-              <circle cx="12" cy="12" r="4.5"></circle>
-              <path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
-            </svg>
-            <svg *ngIf="(themeService.currentTheme$ | async) === 'dark'" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="theme-glyph">
-              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
-            </svg>
-            <svg *ngIf="(themeService.currentTheme$ | async) === 'system'" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="theme-glyph">
-              <rect x="2.5" y="4" width="19" height="12.5" rx="2"></rect>
-              <line x1="8.5" y1="20" x2="15.5" y2="20"></line>
-              <line x1="12" y1="16.5" x2="12" y2="20"></line>
-            </svg>
+            @if ((themeService.currentTheme$ | async) === 'light') {
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="theme-glyph">
+                <circle cx="12" cy="12" r="4.5"></circle>
+                <path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path>
+              </svg>
+            }
+            @if ((themeService.currentTheme$ | async) === 'dark') {
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="theme-glyph">
+                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+              </svg>
+            }
+            @if ((themeService.currentTheme$ | async) === 'system') {
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" class="theme-glyph">
+                <rect x="2.5" y="4" width="19" height="12.5" rx="2"></rect>
+                <line x1="8.5" y1="20" x2="15.5" y2="20"></line>
+                <line x1="12" y1="16.5" x2="12" y2="20"></line>
+              </svg>
+            }
           </button>
-
+    
           <!-- Profile: full chip on desktop, avatar only on mobile -->
           <a routerLink="/profile" class="profile-btn" title="User Profile" aria-label="Profile">
             <div class="profile-avatar-chip">
-              <img
-                *ngIf="(profileService.profile$ | async)?.avatarUrl as avatarUrl"
-                [src]="avatarUrl"
-                alt=""
-                class="avatar-img" />
-              <span *ngIf="!(profileService.profile$ | async)?.avatarUrl" class="avatar-initials">
-                {{ profileService.getInitials((profileService.profile$ | async)?.displayName || 'User') }}
-              </span>
+              @if ((profileService.profile$ | async)?.avatarUrl; as avatarUrl) {
+                <img
+                  [src]="avatarUrl"
+                  alt=""
+                  class="avatar-img" />
+              }
+              @if (!(profileService.profile$ | async)?.avatarUrl) {
+                <span class="avatar-initials">
+                  {{ profileService.getInitials((profileService.profile$ | async)?.displayName || 'User') }}
+                </span>
+              }
             </div>
             <span class="profile-btn-name">
               {{ (profileService.profile$ | async)?.displayName || 'Profile' }}
             </span>
           </a>
-
+    
           <!-- Mobile Hamburger Button -->
           <button
             type="button"
@@ -256,96 +261,100 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
         </div>
       </div>
     </header>
-
+    
     <!--
-      The drawer lives OUTSIDE .app-header on purpose.
-
-      .app-header carries a backdrop-filter, and a filtered element becomes the
-      containing block for its position: fixed descendants. Nested inside it the
-      drawer resolved top/right/bottom/left against the 60px-tall bar, so it
-      rendered with zero height and the menu looked like it never opened.
-      :host is only position: sticky, which does not create that containing
-      block, so out here the drawer fills the viewport as intended.
+    The drawer lives OUTSIDE .app-header on purpose.
+    
+    .app-header carries a backdrop-filter, and a filtered element becomes the
+    containing block for its position: fixed descendants. Nested inside it the
+    drawer resolved top/right/bottom/left against the 60px-tall bar, so it
+    rendered with zero height and the menu looked like it never opened.
+    :host is only position: sticky, which does not create that containing
+    block, so out here the drawer fills the viewport as intended.
     -->
-    <div *ngIf="mobileMenuOpen" class="mobile-drawer" (click)="closeMobileMenu()">
-      <div class="mobile-drawer-content" (click)="$event.stopPropagation()">
-        <!-- Drawer Header with Profile Card -->
-        <div class="drawer-profile-card">
-          <a routerLink="/profile" (click)="closeMobileMenu()" class="drawer-profile-link">
-            <div class="drawer-avatar">
-              <img
-                *ngIf="(profileService.profile$ | async)?.avatarUrl as avatarUrl"
-                [src]="avatarUrl"
-                alt=""
-                class="avatar-img" />
-              <span *ngIf="!(profileService.profile$ | async)?.avatarUrl" class="avatar-initials">
-                {{ profileService.getInitials((profileService.profile$ | async)?.displayName || 'User') }}
-              </span>
-            </div>
-            <div class="drawer-user-info">
-              <span class="drawer-user-name">{{ (profileService.profile$ | async)?.displayName || 'Offline User' }}</span>
-              <span class="drawer-membership-tag" [class.is-pro]="monetization.isPremium$ | async">
-                {{ (monetization.isPremium$ | async) ? 'PRO Member' : 'Free Tier' }}
-              </span>
-              <ng-container *ngIf="{ remaining: quota.remaining$ | async } as q">
-                <span class="drawer-quota" *ngIf="q.remaining !== null" data-testid="drawer-quota">
-                  {{ 'quota.fullLabel' | translate: { remaining: q.remaining, limit: quota.limit } }}
+    @if (mobileMenuOpen) {
+      <div class="mobile-drawer" (click)="closeMobileMenu()">
+        <div class="mobile-drawer-content" (click)="$event.stopPropagation()">
+          <!-- Drawer Header with Profile Card -->
+          <div class="drawer-profile-card">
+            <a routerLink="/profile" (click)="closeMobileMenu()" class="drawer-profile-link">
+              <div class="drawer-avatar">
+                @if ((profileService.profile$ | async)?.avatarUrl; as avatarUrl) {
+                  <img
+                    [src]="avatarUrl"
+                    alt=""
+                    class="avatar-img" />
+                }
+                @if (!(profileService.profile$ | async)?.avatarUrl) {
+                  <span class="avatar-initials">
+                    {{ profileService.getInitials((profileService.profile$ | async)?.displayName || 'User') }}
+                  </span>
+                }
+              </div>
+              <div class="drawer-user-info">
+                <span class="drawer-user-name">{{ (profileService.profile$ | async)?.displayName || 'Offline User' }}</span>
+                <span class="drawer-membership-tag" [class.is-pro]="monetization.isPremium$ | async">
+                  {{ (monetization.isPremium$ | async) ? 'PRO Member' : 'Free Tier' }}
                 </span>
-              </ng-container>
-            </div>
-          </a>
-          <button class="drawer-close" (click)="closeMobileMenu()" aria-label="Close menu">
-            &times;
-          </button>
-        </div>
-
-        <!-- Language switch -->
-        <div class="drawer-theme-row">
-          <span class="drawer-theme-label">{{ 'common.language' | translate }}</span>
-          <app-language-selector mode="dropdown"></app-language-selector>
-        </div>
-
-        <!-- Appearance switch -->
-        <div class="drawer-theme-row">
-          <span class="drawer-theme-label">{{ 'common.appearance' | translate }}</span>
-          <div class="theme-segmented" role="group" aria-label="Theme">
-            <button
-              *ngFor="let option of themeOptions"
-              type="button"
-              class="theme-seg-btn"
-              [class.active]="(themeService.currentTheme$ | async) === option.mode"
-              (click)="setTheme(option.mode)">
-              {{ ('common.' + option.mode) | translate }}
+                @let drawerQuota = quota.remaining$ | async;
+                @if (drawerQuota !== null) {
+                  <span class="drawer-quota" data-testid="drawer-quota">
+                    {{ 'quota.fullLabel' | translate: { remaining: drawerQuota, limit: quota.limit } }}
+                  </span>
+                }
+              </div>
+            </a>
+            <button class="drawer-close" (click)="closeMobileMenu()" aria-label="Close menu">
+              &times;
             </button>
           </div>
-        </div>
-
-        <!-- Drawer Navigation Links -->
-        <div class="drawer-links">
-          <a
-            *ngFor="let link of drawerLinks; let i = index"
-            [routerLink]="link.route"
-            routerLinkActive="is-active"
-            (click)="closeMobileMenu()"
-            class="drawer-link"
-            [class.pro-link]="link.pro"
-            [style.--stagger]="i">
-            <span class="link-bullet" [ngClass]="link.bullet"></span> {{ link.labelKey | translate }}
-          </a>
-        </div>
-
-        <!-- Drawer Footer -->
-        <div class="drawer-footer">
-          <div class="offline-badge">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-            <span>{{ 'common.offlineBadge' | translate }}</span>
+          <!-- Language switch -->
+          <div class="drawer-theme-row">
+            <span class="drawer-theme-label">{{ 'common.language' | translate }}</span>
+            <app-language-selector mode="dropdown"></app-language-selector>
+          </div>
+          <!-- Appearance switch -->
+          <div class="drawer-theme-row">
+            <span class="drawer-theme-label">{{ 'common.appearance' | translate }}</span>
+            <div class="theme-segmented" role="group" aria-label="Theme">
+              @for (option of themeOptions; track option) {
+                <button
+                  type="button"
+                  class="theme-seg-btn"
+                  [class.active]="(themeService.currentTheme$ | async) === option.mode"
+                  (click)="setTheme(option.mode)">
+                  {{ ('common.' + option.mode) | translate }}
+                </button>
+              }
+            </div>
+          </div>
+          <!-- Drawer Navigation Links -->
+          <div class="drawer-links">
+            @for (link of drawerLinks; track link; let i = $index) {
+              <a
+                [routerLink]="link.route"
+                routerLinkActive="is-active"
+                (click)="closeMobileMenu()"
+                class="drawer-link"
+                [class.pro-link]="link.pro"
+                [style.--stagger]="i">
+                <span class="link-bullet" [ngClass]="link.bullet"></span> {{ link.labelKey | translate }}
+              </a>
+            }
+          </div>
+          <!-- Drawer Footer -->
+          <div class="drawer-footer">
+            <div class="offline-badge">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>{{ 'common.offlineBadge' | translate }}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  `,
+    }
+    `,
   styles: [`
     /*
      * The translucent header colour comes from a token rather than a literal so
@@ -1274,6 +1283,16 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
   `]
 })
 export class AppHeaderComponent implements OnInit, OnDestroy {
+  monetization = inject(MonetizationService);
+  quota = inject(UsageQuotaService);
+  globalSearch = inject(GlobalSearchService);
+  profileService = inject(ProfileService);
+  themeService = inject(ThemeService);
+  private router = inject(Router);
+  private location = inject(Location);
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private cdr = inject(ChangeDetectorRef);
+
   mobileMenuOpen = false;
   toolsMenuOpen = false;
 
@@ -1309,18 +1328,6 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
   ];
 
   private routerSub?: Subscription;
-
-  constructor(
-    public monetization: MonetizationService,
-    public quota: UsageQuotaService,
-    public globalSearch: GlobalSearchService,
-    public profileService: ProfileService,
-    public themeService: ThemeService,
-    private router: Router,
-    private location: Location,
-    private host: ElementRef<HTMLElement>,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   get themeLabel(): string {
     const mode = this.themeService.currentTheme$.value;

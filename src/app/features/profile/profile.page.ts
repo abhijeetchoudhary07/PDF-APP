@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -33,6 +33,12 @@ import {
   ]
 })
 export class ProfilePage implements OnInit {
+  profileService = inject(ProfileService);
+  monetization = inject(MonetizationService);
+  auth = inject(AuthService);
+  themeService = inject(ThemeService);
+  private toastService = inject(ToastService);
+
   profile: UserProfile | null = null;
   usageStats: UsageStats | null = null;
 
@@ -43,14 +49,6 @@ export class ProfilePage implements OnInit {
 
   // Reset Confirmation Modal
   isResetModalOpen = false;
-
-  constructor(
-    public profileService: ProfileService,
-    public monetization: MonetizationService,
-    public auth: AuthService,
-    public themeService: ThemeService,
-    private toastService: ToastService
-  ) {}
 
   async ngOnInit() {
     this.profileService.profile$.subscribe(p => {

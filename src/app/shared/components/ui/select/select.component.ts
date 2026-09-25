@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, forwardRef, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
 export interface SelectOption {
@@ -11,7 +11,7 @@ export interface SelectOption {
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-select',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -21,11 +21,15 @@ export interface SelectOption {
   ],
   template: `
     <div class="select-wrapper" [class.select-disabled]="disabled">
-      <label *ngIf="label" class="select-label">
-        {{ label }}
-        <span *ngIf="required" class="required-star">*</span>
-      </label>
-
+      @if (label) {
+        <label class="select-label">
+          {{ label }}
+          @if (required) {
+            <span class="required-star">*</span>
+          }
+        </label>
+      }
+    
       <div class="select-container">
         <select
           [disabled]="disabled"
@@ -33,21 +37,27 @@ export interface SelectOption {
           (ngModelChange)="onSelectChange($event)"
           (blur)="onBlur()"
           class="native-select">
-          <option *ngIf="placeholder" value="" disabled selected>{{ placeholder }}</option>
-          <option *ngFor="let opt of options" [value]="opt.value">{{ opt.label }}</option>
+          @if (placeholder) {
+            <option value="" disabled selected>{{ placeholder }}</option>
+          }
+          @for (opt of options; track opt) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
           <ng-content></ng-content>
         </select>
-
+    
         <span class="chevron-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </span>
       </div>
-
-      <p *ngIf="hint" class="select-hint">{{ hint }}</p>
+    
+      @if (hint) {
+        <p class="select-hint">{{ hint }}</p>
+      }
     </div>
-  `,
+    `,
   styles: [`
     .select-wrapper {
       display: flex;

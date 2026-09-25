@@ -1,6 +1,6 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { AlertController, IonicModule, NavController } from '@ionic/angular/lazy';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+import { AlertController, NavController } from '@ionic/angular';
+
 import { FormsModule } from '@angular/forms';
 import { PresetService, Preset } from '../../core/services/preset.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -26,8 +26,6 @@ import {
   imports: [
     AppSkeletonComponent,
     AppIconComponent,
-    IonicModule,
-    CommonModule,
     FormsModule,
     AppHeaderComponent,
     AppPageHeaderComponent,
@@ -36,9 +34,14 @@ import {
     AppBadgeComponent,
     AppModalComponent,
     TranslatePipe
-  ]
+]
 })
 export class PresetsPage implements OnInit {
+  private presetService = inject(PresetService);
+  private navCtrl = inject(NavController);
+  private alertCtrl = inject(AlertController);
+  private toast = inject(ToastService);
+
   groupedPresets: { category: string, presets: Preset[] }[] = [];
   selectedPreset?: Preset;
 
@@ -48,8 +51,6 @@ export class PresetsPage implements OnInit {
   enablePhoto = false;
   enableSig = false;
   enablePdf = false;
-
-  constructor(private presetService: PresetService, private navCtrl: NavController, private alertCtrl: AlertController, private toast: ToastService) {}
 
   async ngOnInit() {
     await this.loadPresets();

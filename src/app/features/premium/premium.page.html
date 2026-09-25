@@ -52,231 +52,266 @@
         </div>
 
         <!-- ALREADY PREMIUM -->
-        <div class="already-premium" *ngIf="monetization.isPremium$ | async">
-          <app-icon name="checkmark-circle"></app-icon>
-          <div>
-            <h4>Premium is already active</h4>
-            <p>
-              Everything below is unlocked.
-              <ng-container *ngIf="!auth.isSignedIn">
-                <button type="button" class="inline-link" (click)="goToAccount()">
-                  Create an account
-                </button>
-                to keep it if you change phones.
-              </ng-container>
-            </p>
+        @if (monetization.isPremium$ | async) {
+          <div class="already-premium">
+            <app-icon name="checkmark-circle"></app-icon>
+            <div>
+              <h4>Premium is already active</h4>
+              <p>
+                Everything below is unlocked.
+                @if (!auth.isSignedIn) {
+                  <button type="button" class="inline-link" (click)="goToAccount()">
+                    Create an account
+                  </button>
+                  to keep it if you change phones.
+                }
+              </p>
+            </div>
           </div>
-        </div>
+        }
 
         <!--
-          A submitted payment is not an entitlement: it waits for an admin to
-          confirm the transfer. Saying so plainly, with the reference on screen,
-          is what stops a second payment being sent an hour later.
+        A submitted payment is not an entitlement: it waits for an admin to
+        confirm the transfer. Saying so plainly, with the reference on screen,
+        is what stops a second payment being sent an hour later.
         -->
-        <div class="claim-card is-pending" *ngIf="pending" data-testid="pending-claim">
-          <div class="claim-head">
-            <app-icon name="time" [size]="20"></app-icon>
-            <h4>Payment under review</h4>
-          </div>
-          <p>
-            We have your payment of <strong>{{ claimAmountLabel(pending) }}</strong>
-            for <strong>{{ claimPlanName(pending) }}</strong>, reference
-            <strong>{{ pending.utrNumber }}</strong>.
-            Premium usually activates within {{ reviewHours }} hours of the transfer clearing.
-            There is nothing else to do — please do not pay again.
-          </p>
-          <app-button
-            variant="outline"
-            size="md"
-            [loading]="refreshing"
-            (clicked)="checkStatus()"
-            data-testid="check-status">
-            Check status
-          </app-button>
-        </div>
-
-        <!-- A rejected claim has to say why, or it just generates a support ticket. -->
-        <div
-          class="claim-card is-rejected"
-          *ngIf="!pending && latest && latest.status === 'rejected'"
-          data-testid="rejected-claim">
-          <div class="claim-head">
-            <app-icon name="alert-circle" [size]="20"></app-icon>
-            <h4>Last payment could not be confirmed</h4>
-          </div>
-          <p>
-            Reference <strong>{{ latest.utrNumber }}</strong> was not approved.
-            <ng-container *ngIf="latest.rejectionReason">
-              Reason: {{ latest.rejectionReason }}
-            </ng-container>
-            You can submit a new payment below, or
-            <a routerLink="/features/contact-support">contact support</a>.
-          </p>
-        </div>
-
-        <!-- Payments switched off, or the server is unreachable. -->
-        <div class="store-notice" *ngIf="!paymentsAvailable" role="status" data-testid="store-notice">
-          <app-icon name="information-circle" [size]="18"></app-icon>
-          <p>
-            Payments are temporarily unavailable. Prices below are correct — please
-            try again shortly, or
-            <a routerLink="/features/contact-support">contact support</a> if it persists.
-          </p>
-        </div>
-
-        <!-- PRICING CARDS -->
-        <p class="pricing-offline-note" *ngIf="offlinePricing">
-          Showing last known pricing — we could not reach the server.
-        </p>
-
-        <div class="pricing-cards-grid">
-          <div
-            *ngFor="let plan of plans"
-            class="pricing-card"
-            [class.featured]="isFeatured(plan)"
-            [class.is-selected]="selectedPlan?.planId === plan.planId">
-            <div class="popular-badge" *ngIf="isFeatured(plan)">Most Popular</div>
-            <h4 class="package-title">{{ plan.name }}</h4>
-            <div class="package-price">{{ priceLabel(plan) }}</div>
-            <p class="package-desc">{{ billingNote(plan) }}</p>
-
-            <ul class="package-features" *ngIf="plan.features.length">
-              <li *ngFor="let feature of plan.features">{{ feature }}</li>
-            </ul>
-
+        @if (pending) {
+          <div class="claim-card is-pending" data-testid="pending-claim">
+            <div class="claim-head">
+              <app-icon name="time" [size]="20"></app-icon>
+              <h4>Payment under review</h4>
+            </div>
+            <p>
+              We have your payment of <strong>{{ claimAmountLabel(pending) }}</strong>
+              for <strong>{{ claimPlanName(pending) }}</strong>, reference
+              <strong>{{ pending.utrNumber }}</strong>.
+              Premium usually activates within {{ reviewHours }} hours of the transfer clearing.
+              There is nothing else to do — please do not pay again.
+            </p>
             <app-button
-              [variant]="isFeatured(plan) ? 'primary' : 'outline'"
+              variant="outline"
               size="md"
-              [block]="true"
-              [disabled]="!!pending"
-              (clicked)="choose(plan)">
-              {{ pending ? 'Payment pending' : 'Pay ' + amountLabel(plan) }}
+              [loading]="refreshing"
+              (clicked)="checkStatus()"
+              data-testid="check-status">
+              Check status
             </app-button>
           </div>
+        }
+
+        <!-- A rejected claim has to say why, or it just generates a support ticket. -->
+        @if (!pending && latest && latest.status === 'rejected') {
+          <div
+            class="claim-card is-rejected"
+            data-testid="rejected-claim">
+            <div class="claim-head">
+              <app-icon name="alert-circle" [size]="20"></app-icon>
+              <h4>Last payment could not be confirmed</h4>
+            </div>
+            <p>
+              Reference <strong>{{ latest.utrNumber }}</strong> was not approved.
+              @if (latest.rejectionReason) {
+                Reason: {{ latest.rejectionReason }}
+              }
+              You can submit a new payment below, or
+              <a routerLink="/features/contact-support">contact support</a>.
+            </p>
+          </div>
+        }
+
+        <!-- On a device: Play Billing cannot open a checkout, and why. -->
+        @if (playBilling && !monetization.canPurchase) {
+          <div
+            class="store-notice"
+            role="status"
+            data-testid="store-notice">
+            <app-icon name="information-circle" [size]="18"></app-icon>
+            <p>
+              {{ storeUnavailableNote }} Prices below are correct — please
+              <a routerLink="/features/contact-support">contact support</a> if it persists.
+            </p>
+          </div>
+        }
+
+        <!-- In a browser: payments switched off, or the server is unreachable. -->
+        @if (!playBilling && !paymentsAvailable) {
+          <div
+            class="store-notice"
+            role="status"
+            data-testid="store-notice">
+            <app-icon name="information-circle" [size]="18"></app-icon>
+            <p>
+              Payments are temporarily unavailable. Prices below are correct — please
+              try again shortly, or
+              <a routerLink="/features/contact-support">contact support</a> if it persists.
+            </p>
+          </div>
+        }
+
+        <!-- PRICING CARDS -->
+        @if (offlinePricing) {
+          <p class="pricing-offline-note">
+            Showing last known pricing — we could not reach the server.
+          </p>
+        }
+
+        <div class="pricing-cards-grid">
+          @for (plan of plans; track plan) {
+            <div
+              class="pricing-card"
+              [class.featured]="isFeatured(plan)"
+              [class.is-selected]="selectedPlan?.planId === plan.planId">
+              @if (isFeatured(plan)) {
+                <div class="popular-badge">Most Popular</div>
+              }
+              <h4 class="package-title">{{ plan.name }}</h4>
+              <div class="package-price">{{ priceLabel(plan) }}</div>
+              <p class="package-desc">{{ billingNote(plan) }}</p>
+              @if (plan.features.length) {
+                <ul class="package-features">
+                  @for (feature of plan.features; track feature) {
+                    <li>{{ feature }}</li>
+                  }
+                </ul>
+              }
+              <app-button
+                [variant]="isFeatured(plan) ? 'primary' : 'outline'"
+                size="md"
+                [block]="true"
+                [disabled]="!!pending || !!purchasing"
+                (clicked)="choose(plan)"
+                [attr.data-testid]="'choose-' + plan.planId">
+                {{
+                pending
+                ? 'Payment pending'
+                : purchasing === plan.planId
+                ? 'Opening Google Play…'
+                : 'Pay ' + amountLabel(plan)
+                }}
+              </app-button>
+            </div>
+          }
         </div>
 
         <!-- ============================ PAY PANEL ============================ -->
-        <section
-          class="pay-panel"
-          *ngIf="selectedPlan as plan"
-          aria-labelledby="pay-panel-title"
-          data-testid="pay-panel">
-          <div class="pay-head">
-            <div>
-              <h3 id="pay-panel-title">Pay {{ amountLabel(plan) }} for {{ plan.name }}</h3>
-              <p>Transfer the exact amount, then enter the reference number below.</p>
+        @if (payPanelPlan; as plan) {
+          <section
+            class="pay-panel"
+            aria-labelledby="pay-panel-title"
+            data-testid="pay-panel">
+            <div class="pay-head">
+              <div>
+                <h3 id="pay-panel-title">Pay {{ amountLabel(plan) }} for {{ plan.name }}</h3>
+                <p>Transfer the exact amount, then enter the reference number below.</p>
+              </div>
+              <button type="button" class="pay-close" (click)="closePanel()" aria-label="Close payment panel">
+                &times;
+              </button>
             </div>
-            <button type="button" class="pay-close" (click)="closePanel()" aria-label="Close payment panel">
-              &times;
-            </button>
-          </div>
-
-          <!-- Step 1: pay -->
-          <ol class="pay-steps">
-            <li>
-              <span class="step-label">1. Send {{ amountLabel(plan) }}</span>
-
-              <div class="upi-row">
-                <div class="upi-id-box">
-                  <span class="upi-caption">UPI ID</span>
-                  <span class="upi-id" data-testid="upi-id">{{ settings?.upiId }}</span>
-                  <span class="upi-name">{{ settings?.upiName }}</span>
+            <!-- Step 1: pay -->
+            <ol class="pay-steps">
+              <li>
+                <span class="step-label">1. Send {{ amountLabel(plan) }}</span>
+                <div class="upi-row">
+                  <div class="upi-id-box">
+                    <span class="upi-caption">UPI ID</span>
+                    <span class="upi-id" data-testid="upi-id">{{ settings?.upiId }}</span>
+                    <span class="upi-name">{{ settings?.upiName }}</span>
+                  </div>
+                  <app-button variant="outline" size="sm" (clicked)="copyUpiId()" data-testid="copy-upi">
+                    Copy
+                  </app-button>
                 </div>
-                <app-button variant="outline" size="sm" (clicked)="copyUpiId()" data-testid="copy-upi">
-                  Copy
+                @if (qrDataUrl) {
+                  <div class="qr-box">
+                    <img [src]="qrDataUrl" alt="UPI QR code for this payment" class="qr-img" />
+                    <span class="qr-caption">Scan with any UPI app</span>
+                  </div>
+                }
+                <app-button
+                  variant="primary"
+                  size="md"
+                  [block]="true"
+                  (clicked)="openUpiApp()"
+                  data-testid="open-upi">
+                  Open UPI app
                 </app-button>
-              </div>
-
-              <div class="qr-box" *ngIf="qrDataUrl">
-                <img [src]="qrDataUrl" alt="UPI QR code for this payment" class="qr-img" />
-                <span class="qr-caption">Scan with any UPI app</span>
-              </div>
-
-              <app-button
-                variant="primary"
-                size="md"
-                [block]="true"
-                (clicked)="openUpiApp()"
-                data-testid="open-upi">
-                Open UPI app
-              </app-button>
-
-              <div class="bank-box" *ngIf="settings?.bankAccountNumber">
-                <span class="bank-title">Or transfer to the bank account</span>
-                <dl>
-                  <div><dt>Account name</dt><dd>{{ settings?.bankAccountName }}</dd></div>
-                  <div><dt>Account number</dt><dd>{{ settings?.bankAccountNumber }}</dd></div>
-                  <div><dt>IFSC</dt><dd>{{ settings?.bankIfsc }}</dd></div>
-                  <div *ngIf="settings?.bankName"><dt>Bank</dt><dd>{{ settings?.bankName }}</dd></div>
-                </dl>
-              </div>
-
-              <p class="pay-instructions" *ngIf="settings?.instructions">
-                {{ settings?.instructions }}
-              </p>
-            </li>
-
-            <!-- Step 2: tell us -->
-            <li>
-              <span class="step-label">2. Enter the reference number</span>
-
-              <label class="field">
-                <span class="field-label">UTR / Reference number <em>*</em></span>
-                <input
-                  type="text"
-                  class="field-input"
-                  name="utrNumber"
-                  [(ngModel)]="utrNumber"
-                  placeholder="e.g. 412345678901"
-                  autocomplete="off"
-                  inputmode="latin"
-                  maxlength="32"
-                  data-testid="utr-input" />
-                <span class="field-hint">
-                  The 12-digit number your bank app shows after the transfer.
-                </span>
-              </label>
-
-              <label class="field">
-                <span class="field-label">Name on the payment</span>
-                <input
-                  type="text"
-                  class="field-input"
-                  name="senderName"
-                  [(ngModel)]="senderName"
-                  placeholder="Optional — helps us match the transfer"
-                  maxlength="120" />
-              </label>
-
-              <label class="field">
-                <span class="field-label">Anything else we should know</span>
-                <input
-                  type="text"
-                  class="field-input"
-                  name="contactNote"
-                  [(ngModel)]="contactNote"
-                  placeholder="Optional"
-                  maxlength="200" />
-              </label>
-
-              <app-button
-                variant="primary"
-                size="md"
-                [block]="true"
-                [disabled]="!canSubmit"
-                [loading]="submitting"
-                (clicked)="submit()"
-                data-testid="submit-payment">
-                Submit payment
-              </app-button>
-
-              <p class="pay-footnote">
-                Submitting records your payment for review. Premium is activated once
-                we confirm the transfer, usually within {{ reviewHours }} hours.
-              </p>
-            </li>
-          </ol>
-        </section>
+                @if (settings?.bankAccountNumber) {
+                  <div class="bank-box">
+                    <span class="bank-title">Or transfer to the bank account</span>
+                    <dl>
+                      <div><dt>Account name</dt><dd>{{ settings?.bankAccountName }}</dd></div>
+                      <div><dt>Account number</dt><dd>{{ settings?.bankAccountNumber }}</dd></div>
+                      <div><dt>IFSC</dt><dd>{{ settings?.bankIfsc }}</dd></div>
+                      @if (settings?.bankName) {
+                        <div><dt>Bank</dt><dd>{{ settings?.bankName }}</dd></div>
+                      }
+                    </dl>
+                  </div>
+                }
+                @if (settings?.instructions) {
+                  <p class="pay-instructions">
+                    {{ settings?.instructions }}
+                  </p>
+                }
+              </li>
+              <!-- Step 2: tell us -->
+              <li>
+                <span class="step-label">2. Enter the reference number</span>
+                <label class="field">
+                  <span class="field-label">UTR / Reference number <em>*</em></span>
+                  <input
+                    type="text"
+                    class="field-input"
+                    name="utrNumber"
+                    [(ngModel)]="utrNumber"
+                    placeholder="e.g. 412345678901"
+                    autocomplete="off"
+                    inputmode="latin"
+                    maxlength="32"
+                    data-testid="utr-input" />
+                  <span class="field-hint">
+                    The 12-digit number your bank app shows after the transfer.
+                  </span>
+                </label>
+                <label class="field">
+                  <span class="field-label">Name on the payment</span>
+                  <input
+                    type="text"
+                    class="field-input"
+                    name="senderName"
+                    [(ngModel)]="senderName"
+                    placeholder="Optional — helps us match the transfer"
+                    maxlength="120" />
+                </label>
+                <label class="field">
+                  <span class="field-label">Anything else we should know</span>
+                  <input
+                    type="text"
+                    class="field-input"
+                    name="contactNote"
+                    [(ngModel)]="contactNote"
+                    placeholder="Optional"
+                    maxlength="200" />
+                </label>
+                <app-button
+                  variant="primary"
+                  size="md"
+                  [block]="true"
+                  [disabled]="!canSubmit"
+                  [loading]="submitting"
+                  (clicked)="submit()"
+                  data-testid="submit-payment">
+                  Submit payment
+                </app-button>
+                <p class="pay-footnote">
+                  Submitting records your payment for review. Premium is activated once
+                  we confirm the transfer, usually within {{ reviewHours }} hours.
+                </p>
+              </li>
+            </ol>
+          </section>
+        }
 
         <!-- Restore, for a reinstall or a new phone. -->
         <div class="restore-row">
@@ -297,8 +332,8 @@
         </div>
 
         <!--
-          Manual payment, so the terms people need are about refunds and
-          renewal by hand, not an app store's auto-renew rules.
+        Manual payment, so the terms people need are about refunds and
+        renewal by hand, not an app store's auto-renew rules.
         -->
         <section class="billing-terms" aria-labelledby="billing-terms-title">
           <h4 id="billing-terms-title">Payment terms</h4>

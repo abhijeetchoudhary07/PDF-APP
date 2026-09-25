@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy, inject } from '@angular/core';
+
 import { AppButtonComponent } from '../ui/button/button.component';
 import { AppBadgeComponent } from '../ui/badge/badge.component';
 import { FilePreviewComponent } from '../file-preview/file-preview.component';
@@ -14,9 +14,11 @@ export type DropzoneState = 'empty' | 'selected' | 'processing' | 'success' | 'e
   templateUrl: './file-dropzone.component.html',
   styleUrls: ['./file-dropzone.component.scss'],
   standalone: true,
-  imports: [CommonModule, AppButtonComponent, FilePreviewComponent, TranslatePipe]
+  imports: [AppButtonComponent, FilePreviewComponent, TranslatePipe]
 })
 export class FileDropzoneComponent {
+  private translationService = inject(TranslationService);
+
   @Input() icon = 'cloud-upload';
   @Input() title?: string;
   @Input() description?: string;
@@ -43,8 +45,6 @@ export class FileDropzoneComponent {
   @Output() preview = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
   @Output() retry = new EventEmitter<void>();
-
-  constructor(private translationService: TranslationService) {}
 
   get displayTitle(): string {
     return this.title || this.translationService.translate('dropzone.defaultTitle');

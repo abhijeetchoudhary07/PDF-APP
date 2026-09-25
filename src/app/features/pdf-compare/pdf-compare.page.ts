@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -59,6 +59,14 @@ export interface ChangeItem {
   providers: [DecimalPipe]
 })
 export class PdfComparePage {
+  private compareService = inject(PdfCompareService);
+  private renderService = inject(PdfRenderService);
+  private fileService = inject(FileService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
+
   @ViewChild('origCanvas', { static: false }) origCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('modCanvas', { static: false }) modCanvas?: ElementRef<HTMLCanvasElement>;
 
@@ -88,16 +96,6 @@ export class PdfComparePage {
     { id: 'text-only', label: 'Text Diff' },
     { id: 'visual', label: 'Visual Diff' }
   ];
-
-  constructor(
-    private compareService: PdfCompareService,
-    private renderService: PdfRenderService,
-    private fileService: FileService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private toastService: ToastService,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   onOriginalSelected(file: File): void {
     if (!file.name.toLowerCase().endsWith('.pdf')) {

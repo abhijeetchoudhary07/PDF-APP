@@ -11,262 +11,258 @@
   ></app-page-header>
 
   <!-- STEP 1: SELECT FILE -->
-  <section *ngIf="currentStep === 'select'" class="select-step-section">
-    <div class="dropzone-wrapper">
-      <app-file-dropzone
-        [accept]="'.pdf,application/pdf'"
-        [title]="'privacySanitizer.selectPrompt' | translate"
-        [description]="'privacySanitizer.dropPrompt' | translate"
-        (fileSelected)="onFileSelected($event)"
-      ></app-file-dropzone>
-    </div>
-
-    <div class="privacy-features-grid">
-      <div class="feature-item">
-        <span class="feature-icon">🔍</span>
-        <h4>{{ 'privacySanitizer.featureScanTitle' | translate }}</h4>
-        <p>{{ 'privacySanitizer.featureScanDesc' | translate }}</p>
+  @if (currentStep === 'select') {
+    <section class="select-step-section">
+      <div class="dropzone-wrapper">
+        <app-file-dropzone
+          [accept]="'.pdf,application/pdf'"
+          [title]="'privacySanitizer.selectPrompt' | translate"
+          [description]="'privacySanitizer.dropPrompt' | translate"
+          (fileSelected)="onFileSelected($event)"
+        ></app-file-dropzone>
       </div>
-      <div class="feature-item">
-        <span class="feature-icon">🧹</span>
-        <h4>{{ 'privacySanitizer.featureCleanTitle' | translate }}</h4>
-        <p>{{ 'privacySanitizer.featureCleanDesc' | translate }}</p>
+      <div class="privacy-features-grid">
+        <div class="feature-item">
+          <span class="feature-icon">🔍</span>
+          <h4>{{ 'privacySanitizer.featureScanTitle' | translate }}</h4>
+          <p>{{ 'privacySanitizer.featureScanDesc' | translate }}</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🧹</span>
+          <h4>{{ 'privacySanitizer.featureCleanTitle' | translate }}</h4>
+          <p>{{ 'privacySanitizer.featureCleanDesc' | translate }}</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🛡️</span>
+          <h4>{{ 'privacySanitizer.featureSafeTitle' | translate }}</h4>
+          <p>{{ 'privacySanitizer.featureSafeDesc' | translate }}</p>
+        </div>
       </div>
-      <div class="feature-item">
-        <span class="feature-icon">🛡️</span>
-        <h4>{{ 'privacySanitizer.featureSafeTitle' | translate }}</h4>
-        <p>{{ 'privacySanitizer.featureSafeDesc' | translate }}</p>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- STEP 2: SCANNING SPINNER -->
-  <section *ngIf="currentStep === 'scanning'" class="scanning-section">
-    <div class="scan-card">
-      <div class="spinner"></div>
-      <h3>{{ 'privacySanitizer.scanningTitle' | translate }}</h3>
-      <p>{{ 'privacySanitizer.scanningDesc' | translate }}</p>
-    </div>
-  </section>
+  @if (currentStep === 'scanning') {
+    <section class="scanning-section">
+      <div class="scan-card">
+        <div class="spinner"></div>
+        <h3>{{ 'privacySanitizer.scanningTitle' | translate }}</h3>
+        <p>{{ 'privacySanitizer.scanningDesc' | translate }}</p>
+      </div>
+    </section>
+  }
 
   <!-- STEP 3: SCAN RESULTS & SANITIZATION OPTIONS -->
-  <section *ngIf="currentStep === 'scan_result' && scanReport" class="scan-result-section">
-    <div class="scan-report-card">
-      <div class="report-header">
-        <div class="report-title-group">
-          <h3>{{ 'privacySanitizer.scanReportHeader' | translate }}</h3>
-          <span class="file-name">{{ selectedFile?.name }}</span>
+  @if (currentStep === 'scan_result' && scanReport) {
+    <section class="scan-result-section">
+      <div class="scan-report-card">
+        <div class="report-header">
+          <div class="report-title-group">
+            <h3>{{ 'privacySanitizer.scanReportHeader' | translate }}</h3>
+            <span class="file-name">{{ selectedFile?.name }}</span>
+          </div>
+          <app-badge
+            [variant]="scanReport.totalFound > 0 ? 'warning' : 'success'"
+          >{{ scanReport.totalFound }} {{ 'privacySanitizer.itemsFound' | translate }}</app-badge>
         </div>
-        <app-badge
-          [variant]="scanReport.totalFound > 0 ? 'warning' : 'success'"
-        >{{ scanReport.totalFound }} {{ 'privacySanitizer.itemsFound' | translate }}</app-badge>
+        <!-- Detection Status Grid -->
+        <div class="detection-status-grid">
+          <!-- Metadata -->
+          <div class="status-box" [class.alert]="scanReport.hasMetadata">
+            <span class="icon">{{ scanReport.hasMetadata ? '⚠' : '✓' }}</span>
+            <div class="text">
+              <strong>{{ 'privacySanitizer.catMetadata' | translate }}</strong>
+              <span>{{ scanReport.hasMetadata ? ('privacySanitizer.metadataDetected' | translate) : ('privacySanitizer.noMetadata' | translate) }}</span>
+            </div>
+          </div>
+          <!-- Comments -->
+          <div class="status-box" [class.alert]="scanReport.hasComments">
+            <span class="icon">{{ scanReport.hasComments ? '⚠' : '✓' }}</span>
+            <div class="text">
+              <strong>{{ 'privacySanitizer.catComments' | translate }}</strong>
+              <span>{{ scanReport.hasComments ? (scanReport.commentCount + ' ' + ('privacySanitizer.commentsFound' | translate)) : ('privacySanitizer.noComments' | translate) }}</span>
+            </div>
+          </div>
+          <!-- Attachments -->
+          <div class="status-box" [class.alert]="scanReport.hasAttachments">
+            <span class="icon">{{ scanReport.hasAttachments ? '⚠' : '✓' }}</span>
+            <div class="text">
+              <strong>{{ 'privacySanitizer.catAttachments' | translate }}</strong>
+              <span>{{ scanReport.hasAttachments ? (scanReport.attachmentCount + ' ' + ('privacySanitizer.attachmentsFound' | translate)) : ('privacySanitizer.noAttachments' | translate) }}</span>
+            </div>
+          </div>
+          <!-- Form Data -->
+          <div class="status-box" [class.alert]="scanReport.hasForms">
+            <span class="icon">{{ scanReport.hasForms ? '⚠' : '✓' }}</span>
+            <div class="text">
+              <strong>{{ 'privacySanitizer.catForms' | translate }}</strong>
+              <span>{{ scanReport.hasForms ? (scanReport.formFieldCount + ' ' + ('privacySanitizer.formsFound' | translate)) : ('privacySanitizer.noForms' | translate) }}</span>
+            </div>
+          </div>
+          <!-- Scripts -->
+          <div class="status-box" [class.alert]="scanReport.hasScripts">
+            <span class="icon">{{ scanReport.hasScripts ? '⚠' : '✓' }}</span>
+            <div class="text">
+              <strong>{{ 'privacySanitizer.catScripts' | translate }}</strong>
+              <span>{{ scanReport.hasScripts ? (scanReport.scriptCount + ' ' + ('privacySanitizer.scriptsFound' | translate)) : ('privacySanitizer.noScripts' | translate) }}</span>
+            </div>
+          </div>
+          <!-- Hidden Content -->
+          <div class="status-box" [class.alert]="scanReport.hasHiddenContent">
+            <span class="icon">{{ scanReport.hasHiddenContent ? '⚠' : '✓' }}</span>
+            <div class="text">
+              <strong>{{ 'privacySanitizer.catHidden' | translate }}</strong>
+              <span>{{ scanReport.hasHiddenContent ? ('privacySanitizer.hiddenDetected' | translate) : ('privacySanitizer.noHidden' | translate) }}</span>
+            </div>
+          </div>
+        </div>
+        <!-- Detailed Item List -->
+        @if (scanReport.items.length > 0) {
+          <div class="detected-items-list">
+            <h4>{{ 'privacySanitizer.detectedItemsDetails' | translate }}</h4>
+            @for (item of scanReport.items; track item) {
+              <div class="detected-item-row">
+                <span class="item-tag" [class]="'tag-' + item.category">{{ item.category }}</span>
+                <div class="item-info">
+                  <span class="item-title">{{ item.title }}</span>
+                  <span class="item-detail">{{ item.detail }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
       </div>
-
-      <!-- Detection Status Grid -->
-      <div class="detection-status-grid">
-        <!-- Metadata -->
-        <div class="status-box" [class.alert]="scanReport.hasMetadata">
-          <span class="icon">{{ scanReport.hasMetadata ? '⚠' : '✓' }}</span>
-          <div class="text">
-            <strong>{{ 'privacySanitizer.catMetadata' | translate }}</strong>
-            <span>{{ scanReport.hasMetadata ? ('privacySanitizer.metadataDetected' | translate) : ('privacySanitizer.noMetadata' | translate) }}</span>
-          </div>
+      <!-- Sanitization Options Card -->
+      <div class="options-card">
+        <h3>{{ 'privacySanitizer.optionsHeader' | translate }}</h3>
+        <p class="options-desc">{{ 'privacySanitizer.optionsSubtitle' | translate }}</p>
+        <div class="options-grid">
+          <label class="option-checkbox">
+            <input type="checkbox" [(ngModel)]="options.removeMetadata" />
+            <div class="checkbox-label">
+              <strong>{{ 'privacySanitizer.optRemoveMetadata' | translate }}</strong>
+              <span>{{ 'privacySanitizer.optRemoveMetadataDesc' | translate }}</span>
+            </div>
+          </label>
+          <label class="option-checkbox">
+            <input type="checkbox" [(ngModel)]="options.removeComments" />
+            <div class="checkbox-label">
+              <strong>{{ 'privacySanitizer.optRemoveComments' | translate }}</strong>
+              <span>{{ 'privacySanitizer.optRemoveCommentsDesc' | translate }}</span>
+            </div>
+          </label>
+          <label class="option-checkbox">
+            <input type="checkbox" [(ngModel)]="options.removeAttachments" />
+            <div class="checkbox-label">
+              <strong>{{ 'privacySanitizer.optRemoveAttachments' | translate }}</strong>
+              <span>{{ 'privacySanitizer.optRemoveAttachmentsDesc' | translate }}</span>
+            </div>
+          </label>
+          <label class="option-checkbox">
+            <input type="checkbox" [(ngModel)]="options.removeForms" />
+            <div class="checkbox-label">
+              <strong>{{ 'privacySanitizer.optRemoveForms' | translate }}</strong>
+              <span>{{ 'privacySanitizer.optRemoveFormsDesc' | translate }}</span>
+            </div>
+          </label>
+          <label class="option-checkbox">
+            <input type="checkbox" [(ngModel)]="options.removeScripts" />
+            <div class="checkbox-label">
+              <strong>{{ 'privacySanitizer.optRemoveScripts' | translate }}</strong>
+              <span>{{ 'privacySanitizer.optRemoveScriptsDesc' | translate }}</span>
+            </div>
+          </label>
+          <label class="option-checkbox">
+            <input type="checkbox" [(ngModel)]="options.removeHiddenContent" />
+            <div class="checkbox-label">
+              <strong>{{ 'privacySanitizer.optRemoveHidden' | translate }}</strong>
+              <span>{{ 'privacySanitizer.optRemoveHiddenDesc' | translate }}</span>
+            </div>
+          </label>
         </div>
-
-        <!-- Comments -->
-        <div class="status-box" [class.alert]="scanReport.hasComments">
-          <span class="icon">{{ scanReport.hasComments ? '⚠' : '✓' }}</span>
-          <div class="text">
-            <strong>{{ 'privacySanitizer.catComments' | translate }}</strong>
-            <span>{{ scanReport.hasComments ? (scanReport.commentCount + ' ' + ('privacySanitizer.commentsFound' | translate)) : ('privacySanitizer.noComments' | translate) }}</span>
-          </div>
-        </div>
-
-        <!-- Attachments -->
-        <div class="status-box" [class.alert]="scanReport.hasAttachments">
-          <span class="icon">{{ scanReport.hasAttachments ? '⚠' : '✓' }}</span>
-          <div class="text">
-            <strong>{{ 'privacySanitizer.catAttachments' | translate }}</strong>
-            <span>{{ scanReport.hasAttachments ? (scanReport.attachmentCount + ' ' + ('privacySanitizer.attachmentsFound' | translate)) : ('privacySanitizer.noAttachments' | translate) }}</span>
-          </div>
-        </div>
-
-        <!-- Form Data -->
-        <div class="status-box" [class.alert]="scanReport.hasForms">
-          <span class="icon">{{ scanReport.hasForms ? '⚠' : '✓' }}</span>
-          <div class="text">
-            <strong>{{ 'privacySanitizer.catForms' | translate }}</strong>
-            <span>{{ scanReport.hasForms ? (scanReport.formFieldCount + ' ' + ('privacySanitizer.formsFound' | translate)) : ('privacySanitizer.noForms' | translate) }}</span>
-          </div>
-        </div>
-
-        <!-- Scripts -->
-        <div class="status-box" [class.alert]="scanReport.hasScripts">
-          <span class="icon">{{ scanReport.hasScripts ? '⚠' : '✓' }}</span>
-          <div class="text">
-            <strong>{{ 'privacySanitizer.catScripts' | translate }}</strong>
-            <span>{{ scanReport.hasScripts ? (scanReport.scriptCount + ' ' + ('privacySanitizer.scriptsFound' | translate)) : ('privacySanitizer.noScripts' | translate) }}</span>
-          </div>
-        </div>
-
-        <!-- Hidden Content -->
-        <div class="status-box" [class.alert]="scanReport.hasHiddenContent">
-          <span class="icon">{{ scanReport.hasHiddenContent ? '⚠' : '✓' }}</span>
-          <div class="text">
-            <strong>{{ 'privacySanitizer.catHidden' | translate }}</strong>
-            <span>{{ scanReport.hasHiddenContent ? ('privacySanitizer.hiddenDetected' | translate) : ('privacySanitizer.noHidden' | translate) }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Detailed Item List -->
-      <div *ngIf="scanReport.items.length > 0" class="detected-items-list">
-        <h4>{{ 'privacySanitizer.detectedItemsDetails' | translate }}</h4>
-        <div *ngFor="let item of scanReport.items" class="detected-item-row">
-          <span class="item-tag" [class]="'tag-' + item.category">{{ item.category }}</span>
-          <div class="item-info">
-            <span class="item-title">{{ item.title }}</span>
-            <span class="item-detail">{{ item.detail }}</span>
-          </div>
+        <div class="actions-row">
+          <app-button
+            variant="primary"
+            size="lg"
+            (clicked)="startSanitization()"
+          >{{ 'privacySanitizer.sanitizeBtn' | translate }}</app-button>
+          <app-button
+            variant="outline"
+            size="md"
+            (clicked)="reset()"
+          >{{ 'common.chooseAnother' | translate }}</app-button>
         </div>
       </div>
-    </div>
+    </section>
+  }
 
-    <!-- Sanitization Options Card -->
-    <div class="options-card">
-      <h3>{{ 'privacySanitizer.optionsHeader' | translate }}</h3>
-      <p class="options-desc">{{ 'privacySanitizer.optionsSubtitle' | translate }}</p>
-
-      <div class="options-grid">
-        <label class="option-checkbox">
-          <input type="checkbox" [(ngModel)]="options.removeMetadata" />
-          <div class="checkbox-label">
-            <strong>{{ 'privacySanitizer.optRemoveMetadata' | translate }}</strong>
-            <span>{{ 'privacySanitizer.optRemoveMetadataDesc' | translate }}</span>
-          </div>
-        </label>
-
-        <label class="option-checkbox">
-          <input type="checkbox" [(ngModel)]="options.removeComments" />
-          <div class="checkbox-label">
-            <strong>{{ 'privacySanitizer.optRemoveComments' | translate }}</strong>
-            <span>{{ 'privacySanitizer.optRemoveCommentsDesc' | translate }}</span>
-          </div>
-        </label>
-
-        <label class="option-checkbox">
-          <input type="checkbox" [(ngModel)]="options.removeAttachments" />
-          <div class="checkbox-label">
-            <strong>{{ 'privacySanitizer.optRemoveAttachments' | translate }}</strong>
-            <span>{{ 'privacySanitizer.optRemoveAttachmentsDesc' | translate }}</span>
-          </div>
-        </label>
-
-        <label class="option-checkbox">
-          <input type="checkbox" [(ngModel)]="options.removeForms" />
-          <div class="checkbox-label">
-            <strong>{{ 'privacySanitizer.optRemoveForms' | translate }}</strong>
-            <span>{{ 'privacySanitizer.optRemoveFormsDesc' | translate }}</span>
-          </div>
-        </label>
-
-        <label class="option-checkbox">
-          <input type="checkbox" [(ngModel)]="options.removeScripts" />
-          <div class="checkbox-label">
-            <strong>{{ 'privacySanitizer.optRemoveScripts' | translate }}</strong>
-            <span>{{ 'privacySanitizer.optRemoveScriptsDesc' | translate }}</span>
-          </div>
-        </label>
-
-        <label class="option-checkbox">
-          <input type="checkbox" [(ngModel)]="options.removeHiddenContent" />
-          <div class="checkbox-label">
-            <strong>{{ 'privacySanitizer.optRemoveHidden' | translate }}</strong>
-            <span>{{ 'privacySanitizer.optRemoveHiddenDesc' | translate }}</span>
-          </div>
-        </label>
+  <!-- STEP 4: SANITIZING PROGRESS -->
+  @if (currentStep === 'sanitizing') {
+    <section class="scanning-section">
+      <div class="scan-card">
+        <div class="spinner"></div>
+        <h3>{{ 'privacySanitizer.sanitizingTitle' | translate }}</h3>
+        <p>{{ 'privacySanitizer.sanitizingDesc' | translate }}</p>
       </div>
+    </section>
+  }
 
-      <div class="actions-row">
+  <!-- STEP 5: SANITIZED RESULT & REPORT -->
+  @if (currentStep === 'sanitized' && sanitizationResult) {
+    <section class="sanitized-result-section">
+      <!-- Before vs After Audit Card -->
+      <div class="audit-card">
+        <div class="audit-header">
+          <span class="check-icon">✓</span>
+          <h3>{{ 'privacySanitizer.sanitizationComplete' | translate }}</h3>
+        </div>
+        <div class="before-after-metrics">
+          <div class="metric before">
+            <span class="label">{{ 'common.before' | translate }}</span>
+            <span class="value">{{ sanitizationResult.beforeReport.totalFound }}</span>
+            <span class="subtext">{{ 'privacySanitizer.itemsDetected' | translate }}</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="metric after">
+            <span class="label">{{ 'common.after' | translate }}</span>
+            <span class="value">{{ sanitizationResult.afterReport.totalFound }}</span>
+            <span class="subtext">{{ 'privacySanitizer.removableItems' | translate }}</span>
+          </div>
+        </div>
+        <div class="clean-badge-banner">
+          🛡️ {{ 'privacySanitizer.cleanBanner' | translate }} ({{ sanitizationResult.itemsRemovedCount }} {{ 'privacySanitizer.itemsRemoved' | translate }})
+        </div>
+      </div>
+      <!-- Live Preview of Sanitized PDF -->
+      @if (sanitizedArrayBuffer) {
+        <div class="preview-container">
+          <h4>{{ 'common.preview' | translate }}</h4>
+          <app-pdf-preview
+            [arrayBuffer]="sanitizedArrayBuffer"
+            [initialPage]="1"
+          ></app-pdf-preview>
+        </div>
+      }
+      <!-- Action Buttons -->
+      <div class="result-actions">
         <app-button
           variant="primary"
           size="lg"
-          (clicked)="startSanitization()"
-        >{{ 'privacySanitizer.sanitizeBtn' | translate }}</app-button>
+          (clicked)="downloadSanitized()"
+        >{{ 'common.download' | translate }}</app-button>
         <app-button
           variant="outline"
+          size="lg"
+          (clicked)="shareSanitized()"
+        >{{ 'common.share' | translate }}</app-button>
+        <app-button
+          variant="ghost"
           size="md"
           (clicked)="reset()"
         >{{ 'common.chooseAnother' | translate }}</app-button>
       </div>
-    </div>
-  </section>
-
-  <!-- STEP 4: SANITIZING PROGRESS -->
-  <section *ngIf="currentStep === 'sanitizing'" class="scanning-section">
-    <div class="scan-card">
-      <div class="spinner"></div>
-      <h3>{{ 'privacySanitizer.sanitizingTitle' | translate }}</h3>
-      <p>{{ 'privacySanitizer.sanitizingDesc' | translate }}</p>
-    </div>
-  </section>
-
-  <!-- STEP 5: SANITIZED RESULT & REPORT -->
-  <section *ngIf="currentStep === 'sanitized' && sanitizationResult" class="sanitized-result-section">
-    <!-- Before vs After Audit Card -->
-    <div class="audit-card">
-      <div class="audit-header">
-        <span class="check-icon">✓</span>
-        <h3>{{ 'privacySanitizer.sanitizationComplete' | translate }}</h3>
-      </div>
-
-      <div class="before-after-metrics">
-        <div class="metric before">
-          <span class="label">{{ 'common.before' | translate }}</span>
-          <span class="value">{{ sanitizationResult.beforeReport.totalFound }}</span>
-          <span class="subtext">{{ 'privacySanitizer.itemsDetected' | translate }}</span>
-        </div>
-        <span class="arrow">→</span>
-        <div class="metric after">
-          <span class="label">{{ 'common.after' | translate }}</span>
-          <span class="value">{{ sanitizationResult.afterReport.totalFound }}</span>
-          <span class="subtext">{{ 'privacySanitizer.removableItems' | translate }}</span>
-        </div>
-      </div>
-
-      <div class="clean-badge-banner">
-        🛡️ {{ 'privacySanitizer.cleanBanner' | translate }} ({{ sanitizationResult.itemsRemovedCount }} {{ 'privacySanitizer.itemsRemoved' | translate }})
-      </div>
-    </div>
-
-    <!-- Live Preview of Sanitized PDF -->
-    <div *ngIf="sanitizedArrayBuffer" class="preview-container">
-      <h4>{{ 'common.preview' | translate }}</h4>
-      <app-pdf-preview
-        [arrayBuffer]="sanitizedArrayBuffer"
-        [initialPage]="1"
-      ></app-pdf-preview>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="result-actions">
-      <app-button
-        variant="primary"
-        size="lg"
-        (clicked)="downloadSanitized()"
-      >{{ 'common.download' | translate }}</app-button>
-      <app-button
-        variant="outline"
-        size="lg"
-        (clicked)="shareSanitized()"
-      >{{ 'common.share' | translate }}</app-button>
-      <app-button
-        variant="ghost"
-        size="md"
-        (clicked)="reset()"
-      >{{ 'common.chooseAnother' | translate }}</app-button>
-    </div>
-  </section>
+    </section>
+  }
 
   <!-- Related Tools -->
   <app-related-tools [currentToolId]="'pdf_privacy_sanitizer'"></app-related-tools>

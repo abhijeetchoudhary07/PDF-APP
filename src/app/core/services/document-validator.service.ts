@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import exifr from 'exifr';
 import { PresetService, Preset, PresetRequirement } from './preset.service';
 import { ImageService } from './image.service';
@@ -16,13 +16,12 @@ import {
   providedIn: 'root'
 })
 export class DocumentValidatorService {
-  constructor(
-    private presetService: PresetService,
-    private imageService: ImageService,
-    private compressionService: CompressionService,
-    private pdfService: PdfService,
-    private signatureProcessingService: SignatureProcessingService
-  ) {}
+  private presetService = inject(PresetService);
+  private imageService = inject(ImageService);
+  private compressionService = inject(CompressionService);
+  private pdfService = inject(PdfService);
+  private signatureProcessingService = inject(SignatureProcessingService);
+
 
   /**
    * Validates a single document against a preset requirement slot.

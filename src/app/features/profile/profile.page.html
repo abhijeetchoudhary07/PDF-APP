@@ -3,7 +3,7 @@
 
   <main class="app-main-content">
     <div class="app-container">
-      
+
       <!-- Page Header with Breadcrumbs -->
       <app-page-header
         title="Account & Profile"
@@ -14,19 +14,22 @@
       </app-page-header>
 
       <div class="profile-layout">
-        
+
         <!-- 1. PROFILE HERO CARD -->
         <section class="profile-hero-card">
           <div class="avatar-column">
             <div class="avatar-large">
-              <img
-                *ngIf="profile?.avatarUrl as avatarUrl"
-                [src]="avatarUrl"
-                alt="Profile Avatar"
-                class="avatar-large-img" />
-              <span *ngIf="!profile?.avatarUrl" class="avatar-large-initials">
-                {{ profileService.getInitials(profile?.displayName || 'User') }}
-              </span>
+              @if (profile?.avatarUrl; as avatarUrl) {
+                <img
+                  [src]="avatarUrl"
+                  alt="Profile Avatar"
+                  class="avatar-large-img" />
+              }
+              @if (!profile?.avatarUrl) {
+                <span class="avatar-large-initials">
+                  {{ profileService.getInitials(profile?.displayName || 'User') }}
+                </span>
+              }
             </div>
 
             <!-- Avatar Upload / Remove Actions -->
@@ -40,14 +43,15 @@
                 <input type="file" accept="image/*" (change)="onAvatarFileSelected($event)" class="file-input-hidden" />
               </label>
 
-              <button
-                *ngIf="profile?.avatarUrl"
-                type="button"
-                class="avatar-remove-btn"
-                (click)="removeAvatar()"
-                title="Reset to Initials">
-                Remove
-              </button>
+              @if (profile?.avatarUrl) {
+                <button
+                  type="button"
+                  class="avatar-remove-btn"
+                  (click)="removeAvatar()"
+                  title="Reset to Initials">
+                  Remove
+                </button>
+              }
             </div>
           </div>
 
@@ -63,7 +67,9 @@
               </button>
             </div>
 
-            <p *ngIf="profile?.email as email" class="profile-email">{{ email }}</p>
+            @if (profile?.email; as email) {
+              <p class="profile-email">{{ email }}</p>
+            }
 
             <div class="hero-tags-row">
               <span class="membership-chip" [class.is-pro]="monetization.isPremium$ | async">
@@ -144,19 +150,23 @@
           </div>
 
           <!-- Recent Activity Feed -->
-          <div class="activity-box" *ngIf="usageStats?.recentItems as recentItems">
-            <h4 class="activity-heading">Recent Files</h4>
-            <div class="activity-list">
-              <div *ngFor="let item of recentItems" class="activity-item">
-                <span class="activity-op-badge" [ngClass]="'badge-' + item.operation">
-                  {{ item.operation | uppercase }}
-                </span>
-                <span class="activity-name">{{ item.outputFileName }}</span>
-                <span class="activity-size">{{ formatBytes(item.outputSizeBytes) }}</span>
-                <span class="activity-date">{{ item.date | date:'shortDate' }}</span>
+          @if (usageStats?.recentItems; as recentItems) {
+            <div class="activity-box">
+              <h4 class="activity-heading">Recent Files</h4>
+              <div class="activity-list">
+                @for (item of recentItems; track item) {
+                  <div class="activity-item">
+                    <span class="activity-op-badge" [ngClass]="'badge-' + item.operation">
+                      {{ item.operation | uppercase }}
+                    </span>
+                    <span class="activity-name">{{ item.outputFileName }}</span>
+                    <span class="activity-size">{{ formatBytes(item.outputSizeBytes) }}</span>
+                    <span class="activity-date">{{ item.date | date:'shortDate' }}</span>
+                  </div>
+                }
               </div>
             </div>
-          </div>
+          }
         </section>
 
         <!-- 3. PREMIUM & SUBSCRIPTION -->
@@ -175,19 +185,20 @@
               </div>
               <p class="plan-desc">
                 {{ (monetization.isPremium$ | async)
-                  ? 'Unlimited batch processing, no daily save limit, and priority WebAssembly conversion unlocked.'
-                  : 'Upgrade to PRO to unlock unlimited batch processing, remove all ads, and support offline development.' }}
+                ? 'Unlimited batch processing, no daily save limit, and priority WebAssembly conversion unlocked.'
+                : 'Upgrade to PRO to unlock unlimited batch processing, remove all ads, and support offline development.' }}
               </p>
             </div>
 
             <div class="premium-actions">
-              <app-button
-                *ngIf="!(monetization.isPremium$ | async)"
-                variant="primary"
-                size="md"
-                routerLink="/features/premium">
-                Upgrade to PRO
-              </app-button>
+              @if ((monetization.isPremium$ | async) === false) {
+                <app-button
+                  variant="primary"
+                  size="md"
+                  routerLink="/features/premium">
+                  Upgrade to PRO
+                </app-button>
+              }
 
               <app-button
                 variant="outline"
@@ -207,22 +218,22 @@
           </div>
 
           <div class="account-row-card">
-            <ng-container *ngIf="auth.user$ | async as account; else signedOutRow">
+            @if (auth.user$ | async; as account) {
               <div class="account-row-info">
                 <span class="account-row-label">Signed in</span>
                 <span class="account-row-value">{{ account.email }}</span>
-                <span class="account-row-sub" *ngIf="auth.entitlement$ | async as ent">
-                  {{ ent.isPremium
-                      ? 'Premium on this account' + (ent.validUntil ? ' · renews ' + (ent.validUntil | date:'mediumDate') : ' · never expires')
-                      : 'Free tier on this account' }}
-                </span>
+                @if (auth.entitlement$ | async; as ent) {
+                  <span class="account-row-sub">
+                    {{ ent.isPremium
+                    ? 'Premium on this account' + (ent.validUntil ? ' · renews ' + (ent.validUntil | date:'mediumDate') : ' · never expires')
+                    : 'Free tier on this account' }}
+                  </span>
+                }
               </div>
               <app-button variant="outline" size="md" routerLink="/account">
                 Manage
               </app-button>
-            </ng-container>
-
-            <ng-template #signedOutRow>
+            } @else {
               <div class="account-row-info">
                 <span class="account-row-label">Not signed in</span>
                 <span class="account-row-sub">
@@ -233,7 +244,8 @@
               <app-button variant="primary" size="md" routerLink="/account">
                 Sign in
               </app-button>
-            </ng-template>
+            }
+
           </div>
         </section>
 
@@ -347,7 +359,7 @@
         subtitle="Update your local profile name and optional email"
         [hasFooter]="true"
         (closed)="isEditModalOpen = false">
-        
+
         <div class="form-group">
           <label class="form-label" for="displayNameInput">Display Name</label>
           <input
@@ -382,7 +394,7 @@
         subtitle="This action cannot be undone"
         [hasFooter]="true"
         (closed)="isResetModalOpen = false">
-        
+
         <p class="reset-confirm-text">
           Are you sure you want to clear your local processing history, reset custom avatar, and clear cached files?
         </p>

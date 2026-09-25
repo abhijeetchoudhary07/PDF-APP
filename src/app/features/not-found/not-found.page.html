@@ -52,12 +52,13 @@
         <div class="nf-suggestions">
           <span class="nf-suggestions-title">Popular tools</span>
           <div class="nf-chips">
-            <a
-              *ngFor="let shortcut of shortcuts"
-              [routerLink]="shortcut.route"
-              class="nf-chip">
-              {{ shortcut.label }}
-            </a>
+            @for (shortcut of shortcuts; track shortcut) {
+              <a
+                [routerLink]="shortcut.route"
+                class="nf-chip">
+                {{ shortcut.label }}
+              </a>
+            }
           </div>
         </div>
       </section>

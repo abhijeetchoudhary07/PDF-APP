@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
-import { IonicModule } from '@ionic/angular/lazy';
+import { Platform } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -11,6 +11,7 @@ import type {
   PdfPaymentSettings,
   PdfPlan,
 } from '../../core/api/pdf-api.types';
+import type { StoreStatus } from '../../core/config/store.config';
 import { MonetizationService } from '../../core/services/monetization.service';
 import { ToastService } from '../../core/services/toast.service';
 
@@ -92,7 +93,6 @@ const OFFLINE_PLANS: PdfPlan[] = [
   standalone: true,
   imports: [
     AppIconComponent,
-    IonicModule,
     CommonModule,
     FormsModule,
     RouterModule,
@@ -108,6 +108,28 @@ export class PremiumPage implements OnInit {
   private readonly api = inject(PdfApiService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly platform = inject(Platform);
+
+  /*
+   * Which payment route this runtime uses, decided once and never mixed.
+   *
+   * Play's Payments policy requires Google Play Billing to be the only way to
+   * unlock premium from inside the app. Offering the UPI transfer alongside it
+   * is the violation, not the absence of Play Billing -- so on a device the UPI
+   * panel is not merely hidden behind a flag the server controls, it is never
+   * built, never fetched and never reachable.
+   *
+   * The browser keeps the manual flow. It is not a Play distribution, the
+   * policy does not reach it, and it stays the way anyone who cannot use Play
+   * Billing -- or who already paid that way -- gets premium.
+   */
+  readonly playBilling = this.platform.is('capacitor');
+
+  /** How far Play Billing got, so the paywall can explain a dead button. */
+  storeStatus: StoreStatus = 'off-device';
+
+  /** The plan whose Play checkout sheet is open, if any. */
+  purchasing: string | null = null;
 
   /*
    * Seeded, not empty.
@@ -150,6 +172,11 @@ export class PremiumPage implements OnInit {
      * pending claim -- and pay a second time.
      */
     await this.auth.whenReady();
+
+    this.monetization.storeStatus$.subscribe((status) => {
+      this.storeStatus = status;
+    });
+
     await Promise.all([this.loadPlans(), this.loadSettings(), this.refreshClaims()]);
   }
 
@@ -172,6 +199,16 @@ export class PremiumPage implements OnInit {
   }
 
   private async loadSettings(): Promise<void> {
+    if (this.playBilling) {
+      /*
+       * Not fetched on a device, rather than fetched and hidden. The payee is
+       * the one piece of the manual flow that could still reach a screen by
+       * accident, and a UPI id the app never holds cannot be shown by a bug.
+       */
+      this.settings = null;
+      return;
+    }
+
     try {
       this.settings = await this.api.paymentSettings();
     } catch {
@@ -274,6 +311,11 @@ export class PremiumPage implements OnInit {
       return;
     }
 
+    if (this.playBilling) {
+      await this.buyWithPlay(plan);
+      return;
+    }
+
     if (!this.paymentsAvailable) {
       this.toast.info('Payments are unavailable right now. Please try again shortly.');
       return;
@@ -287,6 +329,65 @@ export class PremiumPage implements OnInit {
     this.selectedPlan = plan;
     this.utrNumber = '';
     this.qrDataUrl = await this.buildQr(plan);
+  }
+
+  /**
+   * Buys a plan through Google Play Billing.
+   *
+   * There is deliberately no UPI fallback in here. A store that cannot sell
+   * right now produces an explanation, never a second payment route — that
+   * second route is exactly what the policy forbids, and a fallback added in a
+   * hurry is how it would come back.
+   */
+  private async buyWithPlay(plan: PdfPlan): Promise<void> {
+    if (this.purchasing) {
+      return;
+    }
+
+    const pkg = this.monetization.packageForPlan(plan.planId);
+    if (!this.monetization.canPurchase || !pkg) {
+      this.toast.info(this.storeUnavailableNote);
+      return;
+    }
+
+    this.purchasing = plan.planId;
+    try {
+      const bought = await this.monetization.purchasePackage(pkg);
+      if (bought) {
+        this.toast.success('Premium is active. Everything is unlocked.');
+        return;
+      }
+
+      // A dismissed sheet and a declined payment both land here, and neither
+      // is an error worth alarming someone with.
+      this.toast.info('The purchase was not completed.');
+    } finally {
+      this.purchasing = null;
+    }
+  }
+
+  /** Why the Play checkout will not open, in terms someone can act on. */
+  get storeUnavailableNote(): string {
+    switch (this.storeStatus) {
+      case 'not-configured':
+        return 'In-app purchases are not available in this build yet.';
+      case 'no-products':
+        return 'These plans are not on sale yet. Please try again shortly.';
+      case 'error':
+        return 'Google Play could not be reached. Check your connection and try again.';
+      default:
+        return 'Purchases are unavailable right now. Please try again shortly.';
+    }
+  }
+
+  /**
+   * The plan the UPI panel is open for.
+   *
+   * Gated on the route rather than on `selectedPlan` alone so that the panel
+   * cannot be rendered on a device even if something else sets the plan.
+   */
+  get payPanelPlan(): PdfPlan | null {
+    return this.playBilling ? null : this.selectedPlan;
   }
 
   closePanel(): void {

@@ -1,4 +1,4 @@
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable, NgZone, inject } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 
@@ -6,9 +6,9 @@ import { Capacitor } from '@capacitor/core';
   providedIn: 'root'
 })
 export class FileService {
-  private trackedObjectUrls = new Set<string>();
+  private ngZone = inject(NgZone);
 
-  constructor(private ngZone: NgZone) {}
+  private trackedObjectUrls = new Set<string>();
 
   async pickImageFile(): Promise<File | undefined> {
     // If native platform (iOS/Android Capacitor container), use Camera/Photo picker

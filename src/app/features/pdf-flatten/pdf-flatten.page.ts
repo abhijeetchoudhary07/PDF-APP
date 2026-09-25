@@ -1,7 +1,7 @@
-import { Component, ElementRef, ViewChild, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, AlertController } from '@ionic/angular/lazy';
+import { AlertController } from '@ionic/angular';
 import { FileService } from '../../core/services/file.service';
 import { PdfFlattenService, FlattenInspectionResult, FlattenResult } from '../../core/services/pdf-flatten.service';
 import { StorageService } from '../../core/services/storage.service';
@@ -31,7 +31,6 @@ import {
   standalone: true,
   imports: [
     AppIconComponent,
-    IonicModule,
     CommonModule,
     FormsModule,
     AppHeaderComponent,
@@ -46,6 +45,14 @@ import {
   providers: [DecimalPipe]
 })
 export class PdfFlattenPage {
+  private fileService = inject(FileService);
+  private flattenService = inject(PdfFlattenService);
+  private storageService = inject(StorageService);
+  private shareService = inject(ShareService);
+  private historyService = inject(HistoryService);
+  private alertCtrl = inject(AlertController);
+  private cdr = inject(ChangeDetectorRef);
+
   @ViewChild('originalCanvas') originalCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('flattenedCanvas') flattenedCanvas?: ElementRef<HTMLCanvasElement>;
 
@@ -72,16 +79,6 @@ export class PdfFlattenPage {
   toggleViewActive: 'original' | 'flattened' = 'flattened';
 
   currentPage = 1;
-
-  constructor(
-    private fileService: FileService,
-    private flattenService: PdfFlattenService,
-    private storageService: StorageService,
-    private shareService: ShareService,
-    private historyService: HistoryService,
-    private alertCtrl: AlertController,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   async selectPdf(): Promise<void> {
     const file = await this.fileService.pickPdfFile();

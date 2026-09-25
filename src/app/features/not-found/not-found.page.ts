@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
-import { IonicModule } from '@ionic/angular/lazy';
 
 import {
   AppHeaderComponent,
@@ -23,13 +22,11 @@ import {
   templateUrl: './not-found.page.html',
   styleUrls: ['./not-found.page.scss'],
   imports: [
-    CommonModule,
     RouterModule,
-    IonicModule,
     AppHeaderComponent,
     AppFooterComponent,
     AppIconComponent
-  ]
+]
 })
 export class NotFoundPage {
   /** The tools a mistyped or stale link was most likely aiming at. */

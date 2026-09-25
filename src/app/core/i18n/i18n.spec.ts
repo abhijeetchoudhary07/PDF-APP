@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { TranslationService } from '../services/translation.service';
 import { TranslatePipe } from './translate.pipe';
 import { en } from './translations/en';
@@ -14,8 +15,16 @@ describe('Internationalization (i18n) System', () => {
   let pipe: TranslatePipe;
 
   beforeEach(() => {
-    service = new TranslationService();
-    pipe = new TranslatePipe(service);
+    /*
+     * Through TestBed rather than `new`: both of these take their
+     * dependencies from `inject()`, which throws outside an injection
+     * context. Resolving the pipe from the same injector as the service is
+     * also what production does, so the pipe really is reading the language
+     * the service holds.
+     */
+    TestBed.configureTestingModule({ providers: [TranslatePipe] });
+    service = TestBed.inject(TranslationService);
+    pipe = TestBed.inject(TranslatePipe);
   });
 
   describe('Language Support Configuration', () => {

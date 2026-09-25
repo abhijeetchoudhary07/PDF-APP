@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 export type SkeletonVariant =
   | 'text'
@@ -26,55 +26,62 @@ export type SkeletonVariant =
   selector: 'app-skeleton',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div class="sk-wrap" [attr.aria-busy]="true" [attr.aria-live]="'polite'">
-      <ng-container [ngSwitch]="variant">
-
+      @switch (variant) {
         <!-- A tool tile: icon, title, two description lines, footer link -->
-        <div *ngSwitchCase="'tool-card'" class="sk-card" [style.height.px]="height || null">
-          <div class="sk sk-icon"></div>
-          <div class="sk sk-line w-55 mt-16"></div>
-          <div class="sk sk-line w-90 mt-10 thin"></div>
-          <div class="sk sk-line w-70 mt-6 thin"></div>
-          <div class="sk sk-line w-35 mt-20 thin"></div>
-        </div>
-
-        <!-- A history / preset row: leading square, two lines, trailing action -->
-        <div *ngSwitchCase="'list-row'" class="sk-row">
-          <div class="sk sk-square"></div>
-          <div class="sk-row-body">
-            <div class="sk sk-line w-45"></div>
-            <div class="sk sk-line w-70 mt-8 thin"></div>
+        @case ('tool-card') {
+          <div class="sk-card" [style.height.px]="height || null">
+            <div class="sk sk-icon"></div>
+            <div class="sk sk-line w-55 mt-16"></div>
+            <div class="sk sk-line w-90 mt-10 thin"></div>
+            <div class="sk sk-line w-70 mt-6 thin"></div>
+            <div class="sk sk-line w-35 mt-20 thin"></div>
           </div>
-          <div class="sk sk-pill"></div>
-        </div>
-
+        }
+        <!-- A history / preset row: leading square, two lines, trailing action -->
+        @case ('list-row') {
+          <div class="sk-row">
+            <div class="sk sk-square"></div>
+            <div class="sk-row-body">
+              <div class="sk sk-line w-45"></div>
+              <div class="sk sk-line w-70 mt-8 thin"></div>
+            </div>
+            <div class="sk sk-pill"></div>
+          </div>
+        }
         <!-- A page thumbnail in the PDF workspace -->
-        <div *ngSwitchCase="'thumbnail'" class="sk sk-thumb" [style.height.px]="height || 180"></div>
-
+        @case ('thumbnail') {
+          <div class="sk sk-thumb" [style.height.px]="height || 180"></div>
+        }
         <!-- A large preview surface -->
-        <div *ngSwitchCase="'preview'" class="sk sk-preview" [style.height.px]="height || 320"></div>
-
-        <div *ngSwitchCase="'circle'" class="sk sk-circle"
-             [style.width.px]="size" [style.height.px]="size"></div>
-
-        <div *ngSwitchCase="'title'" class="sk sk-line sk-title" [style.width]="width"></div>
-
-        <div *ngSwitchCase="'block'" class="sk sk-block"
-             [style.height.px]="height || 120" [style.width]="width"></div>
-
+        @case ('preview') {
+          <div class="sk sk-preview" [style.height.px]="height || 320"></div>
+        }
+        @case ('circle') {
+          <div class="sk sk-circle"
+          [style.width.px]="size" [style.height.px]="size"></div>
+        }
+        @case ('title') {
+          <div class="sk sk-line sk-title" [style.width]="width"></div>
+        }
+        @case ('block') {
+          <div class="sk sk-block"
+          [style.height.px]="height || 120" [style.width]="width"></div>
+        }
         <!-- default: one or more text lines -->
-        <ng-container *ngSwitchDefault>
-          <div *ngFor="let l of lineArray; let i = index"
-               class="sk sk-line thin"
-               [class.mt-8]="i > 0"
-               [style.width]="i === lineArray.length - 1 && lines > 1 ? '60%' : width"></div>
-        </ng-container>
-
-      </ng-container>
+        @default {
+          @for (l of lineArray; track l; let i = $index) {
+            <div
+              class="sk sk-line thin"
+              [class.mt-8]="i > 0"
+            [style.width]="i === lineArray.length - 1 && lines > 1 ? '60%' : width"></div>
+          }
+        }
+      }
     </div>
-  `,
+    `,
   styles: [`
     :host { display: block; }
     .sk-wrap { display: block; }
