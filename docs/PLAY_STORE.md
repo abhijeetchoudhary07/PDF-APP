@@ -7,17 +7,28 @@ the submission. Operational build detail lives in
 [PLAY_STORE_RELEASE.md](PLAY_STORE_RELEASE.md); this document is the Console
 submission itself.
 
-> ## ⛔ Read first — four hard blockers
+> ## ⛔ Read first — what still stops submission
 >
 > | # | Blocker | Why it stops submission |
 > | --- | --- | --- |
-> | **1** | **In-app UPI payments for digital features** | Violates Play's Payments policy. The single most common cause of suspension. §9 |
-> | **2** | **No Android platform exists** | `@capacitor/android` is not installed and there is no `android/` directory. No AAB can be produced. §10 |
-> | **3** | **No upload keystore** | Nothing is signed. §10 |
-> | **4** | **Plan descriptions promise features that are not gated** | The listing would advertise "batch processing" and "no ads" as paid, which every free user already has. Mis-selling. §9 |
+> | **1** | **No upload keystore** | `android/app/keystore.properties` is absent, so `bundleRelease` produces an **unsigned** AAB and Play rejects it. §10 |
+> | **2** | **Privacy policy URL is not live** | `indianformhelper.app` does not resolve. Play requires a reachable policy, and the in-app links point there. §3 |
+> | **3** | **In-app UPI payments for digital features** | Violates Play's Payments policy. The single most common cause of suspension. §9 |
 >
-> Blockers 2 and 3 are mechanical — a few hours. Blockers 1 and 4 are product
-> decisions and need an owner before anything is uploaded.
+> 1 and 2 are mechanical — under an hour. 3 is a product decision and needs an
+> owner before anything is uploaded.
+>
+> ### Cleared since this document was first written
+>
+> - **The Android platform exists.** `android/` is generated, committed, and
+>   builds: `bundleRelease` produces a 12 MB AAB.
+> - **The payment backend is deployed.** `payment-settings` and
+>   `manual-payment` answer in production, and pricing serves ₹49 / ₹365 / ₹999.
+> - **Plan copy no longer mis-sells.** "No ads" and "Ads supported" are gone
+>   from both the app and `pdf_plans`; the tiers are separated by the daily save
+>   cap, which is genuinely enforced. Batch processing is gated for real.
+> - **Account deletion works.** `DELETE /auth/me` returned 405 and is now
+>   implemented, which Play requires of any app offering sign-up.
 
 ---
 

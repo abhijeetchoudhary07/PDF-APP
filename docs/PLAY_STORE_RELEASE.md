@@ -107,11 +107,24 @@ Console so the label and the policy agree:
   account; not shared; used for account management and entitlement sync.
 - **Purchase history** — collected for subscription verification and restore;
   not shared beyond Google Play / RevenueCat.
-- **Device or advertising identifiers** — collected on the free tier and shared
-  with Google AdMob for non-personalized ads.
-- **App activity and crash logs** — anonymous, shared with Google Firebase.
+- **Device or advertising identifiers** — **not collected, not shared.** The
+  app ships no advertising SDK, and `com.google.android.gms.permission.AD_ID`
+  is not in the manifest. Verify before submitting with:
+  `aapt2 dump permissions <aab-or-apk> | grep AD_ID` — it must print nothing.
+- **App activity and crash logs** — **not collected.** There is no analytics
+  provider wired up; `AnalyticsService` records events locally and sends
+  nothing.
 - **Data in transit is encrypted** — yes (HTTPS on the optional account endpoints).
-- **Users can request data deletion** — yes, from the Account screen.
+- **Users can request data deletion** — yes, from the Account screen, which
+  calls `DELETE /api/v1/pdf-app/auth/me`. Deletion is real: every `pdf_` table
+  keyed on the user cascades, and audit rows keep the admin action while
+  dropping the identity.
+
+> Earlier revisions of this section told you to declare advertising IDs shared
+> with AdMob and app activity shared with Firebase. Both plugins have since
+> been removed -- they were never configured and only added permissions the app
+> made no use of. Declaring collection that does not happen is its own policy
+> problem, so the rows above are the ones that match the binary.
 
 ---
 

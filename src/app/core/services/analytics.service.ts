@@ -1,37 +1,36 @@
 import { Injectable } from '@angular/core';
-import { FirebaseAnalytics } from '@capacitor-community/firebase-analytics';
-import { Platform } from '@ionic/angular';
 import { environment } from '../../../environments/environment';
 
+/**
+ * Product analytics — currently inert, deliberately.
+ *
+ * This used to call `@capacitor-community/firebase-analytics`. That plugin was
+ * never configured: there is no `google-services.json`, so Firebase could not
+ * initialise and every call rejected silently. What it *did* do was merge
+ * `com.google.android.gms.permission.AD_ID` into the manifest, so the app
+ * asked for the advertising identifier, collected nothing with it, and
+ * contradicted both its own privacy policy -- which states that no advertising
+ * identifier is read -- and the Data Safety answers that have to match it.
+ *
+ * The plugin is gone rather than the call sites: what is worth measuring is
+ * still recorded here, so turning analytics on later means adding a provider
+ * back in one file instead of hunting for the events again. Until then nothing
+ * leaves the device, which is what the listing promises.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class AnalyticsService {
-  constructor(private platform: Platform) {}
-
-  async logEvent(name: string, params?: any) {
-    if (this.platform.is('capacitor')) {
-      await FirebaseAnalytics.logEvent({
-        name,
-        params: params || {}
-      });
-    } else if (!environment.production) {
-      /*
-       * There is no Firebase off-device, so the event has nowhere to go. It is
-       * echoed during development to make the funnel visible while a tool is
-       * being built — but not in a production web build, where it would print
-       * a running commentary of what the user is doing into a console anyone
-       * can open.
-       */
-      console.log(`Analytics Event: ${name}`, params);
+  async logEvent(name: string, params?: Record<string, unknown>): Promise<void> {
+    if (!environment.production) {
+      // Visible while a tool is being built, silent in a production build --
+      // a released app should not narrate what someone is doing into a console.
+      console.log(`Analytics Event: ${name}`, params ?? {});
     }
   }
 
-  async setUserId(userId: string) {
-    if (this.platform.is('capacitor')) {
-      await FirebaseAnalytics.setUserId({
-        userId,
-      });
-    }
+  async setUserId(_userId: string): Promise<void> {
+    // No provider to identify against. Kept so callers need no changes when
+    // one is added.
   }
 }
