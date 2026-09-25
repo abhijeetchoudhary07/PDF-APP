@@ -223,39 +223,48 @@ export class MonetizationService {
   }
 
   async restorePurchases(): Promise<boolean> {
-    if (!this.platform.is('capacitor')) {
-      /*
-       * Browser or `ionic serve`: RevenueCat is not configured, so calling it
-       * only produces a caught error and a "restore failed" toast. The account
-       * is the only entitlement source off-device, and re-reading it is
-       * exactly what a restore means here -- an admin grant restores this way.
-       */
-      if (this.auth.isSignedIn) {
+    /*
+     * The account is checked first and unconditionally, because it is the only
+     * entitlement source that always applies: payment here is a UPI transfer
+     * plus an admin grant on the server, never a store receipt, so premium can
+     * only survive a reinstall or a new phone through the account.
+     *
+     * The store is an optional extra layered on top, and it has to stay
+     * optional. `restorePurchases` rejects outright when the plugin was never
+     * configured -- "Purchases must be configured before calling this function"
+     * -- which is every build still carrying the placeholder keys in
+     * store.config.ts. Letting that rejection decide the return value is what
+     * stopped manual payers from restoring at all: on a device the account was
+     * never consulted, so the one signal that could have unlocked premium was
+     * skipped in favour of a store that had nothing to say.
+     */
+    if (this.auth.isSignedIn) {
+      try {
         await this.auth.syncProfile();
+      } catch (e) {
+        console.error('Could not re-read the account entitlement', e);
       }
-      return this.isPremium;
     }
 
-    try {
-      const { customerInfo } = await Purchases.restorePurchases();
-      this.storeEntitled = typeof customerInfo.entitlements.active['premium'] !== 'undefined';
-      this.publish();
+    // `storeReady` is false unless `configure` actually succeeded, so this
+    // never calls into an unconfigured plugin just to catch the rejection.
+    if (this.platform.is('capacitor') && (await this.storeReady)) {
+      try {
+        const { customerInfo } = await Purchases.restorePurchases();
+        this.storeEntitled = typeof customerInfo.entitlements.active['premium'] !== 'undefined';
+        this.publish();
 
-      if (this.storeEntitled) {
-        await this.pushEntitlementToServer();
+        if (this.storeEntitled) {
+          await this.pushEntitlementToServer();
+        }
+      } catch (e) {
+        // A store that cannot be reached says nothing about the account, so
+        // the entitlement synced above stands.
+        console.error('Restore from the store failed', e);
       }
-
-      // A restore that finds nothing in the store may still find something on
-      // the account -- an admin grant restores exactly this way.
-      if (!this.storeEntitled && this.auth.isSignedIn) {
-        await this.auth.syncProfile();
-      }
-
-      return this.isPremium;
-    } catch (e) {
-      console.error('Restore failed', e);
-      return false;
     }
+
+    return this.isPremium;
   }
 
   /** Re-reads the account's entitlement. Called on resume, and after a restore. */
