@@ -4,8 +4,9 @@ The steps that cannot be done from this repository, in the order they have to
 happen. Everything here needs your identity, your money, your secrets or a
 product decision, which is why none of it is automated.
 
-**State when this was written (2026-09-25):** policy URLs 404, no keystore, AAB
-unsigned, migration 028 not applied, billing route undecided.
+**State (2026-09-25, updated):** policy URLs **live**; migration written as
+`029` and verified locally but **not applied to production**; no keystore; AAB
+unsigned; UPI payee unverified; billing route undecided.
 
 Reference material, not duplicated here:
 
@@ -22,45 +23,51 @@ Reference material, not duplicated here:
 Four mechanical tasks and one decision. About 30 minutes, apart from the
 decision.
 
-### 0.1 · Turn on GitHub Pages ▸ 2 min
+### 0.1 · ~~Turn on GitHub Pages~~ ✅ done
 
 Play requires a privacy policy URL a reviewer can open in a browser, and — because
 the app offers accounts — a public account-deletion URL. Both pages are written,
 committed and pushed. They are not served, because Pages has no source.
 
-1. Repository **Settings → Pages**
-2. **Source: GitHub Actions**
-3. **Actions → Deploy policy pages → Run workflow** (the last two runs failed at
-   `actions/configure-pages@v5`, which is that step asking GitHub for a Pages
-   config that does not exist yet)
+Done. The source had been **Deploy from a branch → `main` /(root)**, serving a
+repository root with no `index.html` — not "Pages was never enabled", which is
+what the failing `actions/configure-pages@v5` step and the 404 from the Pages
+API both looked like. Switched to **Source: GitHub Actions** and deployed.
 
-Verify:
+- <https://abhijeetchoudhary07.github.io/PDF-APP/privacy> → 200
+- <https://abhijeetchoudhary07.github.io/PDF-APP/delete-account> → 200
+
+Both serve `Officialpostflow360@gmail.com`. Re-check after any Pages change:
 
 ```bash
-curl -o /dev/null -w '%{http_code}\n' https://abhijeetchoudhary07.github.io/PDF-APP/privacy
+curl -sL -o /dev/null -w '%{http_code}\n' https://abhijeetchoudhary07.github.io/PDF-APP/privacy
 ```
 
-`200`, and the same for `/delete-account`. Open both and check the `mailto:`
-links read `Officialpostflow360@gmail.com`.
-
-### 0.2 · Apply migration 028 ▸ 5 min
+### 0.2 · Apply migration 029 to production ▸ 5 min
 
 The paywall renders `pdf_plans.features_json` whenever the server answers, so
 the live API still advertises *Unlimited pages*, *Batch processing* and *OCR &
 PDF intelligence* — none of which is gated. The app's bundled fallback is
 already fixed; the server is not.
 
-The SQL is in [PLAY_STORE.md](PLAY_STORE.md) §9. Save it as
-`migrations/028_pdf_app_plan_copy_truthful.sql` in the **`linkedin AUTO`** repo,
-then:
+**The file is already written** —
+`linkedin AUTO/migrations/029_pdf_app_plan_copy_truthful.sql`, uncommitted. It
+is numbered 029, not 028: `028_posts_error_and_processing.sql` already held that
+number. It has been applied to local PGlite and the SQL is valid.
+
+Applying it to **production** is the step left, and it needs care, because
+`server/cli/migrate.ts` has no dry-run and no way to apply one file — it applies
+everything pending. Check first whether `028_posts_error_and_processing.sql` is
+already recorded in production's `schema_migrations`. If it is not, running
+migrate also ships that unrelated schema change.
 
 ```bash
-DATABASE_URL= npx tsx server/cli/migrate.ts
+DATABASE_URL= npx tsx server/cli/migrate.ts   # local only, safe
 ```
 
-The empty `DATABASE_URL=` runs against local PGlite. To apply it to production
-you point at the real database deliberately — `.env` already does, which is why
-the habit of prefixing matters.
+Dropping the `DATABASE_URL=` prefix makes it read `.env`, which points at the
+production Neon database — which is exactly why the prefix is a habit worth
+keeping.
 
 Verify (expect `0`):
 
@@ -313,8 +320,8 @@ usually cite a specific policy — read which one before changing anything.
 
 | # | Task | Time | Blocks |
 | --- | --- | --- | --- |
-| 0.1 | Enable GitHub Pages | 2 min | Listing (policy URL) |
-| 0.2 | Apply migration 028 | 5 min | Truthful paid copy |
+| 0.1 | ~~Enable GitHub Pages~~ ✅ | — | — |
+| 0.2 | Apply migration 029 to production | 5 min | Truthful paid copy |
 | 0.3 | ₹1 to the UPI payee | 2 min | Taking any money |
 | 0.4 | Create the keystore | 10 min | **Every upload** |
 | 0.5 | Decide the billing route | — | **Submission** |

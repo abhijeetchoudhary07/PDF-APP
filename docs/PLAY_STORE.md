@@ -16,7 +16,7 @@ see [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md).
 > | # | Blocker | Evidence |
 > | --- | --- | --- |
 > | **1** | **No upload keystore** | `android/app/keystore.properties` is absent, so `bundleRelease` produces an **unsigned** AAB: `jarsigner -verify` on the bundle prints `jar is unsigned`. §10 |
-> | **2** | **Both policy URLs return 404** | GitHub Pages was never enabled — `api.github.com/repos/abhijeetchoudhary07/PDF-APP/pages` is 404, and so are `/privacy` and `/delete-account`. The workflow is committed and pushed; it has never had a source. §3 |
+> | **2** | ~~Both policy URLs return 404~~ — **cleared** | Pages *was* enabled, but its source was "Deploy from a branch" → `main` `/(root)`, which serves a repository root that has no `index.html`. Switched to **GitHub Actions**; both URLs now return 200. §3 |
 > | **3** | ~~No JDK 21 on the build machine~~ — **cleared** | Capacitor 8 compiles at Java 21. Homebrew's `openjdk@21` was installed but keg-only, so `java_home` could not see it and `java_home -v 21` silently returned 17. Build with the explicit cellar path. §10 |
 > | **4** | **In-app UPI payments for digital features** | Violates Play's Payments policy. The single most common cause of suspension. §9 |
 >
@@ -174,20 +174,22 @@ requires a policy URL that a reviewer can open in a browser. The same content is
 prepared at `https://abhijeetchoudhary07.github.io/PDF-APP/privacy`, served from
 `docs/hosted`.
 
-> ### ⛔ It is not live. Both pages 404 today.
-> `.github/workflows/pages.yml` is committed and pushed, but GitHub Pages has
-> never had a source, so the workflow has never deployed — the Pages API for
-> this repository returns 404 as well.
+> ### ✅ Live since 2026-09-25
+> Both pages 404'd for a while, and not for the reason the Pages API suggested.
+> Pages *was* enabled; its source was **Deploy from a branch → `main` /(root)**,
+> which serves the repository root — where there is no `index.html`, and no
+> `privacy/` either, because the pages live under `docs/hosted/`. The workflow
+> ran on every push and failed at `actions/configure-pages@v5`, which reads as
+> "Pages is not set up" and is really "Pages is set up the other way".
 >
-> **Fix, once:** repository **Settings → Pages → Source: GitHub Actions**, then
-> **Actions → Deploy policy pages → Run workflow**. Confirm before touching the
-> Console:
+> Setting **Source: GitHub Actions** fixed it. Re-check after any Pages change:
 >
 > ```bash
-> curl -o /dev/null -w '%{http_code}\n' https://abhijeetchoudhary07.github.io/PDF-APP/privacy
+> curl -sL -o /dev/null -w '%{http_code}\n' https://abhijeetchoudhary07.github.io/PDF-APP/privacy
 > ```
 >
-> `200`, not `404`. Do the same for `/delete-account`.
+> `200` (a bare `/privacy` answers 301 to `/privacy/` first, which is normal).
+> Same for `/delete-account`.
 
 A `github.io` URL is acceptable to Play — it checks that the URL resolves and
 serves a policy, not who owns the domain. Moving to a custom domain later is a
@@ -599,9 +601,9 @@ not found.
 - [x] `DELETE /auth/me` implemented server-side — returns 401 unauthenticated
 - [x] **JDK 21 reachable** — use the explicit cellar path, not `java_home`
 - [x] **AAB rebuilt since the Firebase removal** — 12:45, clean, unsigned
-- [ ] Privacy policy live at a public URL — currently 404
-- [ ] Account-deletion web URL live — currently 404
-- [ ] Support address points at a mailbox that exists
+- [x] Privacy policy live at a public URL
+- [x] Account-deletion web URL live
+- [x] Support address points at a mailbox that exists
 - [ ] Reviewer demo account created and granted premium
 - [ ] Camera capture confirmed on a physical device (§8)
 - [ ] `npm run test:unit && npm run build && npm run test:e2e:prod` all green
@@ -641,8 +643,8 @@ Status as re-verified on 2026-09-25.
 | 8 | Content rating | ✅ §7 — answer Ads = **No** |
 | 9 | Permissions reviewed | ✅ §8 — merged manifest read back |
 | 10 | Data Safety form | ✅ §4 — matches the rebuilt bundle |
-| 11 | Privacy policy at a public URL | ❌ **404 — Pages never enabled** |
-| 12 | Account deletion, web URL | ❌ **404 — same cause** |
+| 11 | Privacy policy at a public URL | ✅ Live, 200 |
+| 12 | Account deletion, web URL | ✅ Live, 200 |
 | 13 | Support / contact email | ✅ `Officialpostflow360@gmail.com` everywhere |
 | 14 | JDK 21 reachable | ✅ Keg-only; build with the explicit `JAVA_HOME` in §10 |
 | 15 | **Signed release AAB** | ❌ **Blocker — no keystore** |
