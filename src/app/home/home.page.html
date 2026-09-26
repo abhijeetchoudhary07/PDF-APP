@@ -75,7 +75,7 @@
           <div class="category-marquee-track">
             <!-- First loop group -->
             <div class="category-marquee-group">
-              @for (cat of marqueeCategories; track cat) {
+              @for (cat of categories; track cat) {
                 <button
                   type="button"
                   class="cat-pill"
@@ -87,7 +87,7 @@
             </div>
             <!-- Second loop group (identical duplicate for seamless infinite right-to-left loop) -->
             <div class="category-marquee-group" aria-hidden="true">
-              @for (cat of marqueeCategories; track cat) {
+              @for (cat of categories; track cat) {
                 <button
                   type="button"
                   tabindex="-1"

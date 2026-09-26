@@ -60,8 +60,14 @@ export class HomePage {
     'PRESETS'
   ];
 
+  /*
+   * Rendered twice by the template, as two sibling marquee groups -- that is
+   * what makes the scroll seamless. It is deliberately NOT a pre-doubled array:
+   * `@for` keyed on the value then sees every category twice and Angular warns
+   * (NG0955) and may reuse the wrong pill, on top of rendering four copies of a
+   * list that needs two.
+   */
   categories = HomePage.CATEGORY_LIST;
-  marqueeCategories = [...HomePage.CATEGORY_LIST, ...HomePage.CATEGORY_LIST];
 
   /*
    * Category -> icon name. The template previously carried eleven *ngIf'd inline

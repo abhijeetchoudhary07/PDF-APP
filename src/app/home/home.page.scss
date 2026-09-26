@@ -205,8 +205,15 @@
   display: flex;
   width: max-content;
   will-change: transform;
-  /* Continuously scrolls from right to left in an infinite, uninterrupted loop */
-  animation: category-marquee-scroll 38s linear infinite;
+  /*
+   * Continuously scrolls from right to left in an infinite, uninterrupted loop.
+   *
+   * The duration is coupled to the group width: the keyframe translates the
+   * track by -50%, which is exactly one group. One group is 11 pills, so 19s
+   * here is the same on-screen speed the old doubled 22-pill group had at 38s.
+   * Change how many categories render and this has to change with it.
+   */
+  animation: category-marquee-scroll 19s linear infinite;
 }
 
 .category-marquee-group {
