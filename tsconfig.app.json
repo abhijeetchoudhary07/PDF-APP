@@ -6,7 +6,11 @@
     "types": []
   },
   "files": [
-    "src/main.ts"
+    "src/main.ts",
+    // Listed so it is type-checked. It is pulled in through the build's
+    // `polyfills` option, which does not put it in the TS program on its own,
+    // and the compiler warned that it would ship unchecked.
+    "src/polyfills-legacy.ts"
   ],
   "include": [
     "src/**/*.d.ts"

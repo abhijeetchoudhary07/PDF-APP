@@ -1,49 +1,58 @@
 import { test, expect } from '@playwright/test';
-import { getTestDataPath, setupCapacitorMocks } from '../fixtures/mocks';
+import { setupCapacitorMocks } from '../fixtures/mocks';
+import { importScannedPage, pageAction, pageCards } from './scanner-helpers';
 
+/*
+ * The enhancement editor is reached from the pages dashboard, not straight
+ * after cropping. These tests used to try to load an image through an
+ * `input[type="file"]` the scanner does not have, then look for `.preset-chip`
+ * and a `Compare` button that do not exist either -- every assertion sat behind
+ * an `if` that was never true. See `scanner-helpers.ts`.
+ */
 test.describe('Document Scanner — Auto Enhance Presets @scanner', () => {
   test.beforeEach(async ({ page }) => {
     await setupCapacitorMocks(page);
     await page.goto('/features/document-scanner');
 
-    // Load an image
-    const fileInput = page.locator('input[type="file"]');
-    if (await fileInput.count() > 0) {
-      await fileInput.first().setInputFiles(getTestDataPath('scanner/clean-document.jpg'));
-      const confirmBtn = page.locator('.btn-confirm-crop, button:has-text("Next"), button:has-text("Crop"), button:has-text("Apply")');
-      if (await confirmBtn.isVisible()) {
-        await confirmBtn.click();
-      }
-    }
+    await importScannedPage(page);
+    await pageAction(page, 0, 'Enhance Filter').click();
+    await expect(page.locator('.enhance-card')).toBeVisible({ timeout: 15000 });
   });
 
   test('SCN-025 to SCN-029: Switch between enhancement presets', async ({ page }) => {
-    // Presets: Original, Document, Grayscale, B&W, High Contrast
-    const presets = ['Original', 'Document', 'Grayscale', 'Black & White', 'High Contrast'];
+    const presets = page.locator('.preset-btn');
+    await expect(presets).toHaveCount(5);
 
-    for (const preset of presets) {
-      const chip = page.locator(`.preset-chip:has-text("${preset}"), button:has-text("${preset}")`);
-      if (await chip.isVisible()) {
-        await chip.click();
-        await expect(chip).toHaveClass(/active|selected/);
-      }
+    // Exactly one preset is selected at a time, and choosing another moves it.
+    await expect(page.locator('.preset-btn.active')).toHaveCount(1);
+
+    for (let i = 0; i < 5; i++) {
+      await presets.nth(i).click();
+      await expect(presets.nth(i)).toHaveClass(/active/);
+      await expect(page.locator('.preset-btn.active')).toHaveCount(1);
     }
   });
 
   test('SCN-038: Before/After comparison toggle', async ({ page }) => {
-    const compareBtn = page.locator('.btn-compare, button:has-text("Compare"), [aria-label*="compare" i]');
-    if (await compareBtn.isVisible()) {
-      await compareBtn.click();
-      await expect(page.locator('.comparison-view, .split-view, canvas').first()).toBeVisible();
-    }
+    const preview = page.locator('.enhance-preview-img');
+    const compare = page.locator('.compare-pill-btn');
+
+    const processed = await preview.getAttribute('src');
+
+    // The control is press-and-hold: it shows the original while held.
+    await compare.dispatchEvent('mousedown');
+    await expect(preview).not.toHaveAttribute('src', processed!);
+
+    await compare.dispatchEvent('mouseup');
+    await expect(preview).toHaveAttribute('src', processed!);
   });
 
   test('SCN-040: Apply enhancement and add to multi-page document', async ({ page }) => {
-    const addPageBtn = page.locator('.btn-add-page, button:has-text("Keep"), button:has-text("Add Page"), button:has-text("Save Page")');
-    if (await addPageBtn.isVisible()) {
-      await addPageBtn.click();
-      // Should show thumbnail strip
-      await expect(page.locator('.page-thumb-card, .multipage-container, .thumbnail-strip').first()).toBeVisible({ timeout: 10000 });
-    }
+    await page.locator('.preset-btn').nth(2).click();
+    await page.locator('app-button[data-testid="done-enhancing"] button').click();
+
+    // Back on the dashboard with the page kept.
+    await expect(page.locator('.pages-dashboard-card')).toBeVisible({ timeout: 15000 });
+    await expect(pageCards(page)).toHaveCount(1);
   });
 });

@@ -40,9 +40,10 @@ __pycache__/
 # AI assistant artifacts / chats
 .claude/
 
-# Test output
+# Test and media build output
 playwright-report/
 test-results/
+videos/
 
 
 # --- Android / Capacitor ---------------------------------------------------

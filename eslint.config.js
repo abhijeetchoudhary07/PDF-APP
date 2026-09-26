@@ -4,12 +4,13 @@ const angular = require("angular-eslint");
 
 module.exports = tseslint.config(
   {
+    ignores: ["projects/**/*", "android/**/*", "www/**/*", "dist/**/*", "coverage/**/*", "videos/**/*"]
+  },
+  {
     files: ["**/*.ts"],
-    ignores: ["projects/**/*"],
     extends: [...angular.configs.tsRecommended],
     processor: angular.processInlineTemplates,
     rules: {
-      "@angular-eslint/prefer-standalone": "off",
       /*
        * Angular 22 made OnPush the default change-detection strategy, and this
        * lint rule enforces it. Every component here sets
@@ -20,6 +21,13 @@ module.exports = tseslint.config(
        *
        * Re-enable this rule once component state has been migrated to signals,
        * at which point OnPush becomes both correct and faster.
+       *
+       * That migration is deliberately not part of the release work: it is 79
+       * components, it changes how every screen updates, and the failure mode
+       * it risks is the one described above -- a view that silently stops
+       * repainting, which no test in this repo would catch. `prefer-standalone`
+       * was the half of this modernisation that could be finished safely, and
+       * it is on again below by virtue of not being listed here.
        */
       "@angular-eslint/prefer-on-push-component-change-detection": "off",
       "@angular-eslint/component-class-suffix": [

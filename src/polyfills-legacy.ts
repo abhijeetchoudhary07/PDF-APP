@@ -52,7 +52,9 @@ function at(this: { length: number; [i: number]: unknown }, index: number): unkn
   if (i < 0) i += len;
   return i < 0 || i >= len ? undefined : this[i];
 }
-for (const proto of [Array.prototype, String.prototype] as Array<Record<string, unknown>>) {
+// `as unknown as` because `Array.prototype` and `String.prototype` share no
+// index signature; the loop only reads and defines the one `at` key.
+for (const proto of [Array.prototype, String.prototype] as unknown as Array<Record<string, unknown>>) {
   if (typeof proto['at'] !== 'function') {
     Object.defineProperty(proto, 'at', { value: at, configurable: true, writable: true });
   }

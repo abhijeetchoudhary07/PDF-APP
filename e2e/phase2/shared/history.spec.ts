@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { setupCapacitorMocks } from '../../fixtures/mocks';
 import {
   getPhase2FixturePath,
+  readHistory,
   uploadFileToDropzone,
   waitForProcessingToFinish
 } from '../../common/phase2-helpers';
@@ -21,10 +22,8 @@ test.describe('Phase 2 Shared — History Tracking & Privacy @phase2 @history', 
     await page.locator('.action-bar-center button').first().click();
     await waitForProcessingToFinish(page);
 
-    // Check history storage
-    const historyJson = await page.evaluate(() => localStorage.getItem('IFH_HISTORY_V2'));
-    expect(historyJson).toBeTruthy();
-    const items = JSON.parse(historyJson!);
+    const items = await readHistory(page);
+    expect(items.length).toBeGreaterThan(0);
     const compareItem = items.find((it: any) => it.operation?.includes('Compare'));
     expect(compareItem).toBeTruthy();
     expect(compareItem).not.toHaveProperty('dataUrl');
@@ -38,12 +37,11 @@ test.describe('Phase 2 Shared — History Tracking & Privacy @phase2 @history', 
     await uploadFileToDropzone(page, cleanPath);
     await waitForProcessingToFinish(page);
 
-    const sanitizeBtn = page.locator('app-button button:has-text("Sanitize"), app-button button:has-text("संवेदनशील डेटा हटाएं")').first();
+    const sanitizeBtn = page.locator('app-button[data-testid="start-sanitization"] button').first();
     await sanitizeBtn.click();
     await waitForProcessingToFinish(page);
 
-    const historyJson = await page.evaluate(() => localStorage.getItem('IFH_HISTORY_V2'));
-    const items = JSON.parse(historyJson || '[]');
+    const items = await readHistory(page);
     const privItem = items.find((it: any) => it.operation?.includes('Sanitize') || it.operation?.includes('Privacy'));
     expect(privItem).toBeTruthy();
   });

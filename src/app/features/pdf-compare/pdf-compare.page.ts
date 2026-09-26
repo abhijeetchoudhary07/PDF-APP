@@ -281,16 +281,26 @@ export class PdfComparePage {
       const origCanvas = document.createElement('canvas');
       const modCanvas = document.createElement('canvas');
 
-      const origDoc = await this.renderService.loadPdf(
+      /*
+       * Each document is rendered while it is the loaded one.
+       *
+       * `PdfRenderService` holds a single active document and `loadPdf`
+       * destroys the previous one, so loading both up front and rendering
+       * afterwards drew *both* canvases from the modified file -- the visual
+       * diff was comparing that document against itself and could only ever
+       * come back blank. The two local handles this used to keep were never
+       * passed to anything, which is what hid it.
+       */
+      await this.renderService.loadPdf(
         await this.originalFile.arrayBuffer(),
         'orig_' + this.originalFile.name
       );
-      const modDoc = await this.renderService.loadPdf(
+      await this.renderService.renderPageToCanvas(match.originalPageNumber, origCanvas, 1.0);
+
+      await this.renderService.loadPdf(
         await this.modifiedFile.arrayBuffer(),
         'mod_' + this.modifiedFile.name
       );
-
-      await this.renderService.renderPageToCanvas(match.originalPageNumber, origCanvas, 1.0);
       await this.renderService.renderPageToCanvas(match.modifiedPageNumber, modCanvas, 1.0);
 
       this.visualDiffUrl = await this.compareService.generateVisualDiff(origCanvas, modCanvas);

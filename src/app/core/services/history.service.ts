@@ -24,10 +24,26 @@ export class HistoryService {
 
   async getHistory(): Promise<HistoryItem[]> {
     const { value } = await Preferences.get({ key: HISTORY_STORAGE_KEY });
-    if (value) {
-      return JSON.parse(value);
+    if (!value) return [];
+
+    /*
+     * A stored value that will not parse is treated as no history.
+     *
+     * This is hand-written JSON in Preferences, and a partial write, a killed
+     * process mid-save or a downgrade can leave it truncated. `JSON.parse` threw
+     * straight out of here, and because every caller awaits `getHistory` the
+     * rejection surfaced as a blank history page and a blank profile page --
+     * with the real list still on disk but unreachable, since nothing could get
+     * far enough to rewrite it. Returning an empty list keeps both pages usable
+     * and lets the next save replace the damaged value.
+     */
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      console.warn('Stored history could not be read and was ignored.');
+      return [];
     }
-    return [];
   }
 
   async addHistoryItem(item: Omit<HistoryItem, 'id' | 'date'>): Promise<void> {

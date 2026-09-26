@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indian Form Helper — Hinglish Explainer & Benefits Video Studio</title>
+  <style>
+    :root {
+      --bg: #090e17;
+      --card-bg: #111a28;
+      --card-border: #1f2d42;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --emerald: #10b981;
+      --emerald-dark: #064e3b;
+      --gold: #f59e0b;
+      --blue: #3b82f6;
+      --red: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 24px;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--emerald-dark);
+      color: var(--emerald);
+      border: 1px solid var(--emerald);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .video-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .video-container {
+      position: relative;
+      background: #000;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .video-info {
+      padding: 20px;
+    }
+    .video-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .video-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .controls-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--emerald);
+      color: #000;
+    }
+    .btn-primary:hover {
+      background: #34d399;
+    }
+    .btn-secondary {
+      background: var(--card-border);
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      background: #334155;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chapter-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chapter-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chapter-item:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: var(--card-border);
+    }
+    .chapter-item.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--emerald);
+    }
+    .chapter-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .chapter-time {
+      font-size: 12px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .benefit-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .benefit-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--emerald);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .benefit-card-desc {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .storyboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .storyboard-thumb {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #000;
+      cursor: pointer;
+    }
+    .storyboard-thumb img {
+      width: 100%;
+      display: block;
+      transition: transform 0.2s;
+    }
+    .storyboard-thumb:hover img {
+      transform: scale(1.04);
+    }
+    .thumb-label {
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--card-bg);
+      display: flex;
+      justify-content: space-between;
+    }
+    .seo-box {
+      background: #05080f;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #94a3b8;
+      max-height: 180px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      user-select: all;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="brand-title">
+      <span>🇮🇳 Indian Form Helper</span>
+      <span class="badge">Master Hinglish Video</span>
+    </div>
+    <div style="font-size: 13px; color: var(--muted);">
+      Duration: 1m 48s • Full HD 1080p • 100% Offline Toolkit
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Master Video Player -->
+    <div class="video-card">
+      <div class="video-container">
+        <video id="player" controls poster="indian_form_helper_thumbnail.png">
+          <source src="indian_form_helper_explainer_hinglish.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      <div class="video-info">
+        <h2 class="video-title">Ab Sarkari Exam Form Kabhi Reject Nahi Hoga! 📱 Indian Form Helper</h2>
+        <div class="video-meta">
+          <span>1080p Full HD @ 25fps</span>
+          <span>H.264 / AAC Audio</span>
+          <span>Hinglish Voiceover</span>
+          <span>Size: 4.6 MB</span>
+        </div>
+        <div class="controls-row">
+          <a href="indian_form_helper_explainer_hinglish.mp4" download class="btn btn-primary">
+            ⬇️ Download MP4 Video
+          </a>
+          <button class="btn btn-secondary" onclick="copyVideoPath()">
+            📋 Copy File Path
+          </button>
+          <a href="../../videos/indian_form_helper_thumbnail.png" download class="btn btn-secondary">
+            🖼️ Download HD Thumbnail
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chapter Navigation -->
+    <div class="sidebar">
+      <div class="panel">
+        <div class="panel-title">
+          <span>🎬 Jump to Chapter</span>
+          <span style="font-size: 12px; color: var(--muted);">Click to seek</span>
+        </div>
+        <div class="chapter-list">
+          <div class="chapter-item" onclick="seekTo(0)">
+            <span class="chapter-name">1. The Problem: Rejections & Cafe</span>
+            <span class="chapter-time">0:00</span>
+          </div>
+          <div class="chapter-item" onclick="seekTo(17)">
+            <span class="chapter-name">2. Introducing App & 100% Offline</span>
+            <span class="chapter-time">0:17</span>
+          </div>
+          <div class="chapter-item" onclick="seekTo(35)">
+            <span class="chapter-name">3. Photo Presets & Magic Signature</span>
+            <span class="chapter-time">0:35</span>
+          </div>
+          <div class="chapter-item" onclick="seekTo(50)">
+            <span class="chapter-name">4. PDF Studio: Compress & Merge</span>
+            <span class="chapter-time">0:50</span>
+          </div>
+          <div class="chapter-item" onclick="seekTo(65)">
+            <span class="chapter-name">5. Smart Scanner & 5 Languages OCR</span>
+            <span class="chapter-time">1:05</span>
+          </div>
+          <div class="chapter-item" onclick="seekTo(80)">
+            <span class="chapter-name">6. Top 5 Benefits for Aspirants</span>
+            <span class="chapter-time">1:20</span>
+          </div>
+          <div class="chapter-item" onclick="seekTo(98)">
+            <span class="chapter-name">7. Call to Action: Download Free</span>
+            <span class="chapter-time">1:38</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">
+          <span>🛡️ Core Guarantee</span>
+        </div>
+        <div style="font-size: 13px; color: var(--muted); line-height: 1.6;">
+          <strong style="color: var(--emerald);">100% Airplane Mode Safe:</strong> Har document aapke phone me hi process hota hai. Aadhaar card ya marksheets kabhi internet server par nahi jate!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benefits Section -->
+  <h3 style="margin-top: 10px; margin-bottom: 12px; font-size: 18px;">⭐ 5 Core Benefits Highlighted in Video</h3>
+  <div class="benefit-grid">
+    <div class="benefit-card">
+      <div class="benefit-card-title">1. Zero Form Rejections</div>
+      <div class="benefit-card-desc">SSC, UPSC, aur Banking ke liye exact pixel lock aur under 50 KB compliance. Form kabhi reject nahi hota.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-card-title">2. 100% Offline Privacy</div>
+      <div class="benefit-card-desc">Zero cloud uploads. Sensitive Aadhaar, category certificates phone ke andar hi rehte hain.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-card-title">3. Cyber Cafe Savings</div>
+      <div class="benefit-card-desc">Har form par ₹50 se ₹100 bachaayein aur 2 ghante ki lambi dhoop wali line se azaadi payein.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-card-title">4. 27+ Heavy Document Tools</div>
+      <div class="benefit-card-desc">Resize photo, magic signature cleaner, exact KB compressor, merge, scan, aur multilingual OCR.</div>
+    </div>
+  </div>
+
+  <!-- Storyboard Section -->
+  <h3 style="margin-top: 36px; margin-bottom: 12px; font-size: 18px;">📸 Scene-by-Scene Visual Storyboard</h3>
+  <div class="storyboard-grid">
+    <div class="storyboard-thumb" onclick="seekTo(0)">
+      <img src="../../videos/indian_form_helper_thumbnail.png" alt="Scene 1">
+      <div class="thumb-label">
+        <span>Scene 1: The Problem</span>
+        <span style="color: var(--muted);">0:00</span>
+      </div>
+    </div>
+    <div class="storyboard-thumb" onclick="seekTo(17)">
+      <img src="../../videos/indian_form_helper_thumbnail.png" alt="Scene 2">
+      <div class="thumb-label">
+        <span>Scene 2: The Solution</span>
+        <span style="color: var(--muted);">0:17</span>
+      </div>
+    </div>
+    <div class="storyboard-thumb" onclick="seekTo(35)">
+      <img src="../../videos/indian_form_helper_thumbnail.png" alt="Scene 3">
+      <div class="thumb-label">
+        <span>Scene 3: Photo & Signature</span>
+        <span style="color: var(--muted);">0:35</span>
+      </div>
+    </div>
+    <div class="storyboard-thumb" onclick="seekTo(50)">
+      <img src="../../videos/indian_form_helper_thumbnail.png" alt="Scene 4">
+      <div class="thumb-label">
+        <span>Scene 4: PDF Studio</span>
+        <span style="color: var(--muted);">0:50</span>
+      </div>
+    </div>
+    <div class="storyboard-thumb" onclick="seekTo(65)">
+      <img src="../../videos/indian_form_helper_thumbnail.png" alt="Scene 5">
+      <div class="thumb-label">
+        <span>Scene 5: Scanner & OCR</span>
+        <span style="color: var(--muted);">1:05</span>
+      </div>
+    </div>
+    <div class="storyboard-thumb" onclick="seekTo(80)">
+      <img src="../../videos/indian_form_helper_thumbnail.png" alt="Scene 6">
+      <div class="thumb-label">
+        <span>Scene 6: Benefits</span>
+        <span style="color: var(--muted);">1:20</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- YouTube SEO Kit -->
+  <h3 style="margin-top: 36px; margin-bottom: 12px; font-size: 18px;">🚀 YouTube SEO & Publishing Kit</h3>
+  <div class="panel">
+    <div class="panel-title">
+      <span>YouTube Video Title & Description</span>
+      <button class="btn btn-secondary" onclick="copySEO()">Copy Kit</button>
+    </div>
+    <div class="seo-box" id="seoText">TITLE:
+Ab Sarkari Exam Form Kabhi Reject Nahi Hoga! 📱 Indian Form Helper (Photo, Signature & PDF Tools)
+
+DESCRIPTION:
+SSC, UPSC, IBPS, Railways ya State PSC ka exam form bharte waqt kya aapka form bhi Photo size, Signature shadow ya PDF size exceed hone ki wajah se reject ho jata hai? 
+
+Ab cyber cafe me ghanto khade rehne aur 50-100 rupaye kharch karne ki bilkul zaroorat nahi hai! Meet "Indian Form Helper" — India ka pehla 100% OFFLINE document toolkit jo aapke mobile me bina internet ke chalta hai. Aapka Aadhaar, photo ya certificate kabhi kisi server par upload nahi hota!
+
+⏱️ VIDEO CHAPTERS:
+0:00 - The Real Problem: Exam Form Rejections & Cyber Cafe Hassle
+0:17 - Introducing Indian Form Helper (100% Offline & Private)
+0:35 - Photo Tools: SSC, UPSC, IBPS 1-Tap Presets & Magic Signature
+0:50 - PDF Studio: Compress 10 MB to 294 KB Without Blur & Sign on Screen
+1:05 - Auto Edge-Detection Scanner & 5 Languages OCR (English, Hindi, Marathi, Bengali, Punjabi)
+1:20 - Top 5 Benefits of Indian Form Helper
+1:38 - Download Free on Google Play Store
+
+TAGS / HASHTAGS:
+#SarkariExam #SSCCGL #UPSC #IndianFormHelper #PDFCompressor #SignatureCleaner #PhotoResize #ExamFormFill #CyberCafe #GovernmentJobs #AdmitCard #DocumentHelper</div>
+  </div>
+
+</div>
+
+<script>
+  const video = document.getElementById('player');
+  function seekTo(sec) {
+    video.currentTime = sec;
+    video.play();
+  }
+  function copyVideoPath() {
+    navigator.clipboard.writeText('/Users/abhijeetchoudhary/Desktop/PDF APP/videos/indian_form_helper_explainer_hinglish.mp4');
+    alert('Video path copied to clipboard!');
+  }
+  function copySEO() {
+    const text = document.getElementById('seoText').innerText;
+    navigator.clipboard.writeText(text);
+    alert('YouTube SEO kit copied to clipboard!');
+  }
+</script>
+
+</body>
+</html>

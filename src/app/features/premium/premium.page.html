@@ -236,22 +236,27 @@
                   data-testid="open-upi">
                   Open UPI app
                 </app-button>
+                <!--
+                `@if` narrows `settings` for the whole block, so the `?.` these
+                used to carry was flagged by NG8107 as provably unnecessary. It
+                was needed under `*ngIf`, which did not narrow.
+                -->
                 @if (settings?.bankAccountNumber) {
                   <div class="bank-box">
                     <span class="bank-title">Or transfer to the bank account</span>
                     <dl>
-                      <div><dt>Account name</dt><dd>{{ settings?.bankAccountName }}</dd></div>
-                      <div><dt>Account number</dt><dd>{{ settings?.bankAccountNumber }}</dd></div>
-                      <div><dt>IFSC</dt><dd>{{ settings?.bankIfsc }}</dd></div>
-                      @if (settings?.bankName) {
-                        <div><dt>Bank</dt><dd>{{ settings?.bankName }}</dd></div>
+                      <div><dt>Account name</dt><dd>{{ settings.bankAccountName }}</dd></div>
+                      <div><dt>Account number</dt><dd>{{ settings.bankAccountNumber }}</dd></div>
+                      <div><dt>IFSC</dt><dd>{{ settings.bankIfsc }}</dd></div>
+                      @if (settings.bankName) {
+                        <div><dt>Bank</dt><dd>{{ settings.bankName }}</dd></div>
                       }
                     </dl>
                   </div>
                 }
                 @if (settings?.instructions) {
                   <p class="pay-instructions">
-                    {{ settings?.instructions }}
+                    {{ settings.instructions }}
                   </p>
                 }
               </li>

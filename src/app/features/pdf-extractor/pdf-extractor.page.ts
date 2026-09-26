@@ -19,7 +19,6 @@ import {
   AppFooterComponent,
   AppPageHeaderComponent,
   AppButtonComponent,
-  AppBadgeComponent,
   AppTabsComponent,
   AppRelatedToolsComponent,
   FileDropzoneComponent,
@@ -43,7 +42,6 @@ export type ExtractorTab = 'text' | 'images' | 'tables' | 'pages' | 'attachments
     AppFooterComponent,
     AppPageHeaderComponent,
     AppButtonComponent,
-    AppBadgeComponent,
     AppTabsComponent,
     AppRelatedToolsComponent,
     FileDropzoneComponent,
@@ -196,7 +194,24 @@ export class PdfExtractorPage {
   downloadJson(): void {
     if (!this.extractedContent || !this.selectedFile) return;
     const baseName = this.selectedFile.name.replace(/\.pdf$/i, '');
-    const jsonStr = JSON.stringify(this.extractedContent.pageTexts, null, 2);
+    /*
+     * An envelope, not a bare array.
+     *
+     * This used to write `pageTexts` on its own, which left the file unable to
+     * say what it was: no source document, no page count, and no way to tell a
+     * two-page extraction that returned one page of text from a one-page PDF.
+     * Anything reading it back had to be told those out of band.
+     */
+    const jsonStr = JSON.stringify(
+      {
+        sourceFile: this.selectedFile.name,
+        extractedAt: new Date().toISOString(),
+        totalPages: this.extractedContent.totalPages,
+        pageTexts: this.extractedContent.pageTexts,
+      },
+      null,
+      2,
+    );
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const file = new File([blob], `${baseName}_extracted_text.json`, { type: 'application/json' });
     this.fileService.downloadFile(file);

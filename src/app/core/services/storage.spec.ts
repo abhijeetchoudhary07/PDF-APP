@@ -209,31 +209,27 @@ describe('StorageService', () => {
     });
 
     /*
-     * The extension is taken as `name.split('.').pop()`, which for a name with
-     * no dot in it returns the whole name rather than nothing. So the `|| 'jpg'`
-     * fallback only fires for a name that *ends* in a dot, and an extensionless
-     * file is written as `photo_1kb_1234567890.noextension`.
-     *
-     * Every caller passes a name that came from a real file or from this
-     * service's own output, so neither case is reachable today. These two pin
-     * the behaviour down so a future change to the naming is a deliberate one.
+     * The extension used to be `name.split('.').pop()`, which returns the whole
+     * name when there is no dot in it -- so `scan` was written as
+     * `photo_1kb_1234567890.scan` and the `|| 'jpg'` fallback only ever fired
+     * for a name ending in a dot.
      */
-    it('reuses a dotless name as the extension rather than falling back to jpg', async () => {
+    it.each(['noextension', 'trailing.', '.hidden'])('falls back to jpg for %p', async name => {
       isNative = true;
 
-      await storage.saveFile(new File([new Uint8Array(1024)], 'noextension', { type: 'image/jpeg' }), 'photo');
-
-      const { path } = writeFile.mock.calls[0][0] as { path: string };
-      expect(path.endsWith('.noextension')).toBe(true);
-    });
-
-    it('falls back to jpg only when the name ends in a dot', async () => {
-      isNative = true;
-
-      await storage.saveFile(new File([new Uint8Array(1024)], 'trailing.', { type: 'image/jpeg' }), 'photo');
+      await storage.saveFile(new File([new Uint8Array(1024)], name, { type: 'image/jpeg' }), 'photo');
 
       const { path } = writeFile.mock.calls[0][0] as { path: string };
       expect(path.endsWith('.jpg')).toBe(true);
+    });
+
+    it('still takes a real extension from a dotted name', async () => {
+      isNative = true;
+
+      await storage.saveFile(new File([new Uint8Array(1024)], 'my.scan.v2.png', { type: 'image/png' }), 'photo');
+
+      const { path } = writeFile.mock.calls[0][0] as { path: string };
+      expect(path.endsWith('.png')).toBe(true);
     });
   });
 });

@@ -29,7 +29,35 @@ test.describe('PDF Compare — Visual Diff & Stable UI States @phase2 @compare @
 
     // Verify visual diff display container is rendered
     await expect(page.locator('.diff-view-visual')).toBeVisible();
-    await expect(page.locator('.visual-diff-display, .visual-empty').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.visual-diff-img')).toBeVisible({ timeout: 15000 });
+
+    /*
+     * The container being on screen is not evidence the diff worked.
+     *
+     * `PdfRenderService` keeps one active document and `loadPdf` destroys the
+     * previous one, so the page used to load both files and only then render
+     * the two canvases -- both of which therefore came from the *modified*
+     * document. The comparison was a document against itself and the image was
+     * always unmarked, while this spec passed on the container alone.
+     *
+     * `generateVisualDiff` paints every differing pixel rgb(239,68,68), so
+     * counting those pixels is what actually says the two documents were
+     * compared.
+     */
+    const changedPixels = await page.locator('.visual-diff-img').evaluate((img: HTMLImageElement) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d')!.drawImage(img, 0, 0);
+      const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
+      let marked = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] === 239 && data[i + 1] === 68 && data[i + 2] === 68) marked++;
+      }
+      return marked;
+    });
+
+    expect(changedPixels, 'the visual diff highlighted nothing, so the two documents were not compared').toBeGreaterThan(0);
   });
 
   test('CMP-061: Stable UI states for empty and populated compare page', async ({ page }) => {

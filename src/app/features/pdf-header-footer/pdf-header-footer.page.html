@@ -71,7 +71,7 @@
           </div>
           <!-- TAB: FOOTER -->
           @if (activeTab === 'footer') {
-            <div class="tab-content">
+            <div class="tab-content" data-testid="footer-fields">
               <div class="input-group">
                 <label>{{ 'headerFooter.footerLeft' | translate }}</label>
                 <input
@@ -106,7 +106,7 @@
           }
           <!-- TAB: HEADER -->
           @if (activeTab === 'header') {
-            <div class="tab-content">
+            <div class="tab-content" data-testid="header-fields">
               <div class="input-group">
                 <label>{{ 'headerFooter.headerLeft' | translate }}</label>
                 <input

@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 export const APP_ROUTES: Routes = [
   {
     path: 'home',
-    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
+    loadComponent: () => import('./home/home.page').then(m => m.HomePage)
   },
   {
     path: 'features/photo',

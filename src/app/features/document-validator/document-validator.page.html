@@ -20,8 +20,16 @@
             [(ngModel)]="presetSearchQuery"
             />
           <div class="preset-pills-scroll">
-            @for (group of filteredPresetGroups; track group) {
-              @for (p of group.presets; track p) {
+            <!--
+            Tracked by identity strings, not by object.
+            `filteredPresetGroups` is a getter that builds a fresh `{category,
+            presets}` object on every read as soon as there is a search query.
+            Tracking the object meant a new identity on every change-detection
+            pass, so the whole list was torn down and rebuilt continuously and
+            the pills rendered blank the moment anyone typed in the search box.
+            -->
+            @for (group of filteredPresetGroups; track group.category) {
+              @for (p of group.presets; track p.id) {
                 <button
                   type="button"
                   class="preset-pill"
@@ -48,7 +56,7 @@
             <app-badge color="primary">{{ selectedPreset.category }}</app-badge>
             @if (selectedPreset.photo?.verifiedSource) {
               <app-badge color="success">
-                {{ 'validator.officialVerified' | translate }}: {{ selectedPreset.photo?.verifiedSource }}
+                {{ 'validator.officialVerified' | translate }}: {{ selectedPreset.photo.verifiedSource }}
               </app-badge>
             }
           </div>

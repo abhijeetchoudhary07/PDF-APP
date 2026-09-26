@@ -20,6 +20,30 @@ export class PdfRenderService {
   private thumbnailCache = new Map<string, string>(); // key: `${docId}_p${pageNumber}`
   private currentRenderTask: any = null;
 
+  /*
+   * Renders run one at a time, and only the most recent one paints.
+   *
+   * Two things were wrong. `renderPageToCanvas` cancelled the previous task
+   * and then `await`ed `getPage`, and that await was a hole: the field was
+   * already null, so the next caller's cancel guard found nothing to cancel
+   * and carried on. The editor subscribes to `document$`, `currentPage$` and
+   * `zoom$` -- all BehaviorSubjects, all emitting synchronously on subscribe
+   * -- so opening a PDF fired three renders into that hole at once and pdf.js
+   * refused them: "Cannot use the same canvas during multiple render()
+   * operations", six times on a clean document open. It then `await`ed
+   * `this.currentRenderTask.promise`, a field that by then could belong to a
+   * different render, and nulled it in `finally` whoever owned it.
+   *
+   * `renderQueue` serialises, so there is exactly one render in flight for a
+   * cancel to find. `renderGeneration` is what keeps that from being slow:
+   * asking for a render retires every earlier one immediately, so a queued
+   * render that has already been superseded returns without doing any work,
+   * and the in-flight one is cancelled rather than run to completion. Spinning
+   * the zoom control costs one render, not one per tick.
+   */
+  private renderQueue: Promise<unknown> = Promise.resolve();
+  private renderGeneration = 0;
+
   constructor() {}
 
   async loadPdf(arrayBuffer: ArrayBuffer, docId: string): Promise<any> {
@@ -28,6 +52,13 @@ export class PdfRenderService {
     }
 
     if (this.activePdfDoc) {
+      /*
+       * Swapping the document retires anything queued against the old one, for
+       * the same reason `clear()` does: a render that was asked for while the
+       * previous document was loaded must not paint pages out of this one.
+       */
+      this.renderGeneration++;
+      this.cancelCurrentRenderTask();
       try {
         await this.activePdfDoc.destroy();
       } catch {
@@ -55,22 +86,61 @@ export class PdfRenderService {
   /**
    * Renders a specific page onto an HTMLCanvasElement with device pixel ratio scaling.
    */
-  async renderPageToCanvas(
+  renderPageToCanvas(
     pageNumber: number,
     canvas: HTMLCanvasElement,
     scale: number,
     rotation: number = 0
   ): Promise<RenderPageResult> {
-    if (this.currentRenderTask) {
-      try {
-        this.currentRenderTask.cancel();
-      } catch {
-        // ignore cancel error
-      }
-      this.currentRenderTask = null;
+    const generation = ++this.renderGeneration;
+
+    // Abort whatever is painting now; it is already out of date.
+    this.cancelCurrentRenderTask();
+
+    const attempt = () => this.renderPageNow(generation, pageNumber, canvas, scale, rotation);
+    const run = this.renderQueue.then(attempt, attempt);
+
+    // The queue must not stop on a rejection, and an unobserved rejection on
+    // this chain must not surface as an unhandled promise.
+    this.renderQueue = run.catch(() => undefined);
+    return run;
+  }
+
+  private cancelCurrentRenderTask(): void {
+    if (!this.currentRenderTask) return;
+    try {
+      this.currentRenderTask.cancel();
+    } catch {
+      // A task that has already settled throws on cancel; nothing to do.
+    }
+    this.currentRenderTask = null;
+  }
+
+  private async renderPageNow(
+    generation: number,
+    pageNumber: number,
+    canvas: HTMLCanvasElement,
+    scale: number,
+    rotation: number = 0
+  ): Promise<RenderPageResult> {
+    const page = await this.getPage(pageNumber);
+
+    /*
+     * Superseded while queued. Returning the geometry without painting keeps
+     * the caller's contract -- it asked for the size of a page at a scale, and
+     * that answer is still correct -- while leaving the canvas to whichever
+     * render is current. Resizing it here would blank the newer render's work.
+     */
+    if (generation !== this.renderGeneration) {
+      const superseded = page.getViewport({ scale, rotation });
+      return {
+        width: superseded.width,
+        height: superseded.height,
+        scale,
+        viewport: superseded
+      };
     }
 
-    const page = await this.getPage(pageNumber);
     const dpr = window.devicePixelRatio || 1;
 
     // The viewport scale includes DPR for crisp retina rendering
@@ -90,19 +160,24 @@ export class PdfRenderService {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    this.currentRenderTask = page.render({
+    const task = page.render({
       canvasContext: ctx,
       viewport
     } as any);
+    this.currentRenderTask = task;
 
     try {
-      await this.currentRenderTask.promise;
+      // The local `task`, not the field: by the time this settles the field
+      // may already belong to the next render.
+      await task.promise;
     } catch (e: any) {
       if (e?.name !== 'RenderingCancelledException') {
         throw e;
       }
     } finally {
-      this.currentRenderTask = null;
+      if (this.currentRenderTask === task) {
+        this.currentRenderTask = null;
+      }
     }
 
     return {
@@ -212,6 +287,8 @@ export class PdfRenderService {
   }
 
   clear() {
+    // Retire anything queued: the document it would render from is going away.
+    this.renderGeneration++;
     if (this.currentRenderTask) {
       try {
         this.currentRenderTask.cancel();

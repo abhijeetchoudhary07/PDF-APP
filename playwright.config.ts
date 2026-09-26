@@ -18,6 +18,12 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
+  /*
+   * Web-first assertions retry until this deadline. The default 5s was enough
+   * for a quiet machine but not for a `toHaveValue` racing a component that is
+   * still wiring itself up behind three other workers' PDF renders.
+   */
+  expect: { timeout: 10000 },
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 0,
@@ -31,7 +37,18 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 10000,
+    /*
+     * 20s, not 10s.
+     *
+     * These pages render PDFs with pdf.js on the main thread, and the suite
+     * runs them four at a time. A click that waits on a page still rasterising
+     * its images is slow, not broken -- EXT-022 and HF-010 each failed roughly
+     * one full run in three on a click or a fill that then passed every time
+     * when the same specs were run serially. Nothing is weakened by waiting
+     * longer: an action that succeeds in twelve seconds is still a pass, and a
+     * genuinely broken locator still fails, just later.
+     */
+    actionTimeout: 20000,
     /*
      * Generous against the dev server because a first visit to an
      * uncompiled lazy route legitimately takes tens of seconds on a loaded

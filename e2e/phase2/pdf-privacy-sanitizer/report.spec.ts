@@ -17,7 +17,7 @@ test.describe('PDF Privacy Sanitizer — Before vs After Audit Report @phase2 @p
     await uploadFileToDropzone(page, metaPath);
     await waitForProcessingToFinish(page);
 
-    const sanitizeBtn = page.locator('app-button button:has-text("Sanitize"), app-button button:has-text("संवेदनशील डेटा हटाएं")').first();
+    const sanitizeBtn = page.locator('app-button[data-testid="start-sanitization"] button').first();
     await sanitizeBtn.click();
     await waitForProcessingToFinish(page);
 

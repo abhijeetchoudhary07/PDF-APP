@@ -181,11 +181,17 @@ test.describe('Release — Credential validation @release @auth', () => {
     await fillCredentials(page, 'someone@example.com', 'short');
     await page.getByRole('button', { name: 'Create account' }).click({ timeout: 30000 });
 
-    // The password is what should be complained about now, not the address.
-    const errors = await page.locator('.input-error, [class*="error"]').allInnerTexts();
-    const joined = errors.join(' ');
-    expect(joined).toMatch(/8 characters/i);
-    expect(joined).not.toMatch(/valid email/i);
+    /*
+     * `expect().toContainText` rather than a bare `allInnerTexts()`.
+     * Validation runs on click and the message renders on the next change
+     * detection pass, so reading the DOM once, immediately, sampled it before
+     * it had anything to say -- the assertion saw "" and failed on an app that
+     * was working. The retrying form waits for the message instead.
+     */
+    const errors = page.locator('.input-error');
+    await expect(errors).toHaveCount(1);
+    await expect(errors.first()).toContainText(/8 characters/i);
+    await expect(errors.first()).not.toContainText(/valid email/i);
   });
 
   test('AUTHV-003: a short password is rejected without a request', async ({ page }) => {
@@ -218,9 +224,11 @@ test.describe('Release — Credential validation @release @auth', () => {
     await fillCredentials(page, 'nope', 'short');
     await page.getByRole('button', { name: 'Create account' }).click({ timeout: 30000 });
 
-    const joined = (await page.locator('.input-error, [class*="error"]').allInnerTexts()).join(' ');
-    expect(joined, 'the email problem was not reported').toMatch(/email/i);
-    expect(joined, 'the password problem was not reported').toMatch(/8 characters/i);
+    // Both fields report together, so both messages are on screen at once.
+    const errors = page.locator('.input-error');
+    await expect(errors).toHaveCount(2);
+    await expect(errors.filter({ hasText: /email/i }), 'the email problem was not reported').toHaveCount(1);
+    await expect(errors.filter({ hasText: /8 characters/i }), 'the password problem was not reported').toHaveCount(1);
   });
 
   test('AUTHV-006: the password is never rendered in the DOM as text', async ({ page }) => {

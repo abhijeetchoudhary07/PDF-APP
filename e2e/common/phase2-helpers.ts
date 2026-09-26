@@ -222,3 +222,21 @@ export function setupErrorListener(page: Page): {
 
   return { consoleErrors, pageErrors, failedRequests };
 }
+
+/**
+ * Reads the local processing history the way the app actually stores it.
+ *
+ * `HistoryService` goes through `@capacitor/preferences`, and on the web that
+ * plugin keeps every value in `localStorage` under a `CapacitorStorage.`
+ * prefix. Specs that read the bare `IFH_HISTORY_V2` key found nothing and had
+ * been failing on that alone. Both spellings are checked because
+ * `setupCapacitorMocks` installs an unprefixed stand-in, which takes effect
+ * only when the app resolves the plugin through `window.Capacitor.Plugins`.
+ */
+export async function readHistory(page: Page): Promise<Array<Record<string, any>>> {
+  const raw = await page.evaluate(() => {
+    const KEY = 'IFH_HISTORY_V2';
+    return localStorage.getItem(`CapacitorStorage.${KEY}`) ?? localStorage.getItem(KEY);
+  });
+  return raw ? JSON.parse(raw) : [];
+}

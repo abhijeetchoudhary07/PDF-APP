@@ -73,6 +73,19 @@ export class PdfOcrPage implements OnInit, OnDestroy {
 
   // Detection state
   isDetecting = false;
+
+  /*
+   * Which detection run owns the component state.
+   *
+   * Detection is async and nothing used to cancel a run that had been
+   * superseded. Choosing a file, going back, and choosing another one quickly
+   * enough left the first run still in flight; when it finished it wrote its
+   * own results over the new file's -- or, if `resetAll` had cancelled its job
+   * so that it threw, its error path cleared `selectedFile` and sent the page
+   * back to the picker, discarding a file the person had just chosen. Every
+   * run takes a ticket, and only the holder of the current one may write.
+   */
+  private detectionRun = 0;
   hasSelectableText = false;
   textSample = '';
   totalPages = 0;
@@ -173,12 +186,15 @@ export class PdfOcrPage implements OnInit, OnDestroy {
   }
 
   private async runTextDetection(file: File): Promise<void> {
+    const run = ++this.detectionRun;
     this.currentStep = 'detect';
     this.isDetecting = true;
     this.cdr.detectChanges();
 
     try {
       const detection = await this.ocrService.detectSelectableText(file);
+      if (run !== this.detectionRun) return;
+
       this.hasSelectableText = detection.hasText;
       this.textSample = detection.textSample;
       this.totalPages = detection.pageCount;
@@ -197,6 +213,9 @@ export class PdfOcrPage implements OnInit, OnDestroy {
 
       this.currentStep = 'detect';
     } catch {
+      // A run that has been superseded says nothing and changes nothing.
+      if (run !== this.detectionRun) return;
+
       /*
        * Detection fails when pdf.js cannot open the document at all -- a
        * truncated download, a renamed file that was never a PDF, a damaged
@@ -222,8 +241,11 @@ export class PdfOcrPage implements OnInit, OnDestroy {
       this.selectedPageNumbers = [];
       this.currentStep = 'select';
     } finally {
-      this.isDetecting = false;
-      this.cdr.detectChanges();
+      // A superseded run must not clear the spinner the current one put up.
+      if (run === this.detectionRun) {
+        this.isDetecting = false;
+        this.cdr.detectChanges();
+      }
     }
   }
 
@@ -436,6 +458,8 @@ export class PdfOcrPage implements OnInit, OnDestroy {
   }
 
   resetAll(): void {
+    // Retire any detection still running, so its continuation writes nothing.
+    this.detectionRun++;
     this.ocrService.cancelJob();
     this.clearPreviewUrl();
     this.selectedFile = undefined;

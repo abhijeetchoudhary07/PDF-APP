@@ -26,7 +26,7 @@ test.describe('PDF Privacy Sanitizer — Sanitization Execution & Output Verific
     await metaCheckbox.setChecked(true);
 
     // Click Sanitize button
-    const sanitizeBtn = page.locator('app-button button:has-text("Sanitize"), app-button button:has-text("संवेदनशील डेटा हटाएं")').first();
+    const sanitizeBtn = page.locator('app-button[data-testid="start-sanitization"] button').first();
     await sanitizeBtn.click();
 
     await waitForProcessingToFinish(page);
@@ -63,7 +63,7 @@ test.describe('PDF Privacy Sanitizer — Sanitization Execution & Output Verific
       await checkboxes.nth(i).setChecked(true);
     }
 
-    const sanitizeBtn = page.locator('app-button button:has-text("Sanitize"), app-button button:has-text("संवेदनशील डेटा हटाएं")').first();
+    const sanitizeBtn = page.locator('app-button[data-testid="start-sanitization"] button').first();
     await sanitizeBtn.click();
 
     await waitForProcessingToFinish(page);

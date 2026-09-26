@@ -20,7 +20,7 @@ test.describe('PDF Repair — Recovery Workflow & Multi-Strategy Rebuilding @pha
     await expect(page.locator('.diagnostic-section')).toBeVisible({ timeout: 15000 });
 
     // Click Start Recovery
-    const startBtn = page.locator('app-button button:has-text("Start Recovery"), app-button button:has-text("मरम्मत शुरू करें")').first();
+    const startBtn = page.locator('app-button[data-testid="start-recovery"] button').first();
     await startBtn.click();
 
     await waitForProcessingToFinish(page);

@@ -3,7 +3,16 @@
  * ----------------------------------------------------------------------------
  */
 
-@import "./theme/variables.scss";
+/*
+ * The design tokens are NOT imported here.
+ *
+ * `angular.json` already lists `src/theme/variables.scss` as a global
+ * stylesheet in its own right, so importing it again was redundant -- and it
+ * was the app's only remaining Sass `@import`, a rule Dart Sass 3.0 removes.
+ * Nothing in this file defines a token, only `var()` references, and custom
+ * properties resolve at use time, so the load order of the two files does not
+ * matter.
+ */
 
 /* Core CSS required for Ionic components/Capacitor bridge */
 @import "@ionic/angular/css/core.css";

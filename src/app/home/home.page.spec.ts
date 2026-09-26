@@ -1,20 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { resolveAngularResources } from '../../test-setup';
 
-import { FormsModule } from '@angular/forms';
-import { RouterModule, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { HomePage } from './home.page';
-import { TranslatePipe } from '../shared/components/ui';
 
 import { ToolRegistryService } from '../core/services/tool-registry.service';
 import { TranslationService } from '../core/services/translation.service';
 
 /*
- * HomePage is declared by HomePageModule rather than being standalone, so it
- * goes in `declarations`. CUSTOM_ELEMENTS_SCHEMA covers the child components
- * its template uses, which this spec does not exercise.
+ * HomePage is standalone now, so it goes in `imports` and brings its own
+ * template dependencies with it -- no schema needed, and a missing import
+ * would fail the spec rather than being waved through as a custom element.
  */
 describe('HomePage', () => {
   let component: HomePage;
@@ -26,10 +23,8 @@ describe('HomePage', () => {
     await resolveAngularResources();
 
     TestBed.configureTestingModule({
-      declarations: [HomePage],
-      imports: [FormsModule, RouterModule, TranslatePipe],
+      imports: [HomePage],
       providers: [provideRouter([]), ToolRegistryService, TranslationService],
-      schemas: [CUSTOM_ELEMENTS_SCHEMA],
     });
 
 

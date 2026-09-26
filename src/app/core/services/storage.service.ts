@@ -43,7 +43,14 @@ export class StorageService {
     try {
       if (!file) throw new Error('File is missing');
 
-      const ext = file.name.split('.').pop() || 'jpg';
+      /*
+       * `split('.').pop()` returns the whole name when there is no dot in it,
+       * so a file called `scan` used to be written as `photo_50kb_1738.scan`
+       * and the `|| 'jpg'` fallback only ever fired for a name ending in a dot.
+       * Take the extension only when there really is one.
+       */
+      const dot = file.name.lastIndexOf('.');
+      const ext = (dot > 0 ? file.name.slice(dot + 1) : '') || 'jpg';
       const sizeKB = Math.round(file.size / 1024);
       // Example: photo_50kb_1638210.jpg to prevent overwrites
       const safeName = `${prefix}_${sizeKB}kb_${Math.floor(Date.now() / 1000)}.${ext}`;

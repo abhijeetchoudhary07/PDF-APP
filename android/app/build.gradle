@@ -77,9 +77,27 @@ android {
              * purpose: the extra inlining and class merging would buy almost
              * nothing on a code base this thin, and every one of those
              * transformations is another way for reflective plugin dispatch to
-             * stop resolving. Resource shrinking is likewise left off -- the
-             * icons and splash screens are referenced from the manifest and
-             * from JS by name, which `shrinkResources` cannot see.
+             * stop resolving.
+             *
+             * `shrinkResources` is off, and this is a measured decision rather
+             * than an assumption. Turning it on builds cleanly and takes the
+             * APK from 7,825,100 to 6,966,807 bytes -- 858 kB, about 11% --
+             * with every launcher, round-icon and splash resource still
+             * resolving (checked with `aapt2 dump badging`, which reports the
+             * same icon resource either way).
+             *
+             * What stops it shipping is one line in the shrinker's own report:
+             * `android.content.res.Resources#getIdentifier present: true`.
+             * Something in the dependency graph resolves resources by name at
+             * runtime, and the likeliest owner is RevenueCat, whose paywall is
+             * the one flow that cannot be exercised from a desktop build. AGP
+             * does fall back to a conservative mode when it sees that call, so
+             * the risk is small -- but the failure it protects against is a
+             * missing resource in the purchase flow, found by a customer.
+             *
+             * Turn it on once someone can install a release build and complete
+             * a purchase on a device. It is a one-line change and the 858 kB
+             * is worth having.
              */
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

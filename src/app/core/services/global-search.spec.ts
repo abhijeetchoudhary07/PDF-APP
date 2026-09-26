@@ -103,12 +103,6 @@ describe('GlobalSearchService', () => {
     });
   });
 
-  /*
-   * The listener is added in the constructor and never removed. For a service
-   * that is `providedIn: 'root'` and lives as long as the app, that is fine —
-   * but it does mean a second instance doubles the handler, which is why this
-   * is the one place the service is built twice on purpose.
-   */
   it('registers exactly one handler per instance', () => {
     const spy = vi.spyOn(window, 'addEventListener');
 
@@ -118,5 +112,38 @@ describe('GlobalSearchService', () => {
 
     expect(spy.mock.calls.filter(([type]) => type === 'keydown').length).toBe(1);
     spy.mockRestore();
+  });
+
+  /*
+   * The listener used to be an inline closure with nothing holding a reference
+   * to it, so it could never be removed. Tearing the injector down has to take
+   * the handler with it, or a rebuilt root doubles the toggle and Ctrl+K opens
+   * and immediately closes the palette.
+   */
+  it('removes its handler when the injector is destroyed', () => {
+    const removed: string[] = [];
+    const spy = vi.spyOn(window, 'removeEventListener').mockImplementation(((type: string) => {
+      removed.push(type);
+    }) as never);
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+    TestBed.inject(GlobalSearchService);
+    TestBed.resetTestingModule();
+
+    expect(removed).toContain('keydown');
+    spy.mockRestore();
+  });
+
+  it('a rebuilt service toggles once per shortcut, not twice', () => {
+    // The first instance is still the one under test; build a second the way a
+    // rebuilt root injector would, then check the shortcut is not doubled.
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+    const rebuilt = TestBed.inject(GlobalSearchService);
+
+    press('k', { ctrlKey: true });
+
+    expect(rebuilt.isOpen$.value).toBe(true);
   });
 });

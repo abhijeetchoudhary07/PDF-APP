@@ -19,7 +19,7 @@ test.describe('PDF Repair — Recovered Document Export @phase2 @repair @downloa
     await uploadFileToDropzone(page, pdfPath);
     await waitForProcessingToFinish(page);
 
-    const startBtn = page.locator('app-button button:has-text("Start Recovery"), app-button button:has-text("मरम्मत शुरू करें")').first();
+    const startBtn = page.locator('app-button[data-testid="start-recovery"] button').first();
     await startBtn.click();
     await waitForProcessingToFinish(page);
 

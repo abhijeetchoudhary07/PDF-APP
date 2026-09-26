@@ -144,13 +144,27 @@ describe('HistoryService', () => {
   /*
    * Corrupt storage is not hypothetical: the value is hand-written JSON in
    * Preferences, and a partial write or a downgrade can leave it unparseable.
-   * Today `getHistory` lets the SyntaxError out, which surfaces on the history
-   * page as a blank screen rather than an empty list. Pinned so that if the
-   * behaviour changes it is because someone chose to change it.
+   * `getHistory` used to let the SyntaxError out, which reached the history and
+   * profile pages as a blank screen.
    */
-  it('currently throws rather than recovering from a corrupt stored value', async () => {
+  it('reads a corrupt stored value as no history rather than throwing', async () => {
     store.set(KEY, '{not json');
 
-    await expect(history.getHistory()).rejects.toThrow();
+    await expect(history.getHistory()).resolves.toEqual([]);
+  });
+
+  it('ignores a stored value that parses but is not a list', async () => {
+    store.set(KEY, '{"unexpected":"shape"}');
+
+    await expect(history.getHistory()).resolves.toEqual([]);
+  });
+
+  it('can be written again after the damaged value is read', async () => {
+    store.set(KEY, '{not json');
+
+    await history.addHistoryItem(entry({ outputFileName: 'after.pdf' }));
+
+    const items = await history.getHistory();
+    expect(items.map(i => i.outputFileName)).toEqual(['after.pdf']);
   });
 });

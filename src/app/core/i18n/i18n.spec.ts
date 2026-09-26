@@ -190,6 +190,53 @@ describe('Internationalization (i18n) System', () => {
       const missingInPa = enKeys.filter(k => !paKeys.has(k));
       expect(missingInPa).toEqual([]);
     });
+
+    /*
+     * Parity of keys does not mean parity of placeholders.
+     *
+     * `translate()` interpolates `{{name}}` against the params a caller passes,
+     * and a placeholder that was mistyped or dropped in translation does not
+     * fail loudly -- it renders the literal `{{name}}` to the person, or
+     * silently omits the number the sentence was built around. A translated
+     * string is only interchangeable with its English original if it asks for
+     * exactly the same values. Order may differ, and for these languages it
+     * often must.
+     */
+    describe('placeholder parity', () => {
+      function resolve(dict: any, key: string): string | undefined {
+        const value = key.split('.').reduce<any>((o, k) => (o == null ? o : o[k]), dict);
+        return typeof value === 'string' ? value : undefined;
+      }
+
+      function placeholders(text: string): string[] {
+        return [...text.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g)].map(m => m[1]).sort();
+      }
+
+      const languages: Array<[string, any]> = [
+        ['Hindi', hi],
+        ['Marathi', mr],
+        ['Bengali', bn],
+        ['Punjabi', pa]
+      ];
+
+      it.each(languages)('%s uses the same placeholders as English', (_name, dict) => {
+        const mismatched: string[] = [];
+
+        for (const key of enKeys) {
+          const source = resolve(en, key);
+          const translated = resolve(dict, key);
+          if (source === undefined || translated === undefined) continue;
+
+          const wanted = placeholders(source);
+          const got = placeholders(translated);
+          if (wanted.join(',') !== got.join(',')) {
+            mismatched.push(`${key}: expected [${wanted}] but found [${got}]`);
+          }
+        }
+
+        expect(mismatched).toEqual([]);
+      });
+    });
   });
 
   /**

@@ -9,6 +9,7 @@ import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ValidationService } from '../../core/services/validation.service';
 import { TranslationService } from '../../core/services/translation.service';
 import {
   DocumentSlotType,
@@ -56,6 +57,7 @@ export class DocumentValidatorPage implements OnInit {
   private shareService = inject(ShareService);
   private historyService = inject(HistoryService);
   private toastService = inject(ToastService);
+  private validationService = inject(ValidationService);
   private translationService = inject(TranslationService);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
@@ -151,6 +153,25 @@ export class DocumentValidatorPage implements OnInit {
   // --- FILE HANDLING FOR SLOTS ---
 
   onSlotFileSelected(slot: DocumentSlotType, file: File): void {
+    /*
+     * The dropzone's `accept` filters a drag-and-drop, but the file input's
+     * change event is not filtered by it at all -- `accept` is a hint to the
+     * OS picker, not a guarantee, and every picker offers a way past it. A
+     * .txt dropped into the photo slot used to be taken as a photo: an object
+     * URL was made for it, the preview rendered nothing, and validation ran on
+     * text and reported failures about dimensions. Refusing it here, by the
+     * same rules the rest of the app uses, is the only place that catches it
+     * for both paths.
+     */
+    const check = slot === 'pdf'
+      ? this.validationService.validatePdf(file)
+      : this.validationService.validateImage(file);
+
+    if (!check.valid) {
+      this.toastService.show('error', check.error ?? '');
+      return;
+    }
+
     if (slot === 'photo') {
       if (this.photoPreviewUrl) this.fileService.revokeObjectUrl(this.photoPreviewUrl);
       this.photoFile = file;

@@ -25,6 +25,7 @@
           <app-button
             variant="secondary"
             size="lg"
+            data-testid="import-gallery"
             (clicked)="importFromGallery()"
             >
             🖼️ {{ 'scanner.importGallery' | translate }}
@@ -96,12 +97,14 @@
         <div class="primary-actions">
           <app-button
             variant="ghost"
+            data-testid="cancel-crop"
             (clicked)="cancelCrop()"
             >
             {{ 'common.cancel' | translate }}
           </app-button>
           <app-button
             variant="primary"
+            data-testid="apply-crop"
             (clicked)="applyCrop()"
             >
             ✓ {{ 'scanner.applyCrop' | translate }}
@@ -225,6 +228,7 @@
           <div class="enhance-actions">
             <app-button
               variant="primary"
+              data-testid="done-enhancing"
               (clicked)="doneEnhancing()"
               >
               ✓ {{ 'common.apply' | translate }}
@@ -254,6 +258,7 @@
           <app-button
             variant="ghost"
             size="sm"
+            data-testid="add-page-gallery"
             (clicked)="importFromGallery()"
             >
             ➕ 🖼️ {{ 'scanner.addPageGallery' | translate }}
@@ -350,6 +355,7 @@
           <app-button
             variant="primary"
             size="lg"
+            data-testid="generate-pdf"
             [loading]="isGeneratingPdf"
             (clicked)="generatePdf()"
             >
@@ -398,6 +404,7 @@
         <div class="handoff-actions-row">
           <app-button
             variant="primary"
+            data-testid="make-searchable"
             (clicked)="makeSearchableWithOcr()"
             >
             🔍 {{ 'scanner.makeSearchableBtn' | translate }} →

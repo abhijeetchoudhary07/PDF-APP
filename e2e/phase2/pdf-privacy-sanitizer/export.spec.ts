@@ -19,7 +19,7 @@ test.describe('PDF Privacy Sanitizer — Export & Reset Actions @phase2 @privacy
     await uploadFileToDropzone(page, cleanPath);
     await waitForProcessingToFinish(page);
 
-    const sanitizeBtn = page.locator('app-button button:has-text("Sanitize"), app-button button:has-text("संवेदनशील डेटा हटाएं")').first();
+    const sanitizeBtn = page.locator('app-button[data-testid="start-sanitization"] button').first();
     await sanitizeBtn.click();
     await waitForProcessingToFinish(page);
 

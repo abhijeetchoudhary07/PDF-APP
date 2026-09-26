@@ -44,7 +44,7 @@ test.describe('PDF Compare — Report Generation & Export @phase2 @compare @down
     await expect(page.locator('.result-section')).toBeVisible({ timeout: 15000 });
 
     // Click download report button and intercept download
-    const downloadBtn = page.locator('.result-actions-bar button:has-text("Download Report"), .result-actions-bar button:has-text("रिपोर्ट डाउनलोड करें")');
+    const downloadBtn = page.locator('app-button[data-testid="download-report"] button');
 
     const downloadInfo = await interceptDownload(page, async () => {
       await downloadBtn.click();
@@ -53,12 +53,16 @@ test.describe('PDF Compare — Report Generation & Export @phase2 @compare @down
     expect(downloadInfo.fileName).toContain('pdf_comparison_report.txt');
     expect(downloadInfo.size).toBeGreaterThan(0);
 
-    // Validate report text contents
+    // These are the labels `PdfCompareService.generateTextReport` actually
+    // writes. The spec used to assert "Original Document:" / "Total Pages
+    // Compared:", which the report has never said.
     const reportText = validateDownloadedText(downloadInfo.buffer, [
       'PDF COMPARISON REPORT',
-      'Original Document:',
-      'Modified Document:',
-      'Total Pages Compared:'
+      'Original File:',
+      'Modified File:',
+      'SUMMARY STATISTICS',
+      'Pages Compared:',
+      'PAGE-BY-PAGE DETAILS'
     ]);
     expect(reportText).toContain('text-changed-original.pdf');
     expect(reportText).toContain('text-changed-modified.pdf');

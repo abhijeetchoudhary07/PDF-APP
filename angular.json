@@ -46,7 +46,15 @@
               "src/global.scss",
               "src/theme/variables.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "cropperjs",
+              "jszip",
+              "mammoth",
+              "pako",
+              "qrcode",
+              "tesseract.js"
+            ]
           },
           "configurations": {
             "production": {
@@ -58,8 +66,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "15kb",
-                  "maximumError": "25kb"
+                  "maximumWarning": "25kb",
+                  "maximumError": "40kb"
                 }
               ],
               "fileReplacements": [

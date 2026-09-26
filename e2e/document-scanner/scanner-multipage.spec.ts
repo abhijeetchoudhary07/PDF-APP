@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { getTestDataPath, setupCapacitorMocks } from '../fixtures/mocks';
+import { setupCapacitorMocks } from '../fixtures/mocks';
+import { importScannedPage, pageAction, pageCards } from './scanner-helpers';
 
+/*
+ * These three were gated on an `input[type="file"]` the scanner does not have,
+ * so none of them reached an assertion -- multi-page management had no coverage
+ * at all. See `scanner-helpers.ts`.
+ */
 test.describe('Document Scanner — Multi-page Management @scanner', () => {
   test.beforeEach(async ({ page }) => {
     await setupCapacitorMocks(page);
@@ -8,52 +14,47 @@ test.describe('Document Scanner — Multi-page Management @scanner', () => {
   });
 
   test('SCN-044 & SCN-045: Multi-page scanning thumbnail management', async ({ page }) => {
-    const fileInput = page.locator('input[type="file"]');
-    if (await fileInput.count() > 0) {
-      await fileInput.first().setInputFiles(getTestDataPath('scanner/clean-document.jpg'));
+    await importScannedPage(page);
+    await expect(pageCards(page)).toHaveCount(1);
 
-      const confirmBtn = page.locator('.btn-confirm-crop, button:has-text("Next"), button:has-text("Apply")');
-      if (await confirmBtn.isVisible()) await confirmBtn.click();
+    // A second import adds a page rather than replacing the first.
+    await importScannedPage(page, 'scanner/tilted-document.jpg');
+    await expect(pageCards(page)).toHaveCount(2);
 
-      const addPageBtn = page.locator('.btn-add-page, button:has-text("Keep"), button:has-text("Add Page")');
-      if (await addPageBtn.isVisible()) await addPageBtn.click();
+    // Each card is numbered, and the order controls bound to the ends are
+    // disabled so a page cannot be moved off the list.
+    await expect(page.locator('.page-number-badge').first()).toContainText('1');
+    await expect(pageAction(page, 0, 'Move Left/Up')).toBeDisabled();
+    await expect(pageAction(page, 1, 'Move Right/Down')).toBeDisabled();
 
-      // Page 1 thumbnail exists
-      await expect(page.locator('.page-thumb-card, .page-item')).toHaveCount(1, { timeout: 10000 });
-    }
+    // Reordering swaps them.
+    await pageAction(page, 1, 'Move Left/Up').click();
+    await expect(pageAction(page, 0, 'Move Left/Up')).toBeDisabled();
+    await expect(pageCards(page)).toHaveCount(2);
   });
 
   test('SCN-049: Rotate page thumbnail', async ({ page }) => {
-    const fileInput = page.locator('input[type="file"]');
-    if (await fileInput.count() > 0) {
-      await fileInput.first().setInputFiles(getTestDataPath('scanner/clean-document.jpg'));
-      const confirmBtn = page.locator('.btn-confirm-crop, button:has-text("Next"), button:has-text("Apply")');
-      if (await confirmBtn.isVisible()) await confirmBtn.click();
-      const addPageBtn = page.locator('.btn-add-page, button:has-text("Keep"), button:has-text("Add Page")');
-      if (await addPageBtn.isVisible()) await addPageBtn.click();
+    await importScannedPage(page);
 
-      const rotateBtn = page.locator('.btn-rotate-page, [aria-label*="rotate" i], button:has-text("Rotate")');
-      if (await rotateBtn.isVisible()) {
-        await rotateBtn.click();
-        await expect(page.locator('.page-thumb-card, .page-item').first()).toBeVisible();
-      }
-    }
+    const before = await page.locator('.page-card .page-thumb').getAttribute('src');
+    await pageAction(page, 0, 'Rotate 90°').click();
+
+    // Rotating re-renders the page to a new blob, so the thumbnail's object
+    // URL changes. A rotation that did nothing would leave the same src.
+    await expect(page.locator('.page-card .page-thumb')).not.toHaveAttribute('src', before!, { timeout: 15000 });
+    await expect(pageCards(page)).toHaveCount(1);
   });
 
   test('SCN-047: Delete page', async ({ page }) => {
-    const fileInput = page.locator('input[type="file"]');
-    if (await fileInput.count() > 0) {
-      await fileInput.first().setInputFiles(getTestDataPath('scanner/clean-document.jpg'));
-      const confirmBtn = page.locator('.btn-confirm-crop, button:has-text("Next"), button:has-text("Apply")');
-      if (await confirmBtn.isVisible()) await confirmBtn.click();
-      const addPageBtn = page.locator('.btn-add-page, button:has-text("Keep"), button:has-text("Add Page")');
-      if (await addPageBtn.isVisible()) await addPageBtn.click();
+    await importScannedPage(page);
+    await importScannedPage(page, 'scanner/tilted-document.jpg');
+    await expect(pageCards(page)).toHaveCount(2);
 
-      const deleteBtn = page.locator('.btn-delete-page, [aria-label*="delete" i], [aria-label*="remove" i]');
-      if (await deleteBtn.isVisible()) {
-        await deleteBtn.click();
-        await expect(page.locator('.page-thumb-card, .page-item')).toHaveCount(0);
-      }
-    }
+    await pageAction(page, 0, 'Delete Page').click();
+    await expect(pageCards(page)).toHaveCount(1);
+
+    // Deleting the last page leaves the dashboard behind for the empty state.
+    await pageAction(page, 0, 'Delete Page').click();
+    await expect(pageCards(page)).toHaveCount(0);
   });
 });

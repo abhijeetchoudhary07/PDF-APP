@@ -11,8 +11,14 @@ test.describe('Smart PDF OCR — Result UI & Export @ocr @critical', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles(getTestDataPath('pdf/text.pdf'));
 
-    // Digital PDF shows selectable text directly
-    await expect(page.locator('.selectable-text-banner, .sample-text-content').first()).toBeVisible({ timeout: 10000 });
+    /*
+     * The detection step names the file and states what was found. The spec
+     * used to look for `.selectable-text-banner` / `.sample-text-content`,
+     * neither of which this page has ever rendered.
+     */
+    await expect(page.locator('.file-name').first()).toContainText('text.pdf', { timeout: 10000 });
+    await expect(page.locator('.detection-info-box')).toBeVisible();
+    await expect(page.locator('.detection-info-box .headline')).not.toBeEmpty();
 
     // Copy text button
     const copyBtn = page.locator('.btn-copy-text, button:has-text("Copy"), [aria-label*="copy" i]');

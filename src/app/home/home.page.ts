@@ -1,13 +1,42 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ToolRegistryService, ToolItem } from '../core/services/tool-registry.service';
 import { UsageQuotaService } from '../core/services/usage-quota.service';
+import {
+  AppEmptyStateComponent,
+  AppFooterComponent,
+  AppHeaderComponent,
+  AppIconComponent,
+  TranslatePipe
+} from '../shared/components/ui';
 
+/*
+ * The last component in the app to be declared by an NgModule.
+ *
+ * `HomePageModule` and `HomePageRoutingModule` existed only to declare this
+ * one page and give it a child route, which `loadComponent` does on its own.
+ * Their imports also still listed `AppBadgeComponent` and `AppButtonComponent`,
+ * neither of which this template has used for some time; the list below is what
+ * `home.page.html` actually renders.
+ */
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
-  standalone: false
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    AppHeaderComponent,
+    AppFooterComponent,
+    AppEmptyStateComponent,
+    AppIconComponent,
+    TranslatePipe
+  ]
 })
 export class HomePage {
   /** Free-tier allowance, shown in the hero so it is not a surprise later. */
