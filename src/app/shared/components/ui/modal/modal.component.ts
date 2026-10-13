@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, HostListener, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, ChangeDetectionStrategy, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -8,8 +8,14 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     @if (isOpen) {
-      <div class="modal-backdrop" (click)="onBackdropClick($event)">
-        <div class="modal-dialog" [ngClass]="size ? 'modal-' + size : 'modal-md'" (click)="$event.stopPropagation()">
+      <div #backdrop class="modal-backdrop" (click)="onBackdropClick($event)">
+        <div
+          class="modal-dialog"
+          [ngClass]="size ? 'modal-' + size : 'modal-md'"
+          (click)="$event.stopPropagation()"
+          role="dialog"
+          aria-modal="true"
+          [attr.aria-label]="title">
           <!-- Header -->
           <div class="modal-header">
             <div class="modal-title-group">
@@ -33,7 +39,7 @@ import { CommonModule } from '@angular/common';
           <!-- Footer -->
           @if (hasFooter) {
             <div class="modal-footer">
-              <ng-content select="[modal-footer]"></ng-content>
+              <ng-content select="[modal-footer], [slot=footer], .modal-footer-actions, .zoom-footer-actions, .share-footer-actions"></ng-content>
             </div>
           }
         </div>
@@ -88,6 +94,8 @@ import { CommonModule } from '@angular/common';
       display: flex;
       flex-direction: column;
       gap: 2px;
+      min-width: 0;
+      flex: 1;
     }
 
     .modal-title {
@@ -95,12 +103,14 @@ import { CommonModule } from '@angular/common';
       font-weight: var(--font-weight-semibold, 600);
       color: var(--color-text);
       margin: 0;
+      word-break: break-word;
     }
 
     .modal-subtitle {
       font-size: var(--font-small, 13px);
       color: var(--color-text-secondary);
       margin: 0;
+      word-break: break-word;
     }
 
     .modal-close-btn {
@@ -112,16 +122,26 @@ import { CommonModule } from '@angular/common';
       cursor: pointer;
       padding: 0;
       transition: color var(--transition-fast, 150ms);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      min-height: 32px;
+      border-radius: var(--radius-sm, 6px);
+      flex-shrink: 0;
     }
 
     .modal-close-btn:hover {
       color: var(--color-text);
+      background-color: var(--color-background-subtle);
     }
 
     .modal-body {
       padding: var(--space-5, 20px);
       overflow-y: auto;
       flex: 1;
+      min-height: 0;
+      -webkit-overflow-scrolling: touch;
     }
 
     .modal-footer {
@@ -132,6 +152,92 @@ import { CommonModule } from '@angular/common';
       align-items: center;
       justify-content: flex-end;
       gap: var(--space-2, 8px);
+    }
+
+    .modal-footer ::ng-deep [modal-footer],
+    .modal-footer ::ng-deep [slot=footer] {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--space-2, 8px);
+      width: 100%;
+    }
+
+    @media (max-width: 640px) {
+      .modal-backdrop {
+        padding: 10px;
+        align-items: center;
+      }
+
+      .modal-dialog {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100dvh - 20px);
+        max-height: calc(100vh - 20px);
+        border-radius: var(--radius-lg, 14px);
+        margin: 0;
+      }
+
+      .modal-sm, .modal-md, .modal-lg {
+        max-width: 100%;
+      }
+
+      .modal-full {
+        max-width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+      }
+
+      .modal-header {
+        padding: 12px 16px;
+      }
+
+      .modal-title {
+        font-size: 16px;
+      }
+
+      .modal-subtitle {
+        font-size: 12px;
+      }
+
+      .modal-close-btn {
+        min-width: 38px;
+        min-height: 38px;
+        font-size: 26px;
+      }
+
+      .modal-body {
+        padding: 14px 16px;
+        max-height: calc(100dvh - 130px);
+        max-height: calc(100vh - 130px);
+      }
+
+      .modal-footer {
+        padding: 10px 16px;
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .modal-footer ::ng-deep > * {
+        width: 100%;
+      }
+
+      .modal-footer ::ng-deep [modal-footer]:not(.zoom-footer-actions),
+      .modal-footer ::ng-deep [slot=footer]:not(.zoom-footer-actions) {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 8px;
+        width: 100%;
+      }
+
+      .modal-footer ::ng-deep app-button,
+      .modal-footer ::ng-deep .btn,
+      .modal-footer ::ng-deep button {
+        width: 100%;
+        display: block;
+      }
     }
 
     @keyframes fadeIn {
@@ -145,7 +251,7 @@ import { CommonModule } from '@angular/common';
     }
   `]
 })
-export class AppModalComponent {
+export class AppModalComponent implements OnDestroy {
   @Input() isOpen = false;
   @Input() title = '';
   @Input() subtitle?: string;
@@ -154,6 +260,51 @@ export class AppModalComponent {
   @Input() closeOnBackdrop = true;
 
   @Output() closed = new EventEmitter<void>();
+  @Output() closeModal = new EventEmitter<void>();
+
+  private static openModalCount = 0;
+  private isRegisteredOpen = false;
+  private backdropEl: HTMLElement | null = null;
+
+  @ViewChild('backdrop') set backdropRef(ref: ElementRef<HTMLElement> | undefined) {
+    if (ref?.nativeElement && typeof document !== 'undefined') {
+      this.backdropEl = ref.nativeElement;
+      if (this.backdropEl.parentElement !== document.body) {
+        document.body.appendChild(this.backdropEl);
+      }
+      if (!this.isRegisteredOpen) {
+        AppModalComponent.openModalCount++;
+        this.isRegisteredOpen = true;
+        document.body.classList.add('modal-open');
+      }
+    } else {
+      if (this.backdropEl && this.backdropEl.parentElement === document.body) {
+        document.body.removeChild(this.backdropEl);
+      }
+      this.backdropEl = null;
+      if (this.isRegisteredOpen && typeof document !== 'undefined') {
+        AppModalComponent.openModalCount = Math.max(0, AppModalComponent.openModalCount - 1);
+        this.isRegisteredOpen = false;
+        if (AppModalComponent.openModalCount === 0 && !document.querySelector('.search-backdrop, .onboarding-backdrop')) {
+          document.body.classList.remove('modal-open');
+        }
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.backdropEl && this.backdropEl.parentElement === document.body) {
+      document.body.removeChild(this.backdropEl);
+      this.backdropEl = null;
+    }
+    if (this.isRegisteredOpen && typeof document !== 'undefined') {
+      AppModalComponent.openModalCount = Math.max(0, AppModalComponent.openModalCount - 1);
+      this.isRegisteredOpen = false;
+      if (AppModalComponent.openModalCount === 0 && !document.querySelector('.search-backdrop, .onboarding-backdrop')) {
+        document.body.classList.remove('modal-open');
+      }
+    }
+  }
 
   @HostListener('document:keydown.escape')
   handleEscape() {
@@ -165,6 +316,7 @@ export class AppModalComponent {
   close() {
     this.isOpen = false;
     this.closed.emit();
+    this.closeModal.emit();
   }
 
   onBackdropClick(event: MouseEvent) {

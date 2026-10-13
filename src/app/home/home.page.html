@@ -71,8 +71,16 @@
         </div>
 
         <!-- CATEGORY FILTER PILLS (AUTO-SCROLLING MARQUEE) -->
-        <div class="category-marquee-container" role="tablist" aria-label="Tool Categories">
-          <div class="category-marquee-track">
+        <div
+          class="category-marquee-container"
+          role="tablist"
+          aria-label="Tool Categories"
+          (mouseenter)="pauseMarquee()"
+          (mouseleave)="resumeMarquee()"
+          (touchstart)="pauseMarquee()"
+          (touchend)="resumeMarquee()"
+          (touchcancel)="resumeMarquee()">
+          <div class="category-marquee-track" [class.is-paused]="isMarqueePaused">
             <!-- First loop group -->
             <div class="category-marquee-group">
               @for (cat of categories; track cat) {
@@ -104,7 +112,7 @@
         <!-- RECENT TOOLS BAR -->
         @if (toolRegistry.recentTools$ | async; as recents) {
           @if (recents.length > 0) {
-            <div class="recent-tools-bar">
+            <div class="recent-tools-bar" appAutoScroll [autoScrollSpeed]="0.5">
               <span class="bar-title">{{ 'home.recentTools' | translate }}</span>
               <div class="recent-chips-list">
                 @for (recent of recents; track recent) {

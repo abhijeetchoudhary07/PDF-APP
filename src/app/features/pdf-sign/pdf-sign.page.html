@@ -4,7 +4,7 @@
   <main class="app-main-content">
     <div class="tool-page-container">
       <app-page-header
-        title="Sign PDF"
+        [title]="'tools.pdf_signing.title' | translate"
         subtitle="Place, resize, rotate and burn signatures into any PDF document offline."
         [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Sign PDF' }]"
         badge="SIGN"
@@ -149,71 +149,66 @@
         }
 
         <!-- Add Signature Dialog Modal -->
-        @if (showSignatureDialog) {
-          <div class="modal-backdrop" (click)="closeSignatureDialog()">
-            <div class="signature-modal" (click)="$event.stopPropagation()">
-              <div class="modal-header">
-                <h3>Create or Choose Signature</h3>
-                <button class="close-btn" (click)="closeSignatureDialog()">
-                  <app-icon name="close"></app-icon>
-                </button>
+        <app-modal
+          [isOpen]="showSignatureDialog"
+          [title]="'pdfSign.signatureModalTitle' | translate"
+          [subtitle]="'pdfSign.signatureModalSubtitle' | translate"
+          size="md"
+          (closed)="closeSignatureDialog()">
+          <app-tabs
+            [tabs]="creationTabs"
+            [activeTab]="activeCreationMode"
+            (tabChange)="activeCreationMode = $any($event)"
+            variant="segment">
+          </app-tabs>
+          <!-- DRAW MODE -->
+          @if (activeCreationMode === 'draw') {
+            <div class="draw-panel">
+              <p class="panel-tip">Sign using your finger, stylus, or mouse:</p>
+              <div class="draw-canvas-box">
+                <canvas #drawCanvas
+                  (mousedown)="startDraw($event)"
+                  (mousemove)="drawMove($event)"
+                  (mouseup)="endDraw()"
+                  (touchstart)="startDraw($event)"
+                  (touchmove)="drawMove($event)"
+                  (touchend)="endDraw()">
+                </canvas>
               </div>
-              <app-tabs
-                [tabs]="creationTabs"
-                [activeTab]="activeCreationMode"
-                (tabChange)="activeCreationMode = $any($event)"
-                variant="segment">
-              </app-tabs>
-              <!-- DRAW MODE -->
-              @if (activeCreationMode === 'draw') {
-                <div class="draw-panel">
-                  <p class="panel-tip">Sign using your finger, stylus, or mouse:</p>
-                  <div class="draw-canvas-box">
-                    <canvas #drawCanvas
-                      (mousedown)="startDraw($event)"
-                      (mousemove)="drawMove($event)"
-                      (mouseup)="endDraw()"
-                      (touchstart)="startDraw($event)"
-                      (touchmove)="drawMove($event)"
-                      (touchend)="endDraw()">
-                    </canvas>
-                  </div>
-                  <div class="draw-actions">
-                    <app-button size="sm" variant="outline" (clicked)="clearDraw()">
-                      <app-icon name="trash-outline" class="btn-icon"></app-icon> Clear
-                    </app-button>
-                    <app-button size="sm" variant="primary" (clicked)="insertDrawnSignature()">
-                      <app-icon name="checkmark-outline" class="btn-icon"></app-icon> Insert Signature
-                    </app-button>
-                  </div>
-                </div>
-              }
-              <!-- UPLOAD MODE -->
-              @if (activeCreationMode === 'upload') {
-                <div class="upload-panel">
-                  <p class="panel-tip">Upload a photo of your signature. Background is auto-cleaned and cropped:</p>
-                  <label class="custom-file-upload">
-                    <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onUploadSignature($event)" />
-                    <app-icon name="cloud-upload-outline"></app-icon>
-                    <span>Choose Signature Image</span>
-                  </label>
-                </div>
-              }
-              <!-- RECENT MODE -->
-              @if (activeCreationMode === 'recent') {
-                <div class="recent-panel">
-                  <div class="recent-grid">
-                    @for (sig of recentSignatures; track sig) {
-                      <div class="recent-sig-card" (click)="selectRecentSignature(sig)">
-                        <img [src]="sig" alt="Recent Signature" />
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
+              <div class="draw-actions">
+                <app-button size="sm" variant="outline" (clicked)="clearDraw()">
+                  <app-icon name="trash-outline" class="btn-icon"></app-icon> Clear
+                </app-button>
+                <app-button size="sm" variant="primary" (clicked)="insertDrawnSignature()">
+                  <app-icon name="checkmark-outline" class="btn-icon"></app-icon> Insert Signature
+                </app-button>
+              </div>
             </div>
-          </div>
-        }
+          }
+          <!-- UPLOAD MODE -->
+          @if (activeCreationMode === 'upload') {
+            <div class="upload-panel">
+              <p class="panel-tip">Upload a photo of your signature. Background is auto-cleaned and cropped:</p>
+              <label class="custom-file-upload">
+                <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onUploadSignature($event)" />
+                <app-icon name="cloud-upload-outline"></app-icon>
+                <span>Choose Signature Image</span>
+              </label>
+            </div>
+          }
+          <!-- RECENT MODE -->
+          @if (activeCreationMode === 'recent') {
+            <div class="recent-panel">
+              <div class="recent-grid">
+                @for (sig of recentSignatures; track sig) {
+                  <div class="recent-sig-card" (click)="selectRecentSignature(sig)">
+                    <img [src]="sig" alt="Recent Signature" />
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </app-modal>
       </div>
     </div>
   </main>

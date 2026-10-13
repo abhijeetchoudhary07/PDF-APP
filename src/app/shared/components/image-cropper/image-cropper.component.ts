@@ -2,6 +2,7 @@ import { Component, Input, ViewChild, ElementRef, AfterViewInit, OnDestroy, Chan
 
 import { ModalController } from '@ionic/angular';
 import Cropper from 'cropperjs';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -9,7 +10,7 @@ import Cropper from 'cropperjs';
   templateUrl: './image-cropper.component.html',
   styleUrls: ['./image-cropper.component.scss'],
   standalone: true,
-  imports: []
+  imports: [TranslatePipe]
 })
 export class ImageCropperComponent implements AfterViewInit, OnDestroy {
   private modalCtrl = inject(ModalController);

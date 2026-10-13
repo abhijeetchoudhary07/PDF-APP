@@ -22,6 +22,7 @@ import {
   AppTabsComponent,
   AppRelatedToolsComponent,
   FileDropzoneComponent,
+  AppConversionAnimationComponent,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -45,6 +46,7 @@ export type ExtractorTab = 'text' | 'images' | 'tables' | 'pages' | 'attachments
     AppTabsComponent,
     AppRelatedToolsComponent,
     FileDropzoneComponent,
+    AppConversionAnimationComponent,
     TranslatePipe
   ],
   providers: [DecimalPipe]

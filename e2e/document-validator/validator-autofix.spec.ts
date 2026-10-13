@@ -7,36 +7,31 @@ test.describe('Document Validator — 1-Click Auto-Fix & Re-validation @validato
     await page.goto('/features/document-validator');
   });
 
-  test('VAL-070 & VAL-077: Oversized photo shows "Fix Automatically" and re-validates to READY/PASS', async ({ page }) => {
-    const photoInput = page.locator('.slot-photo input[type="file"], input[type="file"]').first();
-    await photoInput.setInputFiles(getTestDataPath('photos/oversized-photo.jpg'));
+  test('VAL-070 & VAL-077: Oversized photo offers an auto-fix and re-validates', async ({ page }) => {
+    const slot = page.locator('[data-testid="slot-photo"]');
+    await slot.locator('input[type="file"]').setInputFiles(getTestDataPath('photos/oversized-photo.jpg'));
 
-    const validateBtn = page.locator('.btn-validate-all, button:has-text("Validate")');
-    if (await validateBtn.isVisible()) {
-      await validateBtn.click();
-    }
+    /*
+     * By id rather than by `button:has-text("Fix Automatically")`: that label
+     * comes from `validator.fixAuto`, which is translated into five languages,
+     * so a text selector here passes only in an English run.
+     */
+    const fix = page.locator('app-button[data-testid="fix-rule-photo"] button').first();
+    await expect(fix).toBeVisible({ timeout: 10000 });
+    await fix.click();
 
-    // Auto-fix button should appear for failed rule
-    const autoFixBtn = page.locator('.btn-auto-fix-rule, .btn-auto-fix-all, button:has-text("Fix Automatically"), button:has-text("Fix All")');
-    await expect(autoFixBtn.first()).toBeVisible({ timeout: 10000 });
-
-    // Click auto-fix
-    await autoFixBtn.first().click();
-
-    // Verify toast notification and re-validation result
-    await expect(page.locator('.toast-item, :has-text("Auto-fixed"), :has-text("fixed")').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.toast-item').first()).toBeVisible({ timeout: 15000 });
+    await expect(slot.locator('.rule-row').first()).toBeVisible();
   });
 
-  test('VAL-059 to VAL-068: Validation report displays actual value, required value, and status', async ({ page }) => {
-    const photoInput = page.locator('.slot-photo input[type="file"], input[type="file"]').first();
-    await photoInput.setInputFiles(getTestDataPath('photos/valid-photo.jpg'));
+  test('VAL-059 to VAL-068: the report gives actual and required values per rule', async ({ page }) => {
+    const slot = page.locator('[data-testid="slot-photo"]');
+    await slot.locator('input[type="file"]').setInputFiles(getTestDataPath('photos/valid-photo.jpg'));
 
-    const validateBtn = page.locator('.btn-validate-all, button:has-text("Validate")');
-    if (await validateBtn.isVisible()) {
-      await validateBtn.click();
-    }
-
-    // Verification of report structure
-    await expect(page.locator('.validation-report-card, .rule-list, .rule-row').first()).toBeVisible({ timeout: 10000 });
+    const firstRule = slot.locator('.rule-row').first();
+    await expect(firstRule).toBeVisible({ timeout: 10000 });
+    await expect(firstRule.locator('.rule-name')).not.toBeEmpty();
+    await expect(firstRule.locator('.rule-values .actual')).toBeVisible();
+    await expect(firstRule.locator('.rule-values .expected')).toBeVisible();
   });
 });

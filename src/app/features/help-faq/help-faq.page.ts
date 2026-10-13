@@ -8,7 +8,8 @@ import {
   AppPageHeaderComponent,
   AppFooterComponent,
   PrivacySupportNavComponent,
-  AppButtonComponent
+  AppButtonComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 export interface FaqItem {
@@ -32,8 +33,9 @@ export interface FaqItem {
     AppPageHeaderComponent,
     AppFooterComponent,
     PrivacySupportNavComponent,
-    AppButtonComponent
-]
+    AppButtonComponent,
+    TranslatePipe
+  ]
 })
 export class HelpFaqPage {
   searchQuery = '';
@@ -67,7 +69,7 @@ export class HelpFaqPage {
       id: 'faq-3',
       category: 'exam',
       question: 'Why does the recruitment portal reject my photo or signature dimensions?',
-      answer: 'Many portals (such as SSC, UPSC, and IBPS) require strict pixel dimensions in addition to KB size (e.g. 200x230 pixels for passport photos, 140x60 pixels for signatures). Use the "Presets" tool or the dimension lock in Photo Tools to set exact pixel width and height before downloading.',
+      answer: 'Many upload forms require strict pixel dimensions in addition to a KB limit (for example 200x230 pixels for a photo, 140x60 pixels for a signature). Use the "Presets" tool or the dimension lock in Photo Tools to set exact pixel width and height before downloading.',
       isOpen: false
     },
     {

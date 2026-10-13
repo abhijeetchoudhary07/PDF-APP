@@ -12,7 +12,8 @@ import {
   AppFooterComponent,
   AppPageHeaderComponent,
   AppButtonComponent,
-  AppModalComponent
+  AppModalComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -29,7 +30,8 @@ import {
     AppFooterComponent,
     AppPageHeaderComponent,
     AppButtonComponent,
-    AppModalComponent
+    AppModalComponent,
+    TranslatePipe
   ]
 })
 export class ProfilePage implements OnInit {

@@ -90,15 +90,13 @@
   <!-- STEP 2: PROCESSING STATE -->
   @if (currentStep === 'processing') {
     <section class="processing-section">
-      <div class="proc-card">
-        <div class="spinner"></div>
-        <h3>{{ 'common.processing' | translate }}</h3>
-        <p>{{ progressMessage }}</p>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" [style.width.%]="progressPercent"></div>
-        </div>
-        <span class="progress-pct">{{ progressPercent }}%</span>
-      </div>
+      <app-conversion-animation
+        [progress]="progressPercent"
+        [stageText]="progressMessage || ('common.processing' | translate)"
+        [sourceFormat]="'PDF DOCUMENT'"
+        [targetFormat]="'EXTRACTED ASSETS'"
+        [fileName]="selectedFile?.name">
+      </app-conversion-animation>
     </section>
   }
 

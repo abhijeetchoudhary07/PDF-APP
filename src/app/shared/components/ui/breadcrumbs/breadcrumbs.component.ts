@@ -1,6 +1,7 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 import { RouterModule } from '@angular/router';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 export interface BreadcrumbItem {
   label: string;
@@ -11,18 +12,18 @@ export interface BreadcrumbItem {
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-breadcrumbs',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, TranslatePipe],
   template: `
     @if (items && items.length > 0) {
       <nav aria-label="Breadcrumb" class="breadcrumbs-nav">
         <ol class="breadcrumbs-list">
           <li class="breadcrumb-item">
-            <a routerLink="/home" class="breadcrumb-link home-link" title="Home">
+            <a routerLink="/home" class="breadcrumb-link home-link" [title]="'common.home' | translate">
               <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
               </svg>
-              <span class="sr-only">Home</span>
+              <span class="sr-only">{{ 'common.home' | translate }}</span>
             </a>
           </li>
           @for (item of items; track item; let last = $last; let index = $index) {

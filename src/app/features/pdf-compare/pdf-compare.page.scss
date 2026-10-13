@@ -560,3 +560,137 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 640px) {
+  .compare-page {
+    padding: 1rem 0.75rem 2rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .dropzones-container {
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .dropzone-card {
+    padding: 1rem 0.875rem;
+  }
+
+  .selected-file-card {
+    padding: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+
+    .file-info {
+      width: 100%;
+    }
+
+    .file-details .file-name {
+      max-width: 100%;
+      word-break: break-all;
+      white-space: normal;
+    }
+  }
+
+  .action-bar-center {
+    width: 100%;
+
+    app-button {
+      width: 100%;
+      display: block;
+    }
+  }
+
+  .summary-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+
+    .metric-card {
+      padding: 0.75rem 0.5rem;
+
+      .metric-num {
+        font-size: 1.25rem;
+      }
+    }
+  }
+
+  .change-navigator-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+
+    .change-stepper {
+      width: 100%;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+  }
+
+  .page-nav-bar {
+    padding: 10px;
+
+    .nav-controls {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  }
+
+  .diff-view-side-by-side {
+    grid-template-columns: 1fr;
+    gap: 12px;
+
+    .text-content-box {
+      padding: 10px;
+      font-size: 0.82rem;
+      min-height: 180px;
+      max-height: 350px;
+    }
+  }
+
+  .diff-view-page-by-page {
+    .page-card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px;
+    }
+
+    .unified-diff-box {
+      padding: 10px;
+      font-size: 0.85rem;
+      max-height: 350px;
+    }
+  }
+
+  .diff-view-text-only {
+    padding: 10px;
+
+    .text-diff-legend {
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.78rem;
+    }
+
+    .text-only-flow {
+      font-size: 0.85rem;
+    }
+  }
+
+  .result-actions-bar {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+
+    app-button {
+      width: 100%;
+      display: block;
+    }
+  }
+}

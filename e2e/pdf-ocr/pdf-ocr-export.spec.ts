@@ -1,5 +1,18 @@
 import { test, expect } from '@playwright/test';
-import { getTestDataPath, setupCapacitorMocks } from '../fixtures/mocks';
+import { setupCapacitorMocks } from '../fixtures/mocks';
+import { attachPdf, extractDigitalText } from '../fixtures/ocr';
+
+/*
+ * Both tests here stopped at the detection step and then asked about controls
+ * that live on the result step, behind one-shot guards that were never true:
+ * `if (await copyBtn.isVisible())` around the copy assertion, and an
+ * `expect(startBtn).toBeEnabled()` that was never awaited, so it could not fail
+ * either. Nothing in this file reached the result screen at all.
+ *
+ * A digital PDF gets there without recognition -- `extractExistingDigitalText`
+ * produces the same result view in a second or so -- which is what both tests
+ * use now.
+ */
 
 test.describe('Smart PDF OCR — Result UI & Export @ocr @critical', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,36 +20,34 @@ test.describe('Smart PDF OCR — Result UI & Export @ocr @critical', () => {
     await page.goto('/features/pdf-ocr');
   });
 
-  test('OCR-048 to OCR-062: OCR Result UI elements, search, copy, navigation', async ({ page }) => {
-    const fileInput = page.locator('input[type="file"]');
-    await fileInput.setInputFiles(getTestDataPath('pdf/text.pdf'));
+  test('OCR-048 to OCR-062: the result screen shows the text, with search and copy', async ({ page }) => {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
 
-    /*
-     * The detection step names the file and states what was found. The spec
-     * used to look for `.selectable-text-banner` / `.sample-text-content`,
-     * neither of which this page has ever rendered.
-     */
-    await expect(page.locator('.file-name').first()).toContainText('text.pdf', { timeout: 10000 });
-    await expect(page.locator('.detection-info-box')).toBeVisible();
+    await attachPdf(page, 'pdf/text.pdf');
+    await expect(page.locator('.file-name').first()).toContainText('text.pdf');
     await expect(page.locator('.detection-info-box .headline')).not.toBeEmpty();
 
-    // Copy text button
-    const copyBtn = page.locator('.btn-copy-text, button:has-text("Copy"), [aria-label*="copy" i]');
-    if (await copyBtn.isVisible()) {
-      await copyBtn.click();
-      await expect(page.locator('.toast-item, :has-text("copied")').first()).toBeVisible({ timeout: 5000 });
-    }
+    await extractDigitalText(page);
+    await expect(page.locator('.recognized-textarea')).not.toBeEmpty();
+    await expect(page.locator('.search-box .search-input')).toBeVisible();
+
+    await page.getByRole('button', { name: /copy page text/i }).click();
+    await expect(page.locator('.toast-item').first()).toContainText(/copied/i, { timeout: 10000 });
   });
 
-  test('OCR-063 to OCR-070: Export Searchable PDF and TXT file', async ({ page }) => {
-    const fileInput = page.locator('input[type="file"]');
-    await fileInput.setInputFiles(getTestDataPath('pdf/scanned.pdf'));
+  test('OCR-063 to OCR-070: the recognised text exports as a .txt file', async ({ page }) => {
+    await attachPdf(page, 'pdf/text.pdf');
+    await extractDigitalText(page);
 
-    // Verify export action triggers
-    const startBtn = page.locator('.btn-start-ocr, button:has-text("Start OCR")');
-    if (await startBtn.isVisible()) {
-      // Export actions are visible upon completion
-      expect(startBtn).toBeEnabled();
-    }
+    /*
+     * Scoped to the tile grid: the searchable PDF is also offered as a button
+     * in the result header, and an unscoped role query matches both.
+     */
+    const exports = page.locator('.export-options-grid');
+    await expect(exports.getByRole('button', { name: /searchable pdf/i })).toBeVisible();
+
+    // The searchable PDF is the slow export; the text file exercises the path.
+    await exports.getByRole('button', { name: /plain text/i }).click();
+    await expect(page.locator('.toast-item').first()).toContainText(/saved/i, { timeout: 15000 });
   });
 });

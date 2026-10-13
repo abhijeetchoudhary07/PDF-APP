@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, ViewChild, AfterViewChecked, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, AfterViewChecked, OnDestroy, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -14,6 +14,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
   template: `
     @if (searchService.isOpen$ | async) {
       <div
+        #backdrop
         class="search-backdrop"
         (click)="close()">
         <div
@@ -528,6 +529,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       .search-dialog {
         max-width: 100%;
         height: 100%;
+        height: 100dvh;
         border-radius: 0;
         border: none;
         animation: searchSheetIn var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1);
@@ -575,8 +577,38 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
     }
   `]
 })
-export class AppGlobalSearchModalComponent implements AfterViewChecked {
+export class AppGlobalSearchModalComponent implements AfterViewChecked, OnDestroy {
   @ViewChild('searchInput') searchInputRef?: ElementRef<HTMLInputElement>;
+
+  private backdropEl: HTMLElement | null = null;
+
+  @ViewChild('backdrop') set backdropRef(ref: ElementRef<HTMLElement> | undefined) {
+    if (ref?.nativeElement && typeof document !== 'undefined') {
+      this.backdropEl = ref.nativeElement;
+      if (this.backdropEl.parentElement !== document.body) {
+        document.body.appendChild(this.backdropEl);
+      }
+      document.body.classList.add('modal-open');
+    } else {
+      if (this.backdropEl && this.backdropEl.parentElement === document.body) {
+        document.body.removeChild(this.backdropEl);
+      }
+      this.backdropEl = null;
+      if (typeof document !== 'undefined' && !document.querySelector('.modal-backdrop, .onboarding-backdrop')) {
+        document.body.classList.remove('modal-open');
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.backdropEl && this.backdropEl.parentElement === document.body) {
+      document.body.removeChild(this.backdropEl);
+      this.backdropEl = null;
+    }
+    if (typeof document !== 'undefined' && !document.querySelector('.modal-backdrop, .onboarding-backdrop')) {
+      document.body.classList.remove('modal-open');
+    }
+  }
 
   searchQuery = '';
   results: ToolItem[] = [];

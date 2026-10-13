@@ -28,12 +28,15 @@ test.describe('Header / Footer Studio — Typography, Colors & Margins @phase2 @
     const sizeRange = page.locator('input.form-range');
     await sizeRange.fill('16');
 
-    // Click color swatch
+    /*
+     * `if (await swatches.count() > 1)` skipped the colour assertion whenever
+     * the palette failed to render -- which is the one thing that would make
+     * picking a colour impossible.
+     */
     const swatches = page.locator('.color-swatches .swatch');
-    if (await swatches.count() > 1) {
-      await swatches.nth(1).click();
-      await expect(swatches.nth(1)).toHaveClass(/active/);
-    }
+    expect(await swatches.count()).toBeGreaterThan(1);
+    await swatches.nth(1).click();
+    await expect(swatches.nth(1)).toHaveClass(/active/);
   });
 
   test('HF-021: Adjust top, bottom, left, and right margins', async ({ page }) => {

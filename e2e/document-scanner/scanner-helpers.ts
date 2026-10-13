@@ -41,9 +41,17 @@ export async function importScannedPage(
   await expect(page.locator('.pages-dashboard-card')).toBeVisible({ timeout: 15000 });
 }
 
-/** The per-page action buttons carry English `title` attributes. */
-export function pageAction(page: Page, index: number, title: string) {
-  return page.locator('.page-card').nth(index).locator(`button[title="${title}"]`);
+/*
+ * The per-page action buttons, by `data-testid`.
+ *
+ * This used to select them by their `title` attribute -- `button[title="Delete
+ * Page"]` -- which worked only because those titles were hardcoded English. They
+ * are translated now, so the attribute holds whatever the app's current language
+ * says, and a run in any of the other four languages would have matched nothing
+ * and timed out.
+ */
+export function pageAction(page: Page, index: number, testId: string) {
+  return page.locator('.page-card').nth(index).locator(`button[data-testid="${testId}"]`);
 }
 
 export function pageCards(page: Page) {

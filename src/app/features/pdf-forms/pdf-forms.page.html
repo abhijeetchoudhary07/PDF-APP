@@ -4,7 +4,7 @@
   <main class="app-main-content">
     <div class="tool-page-container">
       <app-page-header
-        title="PDF Form Filler"
+        [title]="'tools.pdf_forms.title' | translate"
         subtitle="Fill interactive PDF forms offline or position custom form entries."
         [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Form Filler' }]"
         badge="FORMS"
@@ -17,7 +17,7 @@
             size="sm"
             (clicked)="saveProgress()"
             [disabled]="!document"
-            title="Save Progress">
+            [title]="'forms.saveProgress' | translate">
             <app-icon name="save-outline"></app-icon>
           </app-button>
           <app-button

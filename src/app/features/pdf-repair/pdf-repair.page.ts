@@ -19,6 +19,7 @@ import {
   AppBadgeComponent,
   AppRelatedToolsComponent,
   FileDropzoneComponent,
+  AppConversionAnimationComponent,
   TranslatePipe
 } from '../../shared/components/ui';
 import { PdfPreviewComponent } from '../../shared/components/pdf-preview/pdf-preview.component';
@@ -42,6 +43,7 @@ export type RepairStep = 'select' | 'diagnosing' | 'diagnostic_report' | 'recove
     AppRelatedToolsComponent,
     FileDropzoneComponent,
     PdfPreviewComponent,
+    AppConversionAnimationComponent,
     TranslatePipe
   ],
   providers: [DecimalPipe]

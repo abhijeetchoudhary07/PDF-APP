@@ -157,15 +157,13 @@
   <!-- STEP 4: RECOVERY IN PROGRESS -->
   @if (currentStep === 'recovering') {
     <section class="processing-section">
-      <div class="proc-card">
-        <div class="spinner"></div>
-        <h3>{{ 'repair.recoveringTitle' | translate }}</h3>
-        <p>{{ recoveryMessage }}</p>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" [style.width.%]="recoveryProgress"></div>
-        </div>
-        <span class="progress-pct">{{ recoveryProgress }}%</span>
-      </div>
+      <app-conversion-animation
+        [progress]="recoveryProgress"
+        [stageText]="recoveryMessage || ('repair.recoveringTitle' | translate)"
+        [sourceFormat]="'CORRUPTED PDF'"
+        [targetFormat]="'REBUILT PDF'"
+        [fileName]="selectedFile?.name">
+      </app-conversion-animation>
     </section>
   }
 

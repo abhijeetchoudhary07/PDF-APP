@@ -1,5 +1,6 @@
 import { AppSkeletonComponent } from '../ui/skeleton/skeleton.component';
 import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 
 @Component({
@@ -9,8 +10,9 @@ import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from 
   styleUrls: ['./pdf-page-thumbnail.component.scss'],
   standalone: true,
   imports: [
-    AppSkeletonComponent
-]
+    AppSkeletonComponent,
+    TranslatePipe
+  ]
 })
 export class PdfPageThumbnailComponent {
   @Input() pageNumber!: number;

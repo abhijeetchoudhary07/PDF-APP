@@ -14,6 +14,7 @@ import {
   AppBadgeComponent,
   AppIconComponent,
   AppSkeletonComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -34,6 +35,7 @@ import {
     AppFooterComponent,
     AppButtonComponent,
     AppBadgeComponent,
+    AutoScrollDirective,
     TranslatePipe
   ],
   providers: [DatePipe, DecimalPipe]

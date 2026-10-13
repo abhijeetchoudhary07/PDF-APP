@@ -6,7 +6,7 @@
 
       <!-- Page Header with Breadcrumbs -->
       <app-page-header
-        title="About the Engine"
+        [title]="'aboutEngine.title' | translate"
         subtitle="Deep dive into the 100% client-side WebAssembly, Canvas 2D, and PDF-Lib architecture."
         [breadcrumbs]="[{ label: 'Privacy & Support' }, { label: 'About the Engine' }]"
         badge="ENGINE"

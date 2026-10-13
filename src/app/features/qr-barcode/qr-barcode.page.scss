@@ -679,3 +679,148 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 640px) {
+  .qr-page {
+    padding: 1rem 0.75rem 2rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .source-picker-card {
+    padding: 1rem;
+
+    .source-button-group {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+  }
+
+  .camera-prompt-card {
+    padding: 2rem 1rem;
+  }
+
+  .pdf-config-card {
+    padding: 1rem;
+
+    .file-summary-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .page-selection-controls {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+  }
+
+  .results-card {
+    padding: 1rem;
+
+    .results-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+
+      .results-top-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 6px;
+
+        app-button {
+          width: 100%;
+          display: block;
+        }
+      }
+    }
+
+    .code-item-card {
+      padding: 0.85rem;
+
+      .code-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .code-actions-row {
+        width: 100%;
+
+        app-button {
+          flex: 1;
+          min-width: 80px;
+        }
+      }
+    }
+
+    .export-report-bar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+
+      .export-buttons {
+        width: 100%;
+        flex-direction: column;
+        gap: 6px;
+
+        app-button {
+          width: 100%;
+          display: block;
+        }
+      }
+    }
+  }
+
+  .generator-form-card {
+    padding: 1rem;
+
+    .config-settings-card {
+      padding: 1rem;
+
+      .config-row {
+        .ecc-button-group {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 6px;
+        }
+
+        &.colors-row {
+          flex-direction: column;
+          gap: 10px;
+        }
+      }
+    }
+  }
+
+  .generator-preview-card {
+    padding: 1rem;
+
+    .qr-canvas-wrapper {
+      padding: 1rem;
+    }
+
+    .export-actions-card {
+      .export-btn-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+  }
+
+  .safe-url-modal-card {
+    padding: 1.25rem 1rem;
+
+    .modal-actions {
+      flex-direction: column;
+      width: 100%;
+      gap: 8px;
+
+      app-button {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+}

@@ -11,7 +11,8 @@ import {
   AppPageHeaderComponent,
   AppFooterComponent,
   PrivacySupportNavComponent,
-  AppButtonComponent
+  AppButtonComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -27,8 +28,9 @@ import {
     AppPageHeaderComponent,
     AppFooterComponent,
     PrivacySupportNavComponent,
-    AppButtonComponent
-]
+    AppButtonComponent,
+    TranslatePipe
+  ]
 })
 export class ContactSupportPage implements OnInit {
   private profileService = inject(ProfileService);
@@ -54,11 +56,10 @@ export class ContactSupportPage implements OnInit {
   };
 
   readonly portalRequests = [
-    { name: 'SSC CGL / CHSL', query: 'SSC CGL 2026 Photo & Signature Requirements' },
-    { name: 'UPSC Civil Services', query: 'UPSC CSE 2026 Photo with Name & Date' },
-    { name: 'IBPS PO / Clerk', query: 'IBPS Left Thumb Impression & Declaration Spec' },
-    { name: 'NTA JEE / NEET', query: 'NTA Postcard Photo & Signature Specs' },
-    { name: 'State PSCs (BPSC, UPPSC, MPSC)', query: 'State PSC Application Preset' }
+    { name: 'Photo size', query: 'New photo size preset' },
+    { name: 'Signature size', query: 'New signature size preset' },
+    { name: 'Photo + signature set', query: 'New photo and signature preset' },
+    { name: 'PDF size limit', query: 'New PDF size preset' }
   ];
 
   ngOnInit(): void {

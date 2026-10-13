@@ -31,7 +31,7 @@ test.describe('PDF Content Extractor — Attachment Extraction @phase2 @extracto
 
     // Check attachments list
     const attRows = page.locator('.attachments-list .attachment-row');
-    if (await attRows.count() > 0) {
+    {
       await expect(attRows.first()).toBeVisible();
 
       // Download single attachment

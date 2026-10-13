@@ -74,7 +74,23 @@ export const hi = {
     copy: 'कॉपी करें',
     photo: 'फोटो',
     signature: 'हस्ताक्षर',
-    pdf: 'PDF'
+    pdf: 'PDF',
+    undo: 'पहले जैसा करें',
+    redo: 'फिर से करें',
+    moveUp: 'ऊपर ले जाएं',
+    moveDown: 'नीचे ले जाएं',
+    zoomIn: 'ज़ूम इन',
+    zoomOut: 'ज़ूम आउट',
+    resetZoom: '100% पर रीसेट करें',
+    closePreview: 'पूर्वावलोकन बंद करें',
+    rotate90: '90° घुमाएं',
+    rotate90cw: '90° दाईं ओर घुमाएं',
+    rotate90ccw: '90° बाईं ओर घुमाएं (270°)',
+    deletePage: 'पेज हटाएं',
+    duplicatePage: 'पेज की कॉपी बनाएं',
+    prevPage: 'पिछला पेज',
+    nextPage: 'अगला पेज',
+    home: 'होम'
   },
   header: {
     tools: 'टूल्स',
@@ -110,7 +126,7 @@ export const hi = {
     resetsAt: 'आपके मुफ़्त कार्य आधी रात को फिर से शुरू होंगे।'
   },
   footer: {
-    brandDesc: 'सरकारी परीक्षा और नौकरी फॉर्म के लिए आपका निजी सहायक। फोटो का साइज कम करें, हस्ताक्षर साफ करें, PDF बदलें, जोड़ें और हस्ताक्षर करें — 100% आपके फोन या कंप्यूटर पर सुरक्षित।',
+    brandDesc: 'किसी भी ऑनलाइन फॉर्म के लिए आपका निजी सहायक। फोटो का साइज कम करें, हस्ताक्षर साफ करें, PDF बदलें, जोड़ें और हस्ताक्षर करें — 100% आपके फोन या कंप्यूटर पर सुरक्षित।',
     securityChip: 'फाइलें कभी आपके डिवाइस से बाहर नहीं जातीं',
     docTools: 'दस्तावेज़ टूल्स',
     photoCompress: 'फोटो साइज कम व क्रॉप करें',
@@ -119,7 +135,7 @@ export const hi = {
     docConverter: 'दस्तावेज़ कनवर्टर',
     pageOrganize: 'पेज जोड़ें और क्रम बदलें',
     pdfEditor: 'PDF रीडर और एडिटर',
-    examPresets: 'सरकारी परीक्षा प्रीसेट्स',
+    examPresets: 'साइज प्रीसेट्स',
     productPricing: 'उत्पाद और जानकारी',
     productOverview: 'अवलोकन (Overview)',
     goPremium: 'प्रीमियम लें (असीमित)',
@@ -141,8 +157,8 @@ export const hi = {
   },
   home: {
     heroBadge: '100% आपके डिवाइस पर • कोई सर्वर अपलोड नहीं',
-    heroTitle: '<span class="title-line">हर सरकारी फॉर्म के लिए</span><span class="title-line">सरल दस्तावेज़ सहायक</span>',
-    heroSubtitle: 'SSC, UPSC, IBPS और राज्य सेवा आयोग के फॉर्म के लिए पासपोर्ट फोटो, हस्ताक्षर और PDF को सही KB और साइज में आसानी से तैयार करें।',
+    heroTitle: '<span class="title-line">हर ऑनलाइन फॉर्म के लिए</span><span class="title-line">सरल दस्तावेज़ सहायक</span>',
+    heroSubtitle: 'फोटो, हस्ताक्षर और PDF को फॉर्म में मांगे गए सही पिक्सेल और KB साइज में आसानी से तैयार करें।',
     searchPlaceholder: 'टूल्स खोजें (जैसे फोटो कंप्रेस, मर्ज, वर्ड से पीडीएफ, साइन)...',
     clearSearch: 'सर्च साफ करें',
     recentTools: 'हाल ही में उपयोग किए गए टूल्स:',
@@ -153,7 +169,7 @@ export const hi = {
     feature1Title: 'पूरी गोपनीयता',
     feature1Desc: 'आपकी फाइलें आपके फोन या कंप्यूटर से बाहर नहीं जातीं। सब कुछ बिना सर्वर पर अपलोड किए आपके ब्राउज़र में होता है।',
     feature2Title: 'सटीक KB सीमा',
-    feature2Desc: 'सरकारी पोर्टलों के कड़े नियमों को आसानी से पूरा करें। हम आपकी फोटो और दस्तावेजों को तय KB सीमा के भीतर लाते हैं।',
+    feature2Desc: 'अपलोड की कड़ी सीमाओं को आसानी से पूरा करें। हम आपकी फोटो और दस्तावेजों को तय KB सीमा के भीतर लाते हैं।',
     feature3Title: 'ऑल-इन-वन टूलकिट',
     feature3Desc: 'Word, Excel और PDF के बीच बदलें, फाइलें जोड़ें, पेज हटाएं, फॉर्म भरें और बिना किसी शुल्क के साइन जोड़ें।'
   },
@@ -265,7 +281,7 @@ export const hi = {
     },
     presets: {
       title: 'परीक्षा और नौकरी प्रीसेट्स',
-      description: 'SSC, UPSC, IBPS, NEET और राज्य भर्ती पोर्टलों के लिए पहले से बने साइज।'
+      description: 'आम ऑनलाइन फॉर्म के लिए पहले से बने पिक्सेल और KB साइज।'
     },
     pdf_ocr: {
       title: 'स्मार्ट PDF OCR (टेक्स्ट पहचानें)',
@@ -277,7 +293,7 @@ export const hi = {
     },
     document_validator: {
       title: 'परीक्षा दस्तावेज़ जांचकर्ता (Validator)',
-      description: 'SSC, UPSC और सरकारी फॉर्म के नियमों की तुरंत जांच करें और एक क्लिक में ठीक करें।'
+      description: 'अपनी चुनी हुई साइज के अनुसार तुरंत जांच करें और एक क्लिक में ठीक करें।'
     },
     pdf_compare: {
       title: 'PDF तुलना',
@@ -332,7 +348,7 @@ export const hi = {
     step0Bullet2: 'बिना इंटरनेट के भी पूरी तरह ऑफलाइन काम करता है',
     step0Bullet3: 'आपके व्यक्तिगत दस्तावेज पूरी तरह गोपनीय रहते हैं',
     step1Title: 'सटीक KB और पिक्सेल सीमा',
-    step1Desc: 'सरकारी नौकरी और परीक्षा पोर्टलों (SSC, UPSC, IBPS, राज्य लोक सेवा आयोग) के नियमों के अनुसार तैयार।',
+    step1Desc: 'ऑनलाइन फॉर्म की कड़ी पिक्सेल और फाइल-साइज सीमाओं के अनुसार तैयार।',
     step1Bullet1: 'फाइलों को तय KB सीमा के भीतर रखने की पूरी गारंटी',
     step1Bullet2: 'पासपोर्ट फोटो के लिए 3.5 × 4.5 सेमी का तय अनुपात',
     step1Bullet3: 'हस्ताक्षर के पीछे से कागज की छाया और गंदगी साफ करें',
@@ -513,7 +529,7 @@ export const hi = {
     subtitle: 'ऑनलाइन फॉर्म के लिए पासपोर्ट फोटो को तय KB सीमा और पिक्सेल आकार में क्रॉप व कंप्रेस करें।',
     tabKb: 'सटीक KB कंप्रेस',
     tabPixels: 'सटीक पिक्सेल रीसाइज़',
-    quickPresetsTitle: 'भारतीय पोर्टलों के लिए तुरंत प्रीसेट्स',
+    quickPresetsTitle: 'तुरंत प्रीसेट्स',
     targetSizeTitle: 'वांछित फाइल साइज चुनें',
     targetSizeHint: 'हमारा टूल फोटो की क्वालिटी को ध्यान से सेट करता है ताकि साइज तय सीमा से कम रहे।',
     pixelPresetsTitle: 'सामान्य फॉर्म आकार',
@@ -541,7 +557,9 @@ export const hi = {
     tabImagesToPdf: 'फोटो से PDF बनाएं',
     tabExtract: 'पेज निकालें',
     targetSizeLabel: 'वांछित PDF साइज',
-    compressPdfBtn: 'PDF को {{size}} KB तक छोटा करें'
+    compressPdfBtn: 'PDF को {{size}} KB तक छोटा करें',
+    compileDropzoneTitle: 'PDF बनाने के लिए तस्वीरें चुनें या यहाँ खींचकर छोड़ें',
+    extractDropzoneTitle: 'पेज निकालने के लिए PDF चुनें या यहाँ खींचकर छोड़ें'
   },
   historyPage: {
     title: 'प्रोसेसिंग इतिहास',
@@ -556,7 +574,7 @@ export const hi = {
   },
   presetsPage: {
     title: 'परीक्षा और नौकरी प्रीसेट्स',
-    subtitle: 'सरकारी फॉर्म, परीक्षाओं और नौकरी पोर्टलों के लिए तैयार सेटिंग्स।',
+    subtitle: 'आम ऑनलाइन फॉर्म के लिए तैयार पिक्सेल और KB साइज।',
     customPresetBtn: '+ अपना प्रीसेट बनाएं',
     noticeTitle: 'आधिकारिक नियम सूचना',
     noticeDesc: 'नियम समय के साथ बदल सकते हैं। फॉर्म जमा करने से पहले आधिकारिक वेबसाइट पर नियम अवश्य जांचें।',
@@ -667,15 +685,19 @@ export const hi = {
     ocrHandoffDesc: 'हमारे स्मार्ट PDF OCR टूल से टेक्स्ट निकालें और सर्च लेयर जोड़ें।',
     makeSearchableBtn: 'सर्च करने योग्य बनाएं (OCR)',
     backToPages: 'पेज सूची पर वापस जाएं',
-    startNewScan: 'नया स्कैन शुरू करें'
+    startNewScan: 'नया स्कैन शुरू करें',
+    moveLeftUp: 'बाएं/ऊपर ले जाएं',
+    moveRightDown: 'दाएं/नीचे ले जाएं',
+    adjustCropTitle: 'क्रॉप ठीक करें',
+    enhanceFilterTitle: 'फिल्टर लगाएं'
   },
   validator: {
     title: 'परीक्षा दस्तावेज़ जांचकर्ता (Validator)',
-    subtitle: 'SSC, UPSC और नौकरी फॉर्म के नियमों से फोटो, हस्ताक्षर और PDF जांचें और 1-क्लिक में ठीक करें।',
+    subtitle: 'अपनी चुनी हुई साइज के अनुसार फोटो, हस्ताक्षर और PDF जांचें और 1-क्लिक में ठीक करें।',
     badge: '1-क्लिक में ठीक करें',
     selectPresetLabel: 'परीक्षा / भर्ती पोर्टल चुनें',
-    searchPresetsPlaceholder: 'प्रीसेट खोजें (SSC, UPSC, IBPS, PAN, पासपोर्ट)...',
-    officialVerified: 'आधिकारिक स्रोत',
+    searchPresetsPlaceholder: 'साइज से प्रीसेट खोजें (350 × 450, 200 × 230, 50 KB)...',
+    officialVerified: 'संदर्भ स्रोत',
     requiredDocuments: 'आवश्यक दस्तावेज़',
     readyForSubmission: 'पोर्टल पर अपलोड के लिए तैयार',
     issuesDetected: 'समस्याएं पाई गईं',
@@ -727,7 +749,9 @@ export const hi = {
     renderingVisualDiff: 'दृश्य तुलना ओवरले तैयार हो रहा है...',
     visualDiffHint: 'पृष्ठों के बीच के अंतर लाल रंग में हाइलाइट किए गए हैं।',
     visualDiffUnavailable: 'इस पृष्ठ जोड़े के लिए दृश्य अंतर उपलब्ध नहीं है।',
-    downloadReportBtn: 'तुलना रिपोर्ट डाउनलोड करें'
+    downloadReportBtn: 'तुलना रिपोर्ट डाउनलोड करें',
+    removedLabel: 'हटाया गया',
+    addedLabel: 'जोड़ा गया'
   },
   privacySanitizer: {
     title: 'PDF गोपनीयता सैनिटाइज़र',
@@ -1120,6 +1144,85 @@ export const hi = {
     pendingRedaction: 'अभी लागू नहीं',
     cancelRedactionTitle: 'रद्द करें',
     cropArea: 'क्रॉप क्षेत्र'
+  },
+  previews: {
+    clickToPreview: 'पूर्वावलोकन के लिए क्लिक करें',
+    previewFile: 'फाइल का पूर्वावलोकन',
+    removeFile: 'फाइल हटाएं',
+    enlargePage: 'पेज बड़ा करके देखें',
+    zoomPreview: 'ज़ूम / पूर्वावलोकन',
+    restorePage: 'पेज वापस लाएं',
+    shareDocument: 'दस्तावेज़ शेयर करें',
+    pagePreview: 'पेज {{page}} का पूर्वावलोकन'
+  },
+  organizer: {
+    organizeTitle: 'PDF पेज व्यवस्थित करें',
+    mergeTitle: 'PDF फाइलें जोड़ें',
+    splitTitle: 'PDF दस्तावेज़ बांटें',
+    rotateTitle: 'PDF पेज घुमाएं',
+    deleteTitle: 'PDF पेज हटाएं',
+    extractTitle: 'PDF पेज निकालें',
+    dropzoneMerge: 'जोड़ने के लिए PDF फाइलें चुनें या यहाँ छोड़ें',
+    dropzoneSingle: 'PDF दस्तावेज़ चुनें या यहाँ छोड़ें',
+    rotateSelectedCw: 'चुने हुए पेज 90° दाईं ओर घुमाएं',
+    rotateSelected180: 'चुने हुए पेज 180° घुमाएं',
+    rotateSelectedCcw: 'चुने हुए पेज 270° घुमाएं (90° बाईं ओर)',
+    duplicateSelected: 'चुने हुए पेज की कॉपी बनाएं',
+    deleteSelected: 'चुने हुए पेज हटाएं',
+    moveEarlier: 'बाएं ले जाएं / पहले',
+    moveLater: 'दाएं ले जाएं / बाद में',
+    jumpToPosition: 'किसी जगह पर ले जाएं'
+  },
+  security: {
+    title: 'PDF सुरक्षा',
+    dropzoneUnlock: 'पासवर्ड वाली PDF चुनें या यहाँ छोड़ें',
+    dropzoneProtect: 'सुरक्षित करने के लिए PDF चुनें या यहाँ छोड़ें',
+    unlockedTitle: 'दस्तावेज़ का पासवर्ड हट गया',
+    protectedTitle: 'दस्तावेज़ सुरक्षित हो गया'
+  },
+  profilePage: {
+    title: 'खाता और प्रोफाइल',
+    uploadPhoto: 'अपनी तस्वीर अपलोड करें',
+    resetToInitials: 'नाम के अक्षरों पर लौटें',
+    editProfile: 'प्रोफाइल संपादित करें',
+    resetAllData: 'सारा स्थानीय डेटा मिटाना है?'
+  },
+  localData: {
+    title: 'स्थानीय डेटा भंडारण',
+    factoryResetTitle: 'ऐप को फैक्टरी रीसेट करना है?'
+  },
+  conversionHub: {
+    title: 'दस्तावेज़ और PDF कन्वर्टर',
+    noToolsFound: 'कोई कन्वर्ट टूल नहीं मिला'
+  },
+  flatten: {
+    dropzoneTitle: 'लॉक करने के लिए PDF चुनें या यहाँ छोड़ें'
+  },
+  forms: {
+    saveProgress: 'काम सेव करें'
+  },
+  aboutEngine: {
+    title: 'इंजन के बारे में'
+  },
+  accountPage: {
+    title: 'खाता'
+  },
+  batchPage: {
+    title: 'एक साथ कई तस्वीरें छोटी करें'
+  },
+  batchPdfPage: {
+    title: 'एक साथ कई PDF छोटी करें'
+  },
+  helpPage: {
+    title: 'मदद और अक्सर पूछे जाने वाले सवाल'
+  },
+  pdfSign: {
+    signatureModalTitle: 'हस्ताक्षर बनाएं या चुनें',
+    signatureModalSubtitle: 'हस्ताक्षर बनाएं, अपलोड करें या हालिया हस्ताक्षर चुनें'
+  },
+  signatureRequest: {
+    addRecipientModalTitle: 'नया हस्ताक्षरकर्ता जोड़ें',
+    addRecipientModalSubtitle: 'इस हस्ताक्षर अनुरोध के लिए भूमिका और विवरण दर्ज करें'
   }
 };
 

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { Subscription } from 'rxjs';
 import { AuthError, AuthService } from '../../core/api/auth.service';
 import { emailProblem, normalizeEmail, passwordProblem } from '../../core/api/credential-rules';
@@ -16,6 +16,7 @@ import {
   AppIconComponent,
   AppInputComponent,
   AppPageHeaderComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 type Mode = 'signIn' | 'register';
@@ -44,6 +45,7 @@ type Mode = 'signIn' | 'register';
     AppButtonComponent,
     AppInputComponent,
     AppIconComponent,
+    TranslatePipe
   ],
 })
 export class AccountPage implements OnInit, OnDestroy {
@@ -52,6 +54,7 @@ export class AccountPage implements OnInit, OnDestroy {
   private readonly api = inject(PdfApiService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   /** Plan names as the admin wrote them, so the screen never shows a raw id. */
   private planNames = new Map<string, string>();
@@ -164,6 +167,11 @@ export class AccountPage implements OnInit, OnDestroy {
       // A sign-in is also the moment to reconcile with the store, in case the
       // person bought premium on this device before making an account.
       await this.monetization.refreshFromServer();
+
+      const next = this.route.snapshot.queryParamMap.get('next');
+      if (next) {
+        void this.router.navigateByUrl(next);
+      }
     } catch (error) {
       const message = error instanceof AuthError ? error.message : 'Something went wrong.';
       // 401 is always the password; 409 is always the address already existing.
@@ -172,7 +180,18 @@ export class AccountPage implements OnInit, OnDestroy {
       } else if (error instanceof AuthError && error.status === 401) {
         this.passwordError = message;
       } else {
-        this.toast.error(message);
+        // If network / CORS / server unreachable:
+        if (error instanceof AuthError && (error.status === 0 || !error.status || error.message.includes('network') || error.message.includes('connection'))) {
+          await this.auth.createLocalSession(email, this.displayName.trim() || undefined);
+          this.toast.info('Created offline session (server unreachable).');
+          const next = this.route.snapshot.queryParamMap.get('next');
+          if (next) {
+            void this.router.navigateByUrl(next);
+            return;
+          }
+        } else {
+          this.toast.error(message);
+        }
       }
     } finally {
       this.busy = false;

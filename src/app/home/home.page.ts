@@ -9,6 +9,7 @@ import {
   AppFooterComponent,
   AppHeaderComponent,
   AppIconComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../shared/components/ui';
 
@@ -35,6 +36,7 @@ import {
     AppFooterComponent,
     AppEmptyStateComponent,
     AppIconComponent,
+    AutoScrollDirective,
     TranslatePipe
   ]
 })
@@ -45,6 +47,8 @@ export class HomePage {
   public toolRegistry = inject(ToolRegistryService);
   searchQuery = '';
   selectedCategory: string = 'ALL';
+  isMarqueePaused = false;
+  private marqueeResumeTimer: ReturnType<typeof setTimeout> | null = null;
 
   static readonly CATEGORY_LIST = [
     'ALL',
@@ -137,5 +141,22 @@ export class HomePage {
 
   isFavorite(toolId: string): boolean {
     return this.toolRegistry.isFavorite(toolId);
+  }
+
+  pauseMarquee(): void {
+    if (this.marqueeResumeTimer) {
+      clearTimeout(this.marqueeResumeTimer);
+      this.marqueeResumeTimer = null;
+    }
+    this.isMarqueePaused = true;
+  }
+
+  resumeMarquee(): void {
+    if (this.marqueeResumeTimer) {
+      clearTimeout(this.marqueeResumeTimer);
+    }
+    this.marqueeResumeTimer = setTimeout(() => {
+      this.isMarqueePaused = false;
+    }, 2500);
   }
 }

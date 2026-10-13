@@ -4,7 +4,7 @@
   <main class="app-main-content">
     <div class="tool-page-container">
       <app-page-header
-        title="Account"
+        [title]="'accountPage.title' | translate"
         subtitle="Optional. Sign in only if you want premium to follow you to a new phone."
         [breadcrumbs]="[{ label: 'Account' }]"
         backUrl="/profile">

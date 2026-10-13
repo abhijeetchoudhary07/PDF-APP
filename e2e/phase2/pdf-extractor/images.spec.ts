@@ -40,36 +40,57 @@ test.describe('PDF Content Extractor — Image Extraction & ZIP Export @phase2 @
     await expect(imgSpecs).toBeVisible();
   });
 
+  /*
+   * The download assertions used to sit inside `if (await btn.isVisible())`, so
+   * a gallery that rendered no download control -- or rendered no images at all
+   * -- passed this test rather than failing it. The `beforeEach` extracts a PDF
+   * that is there precisely because it contains images; if the button is
+   * missing, that is the bug this test is for.
+   */
   test('EXT-021: Single image download succeeds', async ({ page }) => {
-    const downloadSingleBtn = page.locator('.image-card button:has-text("Download"), .image-card button:has-text("डाउनलोड")').first();
-    if (await downloadSingleBtn.isVisible()) {
-      const downloadInfo = await interceptDownload(page, async () => {
-        await downloadSingleBtn.click();
-      });
+    const downloadSingleBtn = page.locator('.image-card').first().getByRole('button', { name: /download/i });
+    await expect(downloadSingleBtn).toBeVisible();
 
-      expect(downloadInfo.fileName).toMatch(/\.(png|jpg|jpeg)$/i);
-      expect(downloadInfo.size).toBeGreaterThan(0);
-    }
+    const downloadInfo = await interceptDownload(page, async () => {
+      await downloadSingleBtn.click();
+    });
+
+    expect(downloadInfo.fileName).toMatch(/\.(png|jpg|jpeg)$/i);
+    expect(downloadInfo.size).toBeGreaterThan(0);
   });
 
   test('EXT-022: Batch ZIP export downloads archive with images', async ({ page }) => {
-    // Select all images
-    const selectAllBtn = page.locator('.images-panel button:has-text("Select All"), .images-panel button:has-text("सभी चुनें")').first();
-    if (await selectAllBtn.isVisible()) {
-      await selectAllBtn.click();
-    }
+    /*
+     * This test exported nothing, for two compounding reasons.
+     *
+     * It opened by clicking "Toggle Select All" to select the images. Every
+     * extracted image arrives already selected, so that click *cleared* the
+     * selection -- and ZIP export is disabled with nothing selected. The
+     * `if (await zipBtn.isEnabled())` wrapped around the rest was then false,
+     * the whole export was skipped, and the test passed.
+     *
+     * So the toggle is exercised for what it actually does, in both
+     * directions, and the export runs from the state the page starts in.
+     */
+    const panel = page.locator('.images-panel');
+    const zipBtn = panel.getByRole('button', { name: /zip/i }).first();
+    const toggleAll = panel.getByRole('button', { name: /select all/i }).first();
 
-    const zipBtn = page.locator('.images-panel button:has-text("ZIP"), .images-panel button:has-text("ज़िप")').first();
-    if (await zipBtn.isEnabled()) {
-      const downloadInfo = await interceptDownload(page, async () => {
-        await zipBtn.click();
-      });
+    await expect(zipBtn).toBeEnabled();
 
-      expect(downloadInfo.fileName).toContain('.zip');
-      expect(downloadInfo.size).toBeGreaterThan(0);
+    await toggleAll.click();
+    await expect(zipBtn).toBeDisabled();
+    await toggleAll.click();
+    await expect(zipBtn).toBeEnabled();
 
-      const zipData = await validateDownloadedZip(downloadInfo.buffer, 1);
-      expect(zipData.fileCount).toBeGreaterThanOrEqual(1);
-    }
+    const downloadInfo = await interceptDownload(page, async () => {
+      await zipBtn.click();
+    });
+
+    expect(downloadInfo.fileName).toContain('.zip');
+    expect(downloadInfo.size).toBeGreaterThan(0);
+
+    const zipData = await validateDownloadedZip(downloadInfo.buffer, 1);
+    expect(zipData.fileCount).toBeGreaterThanOrEqual(1);
   });
 });

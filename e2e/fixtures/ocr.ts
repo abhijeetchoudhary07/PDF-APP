@@ -55,3 +55,21 @@ export async function customPageChips(page: Page) {
   await page.getByRole('button', { name: /custom/i }).first().click();
   return page.locator('.page-chip');
 }
+
+/**
+ * Takes the digital-text shortcut to the result step.
+ *
+ * A PDF that already carries selectable text offers direct extraction, which
+ * lands on the same result screen as recognition without running tesseract.
+ * That is the only practical way for a test to assert on the result UI -- copy,
+ * search, the export tiles -- inside a sane timeout.
+ */
+export async function extractDigitalText(page: Page): Promise<void> {
+  await page.getByRole('button', { name: /extract digital text/i }).first().click();
+  await expect(page.locator('.recognized-textarea')).toBeVisible({ timeout: 30000 });
+}
+
+/** The cancel control on the processing step, present only while OCR runs. */
+export function cancelOcrButton(page: Page) {
+  return page.locator('.processing-actions button').first();
+}

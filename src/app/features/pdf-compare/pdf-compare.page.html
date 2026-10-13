@@ -197,7 +197,7 @@
           >{{ 'common.next' | translate }} →</app-button>
         </div>
         <!-- Quick page jump pills -->
-        <div class="page-pills-row">
+        <div class="page-pills-row" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
           @for (m of summary.pageMatches; track m; let idx = $index) {
             <button
               type="button"
@@ -302,10 +302,10 @@
                     <span class="token-unchanged">{{ token.value }} </span>
                   }
                   @if (token.type === 'removed') {
-                    <span class="token-removed" [class.active-change]="isTokenActiveChange(tIdx)" title="Removed">{{ token.value }} </span>
+                    <span class="token-removed" [class.active-change]="isTokenActiveChange(tIdx)" [title]="'compare.removedLabel' | translate">{{ token.value }} </span>
                   }
                   @if (token.type === 'added') {
-                    <span class="token-added" [class.active-change]="isTokenActiveChange(tIdx)" title="Added">{{ token.value }} </span>
+                    <span class="token-added" [class.active-change]="isTokenActiveChange(tIdx)" [title]="'compare.addedLabel' | translate">{{ token.value }} </span>
                   }
                 }
               </div>

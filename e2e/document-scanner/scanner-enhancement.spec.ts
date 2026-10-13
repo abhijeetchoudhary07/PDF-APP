@@ -15,7 +15,7 @@ test.describe('Document Scanner — Auto Enhance Presets @scanner', () => {
     await page.goto('/features/document-scanner');
 
     await importScannedPage(page);
-    await pageAction(page, 0, 'Enhance Filter').click();
+    await pageAction(page, 0, 'page-enhance').click();
     await expect(page.locator('.enhance-card')).toBeVisible({ timeout: 15000 });
   });
 

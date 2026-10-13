@@ -9,6 +9,7 @@ import { ProfileService } from '../../../../core/services/profile.service';
 import { ThemeService, ThemeMode } from '../../../../core/services/theme.service';
 import { AppLanguageSelectorComponent } from '../language-selector/language-selector.component';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { TranslationService } from '../../../../core/services/translation.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -227,7 +228,9 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
           </button>
     
           <!-- Profile: full chip on desktop, avatar only on mobile -->
-          <a routerLink="/profile" class="profile-btn" title="User Profile" aria-label="Profile">
+          <a routerLink="/profile" class="profile-btn"
+             [title]="'header.userProfile' | translate"
+             [attr.aria-label]="'common.profile' | translate">
             <div class="profile-avatar-chip">
               @if ((profileService.profile$ | async)?.avatarUrl; as avatarUrl) {
                 <img
@@ -1288,6 +1291,7 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
   globalSearch = inject(GlobalSearchService);
   profileService = inject(ProfileService);
   themeService = inject(ThemeService);
+  private translation = inject(TranslationService);
   private router = inject(Router);
   private location = inject(Location);
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -1329,10 +1333,19 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
 
   private routerSub?: Subscription;
 
+  /*
+   * `header.themeLabel` has existed, translated into all five languages, for as
+   * long as this getter has been building an English string past it. The mode
+   * names go through the dictionary too: a half-translated label reading
+   * "थीम: light" is worse than either whole version of it.
+   */
   get themeLabel(): string {
     const mode = this.themeService.currentTheme$.value;
     const next = mode === 'light' ? 'dark' : mode === 'dark' ? 'system' : 'light';
-    return `Theme: ${mode} — switch to ${next}`;
+    return this.translation.translate('header.themeLabel', {
+      mode: this.translation.translate(`common.${mode}`),
+      next: this.translation.translate(`common.${next}`)
+    });
   }
 
   /*

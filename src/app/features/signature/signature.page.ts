@@ -26,6 +26,8 @@ import {
   FileDropzoneComponent,
   FilePreviewComponent,
   BeforeAfterPreviewComponent,
+  AppConversionAnimationComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -46,8 +48,10 @@ import {
     AppRelatedToolsComponent,
     FileDropzoneComponent,
     FilePreviewComponent,
+    AppConversionAnimationComponent,
+    AutoScrollDirective,
     TranslatePipe
-],
+  ],
   providers: [DecimalPipe]
 })
 export class SignaturePage implements OnDestroy {
@@ -76,6 +80,7 @@ export class SignaturePage implements OnDestroy {
   processedPreviewUrl?: string;
   processedImageDims?: { width: number; height: number };
   isProcessing = false;
+  processingProgress = 0;
   processingStage: ProcessingStage = 'preparing';
   stageText = 'Preparing signature...';
   errorMessage?: string;
@@ -90,7 +95,7 @@ export class SignaturePage implements OnDestroy {
   // Exact Pixels state
   pixelPresets = [
     { label: '140 × 60 (Standard Portal)', w: 140, h: 60 },
-    { label: '200 × 80 (UPSC / Banking)', w: 200, h: 80 }
+    { label: '200 × 80', w: 200, h: 80 }
   ];
   targetWidth: number = 140;
   targetHeight: number = 60;
@@ -261,6 +266,7 @@ export class SignaturePage implements OnDestroy {
     if (!this.originalFile) return;
 
     this.isProcessing = true;
+    this.processingProgress = 25;
     this.workflowState = 'PROCESSING';
     this.processingStage = 'analyzing';
     this.stageText = getProcessingStageLabel('analyzing', this.translationService);
@@ -272,6 +278,7 @@ export class SignaturePage implements OnDestroy {
         outputFormat: 'image/jpeg'
       };
       this.processingStage = 'optimizing';
+      this.processingProgress = 65;
       this.stageText = getProcessingStageLabel('optimizing', this.translationService);
       this.cdr.detectChanges();
 
@@ -280,6 +287,7 @@ export class SignaturePage implements OnDestroy {
       // Pixels Mode
       try {
         this.processingStage = 'processing';
+        this.processingProgress = 65;
         this.stageText = getProcessingStageLabel('processing', this.translationService);
         this.cdr.detectChanges();
 
@@ -310,6 +318,7 @@ export class SignaturePage implements OnDestroy {
       }
     }
 
+    this.processingProgress = 100;
     this.isProcessing = false;
 
     if (this.processedResult?.success && this.processedResult.file) {

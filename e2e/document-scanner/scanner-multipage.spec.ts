@@ -24,12 +24,12 @@ test.describe('Document Scanner — Multi-page Management @scanner', () => {
     // Each card is numbered, and the order controls bound to the ends are
     // disabled so a page cannot be moved off the list.
     await expect(page.locator('.page-number-badge').first()).toContainText('1');
-    await expect(pageAction(page, 0, 'Move Left/Up')).toBeDisabled();
-    await expect(pageAction(page, 1, 'Move Right/Down')).toBeDisabled();
+    await expect(pageAction(page, 0, 'page-move-up')).toBeDisabled();
+    await expect(pageAction(page, 1, 'page-move-down')).toBeDisabled();
 
     // Reordering swaps them.
-    await pageAction(page, 1, 'Move Left/Up').click();
-    await expect(pageAction(page, 0, 'Move Left/Up')).toBeDisabled();
+    await pageAction(page, 1, 'page-move-up').click();
+    await expect(pageAction(page, 0, 'page-move-up')).toBeDisabled();
     await expect(pageCards(page)).toHaveCount(2);
   });
 
@@ -37,7 +37,7 @@ test.describe('Document Scanner — Multi-page Management @scanner', () => {
     await importScannedPage(page);
 
     const before = await page.locator('.page-card .page-thumb').getAttribute('src');
-    await pageAction(page, 0, 'Rotate 90°').click();
+    await pageAction(page, 0, 'page-rotate').click();
 
     // Rotating re-renders the page to a new blob, so the thumbnail's object
     // URL changes. A rotation that did nothing would leave the same src.
@@ -50,11 +50,11 @@ test.describe('Document Scanner — Multi-page Management @scanner', () => {
     await importScannedPage(page, 'scanner/tilted-document.jpg');
     await expect(pageCards(page)).toHaveCount(2);
 
-    await pageAction(page, 0, 'Delete Page').click();
+    await pageAction(page, 0, 'page-delete').click();
     await expect(pageCards(page)).toHaveCount(1);
 
     // Deleting the last page leaves the dashboard behind for the empty state.
-    await pageAction(page, 0, 'Delete Page').click();
+    await pageAction(page, 0, 'page-delete').click();
     await expect(pageCards(page)).toHaveCount(0);
   });
 });

@@ -19,7 +19,7 @@
             [placeholder]="'validator.searchPresetsPlaceholder' | translate"
             [(ngModel)]="presetSearchQuery"
             />
-          <div class="preset-pills-scroll">
+          <div class="preset-pills-scroll" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
             <!--
             Tracked by identity strings, not by object.
             `filteredPresetGroups` is a getter that builds a fresh `{category,
@@ -54,11 +54,6 @@
           <div class="preset-title-row">
             <h3>{{ selectedPreset.name }}</h3>
             <app-badge color="primary">{{ selectedPreset.category }}</app-badge>
-            @if (selectedPreset.photo?.verifiedSource) {
-              <app-badge color="success">
-                {{ 'validator.officialVerified' | translate }}: {{ selectedPreset.photo.verifiedSource }}
-              </app-badge>
-            }
           </div>
           <div class="applicable-docs-row">
             <span class="label">{{ 'validator.requiredDocuments' | translate }}:</span>
@@ -102,7 +97,7 @@
     <section class="slots-grid">
       <!-- SLOT 1: PHOTO -->
       @if (selectedPreset.photo) {
-        <div class="slot-card">
+        <div class="slot-card" data-testid="slot-photo">
           <div class="slot-header">
             <div class="header-info">
               <h3>📷 {{ 'validator.slotPhoto' | translate }}</h3>
@@ -171,6 +166,7 @@
                           size="sm"
                           [loading]="isFixing && fixingRuleId === rule.id"
                           (clicked)="autoFixRule('photo', rule)"
+                          data-testid="fix-rule-photo"
                           >
                           ⚡ {{ 'validator.fixAuto' | translate }}
                         </app-button>
@@ -187,6 +183,7 @@
                     size="sm"
                     [loading]="isFixing && fixingSlot === 'photo'"
                     (clicked)="autoFixAllSlotIssues('photo')"
+                    data-testid="fix-all-photo"
                     >
                     ⚡ {{ 'validator.fixAllPhoto' | translate }}
                   </app-button>
@@ -214,7 +211,7 @@
       }
       <!-- SLOT 2: SIGNATURE -->
       @if (selectedPreset.signature) {
-        <div class="slot-card">
+        <div class="slot-card" data-testid="slot-signature">
           <div class="slot-header">
             <div class="header-info">
               <h3>✍️ {{ 'validator.slotSignature' | translate }}</h3>
@@ -283,6 +280,7 @@
                           size="sm"
                           [loading]="isFixing && fixingRuleId === rule.id"
                           (clicked)="autoFixRule('signature', rule)"
+                          data-testid="fix-rule-signature"
                           >
                           ⚡ {{ 'validator.fixAuto' | translate }}
                         </app-button>
@@ -299,6 +297,7 @@
                     size="sm"
                     [loading]="isFixing && fixingSlot === 'signature'"
                     (clicked)="autoFixAllSlotIssues('signature')"
+                    data-testid="fix-all-signature"
                     >
                     ⚡ {{ 'validator.fixAllSignature' | translate }}
                   </app-button>
@@ -326,7 +325,7 @@
       }
       <!-- SLOT 3: PDF -->
       @if (selectedPreset.pdf) {
-        <div class="slot-card">
+        <div class="slot-card" data-testid="slot-pdf">
           <div class="slot-header">
             <div class="header-info">
               <h3>📄 {{ 'validator.slotPdf' | translate }}</h3>
@@ -394,6 +393,7 @@
                           size="sm"
                           [loading]="isFixing && fixingRuleId === rule.id"
                           (clicked)="autoFixRule('pdf', rule)"
+                          data-testid="fix-rule-pdf"
                           >
                           ⚡ {{ 'validator.fixAuto' | translate }}
                         </app-button>
@@ -410,6 +410,7 @@
                     size="sm"
                     [loading]="isFixing && fixingSlot === 'pdf'"
                     (clicked)="autoFixAllSlotIssues('pdf')"
+                    data-testid="fix-all-pdf"
                     >
                     ⚡ {{ 'validator.fixAllPdf' | translate }}
                   </app-button>

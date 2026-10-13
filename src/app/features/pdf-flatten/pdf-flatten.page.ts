@@ -20,7 +20,9 @@ import {
   FileDropzoneComponent,
   FilePreviewComponent,
   ResultPreviewComponent,
-  AppIconComponent
+  AppIconComponent,
+  AppConversionAnimationComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -38,9 +40,10 @@ import {
     AppFooterComponent,
     AppButtonComponent,
     AppTabsComponent,
-    AppProgressComponent,
     FileDropzoneComponent,
-    FilePreviewComponent
+    FilePreviewComponent,
+    AppConversionAnimationComponent,
+    TranslatePipe
   ],
   providers: [DecimalPipe]
 })

@@ -7,7 +7,8 @@ import {
   AppPageHeaderComponent,
   AppFooterComponent,
   PrivacySupportNavComponent,
-  AppButtonComponent
+  AppButtonComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -22,8 +23,9 @@ import {
     AppPageHeaderComponent,
     AppFooterComponent,
     PrivacySupportNavComponent,
-    AppButtonComponent
-]
+    AppButtonComponent,
+    TranslatePipe
+  ]
 })
 export class PrivacyPolicyPage {
   lastUpdated = 'September 2026';

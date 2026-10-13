@@ -27,6 +27,7 @@ import {
   AppButtonComponent,
   AppBadgeComponent,
   AppRelatedToolsComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -48,6 +49,7 @@ export type ScannerView = 'empty' | 'cropping' | 'enhancing' | 'pages_list' | 'p
     AppButtonComponent,
     AppBadgeComponent,
     AppRelatedToolsComponent,
+    AutoScrollDirective,
     TranslatePipe
   ]
 })

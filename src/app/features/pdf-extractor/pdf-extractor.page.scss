@@ -524,3 +524,111 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 640px) {
+  .extractor-page {
+    padding: 1rem 0.75rem 2rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .dropzone-wrapper {
+    margin-bottom: 1.5rem;
+  }
+
+  .options-checklist-card {
+    padding: 1.25rem 1rem;
+    margin-bottom: 1.5rem;
+
+    .selected-file-banner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  }
+
+  .checklist-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .action-bar-center {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+
+    app-button {
+      width: 100%;
+      display: block;
+    }
+  }
+
+  .processing-section {
+    padding: 2.5rem 0.5rem;
+
+    .proc-card {
+      padding: 2rem 1.25rem;
+      max-width: 100%;
+    }
+  }
+
+  .result-section {
+    .metrics-row {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .tab-panel {
+      padding: 1rem;
+
+      .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+
+        .header-actions {
+          width: 100%;
+          flex-wrap: wrap;
+          gap: 6px;
+
+          app-button {
+            flex: 1;
+            min-width: 90px;
+          }
+        }
+      }
+    }
+
+    .image-gallery-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .table-card {
+      .table-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+
+    .pages-selector-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .attachments-list {
+      .attachment-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+
+        app-button {
+          width: 100%;
+          display: block;
+        }
+      }
+    }
+  }
+}

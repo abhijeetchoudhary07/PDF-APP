@@ -22,7 +22,7 @@ module.exports = tseslint.config(
        * Re-enable this rule once component state has been migrated to signals,
        * at which point OnPush becomes both correct and faster.
        *
-       * That migration is deliberately not part of the release work: it is 79
+       * That migration is deliberately not part of the release work: it is 73
        * components, it changes how every screen updates, and the failure mode
        * it risks is the one described above -- a view that silently stops
        * repainting, which no test in this repo would catch. `prefer-standalone`
@@ -48,5 +48,46 @@ module.exports = tseslint.config(
     files: ["**/*.html"],
     extends: [...angular.configs.templateRecommended],
     rules: {},
+  },
+  {
+    /*
+     * The Playwright suite, which `ng lint` did not look at until now.
+     *
+     * A test whose body hangs off `if (await locator.isVisible())` does not
+     * skip a step when the element is missing -- it skips the assertions too,
+     * and reports a pass. Twenty-eight of these had accumulated: one had never
+     * exported the ZIP it was named after, one asserted nothing whatsoever, and
+     * a whole scanner suite was green over a file input that is never in the
+     * DOM. None of them could fail, which is the only thing a test is for.
+     *
+     * `isVisible()` and `count()` are one-shot reads rather than web-first
+     * assertions, so they are also a race even when the element does turn up.
+     * `await expect(locator).toBeVisible()` retries and fails loudly; for a
+     * genuinely optional element, assert the branch you expect to be in.
+     */
+    files: ["e2e/**/*.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "IfStatement > AwaitExpression > CallExpression > MemberExpression[property.name=/^(isVisible|isHidden|isEnabled|isDisabled|isChecked|isEditable)$/]",
+          message:
+            "A one-shot isVisible()/isEnabled() guard skips the assertions with it. Use `await expect(locator).toBeVisible()` (or .toBeEnabled()) instead.",
+        },
+        {
+          selector:
+            "IfStatement > BinaryExpression > AwaitExpression > CallExpression > MemberExpression[property.name='count']",
+          message:
+            "A `count()` guard passes the test when the element is absent. Assert what you expect: `await expect(locator).toHaveCount(n)`.",
+        },
+        {
+          selector:
+            "IfStatement > LogicalExpression AwaitExpression > CallExpression > MemberExpression[property.name=/^(isVisible|isEnabled|count)$/]",
+          message:
+            "A one-shot visibility/count check in a compound condition skips the assertions with it. Assert instead.",
+        },
+      ],
+    },
   }
 );

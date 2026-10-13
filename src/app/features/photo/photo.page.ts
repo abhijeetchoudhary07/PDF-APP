@@ -24,6 +24,8 @@ import {
   AppRelatedToolsComponent,
   FileDropzoneComponent,
   FilePreviewComponent,
+  AppConversionAnimationComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -53,8 +55,10 @@ export interface FormPreset {
     FileDropzoneComponent,
     FilePreviewComponent,
     ResultPreviewComponent,
+    AppConversionAnimationComponent,
+    AutoScrollDirective,
     TranslatePipe
-],
+  ],
   providers: [DecimalPipe]
 })
 export class PhotoPage implements OnDestroy {
@@ -83,6 +87,7 @@ export class PhotoPage implements OnDestroy {
   processedPreviewUrl?: string;
   processedImageDims?: { width: number; height: number };
   isProcessing = false;
+  processingProgress = 0;
   processingStage: ProcessingStage = 'preparing';
   stageText = 'Preparing image...';
   errorMessage?: string;
@@ -100,8 +105,8 @@ export class PhotoPage implements OnDestroy {
 
   // Exact Pixels state
   pixelPresets = [
-    { label: '200 × 230 (PAN Card)', w: 200, h: 230 },
-    { label: '413 × 531 (Passport)', w: 413, h: 531 },
+    { label: '200 × 230', w: 200, h: 230 },
+    { label: '413 × 531', w: 413, h: 531 },
     { label: '300 × 400', w: 300, h: 400 },
     { label: '600 × 800', w: 600, h: 800 }
   ];
@@ -109,31 +114,31 @@ export class PhotoPage implements OnDestroy {
   targetHeight: number = 230;
   lockAspectRatio = true;
 
-  // Smart Form Presets (Indian Portals)
+  // Common upload sizes
   formPresets: FormPreset[] = [
     {
       id: 'pan',
-      name: 'PAN Card Photo',
+      name: '200 × 230 px',
       width: 200,
       height: 230,
       maxKB: 50,
-      description: '200 × 230 px, under 50 KB'
+      description: 'Under 50 KB'
     },
     {
       id: 'passport',
-      name: 'Passport Photo',
+      name: '413 × 531 px',
       width: 413,
       height: 531,
       maxKB: 50,
-      description: '3.5 × 4.5 cm (413 × 531 px), 20–50 KB'
+      description: '3.5 × 4.5 cm, 20–50 KB'
     },
     {
-      id: 'ssc',
-      name: 'SSC / UPSC Exam',
+      id: 'px140x180',
+      name: '140 × 180 px',
       width: 140,
       height: 180,
       maxKB: 50,
-      description: 'Standard exam portal requirement'
+      description: 'Under 50 KB'
     }
   ];
   selectedPresetId?: string;
@@ -392,6 +397,7 @@ export class PhotoPage implements OnDestroy {
     if (!this.originalFile) return;
 
     this.isProcessing = true;
+    this.processingProgress = 25;
     this.workflowState = 'PROCESSING';
     this.processingStage = 'analyzing';
     this.stageText = getProcessingStageLabel('analyzing', this.translationService);
@@ -416,6 +422,7 @@ export class PhotoPage implements OnDestroy {
           outputFormat: this.targetFormat || 'image/jpeg'
         };
         this.processingStage = 'optimizing';
+        this.processingProgress = 65;
         this.stageText = getProcessingStageLabel('optimizing', this.translationService);
         this.cdr.detectChanges();
 
@@ -424,6 +431,7 @@ export class PhotoPage implements OnDestroy {
         // Pixels Mode
         try {
           this.processingStage = 'processing';
+          this.processingProgress = 65;
           this.stageText = getProcessingStageLabel('processing', this.translationService);
           this.cdr.detectChanges();
 
@@ -460,6 +468,7 @@ export class PhotoPage implements OnDestroy {
       };
     }
 
+    this.processingProgress = 100;
     this.isProcessing = false;
 
     if (this.processedResult?.success && this.processedResult.file) {

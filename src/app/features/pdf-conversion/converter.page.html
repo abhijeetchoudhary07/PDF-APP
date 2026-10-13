@@ -117,7 +117,7 @@
                           <button type="button" class="btn-text" (click)="toggleSelectAllPages(false)">None</button>
                         </div>
                       </div>
-                      <div class="pages-chips-grid">
+                      <div class="pages-chips-grid" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
                         @for (p of pagesArray; track p; let i = $index) {
                           <button
                             type="button"
@@ -223,20 +223,18 @@
             </div>
           </div>
         }
-        <!-- 3. PROCESSING STATE -->
+        <!-- 3. DYNAMIC PROCESSING & CONVERSION ANIMATION STATE -->
         @if (isProcessing) {
-          <div class="processing-card">
-            <div class="spinner-box">
-              <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="2.5" fill="none" class="animate-spin">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"></circle>
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path>
-              </svg>
-            </div>
-            <h3>{{ progress.stage || 'Processing document...' }}</h3>
-            @if (progress.message) {
-              <p class="progress-subtext">{{ progress.message }}</p>
-            }
-            <app-progress [value]="progress.percent"></app-progress>
+          <div class="processing-animation-box ion-margin-bottom">
+            <app-conversion-animation
+              [progress]="progress.percent"
+              [stageText]="progress.stage || 'Converting document...'"
+              [message]="progress.message"
+              [sourceFormat]="converter.metadata.sourceFormats[0] || 'FILE'"
+              [targetFormat]="converter.metadata.targetFormat || 'PDF'"
+              [fileName]="selectedFile?.name"
+              [isSuccess]="result?.success || false">
+            </app-conversion-animation>
           </div>
         }
         <!-- 4. ERROR STATE -->
@@ -330,6 +328,8 @@
             </div>
           </div>
         }
+
+        <app-related-tools [currentToolId]="converterId"></app-related-tools>
       </div>
     }
   </main>

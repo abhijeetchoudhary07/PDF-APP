@@ -963,3 +963,117 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 640px) {
+  .intelligence-page {
+    padding: 1rem 0.75rem 2rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .dropzone-wrapper {
+    margin-bottom: 1.5rem;
+  }
+
+  .info-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+
+    .info-card {
+      padding: 1rem;
+    }
+  }
+
+  .analyzing-card {
+    padding: 2.5rem 1rem;
+  }
+
+  .workspace-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 1rem;
+
+    .doc-meta-block {
+      width: 100%;
+
+      .doc-title-info .doc-name {
+        word-break: break-all;
+      }
+    }
+
+    .top-bar-controls {
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+      gap: 10px;
+
+      .mode-toggle-group {
+        width: 100%;
+        display: flex;
+
+        .mode-btn {
+          flex: 1;
+          text-align: center;
+        }
+      }
+
+      app-button {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+
+  .workbench-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+
+    .metric-card {
+      padding: 0.75rem 0.5rem;
+
+      .metric-value {
+        font-size: 1.15rem;
+      }
+    }
+  }
+
+  .card-block {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-item-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .export-buttons-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .privacy-modal-card {
+    padding: 1.25rem 1rem;
+
+    .modal-actions {
+      flex-direction: column;
+      width: 100%;
+      gap: 8px;
+
+      app-button {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+}

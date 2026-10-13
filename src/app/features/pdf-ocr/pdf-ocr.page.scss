@@ -527,3 +527,152 @@
     margin-top: 8px;
   }
 }
+
+@media (max-width: 640px) {
+  .ocr-container {
+    padding: 12px 12px 24px;
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .workflow-card {
+    padding: 16px 14px;
+    gap: 16px;
+    border-radius: var(--radius-md, 10px);
+    width: 100%;
+    box-sizing: border-box;
+
+    .card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+
+      h2 {
+        font-size: 1.15rem;
+      }
+
+      .file-name {
+        max-width: 100%;
+        word-break: break-all;
+        font-size: 0.78rem;
+      }
+    }
+  }
+
+  .features-hint-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .detection-body {
+    .detection-info-box {
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px;
+
+      .icon {
+        font-size: 1.4rem;
+      }
+    }
+  }
+
+  .action-buttons-row {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
+
+    app-button {
+      width: 100%;
+      display: block;
+    }
+  }
+
+  .config-grid {
+    gap: 16px;
+
+    .config-group {
+      .form-select {
+        max-width: 100%;
+      }
+    }
+  }
+
+  .lang-selector-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+
+    .lang-pill {
+      padding: 8px 10px;
+    }
+  }
+
+  .page-modes-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
+
+    .mode-btn {
+      padding: 8px 6px;
+      font-size: 0.8rem;
+      text-align: center;
+      width: 100%;
+    }
+  }
+
+  .page-checkboxes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 6px;
+  }
+
+  .privacy-banner {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .processing-card {
+    padding: 24px 12px;
+  }
+
+  .result-card {
+    .result-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+
+      .result-badges {
+        width: 100%;
+      }
+    }
+
+    .toolbar-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      padding: 10px;
+
+      .pagination-controls {
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      .search-box {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .quick-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+
+    .export-options-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+  }
+}

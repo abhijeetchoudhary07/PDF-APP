@@ -4,7 +4,7 @@
   <main class="app-main-content">
     <div class="tool-page-container">
       <app-page-header
-        title="PDF Security"
+        [title]="'security.title' | translate"
         subtitle="Zero-knowledge offline encryption, password protection, and restriction removal."
         [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Security' }]"
         badge="PROTECT"
@@ -43,7 +43,7 @@
                 <app-file-dropzone
                   accept="application/pdf"
                   icon="lock-open"
-                  title="Select or Drop Protected PDF"
+                  [title]="'security.dropzoneUnlock' | translate"
                   description="Supply authorized password to remove permissions restrictions and decrypt into an unlocked copy."
                   (fileSelected)="onUnlockFileSelected($event)">
                 </app-file-dropzone>
@@ -121,7 +121,7 @@
             @if (unlockWorkflowState === 'SUCCESS' && unlockResultFile) {
               <div class="result-container" style="margin-top: 16px;">
                 <app-result-preview
-                  title="Document Unlocked Successfully"
+                  [title]="'security.unlockedTitle' | translate"
                   subtitle="Restrictions and encryption removed. Ready to view and edit."
                   [file]="unlockResultFile"
                   (shared)="shareUnlockResult()"
@@ -141,7 +141,7 @@
                 <app-file-dropzone
                   accept="application/pdf"
                   icon="lock-closed"
-                  title="Select or Drop PDF to Protect"
+                  [title]="'security.dropzoneProtect' | translate"
                   description="Encrypt your PDF document with standard 128-bit encryption. Restrict printing, copying, or editing."
                   (fileSelected)="onProtectFileSelected($event)">
                 </app-file-dropzone>
@@ -277,7 +277,7 @@
             @if (protectWorkflowState === 'SUCCESS' && protectResultFile) {
               <div class="result-container" style="margin-top: 16px;">
                 <app-result-preview
-                  title="Document Protected Successfully"
+                  [title]="'security.protectedTitle' | translate"
                   subtitle="Protected with standard encryption and configured permissions."
                   [file]="protectResultFile"
                   (shared)="shareProtectResult()"

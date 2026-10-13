@@ -17,7 +17,9 @@ import {
   AppButtonComponent,
   AppBadgeComponent,
   AppTabsComponent,
-  AppIconComponent
+  AppIconComponent,
+  AppModalComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -34,8 +36,10 @@ import {
     AppFooterComponent,
     AppButtonComponent,
     AppBadgeComponent,
-    AppTabsComponent
-]
+    AppTabsComponent,
+    AppModalComponent,
+    TranslatePipe
+  ]
 })
 export class PdfSignPage implements AfterViewInit {
   private fileService = inject(FileService);

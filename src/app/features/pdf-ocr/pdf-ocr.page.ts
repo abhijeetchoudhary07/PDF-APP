@@ -29,6 +29,8 @@ import {
   AppRelatedToolsComponent,
   FileDropzoneComponent,
   FilePreviewComponent,
+  AppConversionAnimationComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -50,8 +52,10 @@ export type OcrWorkflowStep = 'select' | 'detect' | 'configure' | 'processing' |
     AppBadgeComponent,
     AppRelatedToolsComponent,
     FileDropzoneComponent,
+    AppConversionAnimationComponent,
+    AutoScrollDirective,
     TranslatePipe
-],
+  ],
   providers: [DecimalPipe]
 })
 export class PdfOcrPage implements OnInit, OnDestroy {

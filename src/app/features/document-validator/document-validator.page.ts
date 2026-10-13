@@ -25,6 +25,7 @@ import {
   AppBadgeComponent,
   AppRelatedToolsComponent,
   FileDropzoneComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -45,6 +46,7 @@ import {
     AppBadgeComponent,
     AppRelatedToolsComponent,
     FileDropzoneComponent,
+    AutoScrollDirective,
     TranslatePipe
   ],
   providers: [DecimalPipe]
@@ -106,7 +108,7 @@ export class DocumentValidatorPage implements OnInit {
     try {
       this.groupedPresets = await this.presetService.getAllGroupedPresets();
       if (!this.selectedPreset && this.groupedPresets.length > 0 && this.groupedPresets[0].presets.length > 0) {
-        // Default to first preset (e.g. SSC)
+        // Default to the first preset
         this.selectPreset(this.groupedPresets[0].presets[0]);
       }
     } catch {

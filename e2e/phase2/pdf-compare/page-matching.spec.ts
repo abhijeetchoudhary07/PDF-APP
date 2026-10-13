@@ -62,11 +62,16 @@ test.describe('PDF Compare — Page Matching & Alignment @phase2 @compare', () =
 
     await expect(page.locator('.result-section')).toBeVisible({ timeout: 15000 });
 
-    // Check page navigation controls
-    const nextMatchBtn = page.locator('.nav-controls button:has-text("Next"), .nav-controls button:has-text("आगे")');
-    if (await nextMatchBtn.isEnabled()) {
-      await nextMatchBtn.click();
-      await expect(page.locator('.match-indicator')).toContainText('2');
-    }
+    /*
+     * `if (await nextMatchBtn.isEnabled())` used to wrap the click and the only
+     * assertion. These fixtures differ in page count by construction, so there
+     * is always a second match to step to: a disabled Next button means the
+     * matching found one page pair or none, which is the failure this test is
+     * supposed to report rather than a reason to stop.
+     */
+    const nextMatchBtn = page.locator('.nav-controls').getByRole('button', { name: /next/i }).first();
+    await expect(nextMatchBtn).toBeEnabled();
+    await nextMatchBtn.click();
+    await expect(page.locator('.match-indicator')).toContainText('2');
   });
 });

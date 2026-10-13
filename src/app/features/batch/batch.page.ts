@@ -23,7 +23,8 @@ import {
   AppFooterComponent,
   AppButtonComponent,
   AppProgressComponent,
-  AppIconComponent
+  AppIconComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -40,7 +41,8 @@ import {
     AppPageHeaderComponent,
     AppFooterComponent,
     AppButtonComponent,
-    AppProgressComponent
+    AppProgressComponent,
+    TranslatePipe
   ],
   providers: [DecimalPipe]
 })

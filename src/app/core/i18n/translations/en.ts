@@ -74,7 +74,23 @@ export const en = {
     copy: 'Copy',
     photo: 'Photo',
     signature: 'Signature',
-    pdf: 'PDF'
+    pdf: 'PDF',
+    undo: 'Undo',
+    redo: 'Redo',
+    moveUp: 'Move Up',
+    moveDown: 'Move Down',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    resetZoom: 'Reset to 100%',
+    closePreview: 'Close preview',
+    rotate90: 'Rotate 90°',
+    rotate90cw: 'Rotate 90° clockwise',
+    rotate90ccw: 'Rotate 90° Counter-Clockwise (270°)',
+    deletePage: 'Delete Page',
+    duplicatePage: 'Duplicate Page',
+    prevPage: 'Previous page',
+    nextPage: 'Next page',
+    home: 'Home'
   },
   header: {
     tools: 'Tools',
@@ -110,7 +126,7 @@ export const en = {
     resetsAt: 'Your free operations reset at midnight.'
   },
   footer: {
-    brandDesc: 'Your private document helper. Shrink photos, clean signatures, convert, combine, and sign documents for government exams and job forms — 100% safe on your device.',
+    brandDesc: 'Your private document helper. Shrink photos, clean signatures, convert, combine, and sign documents for any upload form — 100% safe on your device.',
     securityChip: 'Files Never Leave Your Device',
     docTools: 'Document Tools',
     photoCompress: 'Compress & Crop Photo',
@@ -119,7 +135,7 @@ export const en = {
     docConverter: 'Document Converter',
     pageOrganize: 'Combine & Reorder Pages',
     pdfEditor: 'PDF Reader & Editor',
-    examPresets: 'Exam & Job Form Presets',
+    examPresets: 'Size Presets',
     productPricing: 'Product & Info',
     productOverview: 'Overview',
     goPremium: 'Go Premium (Unlimited)',
@@ -148,7 +164,7 @@ export const en = {
   home: {
     heroBadge: '100% On Your Device • No Server Uploads',
     heroTitle: '<span class="title-line">The Simple Document</span><span class="title-line">Helper for Every Form</span>',
-    heroSubtitle: 'Easily resize passport photos, clean signatures, combine and shrink PDFs for SSC, UPSC, IBPS, and state job portals with exact size limits.',
+    heroSubtitle: 'Easily resize photos, clean signatures, combine and shrink PDFs to the exact pixel and KB limits an upload form asks for.',
     searchPlaceholder: 'Search tools (like photo compress, merge, word to pdf, sign)...',
     clearSearch: 'Clear search',
     recentTools: 'Recent Tools:',
@@ -159,7 +175,7 @@ export const en = {
     feature1Title: 'Complete Privacy',
     feature1Desc: 'Your files never leave your phone or computer. Everything happens inside your browser without uploading to any server.',
     feature2Title: 'Exact KB Limits',
-    feature2Desc: 'Meet strict government portal requirements easily. We shrink your photos and documents to the exact KB limit required.',
+    feature2Desc: 'Meet strict upload limits easily. We shrink your photos and documents to the exact KB size you need.',
     feature3Title: 'All-In-One Toolkit',
     feature3Desc: 'Convert between Word, Excel, and PDF, combine files, remove pages, fill forms, and add your signature without paying fees.'
   },
@@ -271,7 +287,7 @@ export const en = {
     },
     presets: {
       title: 'Exam & Job Presets',
-      description: 'Ready-made settings for SSC, UPSC, IBPS, NEET, and state government portals.'
+      description: 'Ready-made pixel and KB sizes for common upload forms.'
     },
     pdf_ocr: {
       title: 'Smart PDF OCR',
@@ -283,7 +299,7 @@ export const en = {
     },
     document_validator: {
       title: 'Exam Document Validator',
-      description: 'Verify photos, signatures, and PDFs against SSC, UPSC, and portal requirements with 1-click auto-fix.'
+      description: 'Check photos, signatures and PDFs against a size you choose, with 1-click auto-fix.'
     },
     pdf_compare: {
       title: 'PDF Compare',
@@ -338,7 +354,7 @@ export const en = {
     step0Bullet2: 'Works completely offline without internet',
     step0Bullet3: 'Your private documents and personal details stay safe',
     step1Title: 'Exact KB & Pixel Limits',
-    step1Desc: 'Built specifically to satisfy strict rules for government job and exam portals (SSC, UPSC, IBPS, State PSCs).',
+    step1Desc: 'Built to hit the strict pixel and file-size limits that upload forms enforce.',
     step1Bullet1: 'Shrinks files to guarantee they fit under maximum KB limits',
     step1Bullet2: 'Automatic 3.5 × 4.5 cm passport photo dimensions',
     step1Bullet3: 'Clean up dirty paper backgrounds from photo signatures',
@@ -519,7 +535,7 @@ export const en = {
     subtitle: 'Compress, resize, and crop passport photos to exact KB and dimensions for online forms.',
     tabKb: 'Exact KB Compression',
     tabPixels: 'Exact Pixel Resize',
-    quickPresetsTitle: 'Quick Presets for Indian Portals',
+    quickPresetsTitle: 'Quick Presets',
     targetSizeTitle: 'Select Target File Size',
     targetSizeHint: 'Our engine carefully tunes picture quality to guarantee it stays under this size.',
     pixelPresetsTitle: 'Common Form Presets',
@@ -547,7 +563,9 @@ export const en = {
     tabImagesToPdf: 'Images to PDF',
     tabExtract: 'Extract Pages',
     targetSizeLabel: 'Target PDF Size',
-    compressPdfBtn: 'Compress PDF to {{size}} KB'
+    compressPdfBtn: 'Compress PDF to {{size}} KB',
+    compileDropzoneTitle: 'Select or Drag & Drop Images to Compile',
+    extractDropzoneTitle: 'Select or Drag & Drop PDF to Extract'
   },
   historyPage: {
     title: 'Processing History',
@@ -562,7 +580,7 @@ export const en = {
   },
   presetsPage: {
     title: 'Exam & Job Presets',
-    subtitle: 'Ready-made settings for official portals, exams, and government job forms.',
+    subtitle: 'Ready-made pixel and KB sizes for common upload forms.',
     customPresetBtn: '+ Custom Preset',
     noticeTitle: 'Official Guidelines Notice',
     noticeDesc: 'Requirements may change over time. Always check the official website before submitting your application.',
@@ -673,15 +691,19 @@ export const en = {
     ocrHandoffDesc: 'Extract text and add an invisible searchable layer using our Smart PDF OCR tool.',
     makeSearchableBtn: 'Make Searchable (OCR)',
     backToPages: 'Back to Pages',
-    startNewScan: 'Scan New Document'
+    startNewScan: 'Scan New Document',
+    moveLeftUp: 'Move Left/Up',
+    moveRightDown: 'Move Right/Down',
+    adjustCropTitle: 'Adjust Crop',
+    enhanceFilterTitle: 'Enhance Filter'
   },
   validator: {
     title: 'Exam & Portal Document Validator',
-    subtitle: 'Validate your photos, signatures, and PDFs against official requirements with 1-click auto-fix.',
+    subtitle: 'Check your photos, signatures and PDFs against a size you choose, with 1-click auto-fix.',
     badge: '1-Click Fix',
     selectPresetLabel: 'Select Exam / Job Portal / ID Preset',
-    searchPresetsPlaceholder: 'Search presets (SSC, UPSC, IBPS, PAN, Passport, Visa)...',
-    officialVerified: 'Verified Source',
+    searchPresetsPlaceholder: 'Search presets by size (350 × 450, 200 × 230, 50 KB)...',
+    officialVerified: 'Reference source',
     requiredDocuments: 'Required Documents',
     readyForSubmission: 'Ready for Portal Submission',
     issuesDetected: 'Issues Detected',
@@ -733,7 +755,9 @@ export const en = {
     renderingVisualDiff: 'Rendering visual comparison overlay...',
     visualDiffHint: 'Differences between pages are highlighted in high-contrast red.',
     visualDiffUnavailable: 'Visual difference is not available for this page pair.',
-    downloadReportBtn: 'Download Comparison Report'
+    downloadReportBtn: 'Download Comparison Report',
+    removedLabel: 'Removed',
+    addedLabel: 'Added'
   },
   privacySanitizer: {
     title: 'PDF Privacy Sanitizer',
@@ -1126,6 +1150,85 @@ export const en = {
     pendingRedaction: 'PENDING REDACTION',
     cancelRedactionTitle: 'Cancel redaction',
     cropArea: 'Crop Area'
+  },
+  previews: {
+    clickToPreview: 'Click to preview',
+    previewFile: 'Preview file',
+    removeFile: 'Remove file',
+    enlargePage: 'Enlarge Page',
+    zoomPreview: 'Zoom / Preview',
+    restorePage: 'Restore page',
+    shareDocument: 'Share Document',
+    pagePreview: 'Page {{page}} Preview'
+  },
+  organizer: {
+    organizeTitle: 'Organize PDF Pages',
+    mergeTitle: 'Merge PDF Files',
+    splitTitle: 'Split PDF Document',
+    rotateTitle: 'Rotate PDF Pages',
+    deleteTitle: 'Delete PDF Pages',
+    extractTitle: 'Extract PDF Pages',
+    dropzoneMerge: 'Select or Drop PDF Files to Merge',
+    dropzoneSingle: 'Select or Drop PDF Document',
+    rotateSelectedCw: 'Rotate Selected 90° CW',
+    rotateSelected180: 'Rotate Selected 180°',
+    rotateSelectedCcw: 'Rotate Selected 270° (90° CCW)',
+    duplicateSelected: 'Duplicate Selected',
+    deleteSelected: 'Delete Selected',
+    moveEarlier: 'Move Left / Earlier',
+    moveLater: 'Move Right / Later',
+    jumpToPosition: 'Jump to Position'
+  },
+  security: {
+    title: 'PDF Security',
+    dropzoneUnlock: 'Select or Drop Protected PDF',
+    dropzoneProtect: 'Select or Drop PDF to Protect',
+    unlockedTitle: 'Document Unlocked Successfully',
+    protectedTitle: 'Document Protected Successfully'
+  },
+  profilePage: {
+    title: 'Account & Profile',
+    uploadPhoto: 'Upload Custom Photo',
+    resetToInitials: 'Reset to Initials',
+    editProfile: 'Edit Profile',
+    resetAllData: 'Reset All Local Data?'
+  },
+  localData: {
+    title: 'Local Data Storage',
+    factoryResetTitle: 'Factory Reset Application?'
+  },
+  conversionHub: {
+    title: 'Document & PDF Converter',
+    noToolsFound: 'No conversion tools found'
+  },
+  flatten: {
+    dropzoneTitle: 'Select or Drop PDF to Flatten'
+  },
+  forms: {
+    saveProgress: 'Save Progress'
+  },
+  aboutEngine: {
+    title: 'About the Engine'
+  },
+  accountPage: {
+    title: 'Account'
+  },
+  batchPage: {
+    title: 'Batch Compress Photos'
+  },
+  batchPdfPage: {
+    title: 'Batch Compress PDFs'
+  },
+  helpPage: {
+    title: 'Help & Frequently Asked Questions'
+  },
+  pdfSign: {
+    signatureModalTitle: 'Create or Choose Signature',
+    signatureModalSubtitle: 'Draw, upload, or choose a recent signature'
+  },
+  signatureRequest: {
+    addRecipientModalTitle: 'Add New Recipient',
+    addRecipientModalSubtitle: 'Assign roles and details for this signature request'
   }
 };
 

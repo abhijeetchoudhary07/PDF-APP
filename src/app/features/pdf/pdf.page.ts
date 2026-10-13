@@ -26,6 +26,8 @@ import {
   FilePreviewComponent,
   PdfPageThumbnailComponent,
   BeforeAfterPreviewComponent,
+  AppConversionAnimationComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -49,6 +51,8 @@ import {
     FileDropzoneComponent,
     FilePreviewComponent,
     PdfPageThumbnailComponent,
+    AppConversionAnimationComponent,
+    AutoScrollDirective,
     TranslatePipe
   ],
   providers: [DecimalPipe]
@@ -76,6 +80,7 @@ export class PdfPage implements OnInit, OnDestroy {
   processedResult?: ProcessingResult & { targetMissed?: boolean };
   processedPdfThumbnailUrl?: string;
   isProcessing = false;
+  processingProgress = 0;
   processingStage: ProcessingStage = 'preparing';
   stageText = 'Preparing PDF...';
   errorMessage?: string;
@@ -221,6 +226,7 @@ export class PdfPage implements OnInit, OnDestroy {
     if (!this.originalFile) return;
 
     this.isProcessing = true;
+    this.processingProgress = 25;
     this.workflowState = 'PROCESSING';
     this.processingStage = 'analyzing';
     this.stageText = getProcessingStageLabel('analyzing', this.translationService);
@@ -229,6 +235,7 @@ export class PdfPage implements OnInit, OnDestroy {
     setTimeout(() => {
       if (this.isProcessing) {
         this.processingStage = 'optimizing';
+        this.processingProgress = 65;
         this.stageText = getProcessingStageLabel('optimizing', this.translationService);
         this.cdr.detectChanges();
       }
@@ -238,6 +245,7 @@ export class PdfPage implements OnInit, OnDestroy {
       this.originalFile,
       { targetKB: this.selectedTargetKB }
     );
+    this.processingProgress = 100;
     this.isProcessing = false;
 
     if (this.processedResult.success && this.processedResult.file) {
@@ -307,11 +315,13 @@ export class PdfPage implements OnInit, OnDestroy {
   async createPdf(): Promise<void> {
     if (this.imageFiles.length === 0) return;
     this.isProcessing = true;
+    this.processingProgress = 40;
     this.workflowState = 'PROCESSING';
     this.stageText = 'Generating PDF from images...';
     this.cdr.detectChanges();
 
     this.processedResult = await this.pdfService.imagesToPdf(this.imageFiles, this.createConfig);
+    this.processingProgress = 100;
     this.isProcessing = false;
 
     if (this.processedResult.success) {

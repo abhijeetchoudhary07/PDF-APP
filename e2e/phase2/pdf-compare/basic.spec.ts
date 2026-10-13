@@ -67,13 +67,20 @@ test.describe('PDF Compare — Basic Page & File Selection @phase2 @compare', ()
     await expect(page.locator('.dropzone-card').first().locator('input[type="file"]')).toBeAttached();
   });
 
+  /*
+   * The guard here was `if (await compareLink.isVisible())` around both the
+   * click and the assertion, so a home page that had stopped linking to the
+   * tool at all would have passed this test rather than failed it -- which is
+   * the one thing it exists to catch.
+   */
   test('CMP-004: Direct route navigation from home page', async ({ page }) => {
     await page.goto('/');
-    // Check tool card navigation to pdf-compare
-    const compareLink = page.locator('a[href*="/features/pdf-compare"], [routerLink*="/features/pdf-compare"]').first();
-    if (await compareLink.isVisible()) {
-      await compareLink.click();
-      await expect(page).toHaveURL(/.*features\/pdf-compare/);
-    }
+
+    const compareLink = page.locator('a[href*="/features/pdf-compare"]').first();
+    await expect(compareLink).toBeVisible({ timeout: 15000 });
+    await compareLink.scrollIntoViewIfNeeded();
+    await compareLink.click();
+
+    await expect(page).toHaveURL(/.*features\/pdf-compare/);
   });
 });

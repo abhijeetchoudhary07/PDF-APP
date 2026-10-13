@@ -48,8 +48,14 @@ test.describe('PDF Content Extractor — Page Extraction & Thumbnail Selection @
     const firstPageCard = page.locator('.pages-selector-grid .page-box-card').first();
     await firstPageCard.click();
 
+    /*
+     * The export assertions were inside `if (await exportBtn.isEnabled())`, so
+     * an export button left disabled -- the most likely way for page selection
+     * to break -- took this test straight to a pass.
+     */
     const exportBtn = pagesPanel.locator('button:has-text("Export Selected"), button:has-text("चयनित निर्यात करें")').first();
-    if (await exportBtn.isEnabled()) {
+    await expect(exportBtn).toBeEnabled();
+    {
       const downloadInfo = await interceptDownload(page, async () => {
         await exportBtn.click();
       });

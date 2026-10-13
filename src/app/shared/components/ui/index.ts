@@ -28,4 +28,6 @@ export * from '../pdf-preview/pdf-preview.component';
 export * from '../pdf-page-thumbnail/pdf-page-thumbnail.component';
 export * from '../before-after-preview/before-after-preview.component';
 export * from '../result-preview/result-preview.component';
+export * from '../conversion-animation/conversion-animation.component';
+export * from '../../directives/auto-scroll.directive';
 

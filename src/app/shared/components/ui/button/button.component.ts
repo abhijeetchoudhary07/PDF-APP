@@ -22,7 +22,9 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       [disabled]="disabled || loading"
       (click)="onClick($event)"
       [attr.aria-disabled]="disabled || loading"
-      [attr.aria-busy]="loading">
+      [attr.aria-busy]="loading"
+      [attr.title]="title || null"
+      [attr.aria-label]="ariaLabel || title || null">
     
       <!-- Loading Spinner -->
       @if (loading) {
@@ -233,6 +235,21 @@ export class AppButtonComponent {
   @Input() block = false;
   @Input() icon = false;
   @Input() iconPosition: 'start' | 'end' = 'start';
+
+  /*
+   * Fourteen call sites put a plain `title` attribute on <app-button> and got
+   * a tooltip, which is why nobody noticed there was no input behind it: with
+   * no matching @Input, Angular leaves the attribute on the host <app-button>
+   * element. It hovers, but the accessible name of the control is whatever is
+   * projected into it -- for an icon-only button, nothing. Taking the value as
+   * an input and putting it on the inner <button> fixes both, and gives the
+   * tooltip somewhere to arrive from the translate pipe.
+   *
+   * `ariaLabel` is separate for the cases where the spoken name should differ
+   * from the hover text; it falls back to `title`.
+   */
+  @Input() title?: string;
+  @Input() ariaLabel?: string;
 
   @HostBinding('class.block') get isBlock() {
     return this.block;

@@ -40,8 +40,9 @@ test.describe('PDF Content Extractor — Table Extraction, CSV & XLSX Export @ph
   });
 
   test('EXT-031: Export table to CSV downloads valid delimited file', async ({ page }) => {
-    const csvBtn = page.locator('.table-actions button:has-text("CSV")').first();
-    if (await csvBtn.isVisible()) {
+    const csvBtn = page.locator('.table-actions').first().getByRole('button', { name: /csv/i });
+    await expect(csvBtn).toBeVisible();
+    {
       const downloadInfo = await interceptDownload(page, async () => {
         await csvBtn.click();
       });
@@ -55,8 +56,9 @@ test.describe('PDF Content Extractor — Table Extraction, CSV & XLSX Export @ph
   });
 
   test('EXT-032: Export table to XLSX downloads valid workbook', async ({ page }) => {
-    const xlsxBtn = page.locator('.table-actions button:has-text("XLSX"), .table-actions button:has-text("एक्सेल")').first();
-    if (await xlsxBtn.isVisible()) {
+    const xlsxBtn = page.locator('.table-actions').first().getByRole('button', { name: /xlsx|excel/i });
+    await expect(xlsxBtn).toBeVisible();
+    {
       const downloadInfo = await interceptDownload(page, async () => {
         await xlsxBtn.click();
       });

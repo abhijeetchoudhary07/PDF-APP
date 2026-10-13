@@ -179,9 +179,7 @@ test.describe('Release — Download / output @release @files', () => {
     });
 
     const run = page.getByRole('button', { name: /compress|resize|process|apply/i }).first();
-    if ((await run.count()) === 0) {
-      test.skip(true, 'this build exposes no single-shot action on the photo tool');
-    }
+    await expect(run).toBeVisible();
     await run.click();
 
     // The result card is the download affordance; a job that finishes without

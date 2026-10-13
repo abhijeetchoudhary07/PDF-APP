@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ViewChild, ElementRef, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Preferences } from '@capacitor/preferences';
 import { AppButtonComponent } from '../button/button.component';
@@ -13,7 +13,7 @@ const ONBOARDING_KEY = 'IFH_ONBOARDING_COMPLETED_V1';
   imports: [CommonModule, AppButtonComponent, TranslatePipe],
   template: `
     @if (isOpen) {
-      <div class="onboarding-backdrop" (click)="dismiss()">
+      <div #backdrop class="onboarding-backdrop" (click)="dismiss()">
         <div class="onboarding-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
           <!-- Top bar: Skip button -->
           <div class="dialog-top-bar">
@@ -243,6 +243,79 @@ const ONBOARDING_KEY = 'IFH_ONBOARDING_COMPLETED_V1';
       width: 24px;
       background-color: var(--color-primary);
     }
+
+    @media (max-width: 640px), (max-height: 700px) {
+      .onboarding-backdrop {
+        padding: 10px;
+        align-items: center;
+      }
+
+      .onboarding-dialog {
+        max-height: calc(100dvh - 20px);
+        max-height: calc(100vh - 20px);
+        border-radius: 16px;
+        width: 100%;
+      }
+
+      .dialog-top-bar {
+        padding: 10px 16px;
+      }
+
+      .skip-btn {
+        padding: 6px 10px;
+        min-height: 36px;
+      }
+
+      .slide-content {
+        padding: 14px 16px 10px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: calc(100dvh - 130px);
+        max-height: calc(100vh - 130px);
+      }
+
+      .slide-icon-circle {
+        width: 52px;
+        height: 52px;
+        margin-bottom: 10px;
+      }
+
+      .slide-icon-circle svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      .slide-title {
+        font-size: 18px;
+        margin-bottom: 6px;
+      }
+
+      .slide-desc {
+        font-size: 13px;
+        margin-bottom: 10px;
+        line-height: 1.4;
+      }
+
+      .slide-bullets {
+        padding: 10px 12px;
+        gap: 6px;
+        border-radius: var(--radius-md, 10px);
+      }
+
+      .slide-bullets li {
+        font-size: 12px;
+        gap: 6px;
+      }
+
+      .dialog-bottom-bar {
+        padding: 10px 16px;
+      }
+
+      .dialog-bottom-bar app-button ::ng-deep button {
+        min-height: 40px;
+        padding: 8px 16px;
+      }
+    }
   `]
 })
 export class AppOnboardingModalComponent implements OnInit {
@@ -281,6 +354,43 @@ export class AppOnboardingModalComponent implements OnInit {
       ]
     }
   ];
+
+  private backdropEl: HTMLElement | null = null;
+
+  @ViewChild('backdrop') set backdropRef(ref: ElementRef<HTMLElement> | undefined) {
+    if (ref?.nativeElement && typeof document !== 'undefined') {
+      this.backdropEl = ref.nativeElement;
+      if (this.backdropEl.parentElement !== document.body) {
+        document.body.appendChild(this.backdropEl);
+      }
+      document.body.classList.add('modal-open');
+    } else {
+      if (this.backdropEl && this.backdropEl.parentElement === document.body) {
+        document.body.removeChild(this.backdropEl);
+      }
+      this.backdropEl = null;
+      if (typeof document !== 'undefined' && !document.querySelector('.modal-backdrop, .search-backdrop')) {
+        document.body.classList.remove('modal-open');
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.backdropEl && this.backdropEl.parentElement === document.body) {
+      document.body.removeChild(this.backdropEl);
+      this.backdropEl = null;
+    }
+    if (typeof document !== 'undefined' && !document.querySelector('.modal-backdrop, .search-backdrop')) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  handleEscape() {
+    if (this.isOpen) {
+      this.dismiss();
+    }
+  }
 
   async ngOnInit() {
     try {

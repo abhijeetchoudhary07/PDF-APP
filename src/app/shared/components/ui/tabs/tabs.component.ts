@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
-
+import { AutoScrollDirective } from '../../../directives/auto-scroll.directive';
 
 export interface TabItem {
   id: string;
@@ -13,9 +13,14 @@ export interface TabItem {
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-tabs',
   standalone: true,
-  imports: [],
+  imports: [AutoScrollDirective],
   template: `
-    <div class="tabs-track" [class.tabs-fullwidth]="fullWidth" [class.tabs-pills]="variant === 'pills'">
+    <div
+      class="tabs-track"
+      [class.tabs-fullwidth]="fullWidth"
+      [class.tabs-pills]="variant === 'pills'"
+      [appAutoScroll]="!fullWidth && autoScroll"
+      [autoScrollSpeed]="0.5">
       @for (tab of tabs; track tab) {
         <button
           type="button"
@@ -156,6 +161,7 @@ export class AppTabsComponent {
   }
   @Input() fullWidth = false;
   @Input() scrollable = false;
+  @Input() autoScroll = true;
   @Input() variant: 'segment' | 'pills' = 'segment';
 
   @Output() tabChange = new EventEmitter<string>();

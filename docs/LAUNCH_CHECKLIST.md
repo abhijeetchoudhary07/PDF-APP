@@ -9,10 +9,14 @@ product decision, which is why none of it is automated.
 truthful copy; upload key created and the AAB **signed**; billing route
 **decided and built** — Google Play Billing; UPI payee still unverified.
 
-The signed `.aab` is current, which was checked by content rather than by date:
-every hashed JS chunk in it matches a build from this commit, and
-`main-*.js` is byte-identical. Its source file timestamps are newer than the
-bundle, which looks like a stale artefact and is not one.
+The signed `.aab` is current, which was checked by content rather than by date.
+The release build is **byte-reproducible**: rebuilding unchanged source
+reproduces sha256 `cc1dce52…` exactly (re-verified 2026-09-28), so a sha
+compare is the reliable staleness test and the file date is not — the source
+timestamps are newer than the bundle and always will be.
+
+It still carries `goog_XXXXX`, so it cannot complete a purchase. That is now
+enforced rather than remembered: see `verifyReleaseStoreKeys` in §3.1.
 
 Phase 0 is down to **one two-minute task that is yours: send ₹1 to the payee.**
 Play Billing still needs a RevenueCat key and three Console products, but those
@@ -143,20 +147,59 @@ the `:basePlan` suffix that silently kills subscription matching, is in
 **What is left is account work, not code**, and it needs the Console to exist —
 so it happens in Phase 2:
 
-1. RevenueCat project → public Android key into `src/app/core/config/store.config.ts`
-2. Play Console products: `pro_monthly` and `pro_annual` as **subscriptions**,
-   `lifetime` as a **one-time product**, ids exactly as `PLAY_PRODUCT_IDS` has them
-3. Attach all three to RevenueCat's current offering, entitlement id `premium`
-4. Set `PDF_APP_REVENUECAT_SECRET_KEY` on Render — or a Google Play service
-   account plus `PDF_APP_GOOGLE_PLAY_PACKAGE_NAME`. Without one of those,
-   `subscription/verify` answers 501 and a purchase never becomes a durable
-   account entitlement: premium lives only on the device that bought it, and
-   the admin portal never sees the subscription
-5. Test a real purchase from a track build — it cannot be done locally
+**The key cannot come first.** Play only exposes **Monetise → Products** once a
+bundle declaring `com.android.vending.BILLING` has been uploaded to a track, and
+RevenueCat cannot issue a usable key for products that do not exist yet. The
+order is therefore:
 
-Until step 1, an on-device paywall reports `not-configured` and says so rather
+1. **Upload the current placeholder bundle** to Internal testing. It is
+   unshippable by design — it exists to unlock the Monetise section. The guard
+   in `android/app/build.gradle` blocks this build unless you ask for it:
+
+   ```bash
+   cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
+     ./gradlew bundleRelease -PallowPlaceholderStoreKey
+   ```
+
+2. **Play Console products**: `pro_monthly` and `pro_annual` as
+   **subscriptions**, `lifetime` as a **one-time product**, ids exactly as
+   `PLAY_PRODUCT_IDS` has them. Prices ₹49 / ₹365 / ₹999, matching what
+   `subscription/plans` already serves. **Activate all three** — a product left
+   in Draft imports as nothing, and the paywall then reports `no-products`,
+   which looks identical to a bad key.
+3. **Google Cloud service account** with Play Developer API access, granted in
+   **Play Console → Users and permissions**. Start this early: the grant takes
+   **up to 36 hours to propagate**, and until it does RevenueCat silently
+   returns empty offerings. This is the hidden long pole in Phase 2.
+4. **RevenueCat**: link the app, import the three products, create an
+   entitlement whose id is exactly **`premium`** — the client hard-codes
+   `entitlements.active['premium']` in four places in
+   `monetization.service.ts`, so any other id means a purchase that succeeds
+   and unlocks nothing. Attach all three products, then add one package each to
+   the current offering.
+5. **Public Android key** (`goog_…`) into `src/app/core/config/store.config.ts`.
+6. **Set `PDF_APP_REVENUECAT_SECRET_KEY` on Render** (`sk_…`, same project) — or
+   a Google Play service account plus `PDF_APP_GOOGLE_PLAY_PACKAGE_NAME`.
+   Without one of those, `subscription/verify` answers 501 and a purchase never
+   becomes a durable account entitlement: premium lives only on the device that
+   bought it, and the admin portal never sees the subscription. Saving the
+   variable redeploys, which is what makes it take effect.
+7. **Bump `versionCode`** (it is `1`; step 1 consumed it) and rebuild. No flag
+   this time — if the guard still fires, the key never reached the bundle.
+8. **Test a real purchase from a track build** — it cannot be done locally. Add
+   yourself under **Setup → License testing** first so it costs ₹0 and renews in
+   minutes. **Sign in inside the app before buying**: `verify` looks the
+   subscriber up by the signed-in user id, so a purchase made signed-out lands
+   on an anonymous RevenueCat id.
+
+Until step 5, an on-device paywall reports `not-configured` and says so rather
 than opening a sheet that cannot complete. **Do not submit before a real
 purchase has completed in a track.**
+
+> A 501 from step 6 is invisible on the device — the purchase succeeds and
+> premium lights up locally. The only check that distinguishes "working" from
+> "working on this phone until it is reinstalled" is signing in on a **second
+> device** and confirming premium follows the account.
 
 Link-out and alternative-billing rules have moved repeatedly and vary by region.
 **Read the current Payments policy text in the Console yourself before
@@ -259,6 +302,12 @@ npm run build && npx cap sync android
 ```bash
 cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew bundleRelease
 ```
+
+> `verifyReleaseStoreKeys` runs first and fails the build if the synced assets
+> still contain `goog_XXXXX`. That is the intended behaviour, not a broken
+> build: a bundle with the placeholder signs, uploads and installs perfectly,
+> and every purchase button in it does nothing. Append
+> `-PallowPlaceholderStoreKey` only for the Phase 2.8 step 1 upload.
 
 > The explicit `JAVA_HOME` is not optional. Capacitor 8 compiles at Java 21;
 > Homebrew's `openjdk@21` is keg-only here, and `/usr/libexec/java_home -v 21`
@@ -377,7 +426,7 @@ usually cite a specific policy — read which one before changing anything.
 | 0.5 | ~~Decide the billing route~~ ✅ Play Billing | — | — |
 | 1.x | Register, $25, verify identity | 1–3 days | Everything in the Console |
 | 2.x | Create app, listing, Data Safety | 2 h | Upload |
-| 2.8 | RevenueCat key + 3 Console products + a real test purchase | 2 h | **Submission** |
+| 2.8 | Placeholder upload → 3 Console products → service account → RevenueCat → both keys → rebuild → real test purchase | 2 h work, **+36 h** waiting on the service-account grant | **Submission** |
 | 3.x | Signed AAB, internal test on hardware | 1 h | Closed test |
 | 4.x | 12 testers × 14 days, then production | **14+ days** | Launch |
 

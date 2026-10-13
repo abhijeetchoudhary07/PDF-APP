@@ -412,3 +412,119 @@
     }
   }
 }
+
+@media (max-width: 640px) {
+  .validator-container {
+    padding: 12px 12px 24px;
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .validator-card {
+    padding: 16px 14px;
+    gap: 16px;
+    border-radius: var(--radius-md, 10px);
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .preset-selection-card {
+    .transparency-banner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px;
+
+      .transparency-icon {
+        font-size: 1.6rem;
+      }
+    }
+  }
+
+  .overall-status-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+
+    .banner-icon {
+      font-size: 1.8rem;
+    }
+  }
+
+  .slots-grid {
+    gap: 16px;
+
+    .slot-card {
+      padding: 16px 14px;
+      gap: 14px;
+      border-radius: var(--radius-md, 10px);
+
+      .slot-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+
+        .header-info h3 {
+          font-size: 1.1rem;
+        }
+      }
+
+      .slot-content {
+        .file-info-bar {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+
+          .file-meta {
+            width: 100%;
+
+            .name {
+              word-break: break-all;
+            }
+          }
+        }
+
+        .rules-list {
+          .rule-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 10px;
+
+            .rule-details {
+              width: 100%;
+
+              .rule-values {
+                flex-direction: column;
+                gap: 4px;
+              }
+            }
+
+            .rule-action {
+              width: 100%;
+
+              app-button {
+                width: 100%;
+                display: block;
+              }
+            }
+          }
+        }
+
+        .slot-footer {
+          flex-direction: column;
+          width: 100%;
+          gap: 8px;
+
+          app-button {
+            width: 100%;
+            display: block;
+          }
+        }
+      }
+    }
+  }
+}

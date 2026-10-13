@@ -10,9 +10,8 @@ import { getTestDataPath, setupCapacitorMocks } from '../fixtures/mocks';
  */
 async function resetToPicker(page: import('@playwright/test').Page) {
   const cancel = page.getByRole('button', { name: /^cancel$/i }).first();
-  if (await cancel.count()) {
-    await cancel.click();
-  }
+  await expect(cancel).toBeVisible({ timeout: 15000 });
+  await cancel.click();
   await expect(page.locator('input[type="file"]')).toBeAttached({ timeout: 10000 });
 }
 
@@ -104,16 +103,23 @@ test.describe('Smart PDF OCR — Upload & Input @ocr @smoke', () => {
     await expect(page.locator('.file-name, .selected-file-card, .file-meta-bar').first()).toContainText('scanned.pdf');
   });
 
-  test('OCR-013: Remove selected file resets state', async ({ page }) => {
+  /*
+   * The remove control this looked for -- `.btn-remove-file`, `.btn-reset`, an
+   * aria-label with "remove" or "close" in it, a button reading "Change" --
+   * does not exist in any spelling, so `if (await removeBtn.isVisible())` was
+   * false and the test asserted only that the file had been accepted. Backing
+   * out of a chosen file is what Cancel on the detection summary does, which is
+   * what `resetToPicker` above drives.
+   */
+  test('OCR-013: backing out of a chosen file returns to the picker', async ({ page }) => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles(getTestDataPath('pdf/text.pdf'));
     await expect(page.locator('.file-name, .selected-file-card, .file-meta-bar').first()).toContainText('text.pdf');
 
-    // Click remove/reset button
-    const removeBtn = page.locator('.btn-remove-file, .btn-reset, [aria-label*="remove" i], [aria-label*="close" i], button:has-text("Change")');
-    if (await removeBtn.isVisible()) {
-      await removeBtn.click();
-      await expect(page.locator('.dropzone-container, app-file-dropzone, input[type="file"]').first()).toBeVisible();
-    }
+    await resetToPicker(page);
+
+    // Back on the select step: the dropzone is up and the file is forgotten.
+    await expect(page.locator('app-file-dropzone')).toBeVisible();
+    await expect(page.locator('.file-name')).toHaveCount(0);
   });
 });

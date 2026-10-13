@@ -12,11 +12,18 @@
   &.as-modal {
     position: fixed;
     inset: 20px;
-    z-index: 1000;
+    z-index: 2500;
     max-width: 90vw;
     max-height: 90vh;
     margin: auto;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+
+    @media (max-width: 640px) {
+      inset: 8px;
+      max-width: calc(100vw - 16px);
+      max-height: calc(100dvh - 16px);
+      border-radius: var(--radius-lg, 12px);
+    }
   }
 }
 

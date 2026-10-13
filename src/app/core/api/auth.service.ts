@@ -127,6 +127,29 @@ export class AuthService {
     await this.adoptSession(response);
   }
 
+  async createLocalSession(email: string, displayName?: string): Promise<void> {
+    const user: PdfSafeUser = {
+      id: 'local-' + Date.now(),
+      email,
+      displayName: displayName || email.split('@')[0] || 'User',
+      authProvider: 'email',
+      isActive: true,
+      isVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+    };
+    const response: PdfAuthResponse = {
+      accessToken: 'local-token-' + Date.now(),
+      refreshToken: 'local-refresh-' + Date.now(),
+      expiresIn: 86400,
+      tokenType: 'Bearer',
+      user,
+      entitlement: FREE_ENTITLEMENT,
+    };
+    await this.adoptSession(response);
+  }
+
   /**
    * Deletes the account on the server, then this device's session.
    *

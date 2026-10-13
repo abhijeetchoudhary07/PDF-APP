@@ -26,7 +26,7 @@
 
       <!-- CATEGORY FILTER PILLS -->
       @if (!isLoading && history.length > 0) {
-        <div class="filter-chips-scroll">
+        <div class="filter-chips-scroll" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
           @for (f of filters; track f) {
             <button
               class="filter-chip"

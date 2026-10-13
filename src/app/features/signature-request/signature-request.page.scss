@@ -307,90 +307,31 @@
   }
 }
 
-/* Modal */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+/* Add Recipient Form inside Modal */
+.form-group {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: var(--space-4, 16px);
-}
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  margin-bottom: var(--space-3, 12px);
 
-.add-recipient-modal {
-  background: var(--color-surface, #ffffff);
-  border-radius: var(--radius-xl, 16px);
-  max-width: 440px;
-  width: 100%;
-  box-shadow: var(--shadow-xl);
-  overflow: hidden;
-
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-4, 16px);
-    background: var(--color-primary, #2563eb);
-    color: #ffffff;
-
-    h3 {
-      margin: 0;
-      font-size: var(--font-base, 16px);
-      font-weight: 700;
-    }
-
-    .close-btn {
-      background: transparent;
-      border: none;
-      color: #ffffff;
-      font-size: 20px;
-      cursor: pointer;
-      padding: 4px;
-    }
+  .form-label {
+    font-size: var(--font-xs, 12px);
+    font-weight: 600;
+    color: var(--color-text-secondary, #64748b);
   }
 
-  .modal-body {
-    padding: var(--space-5, 20px);
+  .custom-input, .custom-select {
+    width: 100%;
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-md, 8px);
+    font-size: var(--font-sm, 14px);
+    background: var(--color-surface, #ffffff);
+    color: var(--color-text, #0f172a);
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-1, 4px);
-      margin-bottom: var(--space-3, 12px);
-
-      .form-label {
-        font-size: var(--font-xs, 12px);
-        font-weight: 600;
-        color: var(--color-text-secondary, #64748b);
-      }
-
-      .custom-input, .custom-select {
-        width: 100%;
-        padding: var(--space-2, 8px) var(--space-3, 12px);
-        border: 1px solid var(--color-border, #e2e8f0);
-        border-radius: var(--radius-md, 8px);
-        font-size: var(--font-sm, 14px);
-        background: var(--color-surface, #ffffff);
-        color: var(--color-text, #0f172a);
-
-        &:focus {
-          outline: none;
-          border-color: var(--color-primary, #2563eb);
-        }
-      }
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: var(--space-2, 8px);
-      margin-top: var(--space-4, 16px);
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary, #2563eb);
     }
   }
 }

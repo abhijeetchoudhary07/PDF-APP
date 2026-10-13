@@ -32,7 +32,8 @@ import {
   FileDropzoneComponent,
   FilePreviewComponent,
   PdfPageThumbnailComponent,
-  AppIconComponent
+  AppIconComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -55,7 +56,8 @@ import {
     AppTabsComponent,
     AppProgressComponent,
     AppModalComponent,
-    FileDropzoneComponent
+    FileDropzoneComponent,
+    TranslatePipe
   ],
   providers: [DecimalPipe]
 })

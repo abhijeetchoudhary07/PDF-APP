@@ -84,16 +84,9 @@
                                 }
                               </div>
                               <div class="source-badge-row">
-                                @if (preset.photo.verifiedSource) {
-                                  <app-badge variant="success" size="sm">
-                                    Verified: {{ preset.photo.verifiedSource }}
-                                  </app-badge>
-                                }
-                                @if (!preset.photo.verifiedSource) {
-                                  <app-badge variant="warning" size="sm">
-                                    Unverified - Check Official Guidelines
-                                  </app-badge>
-                                }
+                                <app-badge variant="warning" size="sm">
+                                  Always check the size your form asks for
+                                </app-badge>
                               </div>
                               <app-button size="sm" variant="outline" (clicked)="goToTool('photo', preset.id)" style="margin-top: 10px;">
                                 {{ 'presetsPage.processPhoto' | translate }}
@@ -115,16 +108,9 @@
                                 <p><strong>{{ 'common.format' | translate }}:</strong> {{ preset.signature.format || 'JPEG' }}</p>
                               </div>
                               <div class="source-badge-row">
-                                @if (preset.signature.verifiedSource) {
-                                  <app-badge variant="success" size="sm">
-                                    Verified: {{ preset.signature.verifiedSource }}
-                                  </app-badge>
-                                }
-                                @if (!preset.signature.verifiedSource) {
-                                  <app-badge variant="warning" size="sm">
-                                    Unverified - Check Official Guidelines
-                                  </app-badge>
-                                }
+                                <app-badge variant="warning" size="sm">
+                                  Always check the size your form asks for
+                                </app-badge>
                               </div>
                               <app-button size="sm" variant="outline" (clicked)="goToTool('signature', preset.id)" style="margin-top: 10px;">
                                 {{ 'presetsPage.processSig' | translate }}
@@ -143,16 +129,9 @@
                                 <p><strong>{{ 'common.format' | translate }}:</strong> PDF</p>
                               </div>
                               <div class="source-badge-row">
-                                @if (preset.pdf.verifiedSource) {
-                                  <app-badge variant="success" size="sm">
-                                    Verified: {{ preset.pdf.verifiedSource }}
-                                  </app-badge>
-                                }
-                                @if (!preset.pdf.verifiedSource) {
-                                  <app-badge variant="warning" size="sm">
-                                    Unverified - Check Official Guidelines
-                                  </app-badge>
-                                }
+                                <app-badge variant="warning" size="sm">
+                                  Always check the size your form asks for
+                                </app-badge>
                               </div>
                               <app-button size="sm" variant="outline" (clicked)="goToTool('pdf', preset.id)" style="margin-top: 10px;">
                                 {{ 'presetsPage.processDoc' | translate }}
@@ -180,6 +159,8 @@
       <!-- CUSTOM PRESET MODAL -->
       <app-modal
         [isOpen]="showModal"
+        [hasFooter]="true"
+        (closed)="showModal = false"
         (closeModal)="showModal = false"
         [title]="'presetsPage.createModalTitle' | translate"
         size="md">
@@ -284,7 +265,7 @@
           </div>
         </div>
 
-        <div slot="footer" class="modal-footer-actions">
+        <div modal-footer class="modal-footer-actions">
           <app-button variant="ghost" size="sm" (clicked)="showModal = false">{{ 'common.cancel' | translate }}</app-button>
           <app-button variant="primary" size="sm" (clicked)="saveModal()">{{ 'presetsPage.saveBtn' | translate }}</app-button>
         </div>

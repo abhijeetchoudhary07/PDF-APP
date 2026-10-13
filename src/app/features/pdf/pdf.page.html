@@ -271,7 +271,7 @@
               </app-file-preview>
               <div class="config-card">
                 <label class="control-label">{{ 'pdfPage.targetSizeLabel' | translate }}</label>
-                <div class="preset-chips">
+                <div class="preset-chips" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
                   @for (size of targetSizes; track size) {
                     <button
                       type="button"
@@ -282,17 +282,17 @@
                     </button>
                   }
                 </div>
-                <!-- Processing Banner -->
+                <!-- Processing Conversion Animation -->
                 @if (isProcessing) {
-                  <div class="processing-banner">
-                    <div class="spinner-box">
-                      <div class="loading-spinner"></div>
-                    </div>
-                    <div class="stage-info">
-                      <strong>{{ stageText }}</strong>
-                      <span>{{ 'common.processing' | translate }}</span>
-                    </div>
-                    <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">{{ 'common.cancel' | translate }}</button>
+                  <div class="ion-margin-top ion-margin-bottom">
+                    <app-conversion-animation
+                      [progress]="processingProgress"
+                      [stageText]="stageText"
+                      [sourceFormat]="'PDF'"
+                      [targetFormat]="(selectedTargetKB >= 1024 ? (selectedTargetKB / 1024) + 'MB' : selectedTargetKB + 'KB') + ' PDF'"
+                      [fileName]="originalFile.name"
+                      [isSuccess]="workflowState === 'PREVIEWING'">
+                    </app-conversion-animation>
                   </div>
                 }
                 <app-button
@@ -340,7 +340,7 @@
             <div>
               <app-file-dropzone
                 icon="images"
-                title="Select or Drag & Drop Images to Compile"
+                [title]="'pdfPage.compileDropzoneTitle' | translate"
                 description="Select multiple photos, documents, or scans. Reorder them and export into a clean PDF."
                 accept="image/jpeg,image/png,image/webp"
                 [multiple]="true"
@@ -368,9 +368,9 @@
                       </div>
                     </div>
                     <div class="item-actions">
-                      <button type="button" class="icon-btn" (click)="moveImage(i, -1)" [disabled]="i === 0" title="Move Up">&uarr;</button>
-                      <button type="button" class="icon-btn" (click)="moveImage(i, 1)" [disabled]="i === imageFiles.length - 1" title="Move Down">&darr;</button>
-                      <button type="button" class="icon-btn btn-danger" (click)="removeImage(i)" title="Remove">&times;</button>
+                      <button type="button" class="icon-btn" (click)="moveImage(i, -1)" [disabled]="i === 0" [title]="'common.moveUp' | translate">&uarr;</button>
+                      <button type="button" class="icon-btn" (click)="moveImage(i, 1)" [disabled]="i === imageFiles.length - 1" [title]="'common.moveDown' | translate">&darr;</button>
+                      <button type="button" class="icon-btn btn-danger" (click)="removeImage(i)" [title]="'common.remove' | translate">&times;</button>
                     </div>
                   </div>
                 }
@@ -398,6 +398,17 @@
                   </select>
                 </div>
               </div>
+              @if (isProcessing) {
+                <div class="ion-margin-top ion-margin-bottom">
+                  <app-conversion-animation
+                    [progress]="processingProgress"
+                    [stageText]="stageText"
+                    [sourceFormat]="'IMG (' + imageFiles.length + ')'"
+                    [targetFormat]="'PDF'"
+                    [isSuccess]="workflowState === 'PREVIEWING'">
+                  </app-conversion-animation>
+                </div>
+              }
               <div class="action-submit-wrap">
                 <app-button
                   variant="primary"
@@ -435,7 +446,7 @@
             <div>
               <app-file-dropzone
                 icon="copy"
-                title="Select or Drag & Drop PDF to Extract"
+                [title]="'pdfPage.extractDropzoneTitle' | translate"
                 description="Extract all or specific pages into high-resolution JPG images."
                 accept="application/pdf"
                 (fileSelected)="onExtractPdfSelected($event)">
@@ -463,6 +474,17 @@
                   </app-pdf-page-thumbnail>
                 }
               </div>
+              @if (isProcessing) {
+                <div class="ion-margin-top ion-margin-bottom">
+                  <app-conversion-animation
+                    [progress]="processingProgress"
+                    [stageText]="stageText"
+                    [sourceFormat]="'PDF'"
+                    [targetFormat]="'JPG'"
+                    [fileName]="extractPdfFile.name">
+                  </app-conversion-animation>
+                </div>
+              }
               <div class="action-submit-wrap ion-margin-top">
                 <app-button
                   variant="secondary"

@@ -23,6 +23,7 @@ import {
   AppTabsComponent,
   AppRelatedToolsComponent,
   FileDropzoneComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -54,6 +55,7 @@ export interface ChangeItem {
     AppTabsComponent,
     AppRelatedToolsComponent,
     FileDropzoneComponent,
+    AutoScrollDirective,
     TranslatePipe
   ],
   providers: [DecimalPipe]

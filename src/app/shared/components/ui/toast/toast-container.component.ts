@@ -72,17 +72,17 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
   styles: [`
     .toast-container {
       position: fixed;
-      top: env(safe-area-inset-top, 16px);
+      top: max(16px, env(safe-area-inset-top, 16px));
       left: 50%;
       transform: translateX(-50%);
-      width: calc(100% - 32px);
+      width: min(calc(100% - 32px), 440px);
       max-width: 440px;
-      z-index: 99999;
+      z-index: 100000;
       pointer-events: none;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      margin-top: 12px;
+      gap: 10px;
+      box-sizing: border-box;
     }
 
     .toast-item {
@@ -91,21 +91,17 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
       align-items: flex-start;
       gap: 12px;
       padding: 12px 14px;
-      border-radius: 12px;
-      /*
-       * These used to read --ion-background-color / --ion-border-color, which
-       * this app never sets -- it has its own token system. So the fallbacks
-       * applied and the card was hard-coded white, while the text inside kept
-       * using --color-text. In dark mode that put near-white text (#f8fafc) on
-       * a white card: about 1.1:1, effectively invisible.
-       */
-      background: var(--color-surface);
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      background: var(--color-surface, #ffffff);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--color-border, #e2e8f0);
       animation: toastSlideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       transition: all 0.2s ease;
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 0;
     }
 
     @keyframes toastSlideDown {
@@ -121,121 +117,117 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
 
     /* Toast Variants */
     .toast-success {
-      border-left: 4px solid var(--ion-color-success, #2dd36f);
-      .toast-icon-box { color: var(--ion-color-success, #2dd36f); }
+      border-left: 4px solid var(--color-success, #10b981);
+      .toast-icon-box {
+        background-color: var(--color-success-soft, rgba(16, 185, 129, 0.12));
+        color: var(--color-success, #10b981);
+      }
     }
 
     .toast-warning {
-      border-left: 4px solid var(--ion-color-warning, #ffc409);
-      .toast-icon-box { color: var(--ion-color-warning, #e0a800); }
+      border-left: 4px solid var(--color-warning, #f59e0b);
+      .toast-icon-box {
+        background-color: var(--color-warning-soft, rgba(245, 158, 11, 0.12));
+        color: var(--color-warning, #f59e0b);
+      }
     }
 
     .toast-error {
-      border-left: 4px solid var(--ion-color-danger, #eb445a);
-      .toast-icon-box { color: var(--ion-color-danger, #eb445a); }
+      border-left: 4px solid var(--color-error, #ef4444);
+      .toast-icon-box {
+        background-color: var(--color-error-soft, rgba(239, 68, 68, 0.12));
+        color: var(--color-error, #ef4444);
+      }
     }
 
     .toast-info {
-      border-left: 4px solid var(--ion-color-primary, #3880ff);
-      .toast-icon-box { color: var(--ion-color-primary, #3880ff); }
+      border-left: 4px solid var(--color-info, #3b82f6);
+      .toast-icon-box {
+        background-color: var(--color-info-soft, rgba(59, 130, 246, 0.12));
+        color: var(--color-info, #3b82f6);
+      }
     }
 
     .toast-icon-box {
       flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-top: 1px;
     }
 
     .toast-content {
-      flex: 1;
+      flex: 1 1 auto;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
       min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .toast-title {
       font-size: var(--font-small, 13px);
       font-weight: var(--font-weight-semibold, 600);
-      color: var(--color-text);
+      color: var(--color-text, #0f172a);
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .toast-message {
       font-size: var(--font-caption, 12px);
-      color: var(--color-text-secondary);
-      line-height: 1.35;
+      color: var(--color-text-secondary, #475569);
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
-    /*
-     * The template renders .toast-close-btn; the rules here were written for a
-     * .toast-dismiss-btn that no longer exists, so the control fell back to the
-     * browser's default button chrome -- a grey box with an icon in it.
-     */
     .toast-close-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      /* Comfortable to hit without crowding the message beside it. */
       width: 28px;
       height: 28px;
-      margin: -4px -4px 0 0;
+      margin: -2px -2px 0 0;
       background: transparent;
       border: none;
       border-radius: var(--radius-sm, 6px);
-      color: var(--color-text-muted);
+      color: var(--color-text-muted, #94a3b8);
       cursor: pointer;
       padding: 0;
       transition: color var(--transition-fast, 150ms), background-color var(--transition-fast, 150ms);
     }
 
     .toast-close-btn:hover {
-      color: var(--color-text);
-      background-color: var(--color-background-subtle);
-    }
-
-    /* Colors */
-    .toast-success .toast-icon-box {
-      background-color: var(--color-success-soft);
-      color: var(--color-success);
-    }
-    .toast-success {
-      border-left: 4px solid var(--color-success);
-    }
-
-    .toast-warning .toast-icon-box {
-      background-color: var(--color-warning-soft);
-      color: var(--color-warning);
-    }
-    .toast-warning {
-      border-left: 4px solid var(--color-warning);
-    }
-
-    .toast-error .toast-icon-box {
-      background-color: var(--color-error-soft);
-      color: var(--color-error);
-    }
-    .toast-error {
-      border-left: 4px solid var(--color-error);
-    }
-
-    .toast-info .toast-icon-box {
-      background-color: var(--color-info-soft);
-      color: var(--color-info);
-    }
-    .toast-info {
-      border-left: 4px solid var(--color-info);
+      color: var(--color-text, #0f172a);
+      background-color: var(--color-background-subtle, rgba(0, 0, 0, 0.05));
     }
 
     @media (max-width: 640px) {
       .toast-container {
-        right: 16px;
-        left: 16px;
-        bottom: 16px;
-        max-width: 100%;
+        top: max(12px, env(safe-area-inset-top, 12px));
+        bottom: auto;
+        left: 12px;
+        right: 12px;
         width: auto;
+        max-width: none;
+        transform: none;
+        gap: 8px;
+      }
+
+      .toast-item {
+        padding: 10px 12px;
+        border-radius: 12px;
+        gap: 10px;
+      }
+
+      .toast-icon-box {
+        width: 28px;
+        height: 28px;
       }
     }
   `]

@@ -718,12 +718,30 @@
     color: var(--color-text-secondary, #64748b);
     font-size: var(--font-sm, 14px);
   }
+
+  @media (max-width: 640px) {
+    min-height: 200px;
+    .zoom-preview-img {
+      max-height: 45vh;
+    }
+  }
 }
 
 .zoom-footer-actions {
   display: flex;
   justify-content: space-between;
   width: 100%;
+
+  @media (max-width: 640px) {
+    gap: 8px;
+    app-button {
+      flex: 1;
+      ::ng-deep button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
 }
 
 .custom-spinner {

@@ -8,7 +8,8 @@ import {
   AppPageHeaderComponent,
   AppBadgeComponent,
   AppTabsComponent,
-  AppEmptyStateComponent
+  AppEmptyStateComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 import { ConversionRegistryService } from '../../core/conversion/conversion-registry.service';
 import { ConverterMetadata } from '../../core/conversion/conversion.types';
@@ -28,7 +29,8 @@ import { ConverterMetadata } from '../../core/conversion/conversion.types';
     AppPageHeaderComponent,
     AppBadgeComponent,
     AppTabsComponent,
-    AppEmptyStateComponent
+    AppEmptyStateComponent,
+    TranslatePipe
   ]
 })
 export class ConversionHubPage implements OnInit {

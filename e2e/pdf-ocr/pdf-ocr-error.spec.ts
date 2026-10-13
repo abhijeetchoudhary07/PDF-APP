@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { getTestDataPath, setupCapacitorMocks } from '../fixtures/mocks';
+import { attachPdf, cancelOcrButton, openConfigureStep, startOcrButton } from '../fixtures/ocr';
 
 test.describe('Smart PDF OCR — Error Recovery & Interruption @ocr @error', () => {
   test.beforeEach(async ({ page }) => {
@@ -14,19 +15,31 @@ test.describe('Smart PDF OCR — Error Recovery & Interruption @ocr @error', () 
     await expect(page.locator('.toast-item, [role="alert"], .error-message').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('OCR-041 & OCR-042: Cancel midway and verify clean state', async ({ page }) => {
-    const fileInput = page.locator('input[type="file"]');
-    await fileInput.setInputFiles(getTestDataPath('pdf/scanned.pdf'));
+  /*
+   * This was two nested one-shot guards:
+   *
+   *     if (await startBtn.isVisible()) {
+   *       await startBtn.click();
+   *       if (await cancelBtn.isVisible()) { ...the assertion... }
+   *     }
+   *
+   * Neither could be true at the moment it was checked. `.btn-start-ocr` is not
+   * in the template, and the button it stands for only exists once the
+   * configure step is open -- which is several async steps after the file is
+   * attached. So the outer guard was false, the body never ran, and the test
+   * passed without starting or cancelling anything.
+   */
+  test('OCR-041 & OCR-042: recognition can be cancelled and the page stays usable', async ({ page }) => {
+    await attachPdf(page, 'pdf/scanned.pdf');
+    await openConfigureStep(page);
+    await startOcrButton(page).click();
 
-    const startBtn = page.locator('.btn-start-ocr, button:has-text("Start OCR")');
-    if (await startBtn.isVisible()) {
-      await startBtn.click();
-      const cancelBtn = page.locator('.btn-cancel-ocr, button:has-text("Cancel")');
-      if (await cancelBtn.isVisible()) {
-        await cancelBtn.click();
-        // State remains responsive and can be restarted
-        await expect(page.locator('.btn-start-ocr, .dropzone-container').first()).toBeVisible({ timeout: 10000 });
-      }
-    }
+    const cancel = cancelOcrButton(page);
+    await expect(cancel).toBeVisible({ timeout: 30000 });
+    await cancel.click();
+
+    // Cancelling drops back to the settings step, with start offered again.
+    await expect(startOcrButton(page)).toBeVisible({ timeout: 15000 });
+    await expect(startOcrButton(page)).toBeEnabled();
   });
 });

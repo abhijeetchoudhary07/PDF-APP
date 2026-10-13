@@ -637,13 +637,47 @@
   color: var(--color-text-secondary);
 }
 
-@media (max-width: 480px) {
-  .upi-row {
-    flex-direction: column;
-    align-items: stretch;
+@media (max-width: 640px) {
+  .pricing-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .pay-panel {
     padding: var(--space-4, 16px);
+    margin-top: 16px;
+    border-radius: var(--radius-md, 12px);
+  }
+
+  .pay-head {
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 16px;
+
+    h3 {
+      font-size: 16px;
+      line-height: 1.3;
+    }
+  }
+
+  .upi-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+
+    app-button {
+      width: 100%;
+    }
+  }
+
+  .bank-box dl > div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+
+    dd {
+      text-align: left;
+    }
   }
 }

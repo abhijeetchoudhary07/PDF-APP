@@ -6,7 +6,7 @@
       
       <!-- Page Header with Breadcrumbs -->
       <app-page-header
-        title="Privacy Policy"
+        [title]="'footer.privacyPolicy' | translate"
         subtitle="100% Client-Side Architecture Guarantee & Zero Document Telemetry"
         [breadcrumbs]="[{ label: 'Privacy & Support' }, { label: 'Privacy Policy' }]"
         badge="PRIVACY"
@@ -87,7 +87,7 @@
         <section class="policy-section">
           <h2>1. Introduction & Zero-Upload Principle</h2>
           <p>
-            Welcome to <strong>Indian Form Helper</strong> ("we", "our", or "the application"). We developed this platform specifically for candidates and applicants navigating Indian government recruitment portals (such as UPSC, SSC, State PSCs, IBPS, Railways, NTA, and defense boards) where exact file size, dimension, and privacy standards are strictly mandated.
+            Welcome to <strong>Indian Form Helper</strong> ("we", "our", or "the application"). We developed this platform for anyone who has to meet an exact file size, dimension or privacy standard when uploading a photo, signature or document.
           </p>
           <p>
             Unlike conventional online PDF and photo compressors that upload your sensitive documents (such as Aadhaar cards, PAN cards, educational marksheets, and personal signatures) to third-party cloud servers, <strong>Indian Form Helper is engineered with a strict Zero-Knowledge, 100% Client-Side execution model.</strong>

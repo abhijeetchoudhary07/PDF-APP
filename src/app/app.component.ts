@@ -4,6 +4,7 @@ import type { PluginListenerHandle } from '@capacitor/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular';
 import { ThemeService } from './core/services/theme.service';
 import { MonetizationService } from './core/services/monetization.service';
+import { ToastService } from './core/services/toast.service';
 import {
   AppToastContainerComponent,
   AppGlobalSearchModalComponent,
@@ -27,10 +28,14 @@ import {
 export class AppComponent implements OnDestroy {
   private themeService = inject(ThemeService);
   private monetization = inject(MonetizationService);
+  public toastService = inject(ToastService);
 
   private resumeListener?: PluginListenerHandle;
 
   constructor() {
+    if (typeof window !== 'undefined') {
+      (window as any).__toastService = this.toastService;
+    }
     void this.watchForResume();
   }
 

@@ -74,7 +74,23 @@ export const mr = {
     copy: 'कॉपी करा',
     photo: 'फोटो',
     signature: 'स्वाक्षरी',
-    pdf: 'PDF'
+    pdf: 'PDF',
+    undo: 'पूर्ववत करा',
+    redo: 'पुन्हा करा',
+    moveUp: 'वर हलवा',
+    moveDown: 'खाली हलवा',
+    zoomIn: 'झूम इन',
+    zoomOut: 'झूम आउट',
+    resetZoom: '100% वर रीसेट करा',
+    closePreview: 'पूर्वावलोकन बंद करा',
+    rotate90: '90° फिरवा',
+    rotate90cw: '90° उजवीकडे फिरवा',
+    rotate90ccw: '90° डावीकडे फिरवा (270°)',
+    deletePage: 'पान हटवा',
+    duplicatePage: 'पानाची प्रत बनवा',
+    prevPage: 'मागील पान',
+    nextPage: 'पुढील पान',
+    home: 'होम'
   },
   header: {
     tools: 'साधने (Tools)',
@@ -110,7 +126,7 @@ export const mr = {
     resetsAt: 'तुमची मोफत कामे मध्यरात्री पुन्हा सुरू होतील.'
   },
   footer: {
-    brandDesc: 'सरकारी परीक्षा आणि नोकरीच्या अर्जांसाठी तुमचे खाजगी दस्तऐवज सहाय्यक. फोटो लहान करा, स्वाक्षरी स्वच्छ करा, PDF रूपांतरित करा, जोडा आणि स्वाक्षरी करा — 100% तुमच्या डिव्हाइसवर सुरक्षित.',
+    brandDesc: 'कोणत्याही ऑनलाइन अर्जासाठी तुमचे खाजगी दस्तऐवज सहाय्यक. फोटो लहान करा, स्वाक्षरी स्वच्छ करा, PDF रूपांतरित करा, जोडा आणि स्वाक्षरी करा — 100% तुमच्या डिव्हाइसवर सुरक्षित.',
     securityChip: 'फाइल्स तुमच्या डिव्हाइसबाहेर कधीही जात नाहीत',
     docTools: 'दस्तऐवज साधने',
     photoCompress: 'फोटो आकार कमी करा व क्रॉप करा',
@@ -119,7 +135,7 @@ export const mr = {
     docConverter: 'दस्तऐवज कन्व्हर्टर',
     pageOrganize: 'पृष्ठे जोडा आणि क्रम बदला',
     pdfEditor: 'PDF वाचक आणि संपादक',
-    examPresets: 'सरकारी परीक्षा प्रीसेट्स',
+    examPresets: 'आकार प्रीसेट्स',
     productPricing: 'उत्पादन आणि माहिती',
     productOverview: 'आढावा (Overview)',
     goPremium: 'प्रीमियम मिळवा (अमर्यादित)',
@@ -142,7 +158,7 @@ export const mr = {
   home: {
     heroBadge: '100% तुमच्या डिव्हाइसवर • सर्व्हर अपलोड नाही',
     heroTitle: '<span class="title-line">प्रत्येक अर्जासाठी</span><span class="title-line">सोपे दस्तऐवज सहाय्यक</span>',
-    heroSubtitle: 'SSC, UPSC, MPSC, IBPS आणि इतर सरकारी परीक्षांसाठी पासपोर्ट फोटो, स्वाक्षरी आणि PDF अचूक KB आकारात सहज तयार करा.',
+    heroSubtitle: 'फोटो, स्वाक्षरी आणि PDF अर्जात मागितलेल्या अचूक पिक्सेल व KB आकारात सहज तयार करा.',
     searchPlaceholder: 'साधने शोधा (उदा. फोटो कंप्रेस, मर्ज, वर्ड ते पीडीएफ, सही)...',
     clearSearch: 'शोध साफ करा',
     recentTools: 'नुकतीच वापरलेली साधने:',
@@ -153,7 +169,7 @@ export const mr = {
     feature1Title: 'संपूर्ण गोपनीयता',
     feature1Desc: 'तुमच्या फाइल्स तुमच्या फोन किंवा संगणकाबाहेर कधीही जात नाहीत. सर्व प्रक्रिया कोणत्याही सर्व्हरवर अपलोड न करता तुमच्या ब्राउझरमध्ये होते.',
     feature2Title: 'अचूक KB मर्यादा',
-    feature2Desc: 'सरकारी पोर्टल्सच्या कडक अटी सहज पूर्ण करा. आम्ही तुमचे फोटो आणि दस्तऐवज आवश्यक असलेल्या अचूक KB मर्यादेत आणतो.',
+    feature2Desc: 'अपलोडच्या कडक मर्यादा सहज पूर्ण करा. आम्ही तुमचे फोटो आणि दस्तऐवज आवश्यक असलेल्या अचूक KB मर्यादेत आणतो.',
     feature3Title: 'सर्वसमावेशक टूलकिट',
     feature3Desc: 'Word, Excel आणि PDF मध्ये रूपांतर करा, फाइल्स जोडा, पृष्ठे काढा, फॉर्म भरा आणि कोणत्याही शुल्काशिवाय स्वाक्षरी जोडा.'
   },
@@ -265,7 +281,7 @@ export const mr = {
     },
     presets: {
       title: 'परीक्षा आणि नोकरी प्रीसेट्स',
-      description: 'SSC, UPSC, MPSC, IBPS, NEET आणि राज्य भरतीसाठी तयार केलेले आकार.'
+      description: 'सामान्य ऑनलाइन अर्जांसाठी तयार केलेले पिक्सेल व KB आकार.'
     },
     pdf_ocr: {
       title: 'स्मार्ट PDF OCR (मजकूर ओळखा)',
@@ -277,7 +293,7 @@ export const mr = {
     },
     document_validator: {
       title: 'परीक्षा दस्तऐवज तपासक (Validator)',
-      description: 'MPSC, SSC, UPSC नियमांनुसार फोटो, स्वाक्षरी आणि PDF तपासा व एका क्लिकवर दुरुस्त करा.'
+      description: 'तुम्ही निवडलेल्या आकारानुसार फोटो, स्वाक्षरी आणि PDF तपासा व एका क्लिकवर दुरुस्त करा.'
     },
     pdf_compare: {
       title: 'PDF तुलना',
@@ -332,7 +348,7 @@ export const mr = {
     step0Bullet2: 'इंटरनेटशिवाय पूर्णपणे ऑफलाइन काम करते',
     step0Bullet3: 'तुमची खाजगी माहिती आणि कागदपत्रे पूर्णपणे सुरक्षित राहतात',
     step1Title: 'अचूक KB आणि पिक्सेल मर्यादा',
-    step1Desc: 'सरकारी नोकरी आणि परीक्षांच्या (MPSC, SSC, UPSC, IBPS) नियमांनुसार विशेष तयार केलेले.',
+    step1Desc: 'ऑनलाइन अर्जांच्या कडक पिक्सेल व फाइल-आकार मर्यादांनुसार तयार केलेले.',
     step1Bullet1: 'फाइल्स आवश्यक KB मर्यादेत राहण्याची खात्री',
     step1Bullet2: 'पासपोर्ट फोटोसाठी 3.5 × 4.5 सेमीचे अचूक प्रमाण',
     step1Bullet3: 'कागदावरील स्वाक्षरीची पार्श्वभूमी आणि डाग स्वच्छ करा',
@@ -513,7 +529,7 @@ export const mr = {
     subtitle: 'ऑनलाइन अर्जांसाठी पासपोर्ट फोटो आवश्यक KB आणि आकारात अचूकपणे क्रॉप व लहान करा.',
     tabKb: 'अचूक KB आकार',
     tabPixels: 'अचूक पिक्सेल आकार',
-    quickPresetsTitle: 'भारतीय परीक्षांसाठी त्वरित आकार',
+    quickPresetsTitle: 'त्वरित आकार',
     targetSizeTitle: 'अपेक्षित फाइल आकार निवडा',
     targetSizeHint: 'आमचे साधन फोटोचा दर्जा काळजीपूर्वक सेट करते जेणेकरून आकार मर्यादेत राहील.',
     pixelPresetsTitle: 'सामान्य अर्जांचे आकार',
@@ -541,7 +557,9 @@ export const mr = {
     tabImagesToPdf: 'फोटोमधून PDF बनवा',
     tabExtract: 'पृष्ठे काढा',
     targetSizeLabel: 'अपेक्षित PDF आकार',
-    compressPdfBtn: 'PDF चा आकार {{size}} KB पर्यंत कमी करा'
+    compressPdfBtn: 'PDF चा आकार {{size}} KB पर्यंत कमी करा',
+    compileDropzoneTitle: 'PDF बनवण्यासाठी चित्रे निवडा किंवा येथे ओढून सोडा',
+    extractDropzoneTitle: 'पाने काढण्यासाठी PDF निवडा किंवा येथे ओढून सोडा'
   },
   historyPage: {
     title: 'प्रक्रियेचा इतिहास',
@@ -556,7 +574,7 @@ export const mr = {
   },
   presetsPage: {
     title: 'परीक्षा आणि नोकरी प्रीसेट्स',
-    subtitle: 'सरकारी अर्ज, परीक्षा आणि भरतीसाठी तयार आकार व नियम.',
+    subtitle: 'सामान्य ऑनलाइन अर्जांसाठी तयार पिक्सेल व KB आकार.',
     customPresetBtn: '+ नवीन प्रीसेट',
     noticeTitle: 'अधिकृत मार्गदर्शक सूचना',
     noticeDesc: 'नियम बदलू शकतात. अर्ज सादर करण्यापूर्वी अधिकृत संकेतस्थळावर खात्री करा.',
@@ -667,15 +685,19 @@ export const mr = {
     ocrHandoffDesc: 'आमच्या स्मार्ट PDF OCR टूलद्वारे मजकूर काढा आणि शोध लेयर जोडा.',
     makeSearchableBtn: 'शोधण्यायोग्य बनवा (OCR)',
     backToPages: 'पानांवर परत जा',
-    startNewScan: 'नवीन स्कॅन सुरू करा'
+    startNewScan: 'नवीन स्कॅन सुरू करा',
+    moveLeftUp: 'डावीकडे/वर हलवा',
+    moveRightDown: 'उजवीकडे/खाली हलवा',
+    adjustCropTitle: 'क्रॉप जुळवा',
+    enhanceFilterTitle: 'फिल्टर लावा'
   },
   validator: {
     title: 'परीक्षा दस्तऐवज तपासक (Validator)',
-    subtitle: 'MPSC, SSC, UPSC नियमांनुसार फोटो, स्वाक्षरी आणि PDF तपासा व 1-क्लिकवर दुरुस्त करा.',
+    subtitle: 'तुम्ही निवडलेल्या आकारानुसार फोटो, स्वाक्षरी आणि PDF तपासा व 1-क्लिकवर दुरुस्त करा.',
     badge: '1-क्लिक दुरुस्ती',
     selectPresetLabel: 'परीक्षा / भरती पोर्टल निवडा',
-    searchPresetsPlaceholder: 'प्रीसेट शोधा (MPSC, SSC, UPSC, IBPS, पॅन)...',
-    officialVerified: 'सत्यापित स्रोत',
+    searchPresetsPlaceholder: 'आकारानुसार प्रीसेट शोधा (350 × 450, 200 × 230, 50 KB)...',
+    officialVerified: 'संदर्भ स्रोत',
     requiredDocuments: 'आवश्यक दस्तऐवज',
     readyForSubmission: 'पोर्टलवर अपलोडसाठी सज्ज',
     issuesDetected: 'त्रुटी आढळल्या',
@@ -727,7 +749,9 @@ export const mr = {
     renderingVisualDiff: 'दृश्य तुलना आच्छादन तयार होत आहे...',
     visualDiffHint: 'पृष्ठांमधील फरक ठळक लाल रंगात दाखवले आहेत.',
     visualDiffUnavailable: 'या पृष्ठ जोडीसाठी दृश्य फरक उपलब्ध नाही.',
-    downloadReportBtn: 'तुलना अहवाल डाउनलोड करा'
+    downloadReportBtn: 'तुलना अहवाल डाउनलोड करा',
+    removedLabel: 'काढले',
+    addedLabel: 'जोडले'
   },
   privacySanitizer: {
     title: 'PDF गोपनीयता सॅनिटायझर',
@@ -1120,6 +1144,85 @@ export const mr = {
     pendingRedaction: 'अजून लागू नाही',
     cancelRedactionTitle: 'रद्द करा',
     cropArea: 'क्रॉप क्षेत्र'
+  },
+  previews: {
+    clickToPreview: 'पूर्वावलोकनासाठी क्लिक करा',
+    previewFile: 'फाइलचे पूर्वावलोकन',
+    removeFile: 'फाइल काढून टाका',
+    enlargePage: 'पान मोठे करून पहा',
+    zoomPreview: 'झूम / पूर्वावलोकन',
+    restorePage: 'पान परत आणा',
+    shareDocument: 'दस्तऐवज शेअर करा',
+    pagePreview: 'पान {{page}} चे पूर्वावलोकन'
+  },
+  organizer: {
+    organizeTitle: 'PDF पाने व्यवस्थित करा',
+    mergeTitle: 'PDF फाइली एकत्र करा',
+    splitTitle: 'PDF दस्तऐवज विभागा',
+    rotateTitle: 'PDF पाने फिरवा',
+    deleteTitle: 'PDF पाने हटवा',
+    extractTitle: 'PDF पाने काढा',
+    dropzoneMerge: 'एकत्र करण्यासाठी PDF फाइली निवडा किंवा येथे सोडा',
+    dropzoneSingle: 'PDF दस्तऐवज निवडा किंवा येथे सोडा',
+    rotateSelectedCw: 'निवडलेली पाने 90° उजवीकडे फिरवा',
+    rotateSelected180: 'निवडलेली पाने 180° फिरवा',
+    rotateSelectedCcw: 'निवडलेली पाने 270° फिरवा (90° डावीकडे)',
+    duplicateSelected: 'निवडलेल्या पानांची प्रत बनवा',
+    deleteSelected: 'निवडलेली पाने हटवा',
+    moveEarlier: 'डावीकडे हलवा / आधी',
+    moveLater: 'उजवीकडे हलवा / नंतर',
+    jumpToPosition: 'ठराविक जागी न्या'
+  },
+  security: {
+    title: 'PDF सुरक्षा',
+    dropzoneUnlock: 'पासवर्ड असलेली PDF निवडा किंवा येथे सोडा',
+    dropzoneProtect: 'सुरक्षित करण्यासाठी PDF निवडा किंवा येथे सोडा',
+    unlockedTitle: 'दस्तऐवजाचा पासवर्ड काढला गेला',
+    protectedTitle: 'दस्तऐवज सुरक्षित झाला'
+  },
+  profilePage: {
+    title: 'खाते आणि प्रोफाइल',
+    uploadPhoto: 'स्वतःचे चित्र अपलोड करा',
+    resetToInitials: 'नावाच्या आद्याक्षरांवर परत जा',
+    editProfile: 'प्रोफाइल संपादित करा',
+    resetAllData: 'सर्व स्थानिक डेटा मिटवायचा आहे का?'
+  },
+  localData: {
+    title: 'स्थानिक डेटा संचय',
+    factoryResetTitle: 'अ‍ॅप फॅक्टरी रीसेट करायचे आहे का?'
+  },
+  conversionHub: {
+    title: 'दस्तऐवज आणि PDF कन्व्हर्टर',
+    noToolsFound: 'कोणतेही कन्व्हर्ट साधन सापडले नाही'
+  },
+  flatten: {
+    dropzoneTitle: 'लॉक करण्यासाठी PDF निवडा किंवा येथे सोडा'
+  },
+  forms: {
+    saveProgress: 'काम सेव्ह करा'
+  },
+  aboutEngine: {
+    title: 'इंजिनविषयी'
+  },
+  accountPage: {
+    title: 'खाते'
+  },
+  batchPage: {
+    title: 'एकाच वेळी अनेक चित्रे लहान करा'
+  },
+  batchPdfPage: {
+    title: 'एकाच वेळी अनेक PDF लहान करा'
+  },
+  helpPage: {
+    title: 'मदत आणि नेहमी विचारले जाणारे प्रश्न'
+  },
+  pdfSign: {
+    signatureModalTitle: 'स्वाक्षरी तयार करा किंवा निवडा',
+    signatureModalSubtitle: 'स्वाक्षरी काढा, अपलोड करा किंवा नुकतीच वापरलेली स्वाक्षरी निवडा'
+  },
+  signatureRequest: {
+    addRecipientModalTitle: 'नवीन स्वाक्षरीकर्ता जोडा',
+    addRecipientModalSubtitle: 'या स्वाक्षरी विनंतीसाठी भूमिका आणि तपशील द्या'
   }
 };
 

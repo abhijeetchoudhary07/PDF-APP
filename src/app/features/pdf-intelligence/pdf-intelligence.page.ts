@@ -28,6 +28,7 @@ import {
   AppTabsComponent,
   AppRelatedToolsComponent,
   FileDropzoneComponent,
+  AppModalComponent,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -50,6 +51,7 @@ export type IntelligenceTab = 'overview' | 'summary' | 'search' | 'qa' | 'transl
     AppTabsComponent,
     AppRelatedToolsComponent,
     FileDropzoneComponent,
+    AppModalComponent,
     TranslatePipe
   ],
   providers: [DecimalPipe]

@@ -74,7 +74,23 @@ export const bn = {
     copy: 'কপি করুন',
     photo: 'ছবি',
     signature: 'স্বাক্ষর',
-    pdf: 'PDF'
+    pdf: 'PDF',
+    undo: 'আগের অবস্থায়',
+    redo: 'আবার করুন',
+    moveUp: 'উপরে নিন',
+    moveDown: 'নিচে নিন',
+    zoomIn: 'জুম ইন',
+    zoomOut: 'জুম আউট',
+    resetZoom: '১০০%-এ রিসেট করুন',
+    closePreview: 'প্রিভিউ বন্ধ করুন',
+    rotate90: '৯০° ঘোরান',
+    rotate90cw: '৯০° ডানদিকে ঘোরান',
+    rotate90ccw: '৯০° বাঁদিকে ঘোরান (২৭০°)',
+    deletePage: 'পৃষ্ঠা মুছুন',
+    duplicatePage: 'পৃষ্ঠার নকল করুন',
+    prevPage: 'আগের পৃষ্ঠা',
+    nextPage: 'পরের পৃষ্ঠা',
+    home: 'হোম'
   },
   header: {
     tools: 'টুলস',
@@ -110,7 +126,7 @@ export const bn = {
     resetsAt: 'আপনার ফ্রি কাজ মধ্যরাতে আবার শুরু হবে।'
   },
   footer: {
-    brandDesc: 'সরকারি চাকরি ও পরীক্ষার জন্য আপনার বিশ্বস্ত সহায়ক। ছবির আকার কমান, স্বাক্ষর পরিষ্কার করুন, PDF রূপান্তর, একত্রীকরণ ও স্বাক্ষর করুন — ১০০% আপনার ডিভাইসে সম্পূর্ণ নিরাপদ।',
+    brandDesc: 'যেকোনো অনলাইন ফর্মের জন্য আপনার বিশ্বস্ত সহায়ক। ছবির আকার কমান, স্বাক্ষর পরিষ্কার করুন, PDF রূপান্তর, একত্রীকরণ ও স্বাক্ষর করুন — ১০০% আপনার ডিভাইসে সম্পূর্ণ নিরাপদ।',
     securityChip: 'ফাইল কখনোই আপনার ডিভাইস ছেড়ে যায় না',
     docTools: 'নথিপত্র টুলস',
     photoCompress: 'ছবির আকার কমান ও ক্রপ করুন',
@@ -119,7 +135,7 @@ export const bn = {
     docConverter: 'ডকুমেন্ট কনভার্টার',
     pageOrganize: 'পৃষ্ঠা একত্রীকরণ ও ক্রম পরিবর্তন',
     pdfEditor: 'PDF রিডার ও এডিটর',
-    examPresets: 'সরকারি পরীক্ষার প্রিসেট',
+    examPresets: 'সাইজ প্রিসেট',
     productPricing: 'পণ্য ও তথ্য',
     productOverview: 'বিবরণ (Overview)',
     goPremium: 'প্রিমিয়াম নিন (সীমাহীন)',
@@ -142,7 +158,7 @@ export const bn = {
   home: {
     heroBadge: '১০০% আপনার ডিভাইসে • কোনো সার্ভার আপলোড নেই',
     heroTitle: '<span class="title-line">প্রতিটি আবেদন ফর্মের জন্য</span><span class="title-line">সহজ ডকুমেন্ট সহায়ক</span>',
-    heroSubtitle: 'SSC, UPSC, IBPS এবং রাজ্য সরকারি পরীক্ষার জন্য পাসপোর্ট ছবি, স্বাক্ষর এবং PDF ফাইলের আকার সহজেই সঠিক KB সীমায় প্রস্তুত করুন।',
+    heroSubtitle: 'ছবি, স্বাক্ষর ও PDF ফাইল ফর্মে চাওয়া সঠিক পিক্সেল ও KB মাপে সহজেই প্রস্তুত করুন।',
     searchPlaceholder: 'টুল খুঁজুন (যেমন ফটো কম্প্রেস, মার্জ, ওয়ার্ড টু পিডিএফ, সাইন)...',
     clearSearch: 'অনুসন্ধান মুছুন',
     recentTools: 'সম্প্রতি ব্যবহৃত টুল:',
@@ -153,7 +169,7 @@ export const bn = {
     feature1Title: 'সম্পূর্ণ গোপনীয়তা',
     feature1Desc: 'আপনার ফাইল কখনোই আপনার ফোন বা কম্পিউটার থেকে বাইরে যায় না। সবকিছু কোনো সার্ভারে আপলোড ছাড়াই ব্রাউজারে ঘটে।',
     feature2Title: 'সঠিক KB সীমা',
-    feature2Desc: 'সরকারি পোর্টালের কঠোর নিয়ম সহজেই মেনে চলুন। আমরা আপনার ছবি ও নথিপত্রকে প্রয়োজনীয় নির্দিষ্ট KB মাপে নিয়ে আসি।',
+    feature2Desc: 'আপলোডের কঠোর সীমা সহজেই মেনে চলুন। আমরা আপনার ছবি ও নথিপত্রকে প্রয়োজনীয় নির্দিষ্ট KB মাপে নিয়ে আসি।',
     feature3Title: 'অল-ইন-ওয়ান টুলকিট',
     feature3Desc: 'Word, Excel এবং PDF-এর মধ্যে রূপান্তর করুন, ফাইল একত্রিত করুন, পৃষ্ঠা মুছুন, ফর্ম পূরণ করুন এবং বিনামূল্যে স্বাক্ষর দিন।'
   },
@@ -265,7 +281,7 @@ export const bn = {
     },
     presets: {
       title: 'পরীক্ষা ও চাকরির প্রিসেট',
-      description: 'SSC, UPSC, IBPS, NEET এবং রাজ্য সরকারি পোর্টালের জন্য পূর্বনির্ধারিত মাপ।'
+      description: 'সাধারণ অনলাইন ফর্মের জন্য পূর্বনির্ধারিত পিক্সেল ও KB মাপ।'
     },
     pdf_ocr: {
       title: 'স্মার্ট PDF OCR (টেক্সট চিনুন)',
@@ -277,7 +293,7 @@ export const bn = {
     },
     document_validator: {
       title: 'পরীক্ষার নথি যাচাইকারী (Validator)',
-      description: 'SSC, UPSC ও চাকরির ফর্মের নিয়মে ছবি, স্বাক্ষর ও PDF যাচাই করুন এবং ১-ক্লিকে ঠিক করুন।'
+      description: 'আপনার বেছে নেওয়া মাপে ছবি, স্বাক্ষর ও PDF যাচাই করুন এবং ১-ক্লিকে ঠিক করুন।'
     },
     pdf_compare: {
       title: 'PDF তুলনা',
@@ -332,7 +348,7 @@ export const bn = {
     step0Bullet2: 'ইন্টারনেট ছাড়াই সম্পূর্ণ অফলাইনে কাজ করে',
     step0Bullet3: 'আপনার ব্যক্তিগত নথিপত্র সম্পূর্ণ নিরাপদ থাকে',
     step1Title: 'সঠিক KB ও পিক্সেল সীমা',
-    step1Desc: 'সরকারি চাকরি ও পরীক্ষার (SSC, UPSC, IBPS, PSC) কঠোর নিয়ম অনুযায়ী তৈরি।',
+    step1Desc: 'অনলাইন ফর্মের কঠোর পিক্সেল ও ফাইল-সাইজ সীমা অনুযায়ী তৈরি।',
     step1Bullet1: 'ফাইল নির্দিষ্ট KB সীমার মধ্যে রাখার নিশ্চয়তা',
     step1Bullet2: 'পাসপোর্ট ছবির জন্য ৩.৫ × ৪.৫ সেমি নির্ধারিত মাপ',
     step1Bullet3: 'স্বাক্ষরের পেছনে কাগজের ছায়া ও দাগ পরিষ্কার করুন',
@@ -513,7 +529,7 @@ export const bn = {
     subtitle: 'অনলাইন ফর্মের জন্য পাসপোর্ট ছবি নির্দিষ্ট KB সীমা ও পিক্সেলে নিখুঁতভাবে ক্রপ ও ছোট করুন।',
     tabKb: 'সঠিক KB সংকোচন',
     tabPixels: 'সঠিক পিক্সেল মাপ',
-    quickPresetsTitle: 'ভারতীয় পোর্টালের জন্য প্রস্তুত মাপ',
+    quickPresetsTitle: 'প্রস্তুত মাপ',
     targetSizeTitle: 'কাঙ্ক্ষিত ফাইলের আকার বাছুন',
     targetSizeHint: 'আমাদের সিস্টেম ছবির মান সতর্কতার সাথে সামঞ্জস্য করে যাতে আকার নির্দিষ্ট সীমার মধ্যে থাকে।',
     pixelPresetsTitle: 'সাধারণ ফর্মের মাপ',
@@ -541,7 +557,9 @@ export const bn = {
     tabImagesToPdf: 'ছবি থেকে PDF বানান',
     tabExtract: 'পৃষ্ঠা বের করুন',
     targetSizeLabel: 'কাঙ্ক্ষিত PDF আকার',
-    compressPdfBtn: 'PDF ফাইলের আকার {{size}} KB-তে কমান'
+    compressPdfBtn: 'PDF ফাইলের আকার {{size}} KB-তে কমান',
+    compileDropzoneTitle: 'PDF বানাতে ছবি বাছুন বা এখানে টেনে আনুন',
+    extractDropzoneTitle: 'পৃষ্ঠা বের করতে PDF বাছুন বা এখানে টেনে আনুন'
   },
   historyPage: {
     title: 'প্রসেসিং ইতিহাস',
@@ -556,7 +574,7 @@ export const bn = {
   },
   presetsPage: {
     title: 'পরীক্ষা ও চাকরির প্রিসেট',
-    subtitle: 'সরকারি ফর্ম, পরীক্ষা ও চাকরির পোর্টালের জন্য প্রস্তুত সেটিংস।',
+    subtitle: 'সাধারণ অনলাইন ফর্মের জন্য প্রস্তুত পিক্সেল ও KB মাপ।',
     customPresetBtn: '+ কাস্টম প্রিসেট',
     noticeTitle: 'অফিসিয়াল নির্দেশিকা সংক্রান্ত বিজ্ঞপ্তি',
     noticeDesc: 'নিয়মাবলী সময়ের সাথে পরিবর্তিত হতে পারে। ফর্ম জমা দেওয়ার আগে অফিসিয়াল ওয়েবসাইট যাচাই করুন।',
@@ -667,15 +685,19 @@ export const bn = {
     ocrHandoffDesc: 'আমাদের স্মার্ট PDF OCR টুল দিয়ে টেক্সট বের করুন ও সার্চ লেয়ার যোগ করুন।',
     makeSearchableBtn: 'সার্চযোগ্য করুন (OCR)',
     backToPages: 'পাতার তালিকায় ফিরুন',
-    startNewScan: 'নতুন স্ক্যান শুরু করুন'
+    startNewScan: 'নতুন স্ক্যান শুরু করুন',
+    moveLeftUp: 'বাঁয়ে/উপরে নিন',
+    moveRightDown: 'ডানে/নিচে নিন',
+    adjustCropTitle: 'ক্রপ ঠিক করুন',
+    enhanceFilterTitle: 'ফিল্টার দিন'
   },
   validator: {
     title: 'পরীক্ষার নথি যাচাইকারী (Validator)',
-    subtitle: 'SSC, UPSC ও চাকরির নিয়মে ছবি, স্বাক্ষর ও PDF যাচাই করুন এবং ১-ক্লিকে ঠিক করুন।',
+    subtitle: 'আপনার বেছে নেওয়া মাপে ছবি, স্বাক্ষর ও PDF যাচাই করুন এবং ১-ক্লিকে ঠিক করুন।',
     badge: '১-ক্লিকে সমাধান',
     selectPresetLabel: 'পরীক্ষা বা পোর্টাল প্রিসেট নির্বাচন করুন',
-    searchPresetsPlaceholder: 'প্রিসেট খুঁজুন (SSC, UPSC, IBPS, প্যান, পাসপোর্ট)...',
-    officialVerified: 'যাচাইকৃত উৎস',
+    searchPresetsPlaceholder: 'সাইজ দিয়ে প্রিসেট খুঁজুন (৩৫০ × ৪৫০, ২০০ × ২৩০, ৫০ KB)...',
+    officialVerified: 'তথ্যসূত্র',
     requiredDocuments: 'প্রয়োজনীয় নথিপত্র',
     readyForSubmission: 'পোর্টাল আপলোডের জন্য প্রস্তুত',
     issuesDetected: 'সমস্যা পাওয়া গেছে',
@@ -727,7 +749,9 @@ export const bn = {
     renderingVisualDiff: 'দৃশ্যমান পার্থক্য তৈরি হচ্ছে...',
     visualDiffHint: 'পৃষ্ঠাগুলির মধ্যে পার্থক্য লাল রঙে দেখানো হয়েছে।',
     visualDiffUnavailable: 'এই পৃষ্ঠা জুটির জন্য দৃশ্যমান পার্থক্য উপলব্ধ নেই।',
-    downloadReportBtn: 'তুলনা রিপোর্ট ডাউনলোড করুন'
+    downloadReportBtn: 'তুলনা রিপোর্ট ডাউনলোড করুন',
+    removedLabel: 'সরানো হয়েছে',
+    addedLabel: 'যোগ করা হয়েছে'
   },
   privacySanitizer: {
     title: 'PDF গোপনীয়তা স্যানিটাইজার',
@@ -1120,6 +1144,85 @@ export const bn = {
     pendingRedaction: 'এখনও প্রয়োগ হয়নি',
     cancelRedactionTitle: 'বাতিল করুন',
     cropArea: 'ক্রপ এলাকা'
+  },
+  previews: {
+    clickToPreview: 'প্রিভিউ দেখতে ক্লিক করুন',
+    previewFile: 'ফাইলের প্রিভিউ',
+    removeFile: 'ফাইল সরিয়ে দিন',
+    enlargePage: 'পৃষ্ঠা বড় করে দেখুন',
+    zoomPreview: 'জুম / প্রিভিউ',
+    restorePage: 'পৃষ্ঠা ফিরিয়ে আনুন',
+    shareDocument: 'ডকুমেন্ট শেয়ার করুন',
+    pagePreview: 'পৃষ্ঠা {{page}}-এর প্রিভিউ'
+  },
+  organizer: {
+    organizeTitle: 'PDF পৃষ্ঠা সাজান',
+    mergeTitle: 'PDF ফাইল জোড়া লাগান',
+    splitTitle: 'PDF ডকুমেন্ট ভাগ করুন',
+    rotateTitle: 'PDF পৃষ্ঠা ঘোরান',
+    deleteTitle: 'PDF পৃষ্ঠা মুছুন',
+    extractTitle: 'PDF পৃষ্ঠা বের করুন',
+    dropzoneMerge: 'জোড়া লাগাতে PDF ফাইল বাছুন বা এখানে ছাড়ুন',
+    dropzoneSingle: 'PDF ডকুমেন্ট বাছুন বা এখানে ছাড়ুন',
+    rotateSelectedCw: 'নির্বাচিত পৃষ্ঠা ৯০° ডানদিকে ঘোরান',
+    rotateSelected180: 'নির্বাচিত পৃষ্ঠা ১৮০° ঘোরান',
+    rotateSelectedCcw: 'নির্বাচিত পৃষ্ঠা ২৭০° ঘোরান (৯০° বাঁদিকে)',
+    duplicateSelected: 'নির্বাচিত পৃষ্ঠার নকল করুন',
+    deleteSelected: 'নির্বাচিত পৃষ্ঠা মুছুন',
+    moveEarlier: 'বাঁয়ে নিন / আগে',
+    moveLater: 'ডানে নিন / পরে',
+    jumpToPosition: 'নির্দিষ্ট জায়গায় নিন'
+  },
+  security: {
+    title: 'PDF নিরাপত্তা',
+    dropzoneUnlock: 'পাসওয়ার্ড দেওয়া PDF বাছুন বা এখানে ছাড়ুন',
+    dropzoneProtect: 'সুরক্ষিত করতে PDF বাছুন বা এখানে ছাড়ুন',
+    unlockedTitle: 'ডকুমেন্টের পাসওয়ার্ড সরানো হয়েছে',
+    protectedTitle: 'ডকুমেন্ট সুরক্ষিত হয়েছে'
+  },
+  profilePage: {
+    title: 'অ্যাকাউন্ট ও প্রোফাইল',
+    uploadPhoto: 'নিজের ছবি আপলোড করুন',
+    resetToInitials: 'নামের আদ্যক্ষরে ফিরুন',
+    editProfile: 'প্রোফাইল সম্পাদনা করুন',
+    resetAllData: 'সব স্থানীয় ডেটা মুছে ফেলবেন?'
+  },
+  localData: {
+    title: 'স্থানীয় ডেটা সংরক্ষণ',
+    factoryResetTitle: 'অ্যাপ ফ্যাক্টরি রিসেট করবেন?'
+  },
+  conversionHub: {
+    title: 'ডকুমেন্ট ও PDF কনভার্টার',
+    noToolsFound: 'কোনো কনভার্ট টুল পাওয়া যায়নি'
+  },
+  flatten: {
+    dropzoneTitle: 'লক করতে PDF বাছুন বা এখানে ছাড়ুন'
+  },
+  forms: {
+    saveProgress: 'কাজ সংরক্ষণ করুন'
+  },
+  aboutEngine: {
+    title: 'ইঞ্জিন সম্পর্কে'
+  },
+  accountPage: {
+    title: 'অ্যাকাউন্ট'
+  },
+  batchPage: {
+    title: 'একসাথে অনেক ছবি ছোট করুন'
+  },
+  batchPdfPage: {
+    title: 'একসাথে অনেক PDF ছোট করুন'
+  },
+  helpPage: {
+    title: 'সহায়তা ও সাধারণ প্রশ্ন'
+  },
+  pdfSign: {
+    signatureModalTitle: 'স্বাক্ষর তৈরি করুন বা নির্বাচন করুন',
+    signatureModalSubtitle: 'স্বাক্ষর আঁকুন, আপলোড করুন বা সাম্প্রতিক স্বাক্ষর বেছে নিন'
+  },
+  signatureRequest: {
+    addRecipientModalTitle: 'নতুন প্রাপক যোগ করুন',
+    addRecipientModalSubtitle: 'এই স্বাক্ষর অনুরোধের জন্য ভূমিকা এবং বিবরণ দিন'
   }
 };
 

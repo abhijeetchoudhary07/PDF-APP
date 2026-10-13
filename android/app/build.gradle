@@ -29,8 +29,8 @@ android {
         applicationId "com.pdfhelper.indianformhelper"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 4
+        versionName "1.0.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -104,6 +104,83 @@ android {
         }
     }
 }
+
+/*
+ * Refuses to package a release that still carries the placeholder store key.
+ *
+ * `store.config.ts` ships `goog_XXXXX` until someone pastes the real
+ * RevenueCat key in, and the app handles that honestly at runtime -- the
+ * paywall reports `not-configured` rather than opening a sheet that cannot
+ * complete. What it cannot do is stop the bundle being uploaded. A signed
+ * `.aab` built before the key landed is indistinguishable from a good one by
+ * eye: same size, same `jar verified`, same version. The only difference is a
+ * string buried in a hashed JS chunk, and the first report of it is a tester
+ * saying the buy button does nothing.
+ *
+ * The check reads the *synced web assets* rather than the TypeScript source,
+ * because those are what actually get packaged. Editing `store.config.ts` and
+ * forgetting `npx cap sync android` is its own version of this same bug, and
+ * reading the assets catches both.
+ *
+ * Release only. Debug builds with a placeholder are entirely normal -- there
+ * is no store on an emulator anyway.
+ *
+ * `-PallowPlaceholderStoreKey` overrides it, for the one build that legitimately
+ * needs the placeholder: Play only exposes Monetise -> Products after a bundle
+ * declaring `com.android.vending.BILLING` has been uploaded to a track, and the
+ * products have to exist before RevenueCat can import them and issue the key.
+ * That build is deliberately unshippable, so the override is a flag you have to
+ * type rather than something that can happen by accident.
+ */
+tasks.register('verifyReleaseStoreKeys') {
+    description = 'Fails the release build if the RevenueCat placeholder key is still bundled.'
+    def assetsDir = file('src/main/assets/public')
+
+    doLast {
+        if (!assetsDir.exists()) {
+            throw new GradleException(
+                "No synced web assets at ${assetsDir}.\n" +
+                "Run:  npm run build && npx cap sync android")
+        }
+
+        def offenders = []
+        assetsDir.eachFileRecurse { f ->
+            if (f.isFile() && f.name.endsWith('.js') && f.text.contains('goog_XXXXX')) {
+                offenders << f.name
+            }
+        }
+
+        if (!offenders.isEmpty() && project.hasProperty('allowPlaceholderStoreKey')) {
+            logger.lifecycle(
+                "\nverifyReleaseStoreKeys: placeholder key allowed by " +
+                "-PallowPlaceholderStoreKey.\n" +
+                "This bundle CANNOT complete a purchase. It is good for one thing:\n" +
+                "uploading to a track so Play exposes Monetise -> Products.\n")
+            return
+        }
+
+        if (!offenders.isEmpty()) {
+            throw new GradleException(
+                "Release blocked: the RevenueCat Android key is still the placeholder.\n\n" +
+                "  Found goog_XXXXX in: ${offenders.join(', ')}\n\n" +
+                "  1. Put the real key in src/app/core/config/store.config.ts\n" +
+                "     (RevenueCat -> Project settings -> API keys -> Public app keys)\n" +
+                "  2. npm run build && npx cap sync android\n" +
+                "  3. Rebuild.\n\n" +
+                "  A bundle built now would install, sign and upload cleanly, and\n" +
+                "  every purchase button in it would silently do nothing.")
+        }
+    }
+}
+
+// Both the bundle (.aab, what Play takes) and the APK path, so neither route
+// out of this project can skip the check.
+tasks.configureEach { t ->
+    if (t.name in ['packageReleaseBundle', 'packageRelease']) {
+        t.dependsOn 'verifyReleaseStoreKeys'
+    }
+}
+
 
 repositories {
     flatDir{

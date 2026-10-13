@@ -25,6 +25,8 @@ import {
   AppTabsComponent,
   AppRelatedToolsComponent,
   FileDropzoneComponent,
+  AppModalComponent,
+  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -49,6 +51,8 @@ export type ScanInputSource = 'camera' | 'image' | 'pdf';
     AppTabsComponent,
     AppRelatedToolsComponent,
     FileDropzoneComponent,
+    AppModalComponent,
+    AutoScrollDirective,
     TranslatePipe
   ],
   providers: [DecimalPipe]

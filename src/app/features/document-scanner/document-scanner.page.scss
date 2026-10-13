@@ -509,3 +509,213 @@
     margin-top: 8px;
   }
 }
+
+@media (max-width: 640px) {
+  .scanner-container {
+    padding: 12px 12px 24px;
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .scanner-card {
+    padding: 16px 14px;
+    gap: 16px;
+    border-radius: var(--radius-md, 10px);
+    width: 100%;
+    box-sizing: border-box;
+
+    .card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+
+      h2 {
+        font-size: 1.15rem;
+      }
+    }
+  }
+
+  .capture-start-card {
+    .capture-hero {
+      padding: 24px 12px;
+
+      .camera-icon-circle {
+        width: 60px;
+        height: 60px;
+        font-size: 1.8rem;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+      }
+
+      .capture-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+
+        app-button {
+          width: 100%;
+          display: block;
+        }
+      }
+    }
+  }
+
+  .scanner-tips-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .crop-card {
+    .crop-canvas-wrapper {
+      padding: 6px;
+      max-width: 100%;
+    }
+
+    .crop-actions-row {
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+      gap: 10px;
+
+      .primary-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+
+        app-button {
+          width: 100%;
+          display: block;
+        }
+      }
+
+      app-button {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+
+  .enhance-card {
+    .enhance-preview-container {
+      min-height: 240px;
+      padding: 8px;
+    }
+
+    .enhance-controls-panel {
+      .presets-btn-group {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+      }
+
+      .slider-row {
+        flex-wrap: wrap;
+        gap: 6px;
+
+        .slider-name {
+          width: 100%;
+        }
+
+        input[type='range'] {
+          flex: 1;
+        }
+      }
+
+      .enhance-actions {
+        app-button {
+          width: 100%;
+          display: block;
+        }
+      }
+    }
+  }
+
+  .pages-dashboard-card {
+    .header-actions {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 6px;
+
+      app-button {
+        flex: 1;
+        min-width: 110px;
+      }
+    }
+
+    .pages-grid {
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+
+      .page-card {
+        .page-thumb-wrapper {
+          height: 140px;
+        }
+      }
+    }
+
+    .generate-pdf-bar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+
+      .pdf-options {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+
+        .option-item {
+          justify-content: space-between;
+          width: 100%;
+        }
+      }
+
+      app-button {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+
+  .pdf-ready-card {
+    .ready-hero {
+      padding: 16px 0;
+
+      .primary-download-row {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+
+        app-button {
+          width: 100%;
+          display: block;
+        }
+      }
+    }
+
+    .ocr-handoff-box {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      padding: 14px;
+
+      app-button {
+        width: 100%;
+        display: block;
+      }
+    }
+
+    .scanner-footer-actions {
+      flex-direction: column;
+      width: 100%;
+      gap: 10px;
+
+      app-button {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+}

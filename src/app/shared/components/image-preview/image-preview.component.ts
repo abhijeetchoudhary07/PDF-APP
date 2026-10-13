@@ -2,6 +2,7 @@ import { Component, EventEmitter, HostListener, Input, Output, ChangeDetectionSt
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { AppButtonComponent } from '../ui/button/button.component';
 import { AppBadgeComponent } from '../ui/badge/badge.component';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -9,7 +10,7 @@ import { AppBadgeComponent } from '../ui/badge/badge.component';
   templateUrl: './image-preview.component.html',
   styleUrls: ['./image-preview.component.scss'],
   standalone: true,
-  imports: [CommonModule, AppBadgeComponent],
+  imports: [CommonModule, AppBadgeComponent, TranslatePipe],
   providers: [DecimalPipe]
 })
 export class ImagePreviewComponent {

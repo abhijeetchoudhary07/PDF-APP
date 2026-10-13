@@ -211,9 +211,21 @@
    * The duration is coupled to the group width: the keyframe translates the
    * track by -50%, which is exactly one group. One group is 11 pills, so 19s
    * here is the same on-screen speed the old doubled 22-pill group had at 38s.
-   * Change how many categories render and this has to change with it.
-   */
   animation: category-marquee-scroll 19s linear infinite;
+
+  &.is-paused {
+    animation-play-state: paused;
+  }
+}
+
+.category-marquee-container:hover .category-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-marquee-track {
+    animation: none;
+  }
 }
 
 .category-marquee-group {

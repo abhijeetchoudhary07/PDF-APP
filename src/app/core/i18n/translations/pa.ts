@@ -74,7 +74,23 @@ export const pa = {
     copy: 'ਕਾਪੀ ਕਰੋ',
     photo: 'ਫੋਟੋ',
     signature: 'ਦਸਤਖਤ',
-    pdf: 'PDF'
+    pdf: 'PDF',
+    undo: 'ਪਹਿਲਾਂ ਵਾਂਗ ਕਰੋ',
+    redo: 'ਦੁਬਾਰਾ ਕਰੋ',
+    moveUp: 'ਉੱਪਰ ਲੈ ਜਾਓ',
+    moveDown: 'ਹੇਠਾਂ ਲੈ ਜਾਓ',
+    zoomIn: 'ਜ਼ੂਮ ਇਨ',
+    zoomOut: 'ਜ਼ੂਮ ਆਉਟ',
+    resetZoom: '100% \'ਤੇ ਰੀਸੈੱਟ ਕਰੋ',
+    closePreview: 'ਪੂਰਵਦਰਸ਼ਨ ਬੰਦ ਕਰੋ',
+    rotate90: '90° ਘੁਮਾਓ',
+    rotate90cw: '90° ਸੱਜੇ ਪਾਸੇ ਘੁਮਾਓ',
+    rotate90ccw: '90° ਖੱਬੇ ਪਾਸੇ ਘੁਮਾਓ (270°)',
+    deletePage: 'ਸਫ਼ਾ ਹਟਾਓ',
+    duplicatePage: 'ਸਫ਼ੇ ਦੀ ਨਕਲ ਬਣਾਓ',
+    prevPage: 'ਪਿਛਲਾ ਸਫ਼ਾ',
+    nextPage: 'ਅਗਲਾ ਸਫ਼ਾ',
+    home: 'ਹੋਮ'
   },
   header: {
     tools: 'ਟੂਲਸ',
@@ -110,7 +126,7 @@ export const pa = {
     resetsAt: 'ਤੁਹਾਡੇ ਮੁਫ਼ਤ ਕੰਮ ਅੱਧੀ ਰਾਤ ਨੂੰ ਮੁੜ ਸ਼ੁਰੂ ਹੋਣਗੇ।'
   },
   footer: {
-    brandDesc: 'ਸਰਕਾਰੀ ਪ੍ਰੀਖਿਆਵਾਂ ਅਤੇ ਨੌਕਰੀਆਂ ਦੇ ਫਾਰਮਾਂ ਲਈ ਤੁਹਾਡਾ ਨਿੱਜੀ ਸਹਾਇਕ। ਫੋਟੋਆਂ ਛੋਟੀਆਂ ਕਰੋ, ਦਸਤਖਤ ਸਾਫ ਕਰੋ, PDF ਬਦਲੋ, ਜੋੜੋ ਅਤੇ ਦਸਤਖਤ ਕਰੋ — 100% ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਤੇ ਸੁਰੱਖਿਅਤ।',
+    brandDesc: 'ਕਿਸੇ ਵੀ ਆਨਲਾਈਨ ਫਾਰਮ ਲਈ ਤੁਹਾਡਾ ਨਿੱਜੀ ਸਹਾਇਕ। ਫੋਟੋਆਂ ਛੋਟੀਆਂ ਕਰੋ, ਦਸਤਖਤ ਸਾਫ ਕਰੋ, PDF ਬਦਲੋ, ਜੋੜੋ ਅਤੇ ਦਸਤਖਤ ਕਰੋ — 100% ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਤੇ ਸੁਰੱਖਿਅਤ।',
     securityChip: 'ਫਾਈਲਾਂ ਕਦੇ ਵੀ ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਤੋਂ ਬਾਹਰ ਨਹੀਂ ਜਾਂਦੀਆਂ',
     docTools: 'ਦਸਤਾਵੇਜ਼ ਟੂਲਸ',
     photoCompress: 'ਫੋਟੋ ਛੋਟੀ ਕਰੋ ਅਤੇ ਕੱਟੋ',
@@ -119,7 +135,7 @@ export const pa = {
     docConverter: 'ਦਸਤਾਵੇਜ਼ ਕਨਵਰਟਰ',
     pageOrganize: 'ਪੰਨੇ ਜੋੜੋ ਅਤੇ ਤਰਤੀਬ ਬਦਲੋ',
     pdfEditor: 'PDF ਰੀਡਰ ਅਤੇ ਐਡੀਟਰ',
-    examPresets: 'ਸਰਕਾਰੀ ਪ੍ਰੀਖਿਆ ਪ੍ਰੀਸੈੱਟ',
+    examPresets: 'ਸਾਈਜ਼ ਪ੍ਰੀਸੈੱਟ',
     productPricing: 'ਉਤਪਾਦ ਅਤੇ ਜਾਣਕਾਰੀ',
     productOverview: 'ਵੇਰਵਾ (Overview)',
     goPremium: 'ਪ੍ਰੀਮੀਅਮ ਲਵੋ (ਅਸੀਮਤ)',
@@ -141,8 +157,8 @@ export const pa = {
   },
   home: {
     heroBadge: '100% ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਤੇ • ਕੋਈ ਸਰਵਰ ਅੱਪਲੋਡ ਨਹੀਂ',
-    heroTitle: '<span class="title-line">ਹਰ ਸਰਕਾਰੀ ਫਾਰਮ ਲਈ</span><span class="title-line">ਆਸਾਨ ਦਸਤਾਵੇਜ਼ ਸਹਾਇਕ</span>',
-    heroSubtitle: 'SSC, UPSC, IBPS, PPSC ਅਤੇ ਪੰਜਾਬ ਸਰਕਾਰ ਦੀਆਂ ਭਰਤੀਆਂ ਲਈ ਪਾਸਪੋਰਟ ਫੋਟੋ, ਦਸਤਖਤ ਅਤੇ PDF ਨੂੰ ਸਹੀ KB ਵਿੱਚ ਆਸਾਨੀ ਨਾਲ ਤਿਆਰ ਕਰੋ।',
+    heroTitle: '<span class="title-line">ਹਰ ਆਨਲਾਈਨ ਫਾਰਮ ਲਈ</span><span class="title-line">ਆਸਾਨ ਦਸਤਾਵੇਜ਼ ਸਹਾਇਕ</span>',
+    heroSubtitle: 'ਫੋਟੋ, ਦਸਤਖਤ ਅਤੇ PDF ਨੂੰ ਫਾਰਮ ਵਿੱਚ ਮੰਗੇ ਗਏ ਸਹੀ ਪਿਕਸਲ ਅਤੇ KB ਸਾਈਜ਼ ਵਿੱਚ ਆਸਾਨੀ ਨਾਲ ਤਿਆਰ ਕਰੋ।',
     searchPlaceholder: 'ਟੂਲ ਖੋਜੋ (ਜਿਵੇਂ ਫੋਟੋ ਕੰਪ੍ਰੈਸ, ਮਰਜ, ਵਰਡ ਤੋਂ ਪੀਡੀਐਫ, ਸਾਈਨ)...',
     clearSearch: 'ਖੋਜ ਸਾਫ ਕਰੋ',
     recentTools: 'ਹਾਲ ਹੀ ਵਿੱਚ ਵਰਤੇ ਗਏ ਟੂਲ:',
@@ -153,7 +169,7 @@ export const pa = {
     feature1Title: 'ਪੂਰੀ ਗੋਪਨੀਯਤਾ',
     feature1Desc: 'ਤੁਹਾਡੀਆਂ ਫਾਈਲਾਂ ਤੁਹਾਡੇ ਫੋਨ ਜਾਂ ਕੰਪਿਊਟਰ ਤੋਂ ਬਾਹਰ ਨਹੀਂ ਜਾਂਦੀਆਂ। ਸਾਰਾ ਕੰਮ ਬਿਨਾਂ ਸਰਵਰ ਤੇ ਅੱਪਲੋਡ ਕੀਤੇ ਤੁਹਾਡੇ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਹੁੰਦਾ ਹੈ।',
     feature2Title: 'ਸਹੀ KB ਸੀਮਾ',
-    feature2Desc: 'ਸਰਕਾਰੀ ਪੋਰਟਲਾਂ ਦੇ ਸਖਤ ਨਿਯਮਾਂ ਨੂੰ ਆਸਾਨੀ ਨਾਲ ਪੂਰਾ ਕਰੋ। ਅਸੀਂ ਤੁਹਾਡੀਆਂ ਫੋਟੋਆਂ ਅਤੇ ਦਸਤਾਵੇਜ਼ਾਂ ਨੂੰ ਲੋੜੀਂਦੇ ਸਹੀ KB ਸਾਈਜ਼ ਵਿੱਚ ਲਿਆਉਂਦੇ ਹਾਂ।',
+    feature2Desc: 'ਅਪਲੋਡ ਦੀਆਂ ਸਖਤ ਹੱਦਾਂ ਨੂੰ ਆਸਾਨੀ ਨਾਲ ਪੂਰਾ ਕਰੋ। ਅਸੀਂ ਤੁਹਾਡੀਆਂ ਫੋਟੋਆਂ ਅਤੇ ਦਸਤਾਵੇਜ਼ਾਂ ਨੂੰ ਲੋੜੀਂਦੇ ਸਹੀ KB ਸਾਈਜ਼ ਵਿੱਚ ਲਿਆਉਂਦੇ ਹਾਂ।',
     feature3Title: 'ਆਲ-ਇਨ-ਵਨ ਟੂਲਕਿੱਟ',
     feature3Desc: 'Word, Excel ਅਤੇ PDF ਵਿਚਕਾਰ ਬਦਲੋ, ਫਾਈਲਾਂ ਜੋੜੋ, ਪੰਨੇ ਹਟਾਓ, ਫਾਰਮ ਭਰੋ ਅਤੇ ਬਿਨਾਂ ਕਿਸੇ ਫੀਸ ਦੇ ਦਸਤਖਤ ਲਗਾਓ।'
   },
@@ -265,7 +281,7 @@ export const pa = {
     },
     presets: {
       title: 'ਪ੍ਰੀਖਿਆ ਅਤੇ ਨੌਕਰੀ ਪ੍ਰੀਸੈੱਟ',
-      description: 'SSC, UPSC, IBPS, NEET ਅਤੇ ਪੰਜਾਬ ਸਰਕਾਰ ਦੀਆਂ ਭਰਤੀਆਂ ਲਈ ਤਿਆਰ ਆਕਾਰ।'
+      description: 'ਆਮ ਆਨਲਾਈਨ ਫਾਰਮਾਂ ਲਈ ਤਿਆਰ ਪਿਕਸਲ ਅਤੇ KB ਸਾਈਜ਼।'
     },
     pdf_ocr: {
       title: 'ਸਮਾਰਟ PDF OCR (ਟੈਕਸਟ ਪਛਾਣੋ)',
@@ -277,7 +293,7 @@ export const pa = {
     },
     document_validator: {
       title: 'ਪ੍ਰੀਖਿਆ ਦਸਤਾਵੇਜ਼ ਜਾਂਚਕਰਤਾ (Validator)',
-      description: 'SSC, UPSC ਅਤੇ ਭਰਤੀ ਫ਼ਾਰਮਾਂ ਦੇ ਨਿਯਮਾਂ ਅਨੁਸਾਰ ਫ਼ੋਟੋ, ਦਸਤਖ਼ਤ ਅਤੇ PDF ਜਾਂਚੋ ਅਤੇ 1-ਕਲਿੱਕ ਵਿੱਚ ਠੀਕ ਕਰੋ।'
+      description: 'ਤੁਹਾਡੇ ਚੁਣੇ ਹੋਏ ਸਾਈਜ਼ ਅਨੁਸਾਰ ਫ਼ੋਟੋ, ਦਸਤਖ਼ਤ ਅਤੇ PDF ਜਾਂਚੋ ਅਤੇ 1-ਕਲਿੱਕ ਵਿੱਚ ਠੀਕ ਕਰੋ।'
     },
     pdf_compare: {
       title: 'PDF ਤੁਲਨਾ',
@@ -332,7 +348,7 @@ export const pa = {
     step0Bullet2: 'ਇੰਟਰਨੈੱਟ ਤੋਂ ਬਿਨਾਂ ਪੂਰੀ ਤਰ੍ਹਾਂ ਔਫਲਾਈਨ ਕੰਮ ਕਰਦਾ ਹੈ',
     step0Bullet3: 'ਤੁਹਾਡੇ ਨਿੱਜੀ ਦਸਤਾਵੇਜ਼ ਪੂਰੀ ਤਰ੍ਹਾਂ ਸੁਰੱਖਿਅਤ ਰਹਿੰਦੇ ਹਨ',
     step1Title: 'ਸਹੀ KB ਅਤੇ ਪਿਕਸਲ ਸੀਮਾ',
-    step1Desc: 'ਸਰਕਾਰੀ ਨੌਕਰੀਆਂ ਅਤੇ ਪ੍ਰੀਖਿਆਵਾਂ ਦੇ ਪੋਰਟਲਾਂ ਦੇ ਨਿਯਮਾਂ ਅਨੁਸਾਰ ਵਿਸ਼ੇਸ਼ ਤੌਰ ਤੇ ਤਿਆਰ।',
+    step1Desc: 'ਆਨਲਾਈਨ ਫਾਰਮਾਂ ਦੀਆਂ ਸਖਤ ਪਿਕਸਲ ਅਤੇ ਫਾਈਲ-ਸਾਈਜ਼ ਹੱਦਾਂ ਅਨੁਸਾਰ ਤਿਆਰ।',
     step1Bullet1: 'ਫਾਈਲਾਂ ਨੂੰ ਲੋੜੀਂਦੀ KB ਹੱਦ ਵਿੱਚ ਰੱਖਣ ਦੀ ਪੂਰੀ ਗਰੰਟੀ',
     step1Bullet2: 'ਪਾਸਪੋਰਟ ਫੋਟੋ ਲਈ 3.5 × 4.5 ਸੈਂਟੀਮੀਟਰ ਦਾ ਪੱਕਾ ਅਨੁਪਾਤ',
     step1Bullet3: 'ਦਸਤਖਤ ਪਿੱਛੋਂ ਕਾਗਜ਼ ਦੇ ਦਾਗ ਅਤੇ ਪਰਛਾਵੇਂ ਸਾਫ ਕਰੋ',
@@ -513,7 +529,7 @@ export const pa = {
     subtitle: 'ਆਨਲਾਈਨ ਫਾਰਮਾਂ ਲਈ ਪਾਸਪੋਰਟ ਫੋਟੋ ਨੂੰ ਨਿਰਧਾਰਤ KB ਅਤੇ ਪਿਕਸਲ ਆਕਾਰ ਵਿੱਚ ਆਸਾਨੀ ਨਾਲ ਕੱਟੋ ਤੇ ਛੋਟਾ ਕਰੋ।',
     tabKb: 'ਸਹੀ KB ਆਕਾਰ',
     tabPixels: 'ਸਹੀ ਪਿਕਸਲ ਆਕਾਰ',
-    quickPresetsTitle: 'ਭਾਰਤੀ ਪੋਰਟਲਾਂ ਲਈ ਤਿਆਰ ਪ੍ਰੀਸੈੱਟ',
+    quickPresetsTitle: 'ਤਿਆਰ ਪ੍ਰੀਸੈੱਟ',
     targetSizeTitle: 'ਲੋੜੀਂਦਾ ਫਾਈਲ ਆਕਾਰ ਚੁਣੋ',
     targetSizeHint: 'ਸਾਡਾ ਟੂਲ ਫੋਟੋ ਦੀ ਕੁਆਲਿਟੀ ਨੂੰ ਧਿਆਨ ਨਾਲ ਸੈੱਟ ਕਰਦਾ ਹੈ ਤਾਂ ਜੋ ਆਕਾਰ ਹੱਦ ਵਿੱਚ ਰਹੇ।',
     pixelPresetsTitle: 'ਆਮ ਫਾਰਮ ਆਕਾਰ',
@@ -541,7 +557,9 @@ export const pa = {
     tabImagesToPdf: 'ਫੋਟੋਆਂ ਤੋਂ PDF ਬਣਾਓ',
     tabExtract: 'ਪੰਨੇ ਬਾਹਰ ਕੱਢੋ',
     targetSizeLabel: 'ਲੋੜੀਂਦਾ PDF ਆਕਾਰ',
-    compressPdfBtn: 'PDF ਨੂੰ {{size}} KB ਤੱਕ ਛੋਟਾ ਕਰੋ'
+    compressPdfBtn: 'PDF ਨੂੰ {{size}} KB ਤੱਕ ਛੋਟਾ ਕਰੋ',
+    compileDropzoneTitle: 'PDF ਬਣਾਉਣ ਲਈ ਤਸਵੀਰਾਂ ਚੁਣੋ ਜਾਂ ਇੱਥੇ ਖਿੱਚ ਕੇ ਛੱਡੋ',
+    extractDropzoneTitle: 'ਸਫ਼ੇ ਕੱਢਣ ਲਈ PDF ਚੁਣੋ ਜਾਂ ਇੱਥੇ ਖਿੱਚ ਕੇ ਛੱਡੋ'
   },
   historyPage: {
     title: 'ਪ੍ਰੋਸੈਸਿੰਗ ਇਤਿਹਾਸ',
@@ -556,7 +574,7 @@ export const pa = {
   },
   presetsPage: {
     title: 'ਪ੍ਰੀਖਿਆ ਤੇ ਨੌਕਰੀ ਪ੍ਰੀਸੈੱਟ',
-    subtitle: 'ਸਰਕਾਰੀ ਫ਼ਾਰਮਾਂ, ਪ੍ਰੀਖਿਆਵਾਂ ਅਤੇ ਭਰਤੀ ਪੋਰਟਲਾਂ ਲਈ ਤਿਆਰ ਸੈਟਿੰਗਾਂ।',
+    subtitle: 'ਆਮ ਆਨਲਾਈਨ ਫਾਰਮਾਂ ਲਈ ਤਿਆਰ ਪਿਕਸਲ ਅਤੇ KB ਸਾਈਜ਼।',
     customPresetBtn: '+ ਕਸਟਮ ਪ੍ਰੀਸੈੱਟ',
     noticeTitle: 'ਅਧਿਕਾਰਤ ਨਿਯਮ ਸੂਚਨਾ',
     noticeDesc: 'ਨਿਯਮ ਸਮੇਂ ਦੇ ਨਾਲ ਬਦਲ ਸਕਦੇ ਹਨ। ਫ਼ਾਰਮ ਜਮ੍ਹਾ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਅਧਿਕਾਰਤ ਵੈੱਬਸਾਈਟ ਦੀ ਜਾਂਚ ਕਰੋ।',
@@ -667,15 +685,19 @@ export const pa = {
     ocrHandoffDesc: 'ਸਾਡੇ ਸਮਾਰਟ PDF OCR ਟੂਲ ਰਾਹੀਂ ਟੈਕਸਟ ਕੱਢੋ ਅਤੇ ਸਰਚ ਲੇਅਰ ਜੋੜੋ।',
     makeSearchableBtn: 'ਸਰਚਯੋਗ ਬਣਾਓ (OCR)',
     backToPages: 'ਪੰਨਿਆਂ ਦੀ ਸੂਚੀ ਉੱਤੇ ਵਾਪਸ ਜਾਓ',
-    startNewScan: 'ਨਵਾਂ ਸਕੈਨ ਸ਼ੁਰੂ ਕਰੋ'
+    startNewScan: 'ਨਵਾਂ ਸਕੈਨ ਸ਼ੁਰੂ ਕਰੋ',
+    moveLeftUp: 'ਖੱਬੇ/ਉੱਪਰ ਲੈ ਜਾਓ',
+    moveRightDown: 'ਸੱਜੇ/ਹੇਠਾਂ ਲੈ ਜਾਓ',
+    adjustCropTitle: 'ਕ੍ਰਾਪ ਠੀਕ ਕਰੋ',
+    enhanceFilterTitle: 'ਫਿਲਟਰ ਲਗਾਓ'
   },
   validator: {
     title: 'ਪ੍ਰੀਖਿਆ ਦਸਤਾਵੇਜ਼ ਜਾਂਚਕਰਤਾ (Validator)',
-    subtitle: 'SSC, UPSC ਅਤੇ ਭਰਤੀ ਫ਼ਾਰਮਾਂ ਦੇ ਨਿਯਮਾਂ ਅਨੁਸਾਰ ਫ਼ੋਟੋ, ਦਸਤਖ਼ਤ ਅਤੇ PDF ਜਾਂਚੋ ਅਤੇ 1-ਕਲਿੱਕ ਵਿੱਚ ਠੀਕ ਕਰੋ।',
+    subtitle: 'ਤੁਹਾਡੇ ਚੁਣੇ ਹੋਏ ਸਾਈਜ਼ ਅਨੁਸਾਰ ਫ਼ੋਟੋ, ਦਸਤਖ਼ਤ ਅਤੇ PDF ਜਾਂਚੋ ਅਤੇ 1-ਕਲਿੱਕ ਵਿੱਚ ਠੀਕ ਕਰੋ।',
     badge: '1-ਕਲਿੱਕ ਹੱਲ',
     selectPresetLabel: 'ਪ੍ਰੀਖਿਆ ਜਾਂ ਭਰਤੀ ਪੋਰਟਲ ਚੁਣੋ',
-    searchPresetsPlaceholder: 'ਪ੍ਰੀਸੈੱਟ ਖੋਜੋ (SSC, UPSC, IBPS, ਪੈਨ, ਪਾਸਪੋਰਟ)...',
-    officialVerified: 'ਪ੍ਰਮਾਣਿਤ ਸਰੋਤ',
+    searchPresetsPlaceholder: 'ਸਾਈਜ਼ ਨਾਲ ਪ੍ਰੀਸੈੱਟ ਖੋਜੋ (350 × 450, 200 × 230, 50 KB)...',
+    officialVerified: 'ਹਵਾਲਾ ਸਰੋਤ',
     requiredDocuments: 'ਲੋੜੀਂਦੇ ਦਸਤਾਵੇਜ਼',
     readyForSubmission: 'ਪੋਰਟਲ ਅਪਲੋਡ ਲਈ ਤਿਆਰ',
     issuesDetected: 'ਕਮੀਆਂ ਪਾਈਆਂ ਗਈਆਂ',
@@ -727,7 +749,9 @@ export const pa = {
     renderingVisualDiff: 'ਦ੍ਰਿਸ਼ਟੀਗਤ ਤੁਲਨਾ ਤਿਆਰ ਹੋ ਰਹੀ ਹੈ...',
     visualDiffHint: 'ਪੰਨਿਆਂ ਵਿਚਕਾਰ ਅੰਤਰ ਲਾਲ ਰੰਗ ਵਿੱਚ ਹਾਈਲਾਈਟ ਕੀਤੇ ਗਏ ਹਨ।',
     visualDiffUnavailable: 'ਇਸ ਪੰਨੇ ਦੇ ਜੋੜੇ ਲਈ ਦ੍ਰਿਸ਼ਟੀਗਤ ਅੰਤਰ ਉਪਲਬਧ ਨਹੀਂ ਹੈ।',
-    downloadReportBtn: 'ਤੁਲਨਾ ਰਿਪੋਰਟ ਡਾਊਨਲੋਡ ਕਰੋ'
+    downloadReportBtn: 'ਤੁਲਨਾ ਰਿਪੋਰਟ ਡਾਊਨਲੋਡ ਕਰੋ',
+    removedLabel: 'ਹਟਾਇਆ ਗਿਆ',
+    addedLabel: 'ਜੋੜਿਆ ਗਿਆ'
   },
   privacySanitizer: {
     title: 'PDF ਨਿੱਜਤਾ ਸੈਨੀਟਾਈਜ਼ਰ',
@@ -1120,6 +1144,85 @@ export const pa = {
     pendingRedaction: 'ਹਾਲੇ ਲਾਗੂ ਨਹੀਂ',
     cancelRedactionTitle: 'ਰੱਦ ਕਰੋ',
     cropArea: 'ਕ੍ਰਾਪ ਖੇਤਰ'
+  },
+  previews: {
+    clickToPreview: 'ਪੂਰਵਦਰਸ਼ਨ ਲਈ ਕਲਿੱਕ ਕਰੋ',
+    previewFile: 'ਫਾਈਲ ਦਾ ਪੂਰਵਦਰਸ਼ਨ',
+    removeFile: 'ਫਾਈਲ ਹਟਾਓ',
+    enlargePage: 'ਸਫ਼ਾ ਵੱਡਾ ਕਰਕੇ ਦੇਖੋ',
+    zoomPreview: 'ਜ਼ੂਮ / ਪੂਰਵਦਰਸ਼ਨ',
+    restorePage: 'ਸਫ਼ਾ ਵਾਪਸ ਲਿਆਓ',
+    shareDocument: 'ਦਸਤਾਵੇਜ਼ ਸਾਂਝਾ ਕਰੋ',
+    pagePreview: 'ਸਫ਼ਾ {{page}} ਦਾ ਪੂਰਵਦਰਸ਼ਨ'
+  },
+  organizer: {
+    organizeTitle: 'PDF ਸਫ਼ੇ ਤਰਤੀਬ ਦਿਓ',
+    mergeTitle: 'PDF ਫਾਈਲਾਂ ਜੋੜੋ',
+    splitTitle: 'PDF ਦਸਤਾਵੇਜ਼ ਵੰਡੋ',
+    rotateTitle: 'PDF ਸਫ਼ੇ ਘੁਮਾਓ',
+    deleteTitle: 'PDF ਸਫ਼ੇ ਹਟਾਓ',
+    extractTitle: 'PDF ਸਫ਼ੇ ਕੱਢੋ',
+    dropzoneMerge: 'ਜੋੜਨ ਲਈ PDF ਫਾਈਲਾਂ ਚੁਣੋ ਜਾਂ ਇੱਥੇ ਛੱਡੋ',
+    dropzoneSingle: 'PDF ਦਸਤਾਵੇਜ਼ ਚੁਣੋ ਜਾਂ ਇੱਥੇ ਛੱਡੋ',
+    rotateSelectedCw: 'ਚੁਣੇ ਸਫ਼ੇ 90° ਸੱਜੇ ਪਾਸੇ ਘੁਮਾਓ',
+    rotateSelected180: 'ਚੁਣੇ ਸਫ਼ੇ 180° ਘੁਮਾਓ',
+    rotateSelectedCcw: 'ਚੁਣੇ ਸਫ਼ੇ 270° ਘੁਮਾਓ (90° ਖੱਬੇ ਪਾਸੇ)',
+    duplicateSelected: 'ਚੁਣੇ ਸਫ਼ਿਆਂ ਦੀ ਨਕਲ ਬਣਾਓ',
+    deleteSelected: 'ਚੁਣੇ ਸਫ਼ੇ ਹਟਾਓ',
+    moveEarlier: 'ਖੱਬੇ ਲੈ ਜਾਓ / ਪਹਿਲਾਂ',
+    moveLater: 'ਸੱਜੇ ਲੈ ਜਾਓ / ਬਾਅਦ ਵਿੱਚ',
+    jumpToPosition: 'ਕਿਸੇ ਥਾਂ \'ਤੇ ਲੈ ਜਾਓ'
+  },
+  security: {
+    title: 'PDF ਸੁਰੱਖਿਆ',
+    dropzoneUnlock: 'ਪਾਸਵਰਡ ਵਾਲੀ PDF ਚੁਣੋ ਜਾਂ ਇੱਥੇ ਛੱਡੋ',
+    dropzoneProtect: 'ਸੁਰੱਖਿਅਤ ਕਰਨ ਲਈ PDF ਚੁਣੋ ਜਾਂ ਇੱਥੇ ਛੱਡੋ',
+    unlockedTitle: 'ਦਸਤਾਵੇਜ਼ ਦਾ ਪਾਸਵਰਡ ਹਟਾ ਦਿੱਤਾ ਗਿਆ',
+    protectedTitle: 'ਦਸਤਾਵੇਜ਼ ਸੁਰੱਖਿਅਤ ਹੋ ਗਿਆ'
+  },
+  profilePage: {
+    title: 'ਖਾਤਾ ਅਤੇ ਪ੍ਰੋਫਾਈਲ',
+    uploadPhoto: 'ਆਪਣੀ ਤਸਵੀਰ ਅੱਪਲੋਡ ਕਰੋ',
+    resetToInitials: 'ਨਾਂ ਦੇ ਅੱਖਰਾਂ \'ਤੇ ਵਾਪਸ ਜਾਓ',
+    editProfile: 'ਪ੍ਰੋਫਾਈਲ ਸੋਧੋ',
+    resetAllData: 'ਸਾਰਾ ਸਥਾਨਕ ਡਾਟਾ ਮਿਟਾਉਣਾ ਹੈ?'
+  },
+  localData: {
+    title: 'ਸਥਾਨਕ ਡਾਟਾ ਭੰਡਾਰ',
+    factoryResetTitle: 'ਐਪ ਨੂੰ ਫੈਕਟਰੀ ਰੀਸੈੱਟ ਕਰਨਾ ਹੈ?'
+  },
+  conversionHub: {
+    title: 'ਦਸਤਾਵੇਜ਼ ਅਤੇ PDF ਕਨਵਰਟਰ',
+    noToolsFound: 'ਕੋਈ ਕਨਵਰਟ ਟੂਲ ਨਹੀਂ ਮਿਲਿਆ'
+  },
+  flatten: {
+    dropzoneTitle: 'ਲਾਕ ਕਰਨ ਲਈ PDF ਚੁਣੋ ਜਾਂ ਇੱਥੇ ਛੱਡੋ'
+  },
+  forms: {
+    saveProgress: 'ਕੰਮ ਸੇਵ ਕਰੋ'
+  },
+  aboutEngine: {
+    title: 'ਇੰਜਣ ਬਾਰੇ'
+  },
+  accountPage: {
+    title: 'ਖਾਤਾ'
+  },
+  batchPage: {
+    title: 'ਇੱਕੋ ਵੇਲੇ ਕਈ ਤਸਵੀਰਾਂ ਛੋਟੀਆਂ ਕਰੋ'
+  },
+  batchPdfPage: {
+    title: 'ਇੱਕੋ ਵੇਲੇ ਕਈ PDF ਛੋਟੀਆਂ ਕਰੋ'
+  },
+  helpPage: {
+    title: 'ਮਦਦ ਅਤੇ ਆਮ ਪੁੱਛੇ ਜਾਂਦੇ ਸਵਾਲ'
+  },
+  pdfSign: {
+    signatureModalTitle: 'ਦਸਤਖਤ ਬਣਾਓ ਜਾਂ ਚੁਣੋ',
+    signatureModalSubtitle: 'ਦਸਤਖਤ ਬਣਾਓ, ਅੱਪਲੋਡ ਕਰੋ ਜਾਂ ਹਾਲੀਆ ਦਸਤਖਤ ਚੁਣੋ'
+  },
+  signatureRequest: {
+    addRecipientModalTitle: 'ਨਵਾਂ ਪ੍ਰਾਪਤਕਰਤਾ ਸ਼ਾਮਲ ਕਰੋ',
+    addRecipientModalSubtitle: 'ਇਸ ਦਸਤਖਤ ਬੇਨਤੀ ਲਈ ਭੂਮਿਕਾਵਾਂ ਅਤੇ ਵੇਰਵੇ ਦਿਓ'
   }
 };
 

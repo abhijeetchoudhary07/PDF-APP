@@ -4,7 +4,7 @@
   <main class="app-main-content">
     <div class="tool-page-container">
       <app-page-header
-        title="Batch Compress PDFs"
+        [title]="'batchPdfPage.title' | translate"
         subtitle="Compress multiple PDF documents consecutively to prevent device memory exhaustion."
         [breadcrumbs]="[{ label: 'Batch Compress PDFs' }]"
         badge="BATCH"

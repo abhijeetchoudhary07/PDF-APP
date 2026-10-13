@@ -4,7 +4,7 @@
   <main class="app-main-content">
     <div class="tool-page-container">
       <app-page-header
-        title="Flatten PDF"
+        [title]="'tools.pdf_flatten.title' | translate"
         subtitle="Convert interactive form fields, annotations, and signatures into permanent static graphics."
         [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Flatten' }]"
         badge="FLATTEN"
@@ -19,7 +19,7 @@
             <app-file-dropzone
               accept="application/pdf"
               icon="layers"
-              title="Select or Drop PDF to Flatten"
+              [title]="'flatten.dropzoneTitle' | translate"
               description="Convert interactive form fields, annotations, added signatures, and text overlays into permanent static PDF graphics."
               (fileSelected)="onFileSelected($event)">
             </app-file-dropzone>
@@ -57,11 +57,13 @@
             <!-- Processing State -->
             @if (workflowState === 'PROCESSING') {
               <div class="processing-status-card" style="margin-bottom: 16px;">
-                <app-progress
-                  [value]="flattenProgress"
-                  variant="warning"
-                  [label]="stageLabels[currentStage] + ' (' + flattenProgress + '%)'">
-                </app-progress>
+                <app-conversion-animation
+                  [progress]="flattenProgress"
+                  [stageText]="stageLabels[currentStage] || 'Flattening PDF Elements...'"
+                  [sourceFormat]="'INTERACTIVE PDF'"
+                  [targetFormat]="mode === 'raster' ? 'RASTER PDF' : 'FLATTENED PDF'"
+                  [fileName]="pdfFile.name">
+                </app-conversion-animation>
               </div>
             }
             <!-- Error State -->

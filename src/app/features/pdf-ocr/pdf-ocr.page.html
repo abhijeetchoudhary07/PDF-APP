@@ -179,7 +179,7 @@
               </button>
             </div>
             @if (pageSelectionMode === 'custom') {
-              <div class="page-checkboxes-grid">
+              <div class="page-checkboxes-grid" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
                 @for (p of [].constructor(totalPages); track p; let i = $index) {
                   <label
                     class="page-chip"
@@ -228,18 +228,14 @@
   <!-- STEP 4: PROCESSING -->
   @if (currentStep === 'processing') {
     <section class="workflow-card processing-card">
-      <div class="processing-spinner"></div>
-      <h3 class="stage-title">{{ progressMessage }}</h3>
-      <div class="progress-bar-container">
-        <div class="progress-bar-fill" [style.width.%]="progressPercent"></div>
-      </div>
-      <div class="progress-meta">
-        <span>{{ progressPercent }}%</span>
-        @if (totalPages > 1) {
-          <span>Page {{ currentPageProcessing }} of {{ selectedPageNumbers.length }}</span>
-        }
-      </div>
-      <div class="processing-actions">
+      <app-conversion-animation
+        [progress]="progressPercent"
+        [stageText]="progressMessage || 'Recognizing Document Text...'"
+        [sourceFormat]="'SCANNED PDF'"
+        [targetFormat]="'EXTRACTED TEXT'"
+        [fileName]="selectedFile?.name">
+      </app-conversion-animation>
+      <div class="processing-actions ion-margin-top" style="text-align: center;">
         <app-button
           variant="ghost"
           (clicked)="cancelOcr()"

@@ -6,7 +6,7 @@
 
       <!-- PAGE HEADER -->
       <app-page-header
-        title="Document & PDF Converter"
+        [title]="'conversionHub.title' | translate"
         subtitle="100% offline, zero-upload file conversion between PDF and Office, image, and text formats."
         backUrl="/home"
         [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Converter' }]"
@@ -114,7 +114,7 @@
       @if (filteredPdfToFormat.length === 0 && filteredFormatToPdf.length === 0) {
         <div class="no-results-wrap">
           <app-empty-state
-            title="No conversion tools found"
+            [title]="'conversionHub.noToolsFound' | translate"
             [description]="'No conversion tools match &quot;' + searchTerm + '&quot;.'"
             actionLabel="Clear Search"
             (actionClicked)="searchTerm = ''">

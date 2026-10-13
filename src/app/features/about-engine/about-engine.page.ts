@@ -7,7 +7,8 @@ import {
   AppPageHeaderComponent,
   AppFooterComponent,
   PrivacySupportNavComponent,
-  AppGovDisclaimerComponent
+  AppGovDisclaimerComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 export interface TechModule {
@@ -31,8 +32,9 @@ export interface TechModule {
     AppPageHeaderComponent,
     AppFooterComponent,
     PrivacySupportNavComponent,
-    AppGovDisclaimerComponent
-]
+    AppGovDisclaimerComponent,
+    TranslatePipe
+  ]
 })
 export class AboutEnginePage {
   readonly engineVersion = '2026.9.1';

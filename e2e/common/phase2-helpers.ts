@@ -35,16 +35,21 @@ export async function uploadFileToDropzone(
 
 /**
  * Waits for processing spinners/sections to complete and disappear.
+ *
+ * This used to be a one-shot `if (await spinner.count() > 0)` around a
+ * `waitFor` whose timeout was then swallowed by a `catch {}`. Both halves hurt,
+ * and this helper has 70-odd callers: a spinner still spinning after the
+ * deadline was reported as "finished", so the caller went on to assert against
+ * a half-rendered page and failed somewhere else entirely, on a locator that
+ * was not the problem.
+ *
+ * `toBeHidden` covers the case the count guard was there for -- it is satisfied
+ * by an element that was never attached -- while a spinner that is genuinely
+ * stuck now fails here, naming the spinner.
  */
 export async function waitForProcessingToFinish(page: Page, timeoutMs = 25000): Promise<void> {
-  const spinner = page.locator('.spinner, .processing-section, .proc-card, .progress-card, .scanning-section');
-  if (await spinner.count() > 0) {
-    try {
-      await spinner.first().waitFor({ state: 'hidden', timeout: timeoutMs });
-    } catch {
-      // If element is already removed from DOM
-    }
-  }
+  const spinner = page.locator('.spinner, .processing-section, .proc-card, .progress-card, .scanning-section').first();
+  await expect(spinner).toBeHidden({ timeout: timeoutMs });
 }
 
 /**

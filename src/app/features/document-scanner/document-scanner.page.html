@@ -266,7 +266,7 @@
         </div>
       </div>
       <!-- Multi-Page Grid -->
-      <div class="pages-grid">
+      <div class="pages-grid" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
         @for (page of pages; track page; let i = $index) {
           <div
             class="page-card"
@@ -282,7 +282,8 @@
               <button
                 type="button"
                 class="action-icon-btn"
-                title="Move Left/Up"
+                [title]="'scanner.moveLeftUp' | translate"
+                data-testid="page-move-up"
                 [disabled]="i === 0"
                 (click)="$event.stopPropagation(); movePage(i, 'up')"
                 >
@@ -291,7 +292,8 @@
               <button
                 type="button"
                 class="action-icon-btn"
-                title="Adjust Crop"
+                [title]="'scanner.adjustCropTitle' | translate"
+                data-testid="page-crop"
                 (click)="$event.stopPropagation(); openCropEditor(i)"
                 >
                 ✂️
@@ -299,7 +301,8 @@
               <button
                 type="button"
                 class="action-icon-btn"
-                title="Enhance Filter"
+                [title]="'scanner.enhanceFilterTitle' | translate"
+                data-testid="page-enhance"
                 (click)="$event.stopPropagation(); openEnhanceEditor(i)"
                 >
                 🎨
@@ -307,7 +310,8 @@
               <button
                 type="button"
                 class="action-icon-btn"
-                title="Rotate 90°"
+                [title]="'common.rotate90' | translate"
+                data-testid="page-rotate"
                 (click)="$event.stopPropagation(); activePageIndex = i; rotateActivePage()"
                 >
                 🔄
@@ -315,7 +319,8 @@
               <button
                 type="button"
                 class="action-icon-btn"
-                title="Move Right/Down"
+                [title]="'scanner.moveRightDown' | translate"
+                data-testid="page-move-down"
                 [disabled]="i === pages.length - 1"
                 (click)="$event.stopPropagation(); movePage(i, 'down')"
                 >
@@ -324,7 +329,8 @@
               <button
                 type="button"
                 class="action-icon-btn delete-btn"
-                title="Delete Page"
+                [title]="'common.deletePage' | translate"
+                data-testid="page-delete"
                 (click)="$event.stopPropagation(); deletePage(i)"
                 >
                 🗑️

@@ -6,7 +6,7 @@
 
       <!-- Page Header with Breadcrumbs -->
       <app-page-header
-        title="Local Data Storage"
+        [title]="'localData.title' | translate"
         subtitle="Inspect, manage, and export your offline device storage, history logs, and cache."
         [breadcrumbs]="[{ label: 'Privacy & Support' }, { label: 'Local Data Storage' }]"
         badge="STORAGE"
@@ -177,7 +177,7 @@
       <!-- CLEAR HISTORY CONFIRMATION MODAL -->
       <app-modal
         [isOpen]="isClearHistoryModalOpen"
-        title="Clear Processing History?"
+        [title]="'settings.clearHistoryModalTitle' | translate"
         subtitle="Erase all historical log entries"
         [hasFooter]="true"
         (closed)="isClearHistoryModalOpen = false">
@@ -193,7 +193,7 @@
       <!-- FACTORY RESET MODAL -->
       <app-modal
         [isOpen]="isFactoryResetModalOpen"
-        title="Factory Reset Application?"
+        [title]="'localData.factoryResetTitle' | translate"
         subtitle="This action cannot be undone"
         [hasFooter]="true"
         (closed)="isFactoryResetModalOpen = false">

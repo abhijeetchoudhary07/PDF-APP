@@ -202,10 +202,9 @@ test.describe('Release — Mobile drawer @release @ui', () => {
 
     // The drawer uses the segmented mode, so the languages are cards, not a menu.
     const cards = page.locator('.lang-card-btn, .lang-compact-pills .compact-pill');
-    if ((await cards.count()) > 0) {
-      await cards.filter({ hasText: 'हिन्दी' }).first().click();
-      await expect(page.locator('html')).toHaveAttribute('lang', 'hi', { timeout: 10000 });
-    }
+    await expect(cards.first()).toBeVisible();
+    await cards.filter({ hasText: 'हिन्दी' }).first().click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'hi', { timeout: 10000 });
   });
 
   test('UI-009: the drawer never renders wider than the phone', async ({ page }) => {

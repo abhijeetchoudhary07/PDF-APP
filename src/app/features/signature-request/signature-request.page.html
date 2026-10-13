@@ -4,7 +4,7 @@
   <main class="app-main-content">
     <div class="tool-page-container">
       <app-page-header
-        title="Request Signatures"
+        [title]="'tools.signature_request.title' | translate"
         subtitle="Configure signers, assign fields, and export request specification packages."
         [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Signature Requests' }]"
         badge="SIGN"
@@ -196,40 +196,34 @@
         }
 
         <!-- ADD RECIPIENT MODAL -->
-        @if (showAddRecipientDialog) {
-          <div class="modal-backdrop" (click)="closeAddRecipient()">
-            <div class="add-recipient-modal" (click)="$event.stopPropagation()">
-              <div class="modal-header">
-                <h3>Add New Recipient</h3>
-                <button class="close-btn" (click)="closeAddRecipient()">
-                  <app-icon name="close"></app-icon>
-                </button>
-              </div>
-              <div class="modal-body">
-                <div class="form-group">
-                  <label class="form-label">Full Name</label>
-                  <input type="text" [(ngModel)]="newRecipientName" placeholder="e.g. John Doe" class="custom-input" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Email Address</label>
-                  <input type="email" [(ngModel)]="newRecipientEmail" placeholder="e.g. john@example.com" class="custom-input" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Role</label>
-                  <select [(ngModel)]="newRecipientRole" class="custom-select">
-                    <option value="signer">Signer (Must sign document)</option>
-                    <option value="approver">Approver (Reviews and approves)</option>
-                    <option value="cc">CC (Receives completed copy)</option>
-                  </select>
-                </div>
-                <div class="modal-actions">
-                  <app-button variant="ghost" size="sm" (clicked)="closeAddRecipient()">Cancel</app-button>
-                  <app-button variant="primary" size="sm" (clicked)="addRecipient()">Add Recipient</app-button>
-                </div>
-              </div>
-            </div>
+        <app-modal
+          [isOpen]="showAddRecipientDialog"
+          [title]="'signatureRequest.addRecipientModalTitle' | translate"
+          [subtitle]="'signatureRequest.addRecipientModalSubtitle' | translate"
+          [hasFooter]="true"
+          size="sm"
+          (closed)="closeAddRecipient()">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" [(ngModel)]="newRecipientName" placeholder="e.g. John Doe" class="custom-input" />
           </div>
-        }
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" [(ngModel)]="newRecipientEmail" placeholder="e.g. john@example.com" class="custom-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select [(ngModel)]="newRecipientRole" class="custom-select">
+              <option value="signer">Signer (Must sign document)</option>
+              <option value="approver">Approver (Reviews and approves)</option>
+              <option value="cc">CC (Receives completed copy)</option>
+            </select>
+          </div>
+          <div modal-footer>
+            <app-button variant="outline" size="md" (clicked)="closeAddRecipient()">Cancel</app-button>
+            <app-button variant="primary" size="md" (clicked)="addRecipient()">Add Recipient</app-button>
+          </div>
+        </app-modal>
       </div>
     </div>
   </main>

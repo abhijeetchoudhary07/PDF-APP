@@ -13,7 +13,8 @@ import {
   AppFooterComponent,
   PrivacySupportNavComponent,
   AppButtonComponent,
-  AppModalComponent
+  AppModalComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 export interface StorageRecord {
@@ -39,8 +40,9 @@ export interface StorageRecord {
     AppFooterComponent,
     PrivacySupportNavComponent,
     AppButtonComponent,
-    AppModalComponent
-]
+    AppModalComponent,
+    TranslatePipe
+  ]
 })
 export class LocalDataStoragePage implements OnInit {
   private historyService = inject(HistoryService);

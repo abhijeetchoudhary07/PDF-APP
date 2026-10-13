@@ -5,7 +5,7 @@
     <div class="app-container">
       <!-- PAGE HEADER -->
       <app-page-header
-        [title]="mode === 'organize' ? 'Organize PDF Pages' : (mode === 'merge' ? 'Merge PDF Files' : (mode === 'split' ? 'Split PDF Document' : (mode === 'rotate' ? 'Rotate PDF Pages' : (mode === 'delete' ? 'Delete PDF Pages' : 'Extract PDF Pages'))))"
+        [title]="(mode === 'organize' ? 'organizer.organizeTitle' : (mode === 'merge' ? 'organizer.mergeTitle' : (mode === 'split' ? 'organizer.splitTitle' : (mode === 'rotate' ? 'organizer.rotateTitle' : (mode === 'delete' ? 'organizer.deleteTitle' : 'organizer.extractTitle'))))) | translate"
         [subtitle]="mode === 'merge' ? 'Combine multiple PDF documents into a single organized file.' : 'Rearrange, rotate, delete, extract or split pages with zero quality loss.'"
         [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Organize' }]"
         badge="ORGANIZE"
@@ -19,7 +19,7 @@
             size="sm"
             (clicked)="pageManager.undo()"
             [disabled]="!pageManager.canUndo"
-            title="Undo">
+            [title]="'common.undo' | translate">
             <app-icon name="arrow-undo-outline" class="btn-icon"></app-icon>
           </app-button>
           <app-button
@@ -27,7 +27,7 @@
             size="sm"
             (clicked)="pageManager.redo()"
             [disabled]="!pageManager.canRedo"
-            title="Redo">
+            [title]="'common.redo' | translate">
             <app-icon name="arrow-redo-outline" class="btn-icon"></app-icon>
           </app-button>
 
@@ -37,7 +37,7 @@
               variant="ghost"
               size="sm"
               (clicked)="pageManager.clear(); lastExportResult = undefined; splitExportResults = []"
-              title="Reset">
+              [title]="'common.reset' | translate">
               <app-icon name="refresh-outline" class="btn-icon"></app-icon>
             </app-button>
           }
@@ -72,7 +72,7 @@
               [multiple]="mode === 'merge'"
               accept="application/pdf"
               [icon]="mode === 'merge' ? 'documents' : 'document-text'"
-              [title]="mode === 'merge' ? 'Select or Drop PDF Files to Merge' : 'Select or Drop PDF Document'"
+              [title]="(mode === 'merge' ? 'organizer.dropzoneMerge' : 'organizer.dropzoneSingle') | translate"
               [description]="mode === 'merge' ? 'Choose 2 or more PDF documents to combine and organize offline.' : 'Upload a PDF to view, reorder, rotate, delete, or split its pages offline.'"
               (fileSelected)="processSinglePdf($event)"
               (filesSelected)="processMultiplePdfs($event)">
@@ -135,13 +135,13 @@
                     </div>
                   </div>
                   <div class="doc-item-actions">
-                    <app-button variant="ghost" size="sm" (clicked)="moveMergeDoc(i, -1)" [disabled]="i === 0" title="Move Up">
+                    <app-button variant="ghost" size="sm" (clicked)="moveMergeDoc(i, -1)" [disabled]="i === 0" [title]="'common.moveUp' | translate">
                       <app-icon name="arrow-up"></app-icon>
                     </app-button>
-                    <app-button variant="ghost" size="sm" (clicked)="moveMergeDoc(i, 1)" [disabled]="i === mergeDocs.length - 1" title="Move Down">
+                    <app-button variant="ghost" size="sm" (clicked)="moveMergeDoc(i, 1)" [disabled]="i === mergeDocs.length - 1" [title]="'common.moveDown' | translate">
                       <app-icon name="arrow-down"></app-icon>
                     </app-button>
-                    <app-button variant="danger" size="sm" (clicked)="removeMergeDoc(i)" title="Remove">
+                    <app-button variant="danger" size="sm" (clicked)="removeMergeDoc(i)" [title]="'common.remove' | translate">
                       <app-icon name="trash-outline"></app-icon>
                     </app-button>
                   </div>
@@ -291,22 +291,22 @@
             <app-button size="sm" variant="outline" (clicked)="deselectAll()" [disabled]="pageManager.selectedCount === 0">None</app-button>
             <app-button size="sm" variant="outline" (clicked)="invertSelection()">Invert</app-button>
             <!-- Bulk Rotate -->
-            <app-button size="sm" variant="outline" (clicked)="rotateSelected(90)" [disabled]="pageManager.selectedCount === 0" title="Rotate Selected 90° CW">
+            <app-button size="sm" variant="outline" (clicked)="rotateSelected(90)" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.rotateSelectedCw' | translate">
               <app-icon name="refresh" class="btn-icon"></app-icon>
               +90°
             </app-button>
-            <app-button size="sm" variant="outline" (clicked)="rotateSelected(180)" [disabled]="pageManager.selectedCount === 0" title="Rotate Selected 180°">
+            <app-button size="sm" variant="outline" (clicked)="rotateSelected(180)" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.rotateSelected180' | translate">
               180°
             </app-button>
-            <app-button size="sm" variant="outline" (clicked)="rotateSelected(270)" [disabled]="pageManager.selectedCount === 0" title="Rotate Selected 270° (90° CCW)">
+            <app-button size="sm" variant="outline" (clicked)="rotateSelected(270)" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.rotateSelectedCcw' | translate">
               270°
             </app-button>
             <!-- Bulk Duplicate -->
-            <app-button size="sm" variant="outline" (clicked)="duplicateSelected()" [disabled]="pageManager.selectedCount === 0" title="Duplicate Selected">
+            <app-button size="sm" variant="outline" (clicked)="duplicateSelected()" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.duplicateSelected' | translate">
               <app-icon name="copy-outline"></app-icon>
             </app-button>
             <!-- Bulk Delete -->
-            <app-button size="sm" variant="danger" (clicked)="deleteSelected()" [disabled]="pageManager.selectedCount === 0" title="Delete Selected">
+            <app-button size="sm" variant="danger" (clicked)="deleteSelected()" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.deleteSelected' | translate">
               <app-icon name="trash-outline"></app-icon>
             </app-button>
           </div>
@@ -352,7 +352,7 @@
                     </span>
                   }
                 </div>
-                <button class="zoom-icon-btn" (click)="openZoomModal(page)" title="Enlarge Page">
+                <button class="zoom-icon-btn" (click)="openZoomModal(page)" [title]="'previews.enlargePage' | translate">
                   <app-icon name="expand-outline"></app-icon>
                 </button>
               </div>
@@ -402,20 +402,20 @@
                     class="action-btn"
                     (click)="movePageLeft(i)"
                     [disabled]="i === 0"
-                    title="Move Left / Earlier">
+                    [title]="'organizer.moveEarlier' | translate">
                     <app-icon name="arrow-back"></app-icon>
                   </button>
                   <button
                     class="action-btn"
                     (click)="movePageRight(i)"
                     [disabled]="i === pageManager.pages.length - 1"
-                    title="Move Right / Later">
+                    [title]="'organizer.moveLater' | translate">
                     <app-icon name="arrow-forward"></app-icon>
                   </button>
                   <button
                     class="action-btn"
                     (click)="promptMoveToPosition(page)"
-                    title="Jump to Position">
+                    [title]="'organizer.jumpToPosition' | translate">
                     <app-icon name="swap-horizontal"></app-icon>
                   </button>
                 </div>
@@ -423,25 +423,25 @@
                   <button
                     class="action-btn"
                     (click)="rotatePage(page, -90)"
-                    title="Rotate 90° Counter-Clockwise (270°)">
+                    [title]="'common.rotate90ccw' | translate">
                     <app-icon name="arrow-undo"></app-icon>
                   </button>
                   <button
                     class="action-btn"
                     (click)="rotatePage(page, 90)"
-                    title="Rotate 90° Clockwise">
+                    [title]="'common.rotate90cw' | translate">
                     <app-icon name="refresh"></app-icon>
                   </button>
                   <button
                     class="action-btn"
                     (click)="duplicatePage(page)"
-                    title="Duplicate Page">
+                    [title]="'common.duplicatePage' | translate">
                     <app-icon name="copy-outline"></app-icon>
                   </button>
                   <button
                     class="action-btn btn-danger"
                     (click)="deletePage(page)"
-                    title="Delete Page">
+                    [title]="'common.deletePage' | translate">
                     <app-icon name="trash-outline"></app-icon>
                   </button>
                 </div>
@@ -591,8 +591,10 @@
     <!-- HIGH RESOLUTION ZOOM MODAL -->
     <app-modal
       [isOpen]="zoomModalOpen"
+      [hasFooter]="true"
+      (closed)="closeZoomModal()"
       (closeModal)="closeZoomModal()"
-      [title]="'Page ' + (zoomPage?.displayNumber || 1) + ' Preview'"
+      [title]="'previews.pagePreview' | translate: { page: zoomPage?.displayNumber || 1 }"
       size="lg">
       <div class="zoom-image-container">
         @if (isZoomLoading) {
@@ -610,7 +612,7 @@
         }
       </div>
 
-      <div slot="footer" class="zoom-footer-actions">
+      <div modal-footer class="zoom-footer-actions">
         <app-button variant="outline" size="sm" (clicked)="prevZoomPage()">
           <app-icon name="chevron-back" class="btn-icon"></app-icon>
           Previous

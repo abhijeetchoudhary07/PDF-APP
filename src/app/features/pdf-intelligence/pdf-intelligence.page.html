@@ -473,39 +473,36 @@
   }
 
   <!-- AI PRIVACY DISCLOSURE MODAL -->
-  @if (showPrivacyModal) {
-    <div class="privacy-modal-backdrop">
-      <div class="privacy-modal-card">
-        <div class="modal-icon-shield">🛡️</div>
-        <h3>{{ 'pdfIntelligence.privacyDisclosureTitle' | translate }}</h3>
-        <p class="modal-desc">
-          {{ 'pdfIntelligence.privacyDisclosureDesc' | translate }}
-        </p>
-        <div class="privacy-points-box">
-          <div class="point-item">
-            <span>✓</span>
-            <p>{{ 'pdfIntelligence.privacyPoint1' | translate }}</p>
-          </div>
-          <div class="point-item">
-            <span>✓</span>
-            <p>{{ 'pdfIntelligence.privacyPoint2' | translate }}</p>
-          </div>
-          <div class="point-item">
-            <span>✓</span>
-            <p>{{ 'pdfIntelligence.privacyPoint3' | translate }}</p>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <app-button variant="outline" size="md" (clicked)="cancelAiPrivacy()">
-            {{ 'pdfIntelligence.stayPrivateBtn' | translate }}
-          </app-button>
-          <app-button variant="primary" size="md" (clicked)="acceptAiPrivacy()">
-            {{ 'pdfIntelligence.acceptAiBtn' | translate }}
-          </app-button>
-        </div>
+  <app-modal
+    [isOpen]="showPrivacyModal"
+    [title]="'pdfIntelligence.privacyDisclosureTitle' | translate"
+    [subtitle]="'pdfIntelligence.privacyDisclosureDesc' | translate"
+    [hasFooter]="true"
+    size="md"
+    (closed)="cancelAiPrivacy()">
+    <div class="privacy-points-box">
+      <div class="point-item">
+        <span>✓</span>
+        <p>{{ 'pdfIntelligence.privacyPoint1' | translate }}</p>
+      </div>
+      <div class="point-item">
+        <span>✓</span>
+        <p>{{ 'pdfIntelligence.privacyPoint2' | translate }}</p>
+      </div>
+      <div class="point-item">
+        <span>✓</span>
+        <p>{{ 'pdfIntelligence.privacyPoint3' | translate }}</p>
       </div>
     </div>
-  }
+    <div modal-footer>
+      <app-button variant="outline" size="md" (clicked)="cancelAiPrivacy()">
+        {{ 'pdfIntelligence.stayPrivateBtn' | translate }}
+      </app-button>
+      <app-button variant="primary" size="md" (clicked)="acceptAiPrivacy()">
+        {{ 'pdfIntelligence.acceptAiBtn' | translate }}
+      </app-button>
+    </div>
+  </app-modal>
 
   <!-- CONNECTED / RELATED TOOLS -->
   <app-related-tools [currentToolId]="'pdf_intelligence'"></app-related-tools>

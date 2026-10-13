@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-registry.service';
 
+import { AutoScrollDirective } from '../../../directives/auto-scroll.directive';
+
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-related-tools',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AutoScrollDirective],
   template: `
     @if (relatedTools.length > 0) {
       <section class="related-tools-section">
@@ -25,7 +27,7 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
             </svg>
           </a>
         </div>
-        <div class="tools-grid">
+        <div class="tools-grid" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
           @for (tool of relatedTools; track tool) {
             <a
               [routerLink]="tool.route"
@@ -222,7 +224,22 @@ import { ToolRegistryService, ToolItem } from '../../../../core/services/tool-re
 
     @media (max-width: 640px) {
       .tools-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        overflow-x: auto;
+        gap: var(--space-3, 12px);
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        max-width: 100%;
+        min-width: 0;
+        &::-webkit-scrollbar {
+          display: none;
+        }
+      }
+      .related-card {
+        min-width: 250px;
+        max-width: 280px;
+        flex-shrink: 0;
       }
     }
   `]

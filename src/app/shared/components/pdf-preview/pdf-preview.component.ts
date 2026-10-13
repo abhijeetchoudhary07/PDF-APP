@@ -1,6 +1,7 @@
 import { Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PdfRenderService } from '../../../core/services/pdf-render.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 export interface OverlayConfig {
   watermarkText?: string;
@@ -42,7 +43,7 @@ export interface OverlayConfig {
   templateUrl: './pdf-preview.component.html',
   styleUrls: ['./pdf-preview.component.scss'],
   standalone: true,
-  imports: [CommonModule]
+  imports: [CommonModule, TranslatePipe]
 })
 export class PdfPreviewComponent implements OnChanges, OnDestroy {
   private pdfRenderService = inject(PdfRenderService);

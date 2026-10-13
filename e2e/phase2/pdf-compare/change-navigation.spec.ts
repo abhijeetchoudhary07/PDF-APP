@@ -21,33 +21,39 @@ test.describe('PDF Compare — Change Navigation Stepper @phase2 @compare', () =
     await expect(page.locator('.result-section')).toBeVisible({ timeout: 15000 });
   });
 
+  /*
+   * Both of these were wrapped in a one-shot visibility check -- of the stepper
+   * in one, of the token pill in the other -- with every assertion inside it.
+   * The `beforeEach` above runs a comparison and waits for `.result-section`,
+   * so by the time these run the stepper is either there or the feature is
+   * broken; skipping quietly was never the right answer to that question.
+   *
+   * The inner `if (await nextBtn.isEnabled())` was the same thing one level
+   * down. The fixtures are a pair of PDFs with several known differences, so
+   * "next" being disabled means the diff found one change or none, and that is
+   * a failure rather than a reason to stop looking.
+   */
   test('CMP-040: Stepper controls navigate through detected changes', async ({ page }) => {
     const stepper = page.locator('.change-stepper');
-    if (await stepper.isVisible()) {
-      const prevBtn = stepper.locator('button').first();
-      const nextBtn = stepper.locator('button').last();
+    await expect(stepper).toBeVisible();
 
-      // At start, prev button should be disabled
-      await expect(prevBtn).toBeDisabled();
+    const prevBtn = stepper.locator('button').first();
+    const nextBtn = stepper.locator('button').last();
 
-      // If multiple changes, clicking next advances current-change-tag
-      if (await nextBtn.isEnabled()) {
-        await nextBtn.click();
-        await expect(prevBtn).toBeEnabled();
-        await expect(page.locator('.current-change-tag')).toContainText('2');
+    // The stepper opens on the first change, so there is nothing before it.
+    await expect(prevBtn).toBeDisabled();
+    await expect(nextBtn).toBeEnabled();
 
-        // Clicking prev goes back
-        await prevBtn.click();
-        await expect(prevBtn).toBeDisabled();
-      }
-    }
+    await nextBtn.click();
+    await expect(prevBtn).toBeEnabled();
+    await expect(page.locator('.current-change-tag')).toContainText('2');
+
+    await prevBtn.click();
+    await expect(prevBtn).toBeDisabled();
   });
 
   test('CMP-041: Active change token pill highlights matching token', async ({ page }) => {
-    const tokenPill = page.locator('.token-pill');
-    if (await tokenPill.isVisible()) {
-      // Active change token has class .active-change
-      await expect(page.locator('.active-change')).toBeVisible();
-    }
+    await expect(page.locator('.token-pill')).toBeVisible();
+    await expect(page.locator('.active-change').first()).toBeVisible();
   });
 });

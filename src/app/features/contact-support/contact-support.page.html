@@ -6,7 +6,7 @@
 
       <!-- Page Header with Breadcrumbs -->
       <app-page-header
-        title="Contact Support"
+        [title]="'footer.contactSupport' | translate"
         subtitle="Need assistance with an exam specification, found a bug, or have a suggestion? We're here to help."
         [breadcrumbs]="[{ label: 'Privacy & Support' }, { label: 'Contact Support' }]"
         badge="SUPPORT"
@@ -75,7 +75,7 @@
                   <label for="category">Inquiry Topic</label>
                   <select id="category" [(ngModel)]="category" name="category" class="form-select">
                     <option value="bug">Report a Bug / File Processing Error</option>
-                    <option value="preset">Request Exam Portal Specification (e.g. SSC, UPSC, NTA)</option>
+                    <option value="preset">Request a new size preset</option>
                     <option value="feature">Suggest a Feature / Tool Idea</option>
                     <option value="billing">PRO License & Billing Inquiry</option>
                     <option value="general">General Question / Feedback</option>

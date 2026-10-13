@@ -78,7 +78,7 @@
                   <label class="control-label">{{ 'photoPage.targetSizeTitle' | translate }}</label>
                   <span class="selected-target-pill">{{ selectedTargetKB }} KB</span>
                 </div>
-                <div class="preset-chips">
+                <div class="preset-chips" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
                   @for (size of targetSizes; track size) {
                     <button
                       type="button"
@@ -202,7 +202,7 @@
                             class="format-chip"
                             [class.active]="photoBorderStyle === 'thin-black'"
                             (click)="photoBorderStyle = 'thin-black'">
-                            Thin Black Border (UPSC/SSC)
+                            Thin Black Border
                           </button>
                           <button
                             type="button"
@@ -224,7 +224,7 @@
                             <strong class="toggle-title">Add Name & Date of Photo (DOP) Strip</strong>
                           </label>
                         </div>
-                        <p class="style-hint">Mandatory for many Indian competitive exams (e.g. SSC, Police, State PSC).</p>
+                        <p class="style-hint">Required by some upload forms.</p>
                         @if (addDateAndNameStamp) {
                           <div class="stamp-fields-grid">
                             <div class="field-group">
@@ -255,7 +255,7 @@
             @if (mode === 'pixels') {
               <div class="config-card">
                 <label class="control-label">{{ 'photoPage.pixelPresetsTitle' | translate }}</label>
-                <div class="preset-chips">
+                <div class="preset-chips" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
                   @for (p of pixelPresets; track p) {
                     <button
                       type="button"
@@ -295,17 +295,17 @@
                 </div>
               </div>
             }
-            <!-- PROCESSING INDICATOR (IF IN PROGRESS) -->
+            <!-- PROCESSING INDICATOR & ANIMATION -->
             @if (isProcessing) {
-              <div class="processing-banner">
-                <div class="spinner-box">
-                  <div class="loading-spinner"></div>
-                </div>
-                <div class="stage-info">
-                  <strong>{{ stageText }}</strong>
-                  <span>{{ 'common.processing' | translate }}</span>
-                </div>
-                <button type="button" class="cancel-link-btn" (click)="cancelProcessing()">{{ 'common.cancel' | translate }}</button>
+              <div class="conversion-animation-box ion-margin-bottom">
+                <app-conversion-animation
+                  [progress]="processingProgress"
+                  [stageText]="stageText"
+                  [sourceFormat]="'IMAGE'"
+                  [targetFormat]="mode === 'kb' ? (selectedTargetKB + ' KB') : (targetWidth + 'x' + targetHeight + ' PX')"
+                  [fileName]="originalFile.name"
+                  [isSuccess]="workflowState === 'PREVIEWING'">
+                </app-conversion-animation>
               </div>
             }
             <!-- PRIMARY ACTION -->

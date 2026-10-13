@@ -8,7 +8,10 @@ import {
   AppPageHeaderComponent,
   AppButtonComponent,
   AppBadgeComponent,
-  AppProgressComponent
+  AppProgressComponent,
+  AppConversionAnimationComponent,
+  AppRelatedToolsComponent,
+  AutoScrollDirective
 } from '../../shared/components/ui';
 import { ConversionService } from '../../core/conversion/conversion.service';
 import { IConverter } from '../../core/conversion/converter.interface';
@@ -32,7 +35,9 @@ import { ToastService } from '../../core/services/toast.service';
     AppPageHeaderComponent,
     AppButtonComponent,
     AppBadgeComponent,
-    AppProgressComponent
+    AppConversionAnimationComponent,
+    AppRelatedToolsComponent,
+    AutoScrollDirective
   ],
   providers: [DecimalPipe]
 })
@@ -191,7 +196,8 @@ export class ConverterPage implements OnInit, OnDestroy {
 
     this.isProcessing = true;
     this.errorMessage = undefined;
-    this.progress = { percent: 5, stage: 'Preparing conversion...' };
+    this.progress = { percent: 18, stage: 'Reading file...' };
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     // Build options
     const finalOptions: any = { ...this.options };
@@ -211,6 +217,9 @@ export class ConverterPage implements OnInit, OnDestroy {
       if (this.converterId === 'html-to-pdf') finalOptions.rawHtml = this.textInput;
     }
 
+    this.progress = { percent: 56, stage: 'Converting format...' };
+    await new Promise(resolve => setTimeout(resolve, 320));
+
     try {
       const res = await this.conversionService.runConversion(
         this.converterId,
@@ -224,6 +233,12 @@ export class ConverterPage implements OnInit, OnDestroy {
       this.result = res;
       if (!res.success) {
         this.errorMessage = res.error || 'Conversion failed. Please try again.';
+      } else {
+        this.progress = { percent: 94, stage: 'Finalizing document...' };
+        await new Promise(resolve => setTimeout(resolve, 350));
+        this.progress = { percent: 100, stage: 'Conversion Completed!' };
+        // Smooth transition: allow success celebration animation to complete before presenting download actions
+        await new Promise(resolve => setTimeout(resolve, 1100));
       }
     } catch (e: any) {
       this.errorMessage = e?.message || e.toString();

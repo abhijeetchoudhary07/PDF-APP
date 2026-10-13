@@ -432,3 +432,103 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 640px) {
+  .privacy-page {
+    padding: 1rem 0.75rem 2rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .dropzone-wrapper {
+    margin-bottom: 1.5rem;
+  }
+
+  .privacy-features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    .feature-item {
+      padding: 1.25rem 1rem;
+    }
+  }
+
+  .scanning-section {
+    padding: 2.5rem 0.5rem;
+
+    .scan-card {
+      padding: 2rem 1.25rem;
+      max-width: 100%;
+    }
+  }
+
+  .scan-report-card {
+    padding: 1rem;
+
+    .report-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  }
+
+  .detection-status-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .options-card {
+    padding: 1rem;
+
+    .options-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .actions-row {
+      flex-direction: column;
+      width: 100%;
+      gap: 8px;
+
+      app-button {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+
+  .sanitized-result-section {
+    .audit-card {
+      padding: 1.25rem 1rem;
+
+      .before-after-metrics {
+        gap: 1rem;
+
+        .metric .value {
+          font-size: 1.75rem;
+        }
+
+        .arrow {
+          font-size: 1.25rem;
+        }
+      }
+    }
+
+    .preview-container {
+      padding: 1rem;
+    }
+
+    .result-actions {
+      flex-direction: column;
+      width: 100%;
+      gap: 8px;
+
+      app-button {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+}

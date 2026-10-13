@@ -26,7 +26,8 @@ import {
   FileDropzoneComponent,
   FilePreviewComponent,
   ResultPreviewComponent,
-  AppIconComponent
+  AppIconComponent,
+  TranslatePipe
 } from '../../shared/components/ui';
 
 @Component({
@@ -46,8 +47,9 @@ import {
     AppProgressComponent,
     FileDropzoneComponent,
     FilePreviewComponent,
-    ResultPreviewComponent
-],
+    ResultPreviewComponent,
+    TranslatePipe
+  ],
   providers: [DecimalPipe]
 })
 export class PdfSecurityPage implements OnInit {

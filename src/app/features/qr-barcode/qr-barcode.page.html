@@ -266,7 +266,7 @@
           <h3>{{ 'qrBarcode.generatorTitle' | translate }}</h3>
           <p class="form-desc">{{ 'qrBarcode.generatorDesc' | translate }}</p>
           <!-- TYPE PILLS -->
-          <div class="type-pills-row">
+          <div class="type-pills-row" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
             <button
               type="button"
               class="type-pill"
@@ -560,30 +560,27 @@
   }
 
   <!-- URL SAFETY CONFIRMATION MODAL -->
-  @if (pendingUrl) {
-    <div class="safe-url-modal-backdrop">
-      <div class="safe-url-modal-card">
-        <div class="modal-icon-alert">⚠️</div>
-        <h3>{{ 'qrBarcode.externalUrlWarningTitle' | translate }}</h3>
-        <p class="modal-warning-desc">
-          {{ 'qrBarcode.externalUrlWarningDesc' | translate }}
-        </p>
-        <div class="url-details-box">
-          <span class="url-domain-label">{{ 'qrBarcode.targetDomain' | translate }}:</span>
-          <strong class="domain-text">{{ pendingUrlDomain }}</strong>
-          <p class="full-url-text">{{ pendingUrl }}</p>
-        </div>
-        <div class="modal-actions">
-          <app-button variant="outline" size="md" (clicked)="cancelSafeUrl()">
-            {{ 'common.cancel' | translate }}
-          </app-button>
-          <app-button variant="primary" size="md" (clicked)="confirmOpenUrl()">
-            {{ 'qrBarcode.proceedToUrl' | translate }}
-          </app-button>
-        </div>
-      </div>
+  <app-modal
+    [isOpen]="!!pendingUrl"
+    [title]="'qrBarcode.externalUrlWarningTitle' | translate"
+    [subtitle]="'qrBarcode.externalUrlWarningDesc' | translate"
+    [hasFooter]="true"
+    size="md"
+    (closed)="cancelSafeUrl()">
+    <div class="url-details-box">
+      <span class="url-domain-label">{{ 'qrBarcode.targetDomain' | translate }}:</span>
+      <strong class="domain-text">{{ pendingUrlDomain }}</strong>
+      <p class="full-url-text">{{ pendingUrl }}</p>
     </div>
-  }
+    <div modal-footer>
+      <app-button variant="outline" size="md" (clicked)="cancelSafeUrl()">
+        {{ 'common.cancel' | translate }}
+      </app-button>
+      <app-button variant="primary" size="md" (clicked)="confirmOpenUrl()">
+        {{ 'qrBarcode.proceedToUrl' | translate }}
+      </app-button>
+    </div>
+  </app-modal>
 
   <!-- CONNECTED / RELATED TOOLS -->
   <app-related-tools [currentToolId]="'qr_barcode'"></app-related-tools>
