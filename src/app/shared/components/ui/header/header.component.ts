@@ -429,7 +429,7 @@ import { TranslationService } from '../../../../core/services/translation.servic
          inset keeps the back button and the burger out from under it. */
       padding-left: calc(var(--space-4, 16px) + env(safe-area-inset-left, 0px));
       padding-right: calc(var(--space-4, 16px) + env(safe-area-inset-right, 0px));
-      height: var(--header-height);
+      height: var(--header-height, 60px);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -443,9 +443,9 @@ import { TranslationService } from '../../../../core/services/translation.servic
       flex-shrink: 0;
       align-items: center;
       justify-content: center;
-      border-radius: var(--radius-md, 10px);
-      border: 1px solid var(--color-border);
-      background: var(--color-surface);
+      border-radius: 50%;
+      border: none;
+      background: transparent;
       color: var(--color-text);
       cursor: pointer;
       transition: transform var(--transition-fast), background-color var(--transition-fast);
@@ -456,7 +456,7 @@ import { TranslationService } from '../../../../core/services/translation.servic
     }
 
     .back-btn:active {
-      transform: translateX(-2px) scale(0.94);
+      transform: scale(0.92);
     }
 
     .brand-link {
@@ -1179,6 +1179,9 @@ import { TranslationService } from '../../../../core/services/translation.servic
      * the box around them grows.
      */
     @media (max-width: 960px) {
+      :host {
+        --header-height: 52px;
+      }
       .desktop-nav, .search-kbd, .search-btn-text, .profile-btn-name {
         display: none !important;
       }
@@ -1190,6 +1193,14 @@ import { TranslationService } from '../../../../core/services/translation.servic
         align-items: center;
         justify-content: center;
       }
+      /*
+       * The header's round controls carry the touch floor, not 40px.
+       *
+       * Back, search and the burger are the three most-tapped controls in the
+       * app and they sit at the very top edge of the screen, where a thumb is
+       * least accurate. 44px is the floor the rest of the app holds to, and it
+       * still clears the 48px header with 2px either side.
+       */
       .back-btn,
       .search-trigger-btn,
       .theme-toggle-btn,
@@ -1198,24 +1209,72 @@ import { TranslationService } from '../../../../core/services/translation.servic
         width: var(--min-touch-target, 44px);
         height: var(--min-touch-target, 44px);
         min-width: var(--min-touch-target, 44px);
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: var(--color-text-secondary);
         padding: 0;
         justify-content: center;
+        transition: all var(--transition-fast, 150ms);
+
+        &:hover {
+          color: var(--color-text);
+          background-color: var(--color-background-subtle);
+        }
+
+        &:active {
+          transform: scale(0.92);
+          background-color: var(--color-border);
+        }
       }
-      /* The burger bars are absolutely positioned, so they are re-centred
-         against the larger button rather than left where 36px put them. */
+
+      .mobile-menu-btn {
+        position: relative;
+      }
+
+      /*
+       * The burger bars are positioned from the centre rather than from fixed
+       * offsets, so they stay centred now that the button is 44px rather than
+       * the 40px these numbers were measured against.
+       */
       .burger-bar {
-        left: 14px;
-        width: 16px;
+        position: absolute;
+        left: 50%;
+        width: 18px;
+        height: 2px;
+        margin-left: -9px;
+        border-radius: 2px;
+        background-color: var(--color-text);
+        transition: transform 200ms ease, opacity 150ms ease, top 200ms ease;
       }
-      .bar-top { top: 16px; }
-      .bar-mid { top: 21px; }
-      .bar-bot { top: 26px; }
+      .bar-top { top: calc(50% - 6px); }
+      .bar-mid { top: calc(50% - 1px); }
+      .bar-bot { top: calc(50% + 4px); }
+
+      .mobile-menu-btn.is-open {
+        .bar-top {
+          top: calc(50% - 1px);
+          transform: rotate(45deg);
+        }
+        .bar-mid {
+          opacity: 0;
+          transform: scaleX(0);
+        }
+        .bar-bot {
+          top: calc(50% - 1px);
+          transform: rotate(-45deg);
+        }
+      }
+
       .header-actions {
-        gap: 6px;
+        gap: 4px;
       }
     }
 
     @media (max-width: 768px) {
+      :host {
+        --header-height: 50px;
+      }
       /* Theme toggle and Profile button are redundant in top bar because both
          are prominently featured at the very top of the mobile drawer */
       .theme-toggle-btn {
@@ -1238,36 +1297,38 @@ import { TranslationService } from '../../../../core/services/translation.servic
       }
     }
 
-    /*
-     * 360-430px is the whole Android phone range (360, 390, 412, 430). Four
-     * 44px controls plus the brand do not fit at 360 unless the brand is
-     * allowed to give way, so the text truncates and the icon shrinks while
-     * every tap target keeps its size.
-     */
     @media (max-width: 480px) {
+      :host {
+        --header-height: 48px;
+      }
       .header-inner {
-        padding-left: calc(8px + env(safe-area-inset-left, 0px));
-        padding-right: calc(8px + env(safe-area-inset-right, 0px));
+        padding-left: calc(10px + env(safe-area-inset-left, 0px));
+        padding-right: calc(10px + env(safe-area-inset-right, 0px));
         gap: 4px;
       }
       .brand-link {
-        gap: 6px;
-        /* Yields first when the actions need the width. */
-        flex-shrink: 1;
-        overflow: hidden;
+        gap: 7px;
+        flex-shrink: 0;
+        /*
+         * Full header height rather than just the logo's: this is the way
+         * back to Home from every screen, and at 28px it was the smallest
+         * target in the shell.
+         */
+        min-height: var(--min-touch-target, 44px);
+        align-self: stretch;
       }
       .brand-icon {
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
       }
       .brand-icon svg {
-        width: 18px;
-        height: 18px;
+        width: 17px;
+        height: 17px;
       }
       .brand-name {
         font-size: 15px;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .header-actions {
         gap: 2px;
@@ -1276,11 +1337,17 @@ import { TranslationService } from '../../../../core/services/translation.servic
 
     @media (max-width: 360px) {
       .brand-name {
-        max-width: 78px;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        font-size: 14.5px;
         white-space: nowrap;
-        font-size: 13.5px;
+      }
+      .brand-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+      }
+      .brand-icon svg {
+        width: 16px;
+        height: 16px;
       }
     }
   `]

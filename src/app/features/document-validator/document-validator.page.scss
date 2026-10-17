@@ -61,6 +61,9 @@
           display: flex;
           flex-direction: column;
           align-items: flex-start;
+          justify-content: center;
+          /* 43px measured, one pixel short of the floor. */
+          min-height: var(--min-touch-target, 44px);
           padding: 8px 14px;
           background: var(--color-surface-container, #f8fafc);
           border: 1.5px solid var(--color-border, #e2e8f0);

@@ -1,0 +1,219 @@
+/*
+ * Source-document palette.
+ *
+ * Eight hues set on the row as `--src-hue`, so one custom property drives the
+ * dot, the fill and the edge instead of eight duplicated rule sets. The
+ * saturation and lightness live in their own tokens, redefined once per theme
+ * below, which is what keeps the dark variant to a handful of lines rather
+ * than a second copy of every rule.
+ *
+ * The hue slots themselves (`[data-src-color="N"]`) are declared in
+ * src/global.scss, because the organizer's page cards read them too.
+ *
+ * `color-mix()` would express this more directly, but the build targets
+ * Chrome >= 90 (see .browserslistrc) and it needs 111.
+ *
+ * The file name beside the dot is what actually identifies a document; the
+ * colour is a shortcut, never the only signal.
+ */
+:host {
+  display: block;
+
+  --src-fill-s: 92%;
+  --src-fill-l: 97%;
+  --src-fill-hover-l: 94%;
+  --src-edge-s: 70%;
+  --src-edge-l: 85%;
+  --src-ink-s: 62%;
+  --src-ink-l: 32%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :host-context(:root:not([data-theme="light"]):not(.theme-light)) {
+    --src-fill-s: 42%;
+    --src-fill-l: 18%;
+    --src-fill-hover-l: 23%;
+    --src-edge-s: 40%;
+    --src-edge-l: 32%;
+    --src-ink-s: 76%;
+    --src-ink-l: 82%;
+  }
+}
+
+:host-context([data-theme="dark"]),
+:host-context(body.theme-dark) {
+  --src-fill-s: 42%;
+  --src-fill-l: 18%;
+  --src-fill-hover-l: 23%;
+  --src-edge-s: 40%;
+  --src-edge-l: 32%;
+  --src-ink-s: 76%;
+  --src-ink-l: 82%;
+}
+
+
+.doc-tray-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.tray-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+
+  .tray-heading-icon {
+    flex-shrink: 0;
+    color: var(--color-organize);
+  }
+
+  h4 {
+    margin: 0;
+    font-size: var(--font-small);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+}
+
+.tray-subtitle {
+  margin: 0;
+  font-size: var(--font-xs);
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+/*
+ * The tray scrolls rather than clipping: three loaded documents will not fit
+ * side by side on a 320px phone, and truncating the names to make them fit
+ * would remove the one thing that tells them apart. The negative margin gives
+ * the focus ring room that a tight overflow box would otherwise cut off.
+ */
+.tray-scroller {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px;
+  margin: -2px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tray-list {
+  display: flex;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tray-item {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  max-width: min(78vw, 280px);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: hsl(var(--src-hue, 244) var(--src-fill-s) var(--src-fill-l));
+  border: 1px solid hsl(var(--src-hue, 244) var(--src-edge-s) var(--src-edge-l));
+
+  &.emptied {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    opacity: 0.72;
+  }
+}
+
+.tray-item-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: var(--control-h-md);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text);
+
+  &:hover {
+    background: hsl(var(--src-hue, 244) var(--src-fill-s) var(--src-fill-hover-l));
+  }
+}
+
+.tray-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: hsl(var(--src-hue, 244) 72% 52%);
+}
+
+.tray-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.tray-doc-name {
+  max-width: 100%;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tray-doc-meta {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.tray-item-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--control-h-sm);
+  min-height: var(--control-h-md);
+  padding: 0 var(--space-2);
+  background: transparent;
+  border: none;
+  border-left: 1px solid hsl(var(--src-hue, 244) var(--src-edge-s) var(--src-edge-l));
+  color: var(--color-text-muted);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-danger, #dc2626);
+    background: var(--color-danger-soft, rgba(220, 38, 38, 0.08));
+  }
+}
+
+.tray-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-divider);
+}
+
+.tray-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}

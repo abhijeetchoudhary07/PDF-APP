@@ -1,0 +1,60 @@
+<section class="doc-tray-card">
+  <header>
+    <div class="tray-heading">
+      <app-icon name="layers" class="tray-heading-icon" size="sm"></app-icon>
+      <h4>{{ 'organizer.trayTitle' | translate }}</h4>
+    </div>
+    <p class="tray-subtitle">{{ 'organizer.traySubtitle' | translate }}</p>
+  </header>
+
+  <div class="tray-scroller">
+    <ul class="tray-list">
+      @for (entry of entries; track entry.docId) {
+        <li
+          class="tray-item"
+          [class.emptied]="entry.emptied"
+          [attr.data-src-color]="entry.colorIndex">
+          <button
+            type="button"
+            class="tray-item-main"
+            (click)="selectDocument.emit(entry)"
+            [title]="'organizer.traySelectDocument' | translate">
+            <span class="tray-dot" aria-hidden="true"></span>
+            <span class="tray-item-text">
+              <span class="tray-doc-name">{{ entry.name }}</span>
+              <span class="tray-doc-meta">
+                @if (entry.emptied) {
+                  {{ 'organizer.trayEmptiedBadge' | translate }}
+                } @else {
+                  {{ 'organizer.trayPageCount' | translate:{ count: entry.pageCount, total: entry.originalPageCount } }}
+                }
+              </span>
+            </span>
+          </button>
+          @if (!entry.emptied) {
+            <button
+              type="button"
+              class="tray-item-remove"
+              (click)="removeDocument.emit(entry)"
+              [title]="'organizer.trayRemoveDocument' | translate">
+              <app-icon name="close" size="sm"></app-icon>
+            </button>
+          }
+        </li>
+      }
+    </ul>
+  </div>
+
+  <div class="tray-actions">
+    <app-button
+      variant="outline"
+      size="sm"
+      [block]="true"
+      [disabled]="busy"
+      (clicked)="exportBySource.emit()">
+      <app-icon name="git-branch-outline" class="btn-icon"></app-icon>
+      {{ 'organizer.trayExportBySource' | translate }}
+    </app-button>
+    <p class="tray-hint">{{ 'organizer.trayExportBySourceHint' | translate }}</p>
+  </div>
+</section>

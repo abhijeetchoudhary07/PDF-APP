@@ -75,7 +75,9 @@ export interface PrivacySupportTab {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 16px;
+      /* Touch floor: these were 32px tall on every policy and support page. */
+      min-height: var(--min-touch-target, 44px);
+      padding: 0 16px;
       font-size: var(--font-small, 13px);
       font-weight: var(--font-weight-medium, 500);
       color: var(--color-text-secondary, #94a3b8);

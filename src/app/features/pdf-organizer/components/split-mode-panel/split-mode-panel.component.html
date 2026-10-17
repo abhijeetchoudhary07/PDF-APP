@@ -1,0 +1,398 @@
+<div class="split-mode-panel">
+  <!-- ─────────── B1 — split by output file size ─────────── -->
+  @if (mode === 'max-size') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'organizer.splitMaxSizeHint' | translate }}</p>
+
+      <label class="field-label" for="split-size-value">
+        {{ 'organizer.splitCeilingLabel' | translate }}
+      </label>
+      <div class="size-row">
+        <input
+          id="split-size-value"
+          class="panel-input size-input"
+          type="number"
+          inputmode="decimal"
+          min="1"
+          step="1"
+          [disabled]="busy || analyzing"
+          [ngModel]="config.sizeValue"
+          (ngModelChange)="onSizeValueChange($event)" />
+        <div class="unit-toggle" role="radiogroup" [attr.aria-label]="'organizer.splitCeilingLabel' | translate">
+          @for (unit of sizeUnits; track unit) {
+            <button
+              type="button"
+              class="unit-btn"
+              role="radio"
+              [class.active]="config.sizeUnit === unit"
+              [attr.aria-checked]="config.sizeUnit === unit"
+              [disabled]="busy || analyzing"
+              (click)="update({ sizeUnit: unit })">
+              {{ unit }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <span class="field-label">{{ 'organizer.splitCeilingPresets' | translate }}</span>
+      <div class="preset-grid">
+        @for (preset of sizePresets; track preset.value + preset.unit) {
+          <button
+            type="button"
+            class="preset-chip"
+            [class.active]="isSizePresetActive(preset)"
+            [disabled]="busy || analyzing"
+            (click)="applySizePreset(preset)">
+            {{ preset.value }} {{ preset.unit }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ─────────── B2 — split by document count ─────────── -->
+  @if (mode === 'doc-count') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'organizer.splitDocCountHint' | translate }}</p>
+
+      <label class="field-label" for="split-doc-count">
+        {{ 'organizer.splitDocCountLabel' | translate }}
+      </label>
+      <div class="stepper-row">
+        <button
+          type="button"
+          class="stepper-btn"
+          [disabled]="busy || analyzing || config.docCount <= 1"
+          [attr.aria-label]="'organizer.splitDocCountFewer' | translate"
+          (click)="onDocCountChange(config.docCount - 1)">
+          <app-icon name="remove" size="sm"></app-icon>
+        </button>
+        <input
+          id="split-doc-count"
+          class="panel-input count-input"
+          type="number"
+          inputmode="numeric"
+          min="1"
+          [max]="totalPages || 1"
+          [disabled]="busy || analyzing"
+          [ngModel]="config.docCount"
+          (ngModelChange)="onDocCountChange($event)" />
+        <button
+          type="button"
+          class="stepper-btn"
+          [disabled]="busy || analyzing || config.docCount >= totalPages"
+          [attr.aria-label]="'organizer.splitDocCountMore' | translate"
+          (click)="onDocCountChange(config.docCount + 1)">
+          <app-icon name="add" size="sm"></app-icon>
+        </button>
+      </div>
+      <p class="config-foot">
+        {{ 'organizer.splitDocCountRange' | translate:{ max: totalPages } }}
+      </p>
+    </div>
+  }
+
+  <!-- ─────────── B3 — split by bookmarks / chapters ─────────── -->
+  @if (mode === 'chapters') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'organizer.splitChaptersHint' | translate }}</p>
+
+      @if (outlineLevels.length > 0) {
+        <span class="field-label">{{ 'organizer.splitChapterLevelLabel' | translate }}</span>
+        <div class="preset-grid">
+          @for (level of outlineLevels; track level) {
+            <button
+              type="button"
+              class="preset-chip level-chip"
+              [class.active]="config.chapterLevel === level"
+              [disabled]="busy || analyzing"
+              (click)="update({ chapterLevel: level })">
+              <span class="level-name">
+                {{ 'organizer.splitChapterLevelN' | translate:{ level: level } }}
+              </span>
+              <small>{{ 'organizer.splitChapterLevelCount' | translate:{ count: outlineCountAt(level) } }}</small>
+            </button>
+          }
+        </div>
+        <p class="config-foot">{{ 'organizer.splitChapterLevelNote' | translate }}</p>
+      } @else if (!outlineChecked) {
+        <p class="config-foot">{{ 'organizer.splitChapterNotReadYet' | translate }}</p>
+      }
+      <!--
+        A document with no outline says so once, through the plan's blocking
+        notice below, rather than twice in two different places.
+      -->
+    </div>
+  }
+
+  <!-- ─────────── B4 — split at blank pages or divider sheets ─────────── -->
+  @if (mode === 'divider') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'organizer.splitDividerHint' | translate }}</p>
+
+      <button
+        type="button"
+        class="toggle-row"
+        [class.on]="config.dividerBlank"
+        [disabled]="busy || analyzing"
+        role="switch"
+        [attr.aria-checked]="config.dividerBlank"
+        (click)="toggleDividerBlank()">
+        <span class="toggle-icon"><app-icon name="scan" size="sm"></app-icon></span>
+        <span class="toggle-text">
+          <span class="toggle-label">{{ 'organizer.splitDividerBlankLabel' | translate }}</span>
+          <span class="toggle-desc">{{ 'organizer.splitDividerBlankDesc' | translate }}</span>
+        </span>
+        <span class="toggle-pip" aria-hidden="true"></span>
+      </button>
+
+      <button
+        type="button"
+        class="toggle-row"
+        [class.on]="config.dividerBarcode"
+        [disabled]="busy || analyzing"
+        role="switch"
+        [attr.aria-checked]="config.dividerBarcode"
+        (click)="toggleDividerBarcode()">
+        <span class="toggle-icon"><app-icon name="qr-code" size="sm"></app-icon></span>
+        <span class="toggle-text">
+          <span class="toggle-label">{{ 'organizer.splitDividerCodeLabel' | translate }}</span>
+          <span class="toggle-desc">{{ 'organizer.splitDividerCodeDesc' | translate }}</span>
+        </span>
+        <span class="toggle-pip" aria-hidden="true"></span>
+      </button>
+
+      @if (config.dividerBarcode) {
+        <button
+          type="button"
+          class="toggle-row sub"
+          [class.on]="config.dividerNameFromPayload"
+          [disabled]="busy || analyzing"
+          role="switch"
+          [attr.aria-checked]="config.dividerNameFromPayload"
+          (click)="update({ dividerNameFromPayload: !config.dividerNameFromPayload })">
+          <span class="toggle-icon"><app-icon name="pencil" size="sm"></app-icon></span>
+          <span class="toggle-text">
+            <span class="toggle-label">{{ 'organizer.splitDividerNameLabel' | translate }}</span>
+            <span class="toggle-desc">{{ 'organizer.splitDividerNameDesc' | translate }}</span>
+          </span>
+          <span class="toggle-pip" aria-hidden="true"></span>
+        </button>
+      }
+
+      <p class="config-foot">{{ 'organizer.splitDividerDropNote' | translate }}</p>
+    </div>
+  }
+
+  <!-- ─────────── B5 — split by text pattern ─────────── -->
+  @if (mode === 'text-pattern') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'organizer.splitTextPatternHint' | translate }}</p>
+
+      <label class="field-label" for="split-pattern">
+        {{ 'organizer.splitPatternLabel' | translate }}
+      </label>
+      <input
+        id="split-pattern"
+        class="panel-input"
+        type="text"
+        autocapitalize="none"
+        autocomplete="off"
+        spellcheck="false"
+        [placeholder]="'organizer.splitPatternPlaceholder' | translate"
+        [disabled]="busy || analyzing"
+        [ngModel]="config.textPattern"
+        (ngModelChange)="update({ textPattern: $event })" />
+      <p class="config-foot">{{ 'organizer.splitPatternNote' | translate }}</p>
+
+      <button
+        type="button"
+        class="toggle-row"
+        [class.on]="config.textIgnoreCase"
+        [disabled]="busy || analyzing"
+        role="switch"
+        [attr.aria-checked]="config.textIgnoreCase"
+        (click)="update({ textIgnoreCase: !config.textIgnoreCase })">
+        <span class="toggle-icon"><app-icon name="text" size="sm"></app-icon></span>
+        <span class="toggle-text">
+          <span class="toggle-label">{{ 'organizer.splitPatternIgnoreCase' | translate }}</span>
+        </span>
+        <span class="toggle-pip" aria-hidden="true"></span>
+      </button>
+
+      <button
+        type="button"
+        class="toggle-row"
+        [class.on]="config.textUseRegion"
+        [disabled]="busy || analyzing"
+        role="switch"
+        [attr.aria-checked]="config.textUseRegion"
+        (click)="update({ textUseRegion: !config.textUseRegion })">
+        <span class="toggle-icon"><app-icon name="crop" size="sm"></app-icon></span>
+        <span class="toggle-text">
+          <span class="toggle-label">{{ 'organizer.splitPatternRegionLabel' | translate }}</span>
+          <span class="toggle-desc">{{ 'organizer.splitPatternRegionDesc' | translate }}</span>
+        </span>
+        <span class="toggle-pip" aria-hidden="true"></span>
+      </button>
+
+      @if (config.textUseRegion) {
+        <span class="field-label">
+          {{ 'organizer.splitPatternRegionBand' | translate:{ percent: config.textRegionPercent } }}
+        </span>
+        <div class="preset-grid">
+          @for (percent of regionPresets; track percent) {
+            <button
+              type="button"
+              class="preset-chip"
+              [class.active]="config.textRegionPercent === percent"
+              [disabled]="busy || analyzing"
+              (click)="onRegionPercentChange(percent)">
+              {{ 'organizer.splitPatternTopPercent' | translate:{ percent: percent } }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ─────────── Analyze / progress ─────────── -->
+  @if (analyzing) {
+    <div class="analyze-progress">
+      <app-progress
+        [value]="progress?.percent ?? 0"
+        [label]="progressLabelKey | translate:progressParams"
+        variant="primary"></app-progress>
+      <app-button variant="outline" size="md" [block]="true" (clicked)="cancelAnalyze.emit()">
+        {{ 'common.cancel' | translate }}
+      </app-button>
+    </div>
+  } @else if (mode !== 'doc-count') {
+    <app-button
+      variant="secondary"
+      size="md"
+      [block]="true"
+      [disabled]="!canAnalyze"
+      (clicked)="analyze.emit()">
+      <app-icon name="search" class="btn-icon"></app-icon>
+      {{ analyzeLabelKey | translate }}
+    </app-button>
+  }
+
+  @if (planStale && plan) {
+    <div class="panel-notice warning">
+      <app-icon name="warning" size="sm"></app-icon>
+      <span>{{ 'organizer.splitPlanStale' | translate }}</span>
+    </div>
+  }
+
+  <!-- ─────────── Blocking notices ─────────── -->
+  @for (notice of blockingNotices; track notice.kind + notice.detail) {
+    <div class="panel-notice danger">
+      <app-icon name="alert-circle" size="sm"></app-icon>
+      <span>{{ noticeKey(notice) | translate:noticeParams(notice) }}</span>
+    </div>
+  }
+
+  <!-- ─────────── Plan preview ─────────── -->
+  @if (plan && plan.parts.length > 0) {
+    <div class="plan-preview" [class.stale]="planStale">
+      <div class="plan-summary">
+        <span class="summary-pill strong">
+          <app-icon name="documents" size="sm"></app-icon>
+          {{ 'organizer.splitPlanPartCount' | translate:{ count: plan.parts.length } }}
+        </span>
+        <span class="summary-pill">
+          {{ 'organizer.splitPlanPagesCovered' | translate:{ count: plan.totalPagesCovered } }}
+        </span>
+        @if (plan.droppedPageNumbers.length > 0) {
+          <span class="summary-pill muted">
+            {{ 'organizer.splitPlanDropped' | translate:{ count: plan.droppedPageNumbers.length } }}
+          </span>
+        }
+      </div>
+
+      <ul class="part-list">
+        @for (part of plan.parts; track $index) {
+          <li class="part-row" [class.over]="part.overCeiling">
+            <span class="part-index">{{ $index + 1 }}</span>
+            <span class="part-body">
+              <span class="part-name">{{ part.baseName || ('organizer.splitPlanUnnamedPart' | translate:{ index: $index + 1 }) }}</span>
+              <span class="part-meta">
+                {{ 'organizer.splitPlanPageList' | translate:{ pages: formatPages(part.pageNumbers) } }}
+                <span class="dot">&middot;</span>
+                {{ 'organizer.splitPlanPageTally' | translate:{ count: part.pageNumbers.length } }}
+                @if (part.sizeBytes) {
+                  <span class="dot">&middot;</span>
+                  <span class="part-size">{{ formatSize(part.sizeBytes) }}</span>
+                }
+              </span>
+            </span>
+            @if (part.overCeiling) {
+              <span class="part-flag">{{ 'organizer.splitPlanOverCeiling' | translate }}</span>
+            }
+          </li>
+        }
+      </ul>
+
+      <!-- Advisory notices: things that happened, that nobody should discover later. -->
+      @for (notice of advisoryNotices; track notice.kind + notice.detail) {
+        <div class="panel-notice" [class.warning]="noticeIsWarning(notice)">
+          <app-icon [name]="noticeIsWarning(notice) ? 'warning' : 'information-circle'" size="sm"></app-icon>
+          <span>{{ noticeKey(notice) | translate:noticeParams(notice) }}</span>
+        </div>
+      }
+
+      @if (oversizedPageNumbers().length > 0) {
+        <app-button
+          variant="outline"
+          size="md"
+          [block]="true"
+          [disabled]="busy || analyzing"
+          (clicked)="compressorHandOff.emit(oversizedPageNumbers())">
+          <app-icon name="water" class="btn-icon"></app-icon>
+          {{ 'organizer.splitOpenCompressor' | translate:{ count: oversizedPageNumbers().length } }}
+        </app-button>
+      }
+
+      <!-- Per-page detail, for the modes that read something off each page. -->
+      @if (plan.pageRows.length > 0) {
+        <div class="page-rows">
+          <span class="rows-title">
+            {{ (mode === 'text-pattern'
+                  ? 'organizer.splitPageValuesTitle'
+                  : 'organizer.splitPageBoundariesTitle') | translate }}
+          </span>
+          <ul class="row-list">
+            @for (row of visiblePageRows; track row.pageNumber) {
+              <li class="value-row" [class.dropped]="row.dropped" [class.boundary]="!!row.boundary">
+                <span class="row-page">{{ 'organizer.splitPageShort' | translate:{ page: row.pageNumber } }}</span>
+                <span class="row-value">
+                  @if (row.value) {
+                    {{ row.value }}
+                  } @else if (mode === 'text-pattern') {
+                    <!-- Only the pattern mode reads a value per page, so only it
+                         can report the absence of one. -->
+                    <span class="row-empty">{{ 'organizer.splitPageNoValue' | translate }}</span>
+                  }
+                </span>
+                @if (row.boundary) {
+                  <span class="row-tag">{{ boundaryKey(row) | translate }}</span>
+                }
+              </li>
+            }
+          </ul>
+          @if (hiddenPageRowCount > 0) {
+            <button type="button" class="rows-toggle" (click)="pageRowsExpanded = true">
+              {{ 'organizer.splitShowAllPages' | translate:{ count: hiddenPageRowCount } }}
+            </button>
+          } @else if (pageRowsExpanded && plan.pageRows.length > 6) {
+            <button type="button" class="rows-toggle" (click)="pageRowsExpanded = false">
+              {{ 'organizer.splitShowFewerPages' | translate }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

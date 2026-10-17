@@ -1,0 +1,287 @@
+<div class="section-panel">
+  <!-- ─────────── B6 — page sectioning ─────────── -->
+  @if (mode === 'sections') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'organizer.sectionHint' | translate }}</p>
+
+      <span class="field-label">{{ 'organizer.sectionPresetsLabel' | translate }}</span>
+      <div class="preset-grid">
+        @for (preset of presets; track preset.id) {
+          <button
+            type="button"
+            class="preset-chip"
+            [class.active]="isPresetActive(preset)"
+            [disabled]="busy || scanning"
+            (click)="applyPreset(preset)">
+            {{ preset.labelKey | translate }}
+          </button>
+        }
+      </div>
+
+      <div class="grid-row">
+        <div class="grid-field">
+          <label class="field-label" for="section-rows">
+            {{ 'organizer.sectionRows' | translate }}
+          </label>
+          <input
+            id="section-rows"
+            class="panel-input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="20"
+            [disabled]="busy || scanning"
+            [ngModel]="config.rows"
+            (ngModelChange)="setRows($event)" />
+        </div>
+        <span class="grid-times" aria-hidden="true">&times;</span>
+        <div class="grid-field">
+          <label class="field-label" for="section-columns">
+            {{ 'organizer.sectionColumns' | translate }}
+          </label>
+          <input
+            id="section-columns"
+            class="panel-input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="20"
+            [disabled]="busy || scanning"
+            [ngModel]="config.columns"
+            (ngModelChange)="setColumns($event)" />
+        </div>
+      </div>
+
+      <span class="field-label">{{ 'organizer.sectionOrderLabel' | translate }}</span>
+      <div class="segmented" role="radiogroup" [attr.aria-label]="'organizer.sectionOrderLabel' | translate">
+        <button
+          type="button"
+          class="segment"
+          role="radio"
+          [class.active]="config.order === 'ltr'"
+          [attr.aria-checked]="config.order === 'ltr'"
+          [disabled]="busy || scanning"
+          (click)="setOrder('ltr')">
+          {{ 'organizer.sectionOrderLtr' | translate }}
+        </button>
+        <button
+          type="button"
+          class="segment"
+          role="radio"
+          [class.active]="config.order === 'ttb'"
+          [attr.aria-checked]="config.order === 'ttb'"
+          [disabled]="busy || scanning"
+          (click)="setOrder('ttb')">
+          {{ 'organizer.sectionOrderTtb' | translate }}
+        </button>
+      </div>
+
+      @if (gutterAvailable) {
+        <button
+          type="button"
+          class="toggle-row"
+          [class.on]="config.useGutterDetection"
+          [disabled]="busy || scanning"
+          role="switch"
+          [attr.aria-checked]="config.useGutterDetection"
+          (click)="toggleGutter()">
+          <span class="toggle-icon"><app-icon name="scan" size="sm"></app-icon></span>
+          <span class="toggle-text">
+            <span class="toggle-label">{{ 'organizer.sectionGutterLabel' | translate }}</span>
+            <span class="toggle-desc">{{ 'organizer.sectionGutterDesc' | translate }}</span>
+          </span>
+          <span class="toggle-pip" aria-hidden="true"></span>
+        </button>
+      }
+    </div>
+  }
+
+  <!-- ─────────── B7 — poster tiling ─────────── -->
+  @if (mode === 'tiles') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'organizer.tileHint' | translate }}</p>
+
+      <span class="field-label">{{ 'organizer.tilePaperLabel' | translate }}</span>
+      <div class="segmented" role="radiogroup" [attr.aria-label]="'organizer.tilePaperLabel' | translate">
+        @for (paper of papers; track paper) {
+          <button
+            type="button"
+            class="segment"
+            role="radio"
+            [class.active]="config.paper === paper"
+            [attr.aria-checked]="config.paper === paper"
+            [disabled]="busy"
+            (click)="update({ paper: paper })">
+            {{ paper }}
+          </button>
+        }
+      </div>
+
+      <span class="field-label">{{ 'organizer.tileOrientationLabel' | translate }}</span>
+      <div class="segmented" role="radiogroup" [attr.aria-label]="'organizer.tileOrientationLabel' | translate">
+        @for (dir of orientations; track dir) {
+          <button
+            type="button"
+            class="segment"
+            role="radio"
+            [class.active]="config.orientation === dir"
+            [attr.aria-checked]="config.orientation === dir"
+            [disabled]="busy"
+            (click)="update({ orientation: dir })">
+            {{ ('organizer.tileOrientation_' + dir) | translate }}
+          </button>
+        }
+      </div>
+
+      <label class="field-label" for="tile-overlap">
+        {{ 'organizer.tileOverlapLabel' | translate:{ mm: config.overlapMm } }}
+      </label>
+      <div class="preset-grid">
+        @for (mm of overlapPresets; track mm) {
+          <button
+            type="button"
+            class="preset-chip"
+            [class.active]="config.overlapMm === mm"
+            [disabled]="busy"
+            (click)="setOverlap(mm)">
+            {{ 'organizer.tileOverlapMm' | translate:{ mm: mm } }}
+          </button>
+        }
+      </div>
+      <input
+        id="tile-overlap"
+        class="panel-input"
+        type="number"
+        inputmode="decimal"
+        min="0"
+        max="50"
+        step="1"
+        [disabled]="busy"
+        [ngModel]="config.overlapMm"
+        (ngModelChange)="setOverlap($event)" />
+
+      <button
+        type="button"
+        class="toggle-row"
+        [class.on]="config.cropMarks"
+        [disabled]="busy"
+        role="switch"
+        [attr.aria-checked]="config.cropMarks"
+        (click)="update({ cropMarks: !config.cropMarks })">
+        <span class="toggle-icon"><app-icon name="crop" size="sm"></app-icon></span>
+        <span class="toggle-text">
+          <span class="toggle-label">{{ 'organizer.tileCropMarksLabel' | translate }}</span>
+          <span class="toggle-desc">{{ 'organizer.tileCropMarksDesc' | translate }}</span>
+        </span>
+        <span class="toggle-pip" aria-hidden="true"></span>
+      </button>
+
+      <button
+        type="button"
+        class="toggle-row"
+        [class.on]="config.numbering"
+        [disabled]="busy"
+        role="switch"
+        [attr.aria-checked]="config.numbering"
+        (click)="update({ numbering: !config.numbering })">
+        <span class="toggle-icon"><app-icon name="list-number" size="sm"></app-icon></span>
+        <span class="toggle-text">
+          <span class="toggle-label">{{ 'organizer.tileNumberingLabel' | translate }}</span>
+          <span class="toggle-desc">{{ 'organizer.tileNumberingDesc' | translate }}</span>
+        </span>
+        <span class="toggle-pip" aria-hidden="true"></span>
+      </button>
+    </div>
+  }
+
+  <!-- ─────────── Gutter scan progress ─────────── -->
+  @if (scanning) {
+    <div class="scan-progress">
+      <app-progress
+        [value]="progress?.percent ?? 0"
+        [label]="progressLabelKey | translate:progressParams"
+        variant="primary"></app-progress>
+      <app-button variant="outline" size="md" [block]="true" (clicked)="cancelScan.emit()">
+        {{ 'common.cancel' | translate }}
+      </app-button>
+    </div>
+  }
+
+  <!-- ─────────── Blocking notices ─────────── -->
+  @for (notice of blockingNotices; track notice.kind) {
+    <div class="panel-notice danger">
+      <app-icon name="alert-circle" size="sm"></app-icon>
+      <span>{{ noticeKey(notice) | translate:noticeParams(notice) }}</span>
+    </div>
+  }
+
+  <!-- ─────────── Live preview of the cuts ─────────── -->
+  @if (plan && plan.usable && previewPieces.length > 0) {
+    <div class="preview-block">
+      <div class="plan-summary">
+        <span class="summary-pill strong">
+          <app-icon name="documents" size="sm"></app-icon>
+          {{ (mode === 'tiles' ? 'organizer.tileSheetCount' : 'organizer.sectionPieceCount')
+             | translate:{ count: plan.totalPieces } }}
+        </span>
+        <span class="summary-pill">
+          {{ 'organizer.sectionFromPages' | translate:{ count: plan.sourcePageCount } }}
+        </span>
+        @if (pieceSizeMm) {
+          <span class="summary-pill muted">
+            {{ 'organizer.sectionPieceSize' | translate:{ w: pieceSizeMm.width, h: pieceSizeMm.height } }}
+          </span>
+        }
+      </div>
+
+      <!--
+        The grid drawn over the page itself, in the page's own coordinates, so
+        a rectangle here is the rectangle that gets written -- overlaps and all.
+      -->
+      <figure class="preview-figure">
+        <div class="preview-stage" [style.aspect-ratio]="previewAspect">
+          @if (previewThumbnailUrl) {
+            <img class="preview-page" [src]="previewThumbnailUrl" alt="" aria-hidden="true" />
+          }
+          <svg
+            class="preview-overlay"
+            [attr.viewBox]="viewBox"
+            preserveAspectRatio="none"
+            role="img"
+            [attr.aria-label]="(mode === 'tiles'
+              ? 'organizer.tilePreviewAlt'
+              : 'organizer.sectionPreviewAlt') | translate:{ count: previewPieces.length }">
+            @for (piece of previewPieces; track piece.outputIndex) {
+              <rect
+                class="piece-rect"
+                [class.tile]="mode === 'tiles'"
+                [attr.x]="piece.visual.x"
+                [attr.y]="piece.visual.y"
+                [attr.width]="piece.visual.width"
+                [attr.height]="piece.visual.height"
+                [attr.stroke-width]="strokeWidth"></rect>
+              <text
+                class="piece-label"
+                [attr.x]="piece.visual.x + piece.visual.width / 2"
+                [attr.y]="piece.visual.y + piece.visual.height / 2"
+                [attr.font-size]="labelSize"
+                text-anchor="middle"
+                dominant-baseline="central">{{ pieceLabel(piece) }}</text>
+            }
+          </svg>
+        </div>
+        <figcaption>
+          {{ (mode === 'tiles' ? 'organizer.tilePreviewCaption' : 'organizer.sectionPreviewCaption')
+             | translate }}
+        </figcaption>
+      </figure>
+
+      @for (notice of advisoryNotices; track notice.kind) {
+        <div class="panel-notice" [class.warning]="noticeIsWarning(notice)">
+          <app-icon [name]="noticeIsWarning(notice) ? 'warning' : 'information-circle'" size="sm"></app-icon>
+          <span>{{ noticeKey(notice) | translate:noticeParams(notice) }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

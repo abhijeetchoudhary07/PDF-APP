@@ -262,8 +262,12 @@ const ONBOARDING_KEY = 'IFH_ONBOARDING_COMPLETED_V1';
       }
 
       .skip-btn {
-        padding: 6px 10px;
-        min-height: 36px;
+        /*
+         * Touch floor. Skip is the control a returning user reaches for first,
+         * and it sat at 36px in the corner of the dialog.
+         */
+        padding: 0 12px;
+        min-height: var(--min-touch-target, 44px);
       }
 
       .slide-content {
@@ -311,14 +315,20 @@ const ONBOARDING_KEY = 'IFH_ONBOARDING_COMPLETED_V1';
         padding: 10px 16px;
       }
 
+      /*
+       * This override pinned the dialog's primary action to 40px, below the
+       * touch floor the fluid control scale already provides -- on every route
+       * in the app, since the dialog is in the shell. Only the padding is
+       * worth overriding; the height comes from --control-h-md.
+       */
       .dialog-bottom-bar app-button ::ng-deep button {
-        min-height: 40px;
-        padding: 8px 16px;
+        min-height: var(--control-h-md, 44px);
+        padding: 0 16px;
       }
     }
   `]
 })
-export class AppOnboardingModalComponent implements OnInit {
+export class AppOnboardingModalComponent implements OnInit, OnDestroy {
   isOpen = false;
   currentStep = 0;
 

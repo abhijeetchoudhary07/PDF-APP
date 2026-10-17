@@ -112,6 +112,13 @@ import { AutoScrollDirective } from '../../../directives/auto-scroll.directive';
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      /*
+       * Touch floor. This was a 71x20 text link on nine tool pages, which is a
+       * target a thumb has to hunt for; the padding keeps it from sitting
+       * flush against the heading beside it.
+       */
+      min-height: var(--min-touch-target, 44px);
+      padding: 0 4px;
       font-size: var(--font-small, 13px);
       font-weight: var(--font-weight-semibold, 600);
       color: var(--color-primary);

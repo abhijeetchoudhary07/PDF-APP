@@ -1,0 +1,238 @@
+:host { display: contents; }
+
+.smart-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scan-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-light);
+  border-radius: var(--radius-md);
+}
+
+.helper-list,
+.size-list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.helper-list {
+  gap: var(--space-2);
+}
+
+.helper-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.helper-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: max(var(--control-h-lg), 56px);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface);
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.helper-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-organize);
+}
+
+.helper-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.helper-label {
+  font-size: var(--font-small);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.helper-desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.helper-count {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.count-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  padding: 3px 8px;
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.count-pending {
+  max-width: 84px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: right;
+  color: var(--color-text-muted);
+}
+
+.sub-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: var(--space-3);
+}
+
+.sub-chip {
+  min-height: var(--control-h-sm);
+  padding: 0 var(--control-pad-x-sm);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+
+  &.active {
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+}
+
+.size-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-divider);
+}
+
+.size-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--color-organize);
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+}
+
+/*
+ * A scanned document can carry a dozen distinct page sizes. The list scrolls
+ * inside the sheet rather than pushing the apply control off the bottom of a
+ * phone screen.
+ */
+.size-list {
+  gap: 6px;
+  max-height: 34vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.size-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--control-h-md);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-elevated);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+
+  &.active {
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+
+    .size-count {
+      color: var(--color-primary);
+    }
+  }
+}
+
+.size-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.size-dims {
+  font-size: var(--font-xs);
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+.size-sub {
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-muted);
+}
+
+.size-count {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}

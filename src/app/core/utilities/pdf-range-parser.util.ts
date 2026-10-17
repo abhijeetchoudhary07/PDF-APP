@@ -218,8 +218,59 @@ export class PdfRangeParserUtil {
         return chunks;
       }
 
+      /*
+       * B2 — divide into exactly N files. Pages go out as evenly as they
+       * divide, and the remainder goes to the earliest parts: 10 pages into 3
+       * files is 4/3/3, not 3/3/4. An N the document cannot support returns no
+       * chunks; `validateDocCount` is the call that says why.
+       */
+      case 'doc-count': {
+        const validation = this.validateDocCount(totalPages, config.docCount);
+        if (!validation.valid) return [];
+
+        const parts = validation.docCount;
+        const base = Math.floor(totalPages / parts);
+        const remainder = totalPages % parts;
+
+        const chunks: number[][] = [];
+        let next = 1;
+        for (let part = 0; part < parts; part++) {
+          const size = base + (part < remainder ? 1 : 0);
+          const chunk: number[] = [];
+          for (let i = 0; i < size; i++) {
+            chunk.push(next++);
+          }
+          chunks.push(chunk);
+        }
+        return chunks;
+      }
+
       default:
         return [Array.from({ length: totalPages }, (_, i) => i + 1)];
     }
+  }
+
+  /**
+   * Checks an N for `doc-count` split against the page count.
+   *
+   * `reason` is a kind, not a sentence: the screen turns it into a translated
+   * message, because this utility has no business holding user-visible English.
+   */
+  static validateDocCount(
+    totalPages: number,
+    docCount: number | undefined
+  ): { valid: boolean; docCount: number; reason?: 'not-an-integer' | 'below-one' | 'exceeds-pages' } {
+    const n = Number(docCount);
+
+    if (!Number.isFinite(n) || !Number.isInteger(n)) {
+      return { valid: false, docCount: 0, reason: 'not-an-integer' };
+    }
+    if (n < 1) {
+      return { valid: false, docCount: n, reason: 'below-one' };
+    }
+    if (n > totalPages) {
+      return { valid: false, docCount: n, reason: 'exceeds-pages' };
+    }
+    return { valid: true, docCount: n };
   }
 }

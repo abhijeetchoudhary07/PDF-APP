@@ -7,6 +7,14 @@ export interface BridgeDocument {
   metadata?: Record<string, any>;
 }
 
+/** A document sent to the compressor from another tool, with a size to aim at. */
+export interface CompressHandOff {
+  file: File;
+  /** The ceiling the sending tool was working to, in KB, when it had one. */
+  suggestedTargetKB?: number;
+  source?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -22,6 +30,9 @@ export class DocumentBridgeService {
 
   private qrTargetSubject = new BehaviorSubject<{ file?: File; source?: string } | null>(null);
   public qrTarget$ = this.qrTargetSubject.asObservable();
+
+  private compressTargetSubject = new BehaviorSubject<CompressHandOff | null>(null);
+  public compressTarget$ = this.compressTargetSubject.asObservable();
 
   setOcrTarget(doc: BridgeDocument | null): void {
     this.ocrTargetSubject.next(doc);
@@ -61,6 +72,25 @@ export class DocumentBridgeService {
   getQrTarget(): { file?: File; source?: string } | null {
     const val = this.qrTargetSubject.value;
     this.qrTargetSubject.next(null);
+    return val;
+  }
+
+  /**
+   * Hands a document to the PDF compressor.
+   *
+   * Added for the `max-size` split, which can find a single page that is over
+   * the ceiling on its own: no split can bring that page down, so the screen
+   * offers to carry it to the tool that can. The compressor behaves exactly as
+   * before when nothing is set, which is every other way of arriving there.
+   */
+  setCompressTarget(target: CompressHandOff | null): void {
+    this.compressTargetSubject.next(target);
+  }
+
+  getCompressTarget(): CompressHandOff | null {
+    const val = this.compressTargetSubject.value;
+    // Cleared once retrieved, so a later visit does not reopen a stale file.
+    this.compressTargetSubject.next(null);
     return val;
   }
 }

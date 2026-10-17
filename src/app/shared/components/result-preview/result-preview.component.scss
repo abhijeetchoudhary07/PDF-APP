@@ -434,6 +434,22 @@
   width: 100%;
 }
 
+@media (max-width: 768px) {
+  .result-card {
+    padding: var(--space-4, 16px);
+    margin-top: var(--space-3, 12px);
+    border-radius: var(--radius-md, 10px);
+  }
+}
+
+@media (max-width: 480px) {
+  .result-card {
+    padding: var(--space-3, 12px);
+    margin-top: var(--space-2, 8px);
+    border-radius: var(--radius-sm, 8px);
+  }
+}
+
 @media (max-width: 600px) {
   .comparison-grid {
     flex-direction: column;

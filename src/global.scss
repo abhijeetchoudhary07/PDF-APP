@@ -71,8 +71,8 @@ html, body {
   width: 100%;
   max-width: var(--container-max, 1200px);
   margin-inline: auto;
-  padding-inline: calc(min(5vw, var(--space-8)) + env(safe-area-inset-left, 0px));
-  padding-inline-end: calc(min(5vw, var(--space-8)) + env(safe-area-inset-right, 0px));
+  padding-inline: calc(clamp(12px, 2.5vw, 24px) + env(safe-area-inset-left, 0px));
+  padding-inline-end: calc(clamp(12px, 2.5vw, 24px) + env(safe-area-inset-right, 0px));
 }
 
 /* Narrower measure for reading-heavy and single-column tool pages. */
@@ -155,16 +155,16 @@ ion-router-outlet > .ion-page:not(.is-workspace) > * {
    * The trailing inset keeps the last row of content — usually a primary
    * action — above Android's gesture pill on a page that has no footer.
    */
-  padding: var(--space-6) 0 calc(var(--space-12) + env(safe-area-inset-bottom, 0px));
+  padding: clamp(var(--space-2, 8px), 2vw, var(--space-5, 20px)) 0 calc(var(--space-12) + env(safe-area-inset-bottom, 0px));
 }
 
 /* Common Page Structure Container */
 .tool-page-container {
   width: 100%;
-  max-width: 1000px;
+  max-width: var(--container-max, 1200px);
   margin-inline: auto;
-  padding-inline: calc(min(5vw, var(--space-8)) + env(safe-area-inset-left, 0px));
-  padding-inline-end: calc(min(5vw, var(--space-8)) + env(safe-area-inset-right, 0px));
+  padding-inline: calc(clamp(12px, 2.5vw, 24px) + env(safe-area-inset-left, 0px));
+  padding-inline-end: calc(clamp(12px, 2.5vw, 24px) + env(safe-area-inset-right, 0px));
 }
 
 /* Section Header */
@@ -404,7 +404,91 @@ ion-modal {
     --width: 540px;
     --max-width: 90vw;
     --height: auto;
-    --max-height: 85vh;
+    --max-height: min(85dvh, 85vh);
   }
 }
 
+/* --- HANDY & FLEXIBLE LAYOUT UTILITIES --- */
+/*
+ * Primary action handiness: at <=768px, pin primary actions to a sticky bottom action
+ * bar within env(safe-area-inset-bottom), padding the scroll container by the bar's
+ * height so all content is reachable by thumb with nothing covered.
+ */
+@media (max-width: 768px) {
+  .sticky-mobile-bottom-bar,
+  .export-bar,
+  .apply-action-bar {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-sticky, 100);
+    background: var(--header-surface, rgba(255, 255, 255, 0.92));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--color-border);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    padding-bottom: calc(var(--space-3, 12px) + env(safe-area-inset-bottom, 0px));
+    margin-top: var(--space-4, 16px);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .app-container,
+  .tool-page-container {
+    padding-inline: calc(12px + env(safe-area-inset-left, 0px));
+    padding-inline-end: calc(12px + env(safe-area-inset-right, 0px));
+  }
+
+  .app-main-content {
+    padding-top: var(--space-2, 8px);
+    padding-bottom: calc(var(--control-h-lg, 48px) + var(--space-8, 32px) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 480px) {
+  .app-container,
+  .tool-page-container {
+    padding-inline: calc(8px + env(safe-area-inset-left, 0px));
+    padding-inline-end: calc(8px + env(safe-area-inset-right, 0px));
+  }
+}
+
+/*
+ * Horizontal document scroll prevention:
+ * Any row that overflows either auto-scrolls with appAutoScroll or wraps cleanly.
+ * Horizontal scrollbars on the document/window are strictly forbidden.
+ */
+html, body {
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+
+
+/*
+ * --- SOURCE-DOCUMENT COLOUR SLOTS ---
+ *
+ * The organizer's multi-document tray badges each loaded PDF with a hue, so a
+ * page's source is identifiable at a glance. The hue lives here rather than in
+ * either component because two of them read it — the tray strip and the page
+ * cards — and a second copy inside a component stylesheet is both duplication
+ * and a few hundred bytes against that component's style budget.
+ *
+ * One custom property per slot, consumed as
+ * `hsl(var(--src-hue) <s> <l>)`, which is what lets a component vary the
+ * saturation and lightness per theme without restating the hues.
+ * `color-mix()` would say this more directly but the build targets
+ * Chrome >= 90 (see .browserslistrc) and it needs 111.
+ *
+ * Eight slots, cycled when more documents are loaded. The file name beside the
+ * dot is what actually identifies a document; the colour is a shortcut, never
+ * the only signal.
+ */
+[data-src-color="0"] { --src-hue: 244; }
+[data-src-color="1"] { --src-hue: 162; }
+[data-src-color="2"] { --src-hue: 28; }
+[data-src-color="3"] { --src-hue: 199; }
+[data-src-color="4"] { --src-hue: 330; }
+[data-src-color="5"] { --src-hue: 88; }
+[data-src-color="6"] { --src-hue: 268; }
+[data-src-color="7"] { --src-hue: 8; }

@@ -156,8 +156,12 @@ import { AppBreadcrumbsComponent, BreadcrumbItem } from '../breadcrumbs/breadcru
     }
 
     @media (max-width: 640px) {
+      .page-header-wrapper {
+        margin-bottom: var(--space-3, 12px);
+      }
       .page-header {
         flex-wrap: wrap;
+        padding: var(--space-2, 8px) 0 var(--space-2, 8px);
       }
       .page-title {
         font-size: var(--font-h3, 18px);

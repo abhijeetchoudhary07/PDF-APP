@@ -179,6 +179,19 @@
   --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.25);
   --focus-ring-offset: 2px;
 
+  /* --- 9b. FLUID CONTROL & ICON SCALE (Responsive Tokens) --- */
+  --control-h-sm: clamp(32px, 30px + 0.6vw, 36px);
+  --control-h-md: clamp(40px, 38px + 0.8vw, 44px);
+  --control-h-lg: clamp(48px, 46px + 1vw, 54px);
+
+  --control-pad-x-sm: clamp(10px, 9px + 0.5vw, 14px);
+  --control-pad-x-md: clamp(14px, 12px + 0.8vw, 20px);
+  --control-pad-x-lg: clamp(20px, 18px + 1vw, 28px);
+
+  --icon-sm: clamp(14px, 13px + 0.3vw, 16px);
+  --icon-md: clamp(18px, 17px + 0.5vw, 22px);
+  --icon-lg: clamp(24px, 22px + 0.6vw, 28px);
+
   /* --- 10. ELEVATED / TRANSLUCENT SURFACES --- */
   /*
    * Component styles are encapsulated, so they cannot select an ancestor such as
@@ -238,26 +251,35 @@
   --bp-2xl: 1440px;
 }
 
+/* Touch & Mobile Floor: Ensure accessibility guidelines (>=44px touch targets) on mobile/coarse pointer */
+@media (pointer: coarse), (max-width: 768px) {
+  :root {
+    --control-h-sm: max(clamp(32px, 30px + 0.6vw, 36px), var(--min-touch-target, 44px));
+    --control-h-md: max(clamp(40px, 38px + 0.8vw, 44px), var(--min-touch-target, 44px));
+    --control-h-lg: max(clamp(48px, 46px + 1vw, 54px), var(--min-touch-target, 44px));
+  }
+}
+
 /* --- DARK & LIGHT THEME SELECTORS --- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not(.theme-light) {
-    --color-background: #0b0f19;
-    --color-background-subtle: #111827;
-    --color-surface: #151d2f;
-    --color-surface-hover: #1e293b;
-    --color-surface-elevated: #1f293d;
-    --color-surface-sunken: #0d1322;
+    --color-background: #0f172a;
+    --color-background-subtle: #162032;
+    --color-surface: #1e293b;
+    --color-surface-hover: #273549;
+    --color-surface-elevated: #243044;
+    --color-surface-sunken: #0f172a;
 
-    --color-border: #1f2937;
-    --color-border-hover: #374151;
+    --color-border: #263345;
+    --color-border-hover: #3b4d66;
     --color-border-focus: #6366f1;
-    --color-divider: #1f2937;
+    --color-divider: #1f2a3a;
 
     --color-text: #f8fafc;
     --color-text-secondary: #cbd5e1;
     --color-text-muted: #64748b;
 
-    --header-surface: rgba(17, 24, 39, 0.82);
+    --header-surface: rgba(15, 23, 42, 0.88);
     --glass-surface: rgba(30, 41, 59, 0.62);
     --glass-border: rgba(148, 163, 184, 0.16);
     --scrim: rgba(2, 6, 23, 0.6);
@@ -278,23 +300,23 @@
 }
 
 [data-theme="dark"], body.theme-dark {
-  --color-background: #0b0f19;
-  --color-background-subtle: #111827;
-  --color-surface: #151d2f;
-  --color-surface-hover: #1e293b;
-  --color-surface-elevated: #1f293d;
-  --color-surface-sunken: #0d1322;
+  --color-background: #0f172a;
+  --color-background-subtle: #162032;
+  --color-surface: #1e293b;
+  --color-surface-hover: #273549;
+  --color-surface-elevated: #243044;
+  --color-surface-sunken: #0f172a;
 
-  --color-border: #1f2937;
-  --color-border-hover: #374151;
+  --color-border: #263345;
+  --color-border-hover: #3b4d66;
   --color-border-focus: #6366f1;
-  --color-divider: #1f2937;
+  --color-divider: #1f2a3a;
 
   --color-text: #f8fafc;
   --color-text-secondary: #cbd5e1;
-    --color-text-muted: #64748b;
+  --color-text-muted: #64748b;
 
-  --header-surface: rgba(17, 24, 39, 0.82);
+  --header-surface: rgba(15, 23, 42, 0.88);
   --glass-surface: rgba(30, 41, 59, 0.62);
   --glass-border: rgba(148, 163, 184, 0.16);
   --scrim: rgba(2, 6, 23, 0.6);

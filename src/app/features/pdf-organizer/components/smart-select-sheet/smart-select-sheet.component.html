@@ -1,0 +1,126 @@
+<app-modal
+  [isOpen]="isOpen"
+  [hasFooter]="true"
+  (closed)="closed.emit()"
+  (closeModal)="closed.emit()"
+  [title]="'organizer.smartSelectTitle' | translate"
+  [subtitle]="'organizer.smartSelectSubtitle' | translate"
+  size="md">
+  <div class="smart-body">
+    @if (scanning) {
+      <div class="scan-progress">
+        <app-progress [value]="scanPercent" [label]="scanStage" variant="primary"></app-progress>
+        <app-button variant="outline" size="sm" [block]="true" (clicked)="cancelScan.emit()">
+          {{ 'common.cancel' | translate }}
+        </app-button>
+      </div>
+    }
+
+    <ul class="helper-list">
+      @for (helper of helpers; track helper.id) {
+        @let match = matches.get(helper.id);
+        <li class="helper-item">
+          <button
+            type="button"
+            class="helper-btn"
+            [disabled]="scanning"
+            (click)="applyHelper.emit(helper.id)">
+            <span class="helper-icon">
+              <app-icon [name]="helper.icon" size="md"></app-icon>
+            </span>
+            <span class="helper-text">
+              <span class="helper-label">{{ helper.labelKey | translate }}</span>
+              <span class="helper-desc">{{ helper.descKey | translate }}</span>
+            </span>
+            <span class="helper-count">
+              @if (match?.unavailableReason) {
+                <span class="count-pending">{{ 'organizer.smartSelectNeedsScan' | translate }}</span>
+              } @else {
+                <span class="count-value">{{ match?.matchedCount ?? 0 }}</span>
+              }
+            </span>
+          </button>
+
+          @if (helper.id === 'duplicates' && !match?.unavailableReason) {
+            <div class="sub-row" role="radiogroup">
+              <button
+                type="button"
+                class="sub-chip"
+                role="radio"
+                [class.active]="duplicateScope === 'redundant'"
+                [attr.aria-checked]="duplicateScope === 'redundant'"
+                (click)="duplicateScopeChange.emit('redundant')">
+                {{ 'organizer.duplicateScopeRedundant' | translate }}
+              </button>
+              <button
+                type="button"
+                class="sub-chip"
+                role="radio"
+                [class.active]="duplicateScope === 'all'"
+                [attr.aria-checked]="duplicateScope === 'all'"
+                (click)="duplicateScopeChange.emit('all')">
+                {{ 'organizer.duplicateScopeAll' | translate }}
+              </button>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+
+    <div class="size-section">
+      <div class="size-heading">
+        <app-icon name="resize" size="sm"></app-icon>
+        <div>
+          <span class="helper-label">{{ 'organizer.selectBySizeLabel' | translate }}</span>
+          <span class="helper-desc">{{ 'organizer.selectBySizeDesc' | translate }}</span>
+        </div>
+      </div>
+
+      @if (sizeGroups.length === 0) {
+        <p class="helper-desc">{{ 'organizer.noSizeGroups' | translate }}</p>
+      } @else {
+        <ul class="size-list">
+          @for (group of sizeGroups; track group.key) {
+            <li>
+              <button
+                type="button"
+                class="size-btn"
+                [class.active]="selectedSizeGroupKey === group.key"
+                (click)="sizeGroupChange.emit(group.key)">
+                <app-icon
+                  [name]="group.orientation === 'landscape' ? 'tablet-landscape' : 'tablet-portrait'"
+                  size="sm"></app-icon>
+                <span class="size-text">
+                  <span class="size-dims">{{ group.widthPt }} &times; {{ group.heightPt }} pt</span>
+                  <span class="size-sub">
+                    {{ group.widthMm }} &times; {{ group.heightMm }} mm@if (group.standardName) {
+                      <span> &middot; {{ group.standardName }}</span>
+                    }
+                  </span>
+                </span>
+                <span class="size-count">
+                  {{ 'organizer.sizeGroupPageCount' | translate:{ count: group.count } }}
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+        <app-button
+          variant="outline"
+          size="sm"
+          [block]="true"
+          [disabled]="!selectedSizeGroupKey || scanning"
+          (clicked)="applyHelper.emit('size')">
+          <app-icon name="checkmark-done" class="btn-icon"></app-icon>
+          {{ 'organizer.smartSelectApplySize' | translate:{ count: matches.get('size')?.matchedCount ?? 0 } }}
+        </app-button>
+      }
+    </div>
+  </div>
+
+  <div class="modal-footer-actions" modal-footer>
+    <app-button variant="ghost" size="md" (clicked)="closed.emit()">
+      {{ 'common.close' | translate }}
+    </app-button>
+  </div>
+</app-modal>

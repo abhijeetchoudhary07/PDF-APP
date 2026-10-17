@@ -110,8 +110,9 @@
   text-align: center;
 }
 
+/* Touch floor: this select measured 36px. */
 .format-select {
-  height: 36px;
+  height: var(--min-touch-target, 44px);
   padding: 0 12px;
   border-radius: var(--radius-md, 8px);
   border: 1px solid var(--color-border);

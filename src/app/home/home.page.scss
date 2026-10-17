@@ -206,11 +206,21 @@
   width: max-content;
   will-change: transform;
   /*
-   * Continuously scrolls from right to left in an infinite, uninterrupted loop.
+   * Continuously glides left to right in an infinite, uninterrupted loop.
    *
-   * The duration is coupled to the group width: the keyframe translates the
-   * track by -50%, which is exactly one group. One group is 11 pills, so 19s
+   * The keyframe runs from -50% to 0 -- one whole group's width -- so the
+   * track travels rightwards and the pills enter from the left edge. Starting
+   * at -50% is what makes the loop seamless: the duplicate group is already
+   * filling the viewport when the cycle restarts.
+   *
+   * The duration is coupled to the group width: one group is 11 pills, so 19s
    * here is the same on-screen speed the old doubled 22-pill group had at 38s.
+   *
+   * This declaration previously sat inside an unterminated comment -- the
+   * block above was missing its closing marker -- so the marquee never
+   * animated at all, and the comment swallowed this rule's closing brace,
+   * which silently nested the two selectors that follow inside this one.
+   */
   animation: category-marquee-scroll 19s linear infinite;
 
   &.is-paused {
@@ -238,17 +248,26 @@
 
 @keyframes category-marquee-scroll {
   0% {
-    transform: translateX(0);
+    transform: translateX(-50%);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(0);
   }
 }
 
+/*
+ * The marquee pills are a moving target, which makes the touch floor matter
+ * more here than anywhere: at 6px/14px they measured 27px tall and they glide
+ * under the thumb. The padding stays for the horizontal rhythm and the height
+ * comes from the floor.
+ */
 .cat-pill {
   flex-shrink: 0;
   user-select: none;
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--min-touch-target, 44px);
+  padding: 0 14px;
   font-size: var(--font-small, 13px);
   font-weight: var(--font-weight-medium, 500);
   border-radius: var(--radius-full, 9999px);
@@ -344,9 +363,17 @@
   flex-shrink: 0;
 }
 
+/*
+ * Touch floor. The star sits in the corner of a tool card at 22x22, which is
+ * both hard to hit and easy to hit by accident when aiming for the card; a
+ * 44px box with the same 18px glyph fixes the first without enlarging the
+ * second, because the box is inside the card's own padding.
+ */
 .favorite-star-btn {
   background: transparent;
   border: none;
+  min-width: var(--min-touch-target, 44px);
+  min-height: var(--min-touch-target, 44px);
   padding: 4px;
   cursor: pointer;
   color: var(--color-text-muted);
@@ -379,7 +406,7 @@
  */
 .tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(clamp(250px, 28vw, 320px), 1fr));
   gap: clamp(var(--space-3), 1.5vw, var(--space-5));
 }
 
@@ -685,7 +712,15 @@
   align-items: center;
   gap: 8px;
   margin-top: var(--space-4, 16px);
-  padding: 8px 14px;
+  /*
+   * The search box below has no top margin of its own, so the gap between the
+   * two lives here. Putting it on the pill rather than on the search box means
+   * no stray gap appears on the days the quota pill is not rendered at all.
+   */
+  margin-bottom: var(--space-4, 16px);
+  /* Touch floor: this link is the route to the paywall. */
+  min-height: var(--min-touch-target, 44px);
+  padding: 0 14px;
   border-radius: var(--radius-full, 9999px);
   border: 1px solid var(--color-border);
   background-color: var(--color-surface);

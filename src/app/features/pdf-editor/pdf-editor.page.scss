@@ -34,8 +34,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  /*
+   * Touch floor: this measured 36px, and then 20px wide once it was 44px tall,
+   * because .nav-left is a flex row that was free to shrink it. flex-shrink: 0
+   * is what actually holds the width on a 320px screen.
+   */
+  flex-shrink: 0;
+  width: var(--min-touch-target, 44px);
+  height: var(--min-touch-target, 44px);
   border-radius: var(--radius-md, 8px);
   color: #ffffff;
   text-decoration: none;
@@ -126,10 +132,11 @@
  */
 @media (max-width: 480px) {
   .editor-lang-selector ::ng-deep .lang-trigger-btn {
-    width: 40px;
-    min-width: 40px;
-    height: 40px;
-    min-height: 40px;
+    /* The touch floor, matching the shell header's round controls. */
+    width: var(--min-touch-target, 44px);
+    min-width: var(--min-touch-target, 44px);
+    height: var(--min-touch-target, 44px);
+    min-height: var(--min-touch-target, 44px);
   }
 
   /*

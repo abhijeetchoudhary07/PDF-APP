@@ -254,14 +254,28 @@
   padding: var(--space-5, 20px);
   display: flex;
   flex-direction: column;
+  /*
+   * The card is a grid child, and a grid child's default min-width is auto --
+   * its content's intrinsic width. A long library name therefore stretched the
+   * card past the 320px viewport instead of wrapping inside it.
+   */
+  min-width: 0;
   transition: border-color var(--transition-fast, 150ms);
 
   &:hover {
     border-color: var(--color-primary, #6366f1);
   }
 
+  /*
+   * The header is a title on the left and version/licence tags on the right.
+   * The tags are flex-shrink: 0, and the title wrap had no min-width, so a
+   * long library name pushed the tags clean off the right edge of a 320px and
+   * 375px phone. min-width: 0 lets the title wrap instead, and the row falls
+   * to two lines when even that is not enough.
+   */
   .tech-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
     gap: var(--space-2, 8px);
@@ -269,7 +283,11 @@
   }
 
   .tech-title-wrap {
+    min-width: 0;
+    flex: 1 1 auto;
+
     h4 {
+      overflow-wrap: anywhere;
       margin: 0 0 2px;
       font-size: var(--font-body, 15px);
       font-weight: var(--font-weight-bold, 700);

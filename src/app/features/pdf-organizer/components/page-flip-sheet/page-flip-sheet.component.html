@@ -1,0 +1,110 @@
+<app-modal
+  [isOpen]="isOpen"
+  [hasFooter]="true"
+  (closed)="closed.emit()"
+  (closeModal)="closed.emit()"
+  [title]="'organizer.flipTitle' | translate"
+  [subtitle]="'organizer.flipSubtitle' | translate"
+  size="md">
+  <div class="flip-body">
+    <div class="axis-grid" role="radiogroup" [attr.aria-label]="'organizer.flipTitle' | translate">
+      @for (opt of axisOptions; track opt.id) {
+        <button
+          type="button"
+          class="axis-btn"
+          role="radio"
+          [class.active]="axis === opt.id"
+          [attr.aria-checked]="axis === opt.id"
+          (click)="axisChange.emit(opt.id)">
+          <app-icon [name]="opt.icon" size="lg"></app-icon>
+          <span>{{ opt.labelKey | translate }}</span>
+        </button>
+      }
+    </div>
+
+    @for (opt of axisOptions; track opt.id) {
+      @if (axis === opt.id) {
+        <p class="axis-desc">{{ opt.descKey | translate }}</p>
+      }
+    }
+
+    <div class="scope-row" role="radiogroup">
+      <button
+        type="button"
+        class="scope-btn"
+        role="radio"
+        [class.active]="scope === 'selected'"
+        [attr.aria-checked]="scope === 'selected'"
+        [disabled]="selectedCount === 0"
+        (click)="scopeChange.emit('selected')">
+        {{ 'organizer.flipScopeSelected' | translate:{ count: selectedCount } }}
+      </button>
+      <button
+        type="button"
+        class="scope-btn"
+        role="radio"
+        [class.active]="scope === 'all'"
+        [attr.aria-checked]="scope === 'all'"
+        (click)="scopeChange.emit('all')">
+        {{ 'organizer.flipScopeAll' | translate:{ count: totalCount } }}
+      </button>
+    </div>
+
+    @if (previewPage) {
+      <div class="preview-box">
+        <span class="preview-title">
+          {{ 'organizer.flipPreviewTitle' | translate:{ page: previewPage.displayNumber } }}
+        </span>
+        <div class="preview-stage">
+          @if (previewLoading) {
+            <div class="preview-loading">
+              <div class="preview-spinner"></div>
+              <span>{{ 'organizer.flipPreviewLoading' | translate }}</span>
+            </div>
+          } @else if (preview?.imageUrl) {
+            <img
+              class="preview-img"
+              [src]="preview!.imageUrl"
+              [alt]="'organizer.flipPreviewTitle' | translate:{ page: previewPage.displayNumber }" />
+          } @else if (previewPage.thumbnailUrl) {
+            <!--
+              No rasterised preview was available on this device, so the
+              thumbnail already in hand stands in with the same mirror
+              applied in CSS. The matrix the output uses is unaffected.
+            -->
+            <img
+              class="preview-img"
+              [src]="previewPage.thumbnailUrl"
+              [style.transform]="fallbackPreviewTransform"
+              [alt]="'organizer.flipPreviewTitle' | translate:{ page: previewPage.displayNumber }" />
+          } @else {
+            <p class="note">{{ 'organizer.flipPreviewUnavailable' | translate }}</p>
+          }
+        </div>
+        <p class="note">{{ 'organizer.flipNoteVector' | translate }}</p>
+        <p class="note subtle">{{ 'organizer.flipToggleNote' | translate }}</p>
+      </div>
+    }
+
+    @if (flippedCount > 0) {
+      <button type="button" class="clear-btn" (click)="clearFlips.emit()">
+        <app-icon name="close-circle" size="sm"></app-icon>
+        <span>{{ 'organizer.flipClearBtn' | translate:{ count: flippedCount } }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="modal-footer-actions" modal-footer>
+    <app-button variant="ghost" size="md" (clicked)="closed.emit()">
+      {{ 'common.cancel' | translate }}
+    </app-button>
+    <app-button
+      variant="primary"
+      size="md"
+      [disabled]="targetCount === 0"
+      (clicked)="apply.emit()">
+      <app-icon name="flip-horizontal" class="btn-icon"></app-icon>
+      {{ 'organizer.flipApplyBtn' | translate:{ count: targetCount } }}
+    </app-button>
+  </div>
+</app-modal>

@@ -123,10 +123,10 @@ import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.ty
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      height: 36px;
-      padding: 0 10px;
-      border-radius: var(--radius-md, 10px);
-      background-color: var(--color-surface);
+      height: 34px;
+      padding: 0 12px;
+      border-radius: var(--radius-full, 9999px);
+      background-color: var(--color-background-subtle);
       border: 1px solid var(--color-border);
       color: var(--color-text);
       font-size: var(--font-small, 13px);
@@ -137,8 +137,8 @@ import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.ty
     }
 
     .lang-trigger-btn:hover {
-      background-color: var(--color-surface-hover, var(--color-background-subtle));
-      border-color: var(--color-border-hover, var(--color-primary));
+      background-color: var(--color-surface);
+      border-color: var(--color-primary);
     }
 
     .lang-trigger-btn.is-open {
@@ -165,27 +165,28 @@ import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.ty
       transform: rotate(180deg);
     }
 
-    /*
-     * On a phone the trigger collapses to the globe alone, but it stays a full
-     * 44px touch target — it sits shoulder to shoulder with the search and menu
-     * buttons in the header, and a 34px control next to 44px neighbours is both
-     * a miss-tap risk and an accessibility finding.
-     */
-    @media (max-width: 960px) {
-      /* Height only — the label still fits at tablet widths and in the drawer. */
+    @media (max-width: 600px) {
       .lang-trigger-btn {
-        height: var(--min-touch-target, 44px);
-        min-height: var(--min-touch-target, 44px);
-      }
-    }
-
-    @media (max-width: 480px) {
-      .lang-trigger-btn {
+        /*
+         * The touch floor, not 38px. This control sits in the header beside
+         * the other round controls, which carry the same floor.
+         */
         width: var(--min-touch-target, 44px);
+        height: var(--min-touch-target, 44px);
         min-width: var(--min-touch-target, 44px);
+        min-height: var(--min-touch-target, 44px);
         padding: 0;
+        border: none;
+        background: transparent;
+        border-radius: 50%;
         justify-content: center;
         gap: 0;
+
+        &:hover, &.is-open {
+          background-color: var(--color-background-subtle);
+          border-color: transparent;
+          box-shadow: none;
+        }
       }
       .lang-name,
       .chevron-icon {
@@ -359,8 +360,19 @@ import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.ty
       gap: 6px;
     }
 
+    /*
+     * The compact language pills appear in the mobile drawer and in page
+     * footers, where five of them sit in a row. At 4px/12px they measured 22px
+     * tall -- half the touch floor, for a control that switches the language of
+     * the entire app. The padding is kept for the horizontal rhythm and the
+     * height comes from the floor.
+     */
     .compact-pill {
-      padding: 4px 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--min-touch-target, 44px);
+      padding: 0 14px;
       border-radius: var(--radius-full, 9999px);
       border: 1px solid var(--color-border);
       background: var(--color-surface);

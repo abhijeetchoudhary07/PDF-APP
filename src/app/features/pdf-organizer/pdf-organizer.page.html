@@ -155,15 +155,58 @@
         @if (mode === 'split' && pageManager.pages.length > 0) {
           <div class="split-controls-card">
             <div class="section-card-header">
-              <h4 class="section-title">Split Mode Settings</h4>
+              <h4 class="section-title">{{ 'organizer.splitSettingsTitle' | translate }}</h4>
+              <p class="section-subtitle">{{ 'organizer.splitSettingsSubtitle' | translate }}</p>
             </div>
-            <app-tabs
-              [tabs]="splitModeTabs"
-              [activeTab]="splitMode"
-              (tabChange)="setSplitMode($any($event))"
-              variant="pills"
-              [scrollable]="true">
-            </app-tabs>
+
+            <app-split-mode-picker
+              [modes]="splitModes"
+              [activeMode]="splitMode"
+              [disabled]="isProcessing"
+              [groupLabel]="'organizer.splitSettingsTitle' | translate"
+              (modeSelected)="setSplitMode($event)">
+            </app-split-mode-picker>
+
+            <!-- B6/B7: cutting inside a page, with a live grid preview -->
+            @if (isSectioningSplit) {
+              <app-section-panel
+                [mode]="sectioningMode"
+                [config]="sectioningConfig"
+                [plan]="sectionPlan"
+                [totalPages]="pageManager.pages.length"
+                [previewThumbnailUrl]="sectionPreviewThumbnail"
+                [previewWidth]="sectionPreviewWidth"
+                [previewHeight]="sectionPreviewHeight"
+                [busy]="isProcessing"
+                [scanning]="isScanningGutters"
+                [progress]="gutterProgress"
+                (configChange)="onSectioningConfigChange($event)"
+                (scanGutters)="runGutterScan()"
+                (cancelScan)="cancelGutterScan()">
+              </app-section-panel>
+            }
+
+            <!-- B1-B5: settings and plan preview for the five new modes -->
+            @if (isAdvancedSplit) {
+              <app-split-mode-panel
+                [mode]="advancedSplitMode"
+                [config]="advancedSplitConfig"
+                [totalPages]="pageManager.pages.length"
+                [outlineLevels]="outlineLevels"
+                [outlineCountsByLevel]="outlineCountsByLevel"
+                [outlineChecked]="outlineChecked"
+                [plan]="advancedSplitPlan"
+                [planStale]="advancedPlanStale"
+                [analyzing]="isAnalyzingSplit"
+                [progress]="splitPlanProgress"
+                [busy]="isProcessing"
+                (configChange)="onAdvancedConfigChange($event)"
+                (analyze)="analyzeSplitPlan()"
+                (cancelAnalyze)="cancelSplitAnalyze()"
+                (compressorHandOff)="handOffOversizedToCompressor($event)">
+              </app-split-mode-panel>
+            }
+
             <!-- Every N Pages Config -->
             @if (splitMode === 'every-n') {
               <div class="split-option-body">
@@ -272,59 +315,147 @@
         </div>
       }
 
-      <!-- SELECTION & BATCH ACTIONS TOOLBAR -->
+      <!-- A8: MULTI-DOCUMENT TRAY (only once more than one PDF is loaded) -->
+      @if (isMultiDocument) {
+        <app-document-tray
+          [entries]="documentTray"
+          [busy]="isProcessing"
+          (selectDocument)="selectTrayDocument($event)"
+          (removeDocument)="removeTrayDocument($event)"
+          (exportBySource)="exportSplitBySource()">
+        </app-document-tray>
+      }
+
+      <!-- SMART CONTROLS & ERGONOMIC TOOLBAR -->
       @if (pageManager.pages.length > 0) {
-        <div class="actions-toolbar">
-          <div class="selection-status">
-            @if (pageManager.selectedCount === 0) {
-              <span class="status-hint">Select pages for bulk actions:</span>
-            }
-            @if (pageManager.selectedCount > 0) {
-              <app-badge variant="primary" size="md">
-                {{ pageManager.selectedCount }} of {{ pageManager.pages.length }} selected
-              </app-badge>
-            }
+        <div class="organizer-smart-bar">
+          <!-- Top Utility & Density Row -->
+          <div class="utility-row">
+            <div class="doc-meta-pills">
+              <span class="meta-pill count-pill">
+                <app-icon name="document-text-outline"></app-icon>
+                {{ pageManager.pages.length }} Pages
+              </span>
+              @if (pageManager.selectedCount > 0) {
+                <span class="meta-pill selected-pill">
+                  {{ pageManager.selectedCount }} Selected
+                </span>
+              }
+            </div>
+
+            <div class="utility-actions">
+              <!-- Grid Density Switcher (2-col vs 3-col) -->
+              <button
+                type="button"
+                class="density-toggle-btn"
+                [attr.aria-label]="gridDensity"
+                (click)="toggleGridDensity()">
+                <app-icon [name]="gridDensity === 'comfortable' ? 'grid-outline' : 'albums-outline'"></app-icon>
+                <span>{{ gridDensity === 'comfortable' ? '3-Col View' : '2-Col View' }}</span>
+              </button>
+
+              <!-- Quick Selection -->
+              @if (pageManager.selectedCount < pageManager.pages.length) {
+                <button type="button" class="quick-sel-btn" (click)="selectAll()">Select All</button>
+              } @else {
+                <button type="button" class="quick-sel-btn" (click)="deselectAll()">Clear</button>
+              }
+            </div>
           </div>
-          <div class="toolbar-buttons">
-            <!-- Quick Selection -->
-            <app-button size="sm" variant="outline" (clicked)="selectAll()">All</app-button>
-            <app-button size="sm" variant="outline" (clicked)="deselectAll()" [disabled]="pageManager.selectedCount === 0">None</app-button>
-            <app-button size="sm" variant="outline" (clicked)="invertSelection()">Invert</app-button>
-            <!-- Bulk Rotate -->
-            <app-button size="sm" variant="outline" (clicked)="rotateSelected(90)" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.rotateSelectedCw' | translate">
-              <app-icon name="refresh" class="btn-icon"></app-icon>
-              +90°
-            </app-button>
-            <app-button size="sm" variant="outline" (clicked)="rotateSelected(180)" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.rotateSelected180' | translate">
-              180°
-            </app-button>
-            <app-button size="sm" variant="outline" (clicked)="rotateSelected(270)" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.rotateSelectedCcw' | translate">
-              270°
-            </app-button>
-            <!-- Bulk Duplicate -->
-            <app-button size="sm" variant="outline" (clicked)="duplicateSelected()" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.duplicateSelected' | translate">
-              <app-icon name="copy-outline"></app-icon>
-            </app-button>
-            <!-- Bulk Delete -->
-            <app-button size="sm" variant="danger" (clicked)="deleteSelected()" [disabled]="pageManager.selectedCount === 0" [title]="'organizer.deleteSelected' | translate">
-              <app-icon name="trash-outline"></app-icon>
-            </app-button>
+
+          <!-- Horizontal Smart Tools Ribbon (Scrollable, 1-tap quick actions) -->
+          <div class="smart-ribbon-container">
+            <div class="smart-ribbon">
+              <button type="button" class="ribbon-chip highlight" (click)="openAutoRotateModal()">
+                <app-icon name="sync-outline" class="chip-icon"></app-icon>
+                <span>Auto-Rotate</span>
+              </button>
+              <button type="button" class="ribbon-chip highlight" (click)="openBlankDetectionModal()">
+                <app-icon name="scan" class="chip-icon"></app-icon>
+                <span>Detect Blanks</span>
+              </button>
+              <button type="button" class="ribbon-chip highlight" (click)="openDuplicateModal()">
+                <app-icon name="copy" class="chip-icon"></app-icon>
+                <span>Find Duplicates</span>
+              </button>
+              <button type="button" class="ribbon-chip highlight" (click)="openSmartSelectModal()">
+                <app-icon name="funnel" class="chip-icon"></app-icon>
+                <span>{{ 'organizer.smartSelectChip' | translate }}</span>
+              </button>
+              <button type="button" class="ribbon-chip highlight" (click)="openFlipModal()">
+                <app-icon name="flip-horizontal" class="chip-icon"></app-icon>
+                <span>{{ 'organizer.mirrorFlipChip' | translate }}</span>
+              </button>
+              <button type="button" class="ribbon-chip" (click)="openArrangementModal('custom-expression')">
+                <app-icon name="list-number" class="chip-icon"></app-icon>
+                <span>Expression</span>
+              </button>
+              <button type="button" class="ribbon-chip" (click)="openArrangementModal('duplex-sort')">
+                <app-icon name="documents-outline" class="chip-icon"></app-icon>
+                <span>Duplex Sort</span>
+              </button>
+              <button type="button" class="ribbon-chip" (click)="openArrangementModal('reverse')">
+                <app-icon name="swap-horizontal-outline" class="chip-icon"></app-icon>
+                <span>Reverse</span>
+              </button>
+              <button type="button" class="ribbon-chip" (click)="openArrangementModal('odd-even-split')">
+                <app-icon name="git-branch-outline" class="chip-icon"></app-icon>
+                <span>Odd-Even Split</span>
+              </button>
+              <button type="button" class="ribbon-chip" (click)="openArrangementModal('odd-even-merge')">
+                <app-icon name="git-merge-outline" class="chip-icon"></app-icon>
+                <span>Odd-Even Merge</span>
+              </button>
+            </div>
           </div>
+
           <!-- Quick Mode Helpers -->
           @if (mode === 'rotate') {
             <div class="rotate-all-bar">
               <span class="rotate-all-label">Rotate All Pages:</span>
-              <app-button size="sm" variant="secondary" (clicked)="rotateAll(90)">Rotate All 90° CW</app-button>
-              <app-button size="sm" variant="secondary" (clicked)="rotateAll(180)">Rotate All 180°</app-button>
-              <app-button size="sm" variant="secondary" (clicked)="rotateAll(270)">Rotate All 90° CCW</app-button>
+              <app-button size="sm" variant="secondary" (click)="openAutoRotateModal()">
+                <app-icon name="sync-outline" class="btn-icon"></app-icon>
+                {{ 'organizer.autoRotateActionBtn' | translate }}
+              </app-button>
+              <app-button size="sm" variant="secondary" (click)="rotateAll(90)">Rotate All 90° CW</app-button>
+              <app-button size="sm" variant="secondary" (click)="rotateAll(180)">Rotate All 180°</app-button>
+              <app-button size="sm" variant="secondary" (click)="rotateAll(270)">Rotate All 90° CCW</app-button>
             </div>
           }
         </div>
       }
 
+      <!-- FLOATING / DOCKED SELECTION ACTION BAR -->
+      @if (pageManager.selectedCount > 0) {
+        <div class="floating-selection-bar">
+          <div class="selection-info">
+            <span class="selection-count">{{ pageManager.selectedCount }}</span>
+            <span class="selection-label">selected</span>
+          </div>
+          <div class="floating-actions">
+            <button type="button" class="float-btn" (click)="rotateSelected(90)" [title]="'organizer.rotateSelectedCw' | translate">
+              <app-icon name="refresh"></app-icon>
+              <span>+90°</span>
+            </button>
+            <button type="button" class="float-btn" (click)="rotateSelected(180)" [title]="'organizer.rotateSelected180' | translate">
+              <span>180°</span>
+            </button>
+            <button type="button" class="float-btn" (click)="duplicateSelected()" [title]="'organizer.duplicateSelected' | translate">
+              <app-icon name="copy-outline"></app-icon>
+            </button>
+            <button type="button" class="float-btn btn-danger" (click)="deleteSelected()" [title]="'organizer.deleteSelected' | translate">
+              <app-icon name="trash-outline"></app-icon>
+            </button>
+            <button type="button" class="float-btn-close" (click)="deselectAll()" [title]="'organizer.deselectAll' | translate">
+              <app-icon name="close"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+
       <!-- PAGE THUMBNAILS GRID -->
       @if (pageManager.pages.length > 0) {
-        <div class="page-grid">
+        <div class="page-grid" [class.grid-compact]="gridDensity === 'compact'">
           @for (page of pageManager.pages; track page; let i = $index) {
             <div
               class="page-card"
@@ -352,6 +483,19 @@
                     </span>
                   }
                 </div>
+                <!-- A8: which document this page came from -->
+                @if (isMultiDocument) {
+                  @let badge = pageSourceBadge(page);
+                  @if (badge) {
+                    <span
+                      class="page-source-badge"
+                      [attr.data-src-color]="badge.colorIndex"
+                      [title]="'organizer.trayFromSource' | translate:{ name: badge.name, page: badge.sourcePageNumber }">
+                      <span class="src-dot" aria-hidden="true"></span>
+                      <span class="src-name">{{ badge.name }}</span>
+                    </span>
+                  }
+                }
                 <button class="zoom-icon-btn" (click)="openZoomModal(page)" [title]="'previews.enlargePage' | translate">
                   <app-icon name="expand-outline"></app-icon>
                 </button>
@@ -364,7 +508,7 @@
                     [src]="page.thumbnailUrl"
                     [alt]="'Page ' + page.displayNumber"
                     class="thumbnail-img"
-                    [style.transform]="'rotate(' + page.rotation + 'deg)'" />
+                    [style.transform]="pageThumbnailTransform(page)" />
                 }
                 @if (!page.thumbnailUrl && !page.thumbnailError) {
                   <div class="thumbnail-loading">
@@ -382,6 +526,15 @@
                 @if (page.rotation > 0) {
                   <div class="rotation-badge">
                     {{ page.rotation }}°
+                  </div>
+                }
+                <!-- A6: Flip Badge -->
+                @if (page.flipHorizontal || page.flipVertical) {
+                  <div class="flip-badge">
+                    <app-icon
+                      [name]="page.flipHorizontal && page.flipVertical ? 'flip-both' : page.flipHorizontal ? 'flip-horizontal' : 'flip-vertical'"
+                      size="sm"></app-icon>
+                    <span>{{ pageFlipBadge(page) }}</span>
                   </div>
                 }
                 <!-- Cut Point Indicator (Split Mode) -->
@@ -499,10 +652,16 @@
               variant="primary"
               size="lg"
               [block]="true"
+              [disabled]="!canExportSplit"
               (clicked)="executeExport()">
               <app-icon name="cut-outline" class="btn-icon"></app-icon>
-              Generate Split PDFs ({{ splitChunksPreview.length }} Files)
+              {{ splitGenerateKey | translate:{ count: splitOutputCount } }}
             </app-button>
+            @if ((isAdvancedSplit || isSectioningSplit) && !canExportSplit) {
+              <p class="split-export-hint">
+                {{ splitExportBlockedKey | translate }}
+              </p>
+            }
           }
           @if (mode === 'rotate') {
             <app-button
@@ -538,8 +697,15 @@
         </div>
       }
 
-      <!-- RESULT PREVIEW (Single PDF) -->
-      @if (lastExportResult && mode !== 'split' && beforePreviewData && afterPreviewData) {
+      <!--
+        RESULT PREVIEW (Single PDF)
+
+        Split mode normally writes several files and shows them in the list
+        below, which is why this was hidden there. Sectioning and poster tiling
+        are split modes that write ONE document, so without this they produced a
+        file with nothing on screen to save or share it with.
+      -->
+      @if (lastExportResult && (mode !== 'split' || isSectioningSplit) && beforePreviewData && afterPreviewData) {
         <app-result-preview
           [beforeData]="beforePreviewData"
           [afterData]="afterPreviewData"
@@ -587,6 +753,826 @@
       }
 
     </div>
+
+    <!-- ONE-TAP ARRANGEMENT MODAL WITH PREVIEW -->
+    <app-modal
+      [isOpen]="arrangementModalOpen"
+      [hasFooter]="true"
+      (closed)="closeArrangementModal()"
+      (closeModal)="closeArrangementModal()"
+      [title]="'organizer.arrangeTitle' | translate"
+      size="md">
+      <div class="arrangement-modal-body">
+        <!-- Mode Pills -->
+        <div class="arrangement-mode-pills">
+          @for (m of arrangementModes; track m.id) {
+            <button
+              type="button"
+              class="arrangement-pill-btn"
+              [class.active]="selectedArrangementMode === m.id"
+              (click)="selectArrangementMode(m.id)">
+              <app-icon [name]="m.icon" class="pill-icon"></app-icon>
+              <span>{{ m.shortName }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Mode Description -->
+        @for (m of arrangementModes; track m.id) {
+          @if (selectedArrangementMode === m.id) {
+            <div class="mode-description-box">
+              <span class="mode-desc-title">{{ m.name }}</span>
+              <p class="mode-desc-text">{{ m.description }}</p>
+            </div>
+          }
+        }
+
+        <!-- Duplex Sort Options (toggle for backs reversed) -->
+        @if (selectedArrangementMode === 'duplex-sort') {
+          <div class="duplex-toggle-box">
+            <label class="duplex-checkbox-label">
+              <input
+                type="checkbox"
+                [checked]="duplexBacksReversed"
+                (change)="toggleDuplexBacks()" />
+              <span class="duplex-label-text">Back pages are scanned in reverse order</span>
+            </label>
+            <span class="duplex-help-text">
+              Common when ADF document feeders output the back-side stack inverted (last sheet on top).
+            </span>
+          </div>
+        }
+
+        <!-- Custom Page-Order Expression UI (A1) -->
+        @if (selectedArrangementMode === 'custom-expression') {
+          <div class="custom-expression-box">
+            <div class="expression-input-wrap">
+              <div class="expression-label-row">
+                <span class="expression-label-text">Expression Formula:</span>
+                @if (customPageOrderExpression) {
+                  <button type="button" class="clear-expr-link" (click)="clearExpression()">Clear</button>
+                }
+              </div>
+              <div class="input-with-clear">
+                <input
+                  type="text"
+                  class="expression-text-input"
+                  [class.input-error]="customExpressionError"
+                  [(ngModel)]="customPageOrderExpression"
+                  (input)="onExpressionInputChanged()"
+                  placeholder="e.g. 1,3,2,4-6 or 2n-1 + 2n or reverse" />
+              </div>
+              @if (customExpressionError) {
+                <div class="expression-error-msg">
+                  <app-icon name="alert-circle-outline"></app-icon>
+                  <span>{{ customExpressionError }}</span>
+                </div>
+              } @else if (arrangementPreview && customPageOrderExpression) {
+                <div class="expression-valid-msg">
+                  <app-icon name="checkmark-circle"></app-icon>
+                  <span>Valid expression & live preview calculated</span>
+                </div>
+              }
+            </div>
+
+            <!-- Quick Token Chips for Mobile (No typing required) -->
+            <div class="expression-builder-tokens">
+              <span class="tokens-label">1-Tap Insert:</span>
+              <div class="builder-chips">
+                <button type="button" class="token-chip" (click)="insertExpressionToken('2n-1')">2n-1 (Odd)</button>
+                <button type="button" class="token-chip" (click)="insertExpressionToken('2n')">2n (Even)</button>
+                <button type="button" class="token-chip" (click)="insertExpressionToken('reverse')">reverse</button>
+                <button type="button" class="token-chip" (click)="insertExpressionToken('1-3')">1-3</button>
+                <button type="button" class="token-chip sym" (click)="insertExpressionToken('+')">+</button>
+                <button type="button" class="token-chip sym" (click)="insertExpressionToken(',')">,</button>
+              </div>
+            </div>
+
+            <div class="expression-presets-row">
+              <span class="presets-label">Presets:</span>
+              <div class="preset-chips">
+                <button type="button" class="preset-chip" (click)="setExpressionPreset('2n-1 + 2n')">Odd + Even</button>
+                <button type="button" class="preset-chip" (click)="setExpressionPreset('reverse')">Reverse</button>
+                <button type="button" class="preset-chip" (click)="setExpressionPreset('1,3,2,4-6')">Custom Swap</button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Live Order Preview -->
+        @if (arrangementPreview) {
+          <div class="arrangement-preview-card">
+            <span class="preview-heading">Order Preview ({{ arrangementPreview.pageCount }} pages):</span>
+            <div class="preview-sequence">
+              <div class="sequence-row">
+                <span class="seq-label">Before:</span>
+                <div class="seq-chips">
+                  @for (p of arrangementPreview.previousOrder; track $index) {
+                    <span class="page-chip before">{{ p }}</span>
+                  }
+                </div>
+              </div>
+              <div class="sequence-row">
+                <span class="seq-label">After:</span>
+                <div class="seq-chips">
+                  @for (p of arrangementPreview.newOrder; track $index) {
+                    <span class="page-chip after">{{ p }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div modal-footer class="arrangement-footer-actions">
+        <app-button variant="outline" size="sm" (clicked)="closeArrangementModal()">
+          Cancel
+        </app-button>
+        <app-button variant="primary" size="sm" (clicked)="applyCurrentArrangement()">
+          <app-icon name="checkmark-outline" class="btn-icon"></app-icon>
+          Apply Arrangement
+        </app-button>
+      </div>
+    </app-modal>
+
+    <!-- BLANK PAGE DETECTION & REMOVAL MODAL -->
+    <app-modal
+      [isOpen]="blankModalOpen"
+      [hasFooter]="true"
+      (closed)="closeBlankDetectionModal()"
+      (closeModal)="closeBlankDetectionModal()"
+      [title]="'organizer.blankDetectionTitle' | translate"
+      size="lg">
+      <div class="blank-modal-body">
+        @if (isScanningBlanks) {
+          <!-- Scanning Progress State -->
+          <div class="blank-scanning-box">
+            <div class="scanning-spinner-row">
+              <div class="custom-spinner"></div>
+              <div class="scanning-labels">
+                <span class="scanning-title">{{ blankScanProgress?.stage || 'Scanning pages...' }}</span>
+                <span class="scanning-sub">Analyzing rendered pixels at ~0.2 scale & checking text layer</span>
+              </div>
+            </div>
+            <div class="scanning-progress-bar-wrap">
+              <div class="scanning-progress-bar" [style.width.%]="blankScanProgress?.percent || 0"></div>
+            </div>
+            <div class="scanning-meta-row">
+              <span>{{ blankScanProgress?.percent || 0 }}% completed</span>
+              <span>Found {{ blankScanProgress?.foundBlankCount || 0 }} blank page(s)</span>
+            </div>
+          </div>
+        } @else if (blankReport) {
+          <!-- Sensitivity Controls & Live Count -->
+          <div class="blank-controls-card">
+            <div class="sensitivity-header-row">
+              <div class="sensitivity-label-group">
+                <span class="control-label">Sensitivity Threshold:</span>
+                <span class="threshold-badge">{{ (blankThreshold * 100).toFixed(2) }}% non-white pixels</span>
+              </div>
+              <div class="live-count-badge" [class.has-blanks]="blankReport.blankCount > 0">
+                {{ blankReport.blankCount }} blank page(s) detected ({{ selectedBlankCount }} selected)
+              </div>
+            </div>
+
+            <div class="slider-container">
+              <input
+                type="range"
+                min="0.0001"
+                max="0.01"
+                step="0.0002"
+                [value]="blankThreshold"
+                (input)="onBlankThresholdChange($event)"
+                class="sensitivity-range-input" />
+              <div class="slider-ticks">
+                <span>0.01% (Strict)</span>
+                <span>0.10% (Default)</span>
+                <span>1.00% (High)</span>
+              </div>
+            </div>
+
+            <!-- 1-Tap Sensitivity Presets -->
+            <div class="preset-pills-row">
+              <span class="preset-label">1-Tap Preset:</span>
+              <div class="pills-group">
+                <button
+                  type="button"
+                  class="threshold-pill-btn"
+                  [class.active]="blankThreshold <= 0.0003"
+                  (click)="setBlankPreset(0.0001)">
+                  Strict (0.01%)
+                </button>
+                <button
+                  type="button"
+                  class="threshold-pill-btn"
+                  [class.active]="blankThreshold > 0.0003 && blankThreshold < 0.005"
+                  (click)="setBlankPreset(0.001)">
+                  Default (0.10%)
+                </button>
+                <button
+                  type="button"
+                  class="threshold-pill-btn"
+                  [class.active]="blankThreshold >= 0.005"
+                  (click)="setBlankPreset(0.01)">
+                  High (1.00%)
+                </button>
+              </div>
+            </div>
+
+            <p class="sensitivity-help-text">
+              Cross-checks an empty text layer and rendered pixel density. Pages with real text are never removed.
+            </p>
+          </div>
+
+          <!-- Recovery Notice -->
+          <div class="review-recovery-notice">
+            <app-icon name="information-circle-outline" class="notice-icon"></app-icon>
+            <div class="notice-text">
+              <strong>Guaranteed Recovery:</strong> Removal always emits a review PDF containing the removed pages, so faint-but-real content is never lost.
+            </div>
+          </div>
+
+          <!-- Candidate Thumbnails Grid -->
+          @if (blankReport.blankCount === 0) {
+            <div class="no-blanks-state">
+              <app-icon name="checkmark-circle-outline" class="empty-icon"></app-icon>
+              <h4>{{ 'organizer.noBlankDetectedTitle' | translate }}</h4>
+              <p>{{ 'organizer.noBlankDetectedDesc' | translate }}</p>
+            </div>
+          } @else {
+            <div class="candidates-selection-header">
+              <span class="candidates-title">{{ 'organizer.candidatesTitle' | translate }}</span>
+              <div class="selection-quick-actions">
+                <button type="button" class="text-btn" (click)="selectAllBlanks(true)">{{ 'organizer.selectAll' | translate }}</button>
+                <span class="divider">|</span>
+                <button type="button" class="text-btn" (click)="selectAllBlanks(false)">{{ 'organizer.deselectAll' | translate }}</button>
+              </div>
+            </div>
+
+            <div class="blank-candidates-grid">
+              @for (c of blankReport.blankCandidates; track c.pageId) {
+                <div
+                  class="candidate-card"
+                  [class.selected]="c.selectedForRemoval"
+                  (click)="toggleBlankCandidate(c)">
+                  <div class="candidate-header">
+                    <span class="page-badge">Page {{ c.pageNumber }}</span>
+                    <span class="pixel-ratio-badge">{{ (c.nonWhiteRatio * 100).toFixed(3) }}%</span>
+                  </div>
+                  <div class="candidate-thumb-container">
+                    @if (c.thumbnailUrl) {
+                      <img [src]="c.thumbnailUrl" class="candidate-img" alt="Thumbnail of page {{ c.pageNumber }}" />
+                    } @else {
+                      <div class="candidate-placeholder">
+                        <app-icon name="document-outline"></app-icon>
+                        <span>Page {{ c.pageNumber }}</span>
+                      </div>
+                    }
+                  </div>
+                  <label class="candidate-checkbox-row" (click)="$event.stopPropagation()">
+                    <input
+                      type="checkbox"
+                      [checked]="c.selectedForRemoval"
+                      (change)="toggleBlankCandidate(c)" />
+                    <span class="checkbox-label">Remove</span>
+                  </label>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <div modal-footer class="blank-footer-actions">
+        @if (isScanningBlanks) {
+          <app-button variant="outline" size="sm" (clicked)="cancelBlankScan()">
+            Cancel Scan
+          </app-button>
+        } @else {
+          <div class="footer-left">
+            <app-button variant="outline" size="sm" (clicked)="startBlankScan()">
+              <app-icon name="refresh-outline" class="btn-icon"></app-icon>
+              Rescan
+            </app-button>
+          </div>
+          <div class="footer-right">
+            <app-button variant="outline" size="sm" (clicked)="closeBlankDetectionModal()">
+              Cancel
+            </app-button>
+            <app-button
+              variant="danger"
+              size="sm"
+              [disabled]="selectedBlankCount === 0 || isProcessing"
+              (clicked)="removeSelectedBlanks()">
+              <app-icon name="trash-outline" class="btn-icon"></app-icon>
+              {{ 'organizer.removeBlanksBtn' | translate: { count: selectedBlankCount } }}
+            </app-button>
+          </div>
+        }
+      </div>
+    </app-modal>
+
+    <!-- DUPLICATE PAGE FINDER MODAL -->
+    <app-modal
+      [isOpen]="duplicateModalOpen"
+      [hasFooter]="true"
+      (closed)="closeDuplicateModal()"
+      (closeModal)="closeDuplicateModal()"
+      [title]="'organizer.duplicateFinderTitle' | translate"
+      size="lg">
+      <div class="duplicate-modal-content">
+        @if (isScanningDuplicates) {
+          <div class="duplicate-scanning-state">
+            <div class="custom-spinner"></div>
+            <h4>{{ duplicateScanProgress?.stage || ('organizer.duplicateFinderTitle' | translate) }}</h4>
+            <div class="scan-progress-bar-wrap">
+              <div class="scan-progress-bar-fill" [style.width.%]="duplicateScanProgress?.percent || 0"></div>
+            </div>
+            <p class="scan-page-indicator">
+              Page {{ duplicateScanProgress?.currentPage || 0 }} of {{ duplicateScanProgress?.totalPages || 0 }} ({{ duplicateScanProgress?.percent || 0 }}%)
+            </p>
+          </div>
+        } @else if (duplicateReport) {
+          <!-- Duplicate Settings Bar -->
+          <div class="duplicate-settings-card">
+            <!-- Filter Tabs -->
+            <div class="duplicate-filter-tabs">
+              <button
+                type="button"
+                class="tab-btn"
+                [class.active]="duplicateTab === 'all'"
+                (click)="setDuplicateTab('all')">
+                All ({{ duplicateReport.exactGroups.length + duplicateReport.nearGroups.length }})
+              </button>
+              <button
+                type="button"
+                class="tab-btn"
+                [class.active]="duplicateTab === 'exact'"
+                (click)="setDuplicateTab('exact')">
+                {{ 'organizer.exactDuplicatesTab' | translate: { count: duplicateReport.exactGroups.length } }}
+              </button>
+              <button
+                type="button"
+                class="tab-btn"
+                [class.active]="duplicateTab === 'near'"
+                (click)="setDuplicateTab('near')">
+                {{ 'organizer.nearDuplicatesTab' | translate: { count: duplicateReport.nearGroups.length } }}
+              </button>
+            </div>
+
+            <!-- Sensitivity Slider -->
+            <div class="sensitivity-slider-box">
+              <div class="slider-header">
+                <label class="slider-label">
+                  {{ 'organizer.hammingThresholdLabel' | translate: { value: duplicateHammingThreshold } }}
+                </label>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                [value]="duplicateHammingThreshold"
+                (input)="onHammingThresholdChange($event)"
+                class="sensitivity-range-input" />
+              <div class="slider-ticks">
+                <span>{{ 'organizer.strictHamming' | translate }}</span>
+                <span>{{ 'organizer.defaultHamming' | translate }}</span>
+                <span>{{ 'organizer.relaxedHamming' | translate }}</span>
+              </div>
+            </div>
+
+            <!-- 1-Tap Hamming Presets -->
+            <div class="duplicate-quick-bar">
+              <div class="hamming-presets-row">
+                <span class="preset-label">Threshold:</span>
+                <div class="pills-group">
+                  <button
+                    type="button"
+                    class="threshold-pill-btn"
+                    [class.active]="duplicateHammingThreshold === 0"
+                    (click)="setHammingPreset(0)">
+                    Exact (0)
+                  </button>
+                  <button
+                    type="button"
+                    class="threshold-pill-btn"
+                    [class.active]="duplicateHammingThreshold === 2"
+                    (click)="setHammingPreset(2)">
+                    Strict (2)
+                  </button>
+                  <button
+                    type="button"
+                    class="threshold-pill-btn"
+                    [class.active]="duplicateHammingThreshold === 4"
+                    (click)="setHammingPreset(4)">
+                    Default (4)
+                  </button>
+                  <button
+                    type="button"
+                    class="threshold-pill-btn"
+                    [class.active]="duplicateHammingThreshold === 6"
+                    (click)="setHammingPreset(6)">
+                    Loose (6)
+                  </button>
+                </div>
+              </div>
+              <div class="batch-groups-actions">
+                <button type="button" class="batch-text-btn" (click)="keepFirstInAllDuplicateGroups()">Keep First All</button>
+                <span class="divider">|</span>
+                <button type="button" class="batch-text-btn" (click)="keepAllInDuplicateGroups()">Keep All</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Groups List or Empty State -->
+          @if (visibleDuplicateGroups.length === 0) {
+            <div class="no-duplicates-state">
+              <app-icon name="checkmark-circle-outline" class="empty-icon"></app-icon>
+              <h4>{{ 'organizer.noDuplicatesFoundTitle' | translate }}</h4>
+              <p>{{ 'organizer.noDuplicatesFoundDesc' | translate }}</p>
+            </div>
+          } @else {
+            <div class="duplicate-groups-list">
+              @for (group of visibleDuplicateGroups; track group.id; let gIdx = $index) {
+                <div class="duplicate-group-card" [class.near-group]="group.type === 'near'">
+                  <div class="group-header">
+                    <div class="group-header-left">
+                      <span class="group-index-badge">Group {{ gIdx + 1 }}</span>
+                      @if (group.type === 'exact') {
+                        <span class="group-type-badge exact">Exact Match</span>
+                      } @else {
+                        <span class="group-type-badge near">Near Match (Dist: {{ group.distance }} bits)</span>
+                      }
+                      <span class="group-count-badge">{{ group.pages.length }} Pages</span>
+                    </div>
+                    <div class="group-header-actions">
+                      <button type="button" class="group-quick-btn" (click)="setGroupKeepFirst(group)">
+                        {{ 'organizer.keepFirstBtn' | translate }}
+                      </button>
+                      <span class="divider">|</span>
+                      <button type="button" class="group-quick-btn" (click)="setGroupKeepAll(group)">
+                        {{ 'organizer.keepAllBtn' | translate }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Side-by-side pages grid -->
+                  <div class="group-pages-row">
+                    @for (page of group.pages; track page.pageId; let pIdx = $index) {
+                      <div
+                        class="duplicate-page-item"
+                        [class.keep]="page.keep"
+                        [class.remove]="!page.keep"
+                        (click)="toggleKeepDuplicate(page)">
+                        <div class="page-item-header">
+                          <span class="page-num-badge">Page {{ page.pageNumber }}</span>
+                          @if (page.isFirst) {
+                            <span class="page-role-badge original">{{ 'organizer.originalBadge' | translate }}</span>
+                          } @else {
+                            <span class="page-role-badge duplicate">{{ 'organizer.duplicateBadge' | translate }}</span>
+                          }
+                        </div>
+                        <div class="page-thumb-container">
+                          @if (page.thumbnailUrl) {
+                            <img [src]="page.thumbnailUrl" class="page-thumb-img" [alt]="'Page ' + page.pageNumber" />
+                          } @else {
+                            <div class="page-thumb-placeholder">
+                              <app-icon name="document-outline"></app-icon>
+                              <span>Page {{ page.pageNumber }}</span>
+                            </div>
+                          }
+                        </div>
+                        @if (page.textExcerpt) {
+                          <div class="page-text-excerpt">
+                            {{ page.textExcerpt }}
+                          </div>
+                        }
+                        <label class="page-keep-toggle" (click)="$event.stopPropagation()">
+                          <input
+                            type="checkbox"
+                            [checked]="page.keep"
+                            (change)="toggleKeepDuplicate(page)" />
+                          <span class="toggle-text">{{ 'organizer.keepCheckbox' | translate }}</span>
+                        </label>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <div modal-footer class="duplicate-footer-actions">
+        @if (isScanningDuplicates) {
+          <app-button variant="outline" size="sm" (clicked)="cancelDuplicateScan()">
+            Cancel Scan
+          </app-button>
+        } @else {
+          <div class="footer-left">
+            <app-button variant="outline" size="sm" (clicked)="startDuplicateScan()">
+              <app-icon name="refresh-outline" class="btn-icon"></app-icon>
+              Rescan
+            </app-button>
+          </div>
+          <div class="footer-right">
+            <app-button variant="outline" size="sm" (clicked)="closeDuplicateModal()">
+              Cancel
+            </app-button>
+            <app-button
+              variant="danger"
+              size="sm"
+              [disabled]="duplicatePagesToRemoveCount === 0 || isProcessing"
+              (clicked)="removeSelectedDuplicates()">
+              <app-icon name="trash-outline" class="btn-icon"></app-icon>
+              {{ 'organizer.removeDuplicatesBtn' | translate: { count: duplicatePagesToRemoveCount } }}
+            </app-button>
+          </div>
+        }
+      </div>
+    </app-modal>
+
+    <!-- AUTO-ROTATE UPRIGHT MODAL -->
+    <app-modal
+      [isOpen]="autoRotateModalOpen"
+      [hasFooter]="true"
+      (closed)="closeAutoRotateModal()"
+      (closeModal)="closeAutoRotateModal()"
+      [title]="'organizer.autoRotateTitle' | translate"
+      size="lg">
+      <div class="orientation-modal-content">
+        @if (isScanningOrientation) {
+          <div class="orientation-scanning-state">
+            <div class="custom-spinner"></div>
+            <h4>{{ orientationScanProgress?.stage || ('organizer.autoRotateTitle' | translate) }}</h4>
+            <div class="scan-progress-bar-wrap">
+              <div class="scan-progress-bar-fill" [style.width.%]="orientationScanProgress?.percent || 0"></div>
+            </div>
+            <p class="scan-page-indicator">
+              Page {{ orientationScanProgress?.currentPage || 0 }} of {{ orientationScanProgress?.totalPages || 0 }} ({{ orientationScanProgress?.percent || 0 }}%)
+            </p>
+          </div>
+        } @else if (orientationReport) {
+          <!-- Filter Tabs -->
+          <div class="orientation-filter-tabs">
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="orientationTab === 'toRotate'"
+              (click)="setOrientationTab('toRotate')">
+              {{ 'organizer.toRotateTab' | translate: { count: orientationReport.toRotate.length } }}
+            </button>
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="orientationTab === 'manualReview'"
+              (click)="setOrientationTab('manualReview')">
+              {{ 'organizer.manualReviewTab' | translate: { count: orientationReport.manualReview.length } }}
+            </button>
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="orientationTab === 'alreadyUpright'"
+              (click)="setOrientationTab('alreadyUpright')">
+              {{ 'organizer.alreadyUprightTab' | translate: { count: orientationReport.alreadyUpright.length } }}
+            </button>
+          </div>
+
+          <!-- Tab Content: To Rotate -->
+          @if (orientationTab === 'toRotate') {
+            @if (orientationReport.toRotate.length === 0) {
+              <div class="orientation-empty-state">
+                <app-icon name="checkmark-circle-outline" class="empty-icon"></app-icon>
+                <h4>{{ 'organizer.noRotationNeededTitle' | translate }}</h4>
+                <p>{{ 'organizer.noRotationNeededDesc' | translate }}</p>
+              </div>
+            } @else {
+              <div class="orientation-quick-actions">
+                <span class="actions-label">{{ orientationReport.toRotate.length }} Candidate Page(s)</span>
+                <div class="quick-links">
+                  <button type="button" class="text-link-btn" (click)="selectAllToRotate(true)">Select All</button>
+                  <span class="divider">|</span>
+                  <button type="button" class="text-link-btn" (click)="selectAllToRotate(false)">Deselect All</button>
+                </div>
+              </div>
+              <div class="orientation-items-grid">
+                @for (item of orientationReport.toRotate; track item.pageId) {
+                  <div
+                    class="orientation-card"
+                    [class.selected]="item.selectedForRotation"
+                    (click)="toggleSelectOrientationItem(item)">
+                    <div class="card-top-row">
+                      <span class="page-badge">Page {{ item.displayNumber }}</span>
+                      <span class="rotation-delta-badge">
+                        {{ 'organizer.suggestedCorrectionLabel' | translate: { degrees: item.suggestedRotation } }}
+                      </span>
+                    </div>
+                    <div class="card-thumb-wrapper">
+                      @if (item.thumbnailUrl) {
+                        <img
+                          [src]="item.thumbnailUrl"
+                          [alt]="'Page ' + item.displayNumber"
+                          class="orientation-thumb-img" />
+                      } @else {
+                        <div class="thumb-placeholder">
+                          <app-icon name="document-outline"></app-icon>
+                          <span>Page {{ item.displayNumber }}</span>
+                        </div>
+                      }
+                      <div class="orientation-tag">
+                        {{ 'organizer.detectedOrientationLabel' | translate: { angle: item.detectedAngle } }}
+                      </div>
+                    </div>
+                    <div class="card-bottom-row">
+                      <span class="confidence-tag">
+                        {{ 'organizer.confidenceLabel' | translate: { percent: (item.confidence * 100).toFixed(0) } }}
+                      </span>
+                      <label class="checkbox-container" (click)="$event.stopPropagation()">
+                        <input
+                          type="checkbox"
+                          [checked]="item.selectedForRotation"
+                          (change)="toggleSelectOrientationItem(item)" />
+                        <span class="custom-checkmark"></span>
+                      </label>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <!-- Tab Content: Needs Manual Review -->
+          @if (orientationTab === 'manualReview') {
+            @if (orientationReport.manualReview.length === 0) {
+              <div class="orientation-empty-state">
+                <app-icon name="checkmark-circle-outline" class="empty-icon"></app-icon>
+                <h4>{{ 'organizer.noManualReviewTitle' | translate }}</h4>
+                <p>{{ 'organizer.noManualReviewDesc' | translate }}</p>
+              </div>
+            } @else {
+              <div class="manual-review-info-banner">
+                <app-icon name="information-circle-outline" class="info-icon"></app-icon>
+                <span>{{ 'organizer.manualReviewNotice' | translate }}</span>
+              </div>
+              <div class="orientation-items-grid">
+                @for (item of orientationReport.manualReview; track item.pageId) {
+                  <div class="orientation-card manual-review-card">
+                    <div class="card-top-row">
+                      <span class="page-badge">Page {{ item.displayNumber }}</span>
+                      <span class="review-reason-badge">
+                        {{ item.isNearBlank ? ('organizer.nearBlankBadge' | translate) : ('organizer.lowConfidenceBadge' | translate) }}
+                      </span>
+                    </div>
+                    <div class="card-thumb-wrapper">
+                      @if (item.thumbnailUrl) {
+                        <img
+                          [src]="item.thumbnailUrl"
+                          [alt]="'Page ' + item.displayNumber"
+                          class="orientation-thumb-img" />
+                      } @else {
+                        <div class="thumb-placeholder">
+                          <app-icon name="document-outline"></app-icon>
+                          <span>Page {{ item.displayNumber }}</span>
+                        </div>
+                      }
+                    </div>
+                    <div class="manual-rotate-actions">
+                      <button
+                        type="button"
+                        class="quick-rotate-btn"
+                        (click)="rotateManualItem(item, 90)">
+                        {{ 'organizer.rotateCw90' | translate }}
+                      </button>
+                      <button
+                        type="button"
+                        class="quick-rotate-btn"
+                        (click)="rotateManualItem(item, 270)">
+                        {{ 'organizer.rotateCcw90' | translate }}
+                      </button>
+                      <button
+                        type="button"
+                        class="quick-rotate-btn"
+                        (click)="rotateManualItem(item, 180)">
+                        {{ 'organizer.rotate180' | translate }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <!-- Tab Content: Already Upright -->
+          @if (orientationTab === 'alreadyUpright') {
+            @if (orientationReport.alreadyUpright.length === 0) {
+              <div class="orientation-empty-state">
+                <app-icon name="information-circle-outline" class="empty-icon"></app-icon>
+                <h4>{{ 'organizer.noAlreadyUprightTitle' | translate }}</h4>
+                <p>{{ 'organizer.noAlreadyUprightDesc' | translate }}</p>
+              </div>
+            } @else {
+              <div class="orientation-items-grid">
+                @for (item of orientationReport.alreadyUpright; track item.pageId) {
+                  <div class="orientation-card upright-card">
+                    <div class="card-top-row">
+                      <span class="page-badge">Page {{ item.displayNumber }}</span>
+                      <span class="upright-badge">{{ 'organizer.uprightBadge' | translate }}</span>
+                    </div>
+                    <div class="card-thumb-wrapper">
+                      @if (item.thumbnailUrl) {
+                        <img
+                          [src]="item.thumbnailUrl"
+                          [alt]="'Page ' + item.displayNumber"
+                          class="orientation-thumb-img" />
+                      } @else {
+                        <div class="thumb-placeholder">
+                          <app-icon name="document-outline"></app-icon>
+                          <span>Page {{ item.displayNumber }}</span>
+                        </div>
+                      }
+                    </div>
+                    <div class="card-bottom-row">
+                      <span class="confidence-tag">
+                        {{ 'organizer.confidenceLabel' | translate: { percent: (item.confidence * 100).toFixed(0) } }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+        }
+      </div>
+
+      <div modal-footer class="orientation-footer-actions">
+        @if (isScanningOrientation) {
+          <app-button variant="outline" size="sm" (clicked)="cancelAutoRotateScan()">
+            {{ 'common.cancel' | translate }}
+          </app-button>
+        } @else {
+          <div class="footer-left">
+            <app-button variant="outline" size="sm" (clicked)="startAutoRotateScan()">
+              <app-icon name="refresh-outline" class="btn-icon"></app-icon>
+              {{ 'common.retry' | translate }}
+            </app-button>
+          </div>
+          <div class="footer-right">
+            <app-button variant="outline" size="sm" (clicked)="closeAutoRotateModal()">
+              {{ 'common.close' | translate }}
+            </app-button>
+            <app-button
+              variant="primary"
+              size="sm"
+              [disabled]="selectedAutoRotateCount === 0 || isProcessing"
+              (clicked)="applyAutoRotation()">
+              <app-icon name="sync-outline" class="btn-icon"></app-icon>
+              {{ 'organizer.applyAutoRotateBtn' | translate: { count: selectedAutoRotateCount } }}
+            </app-button>
+          </div>
+        }
+      </div>
+    </app-modal>
+
+    <!-- A6: MIRROR / FLIP SHEET -->
+    <app-page-flip-sheet
+      [isOpen]="flipModalOpen"
+      [axisOptions]="flipAxisOptions"
+      [axis]="flipAxis"
+      [scope]="flipScope"
+      [selectedCount]="pageManager.selectedCount"
+      [totalCount]="pageManager.pages.length"
+      [targetCount]="flipTargetCount"
+      [flippedCount]="flippedPageCount"
+      [previewPage]="flipPreviewPage"
+      [preview]="flipPreview"
+      [previewLoading]="isFlipPreviewLoading"
+      (axisChange)="setFlipAxis($event)"
+      (scopeChange)="setFlipScope($event)"
+      (apply)="applyFlip()"
+      (clearFlips)="clearAllFlips()"
+      (closed)="closeFlipModal()">
+    </app-page-flip-sheet>
+
+    <!-- A7: SMART PAGE SELECTION SHEET -->
+    <app-smart-select-sheet
+      [isOpen]="smartSelectModalOpen"
+      [helpers]="selectionHelpers"
+      [matches]="smartSelectMatches"
+      [sizeGroups]="sizeGroups"
+      [selectedSizeGroupKey]="selectedSizeGroupKey"
+      [duplicateScope]="duplicateSelectScope"
+      [scanning]="isPreparingSmartSelect"
+      [scanPercent]="smartSelectScanPercent"
+      [scanStage]="smartSelectStage"
+      (applyHelper)="applySmartSelect($event)"
+      (duplicateScopeChange)="setDuplicateSelectScope($event)"
+      (sizeGroupChange)="setSelectedSizeGroup($event)"
+      (cancelScan)="cancelSmartSelectScan()"
+      (closed)="closeSmartSelectModal()">
+    </app-smart-select-sheet>
 
     <!-- HIGH RESOLUTION ZOOM MODAL -->
     <app-modal

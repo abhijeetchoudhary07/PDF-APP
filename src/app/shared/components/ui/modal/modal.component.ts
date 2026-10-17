@@ -70,6 +70,7 @@ import { CommonModule } from '@angular/common';
       box-shadow: var(--shadow-modal);
       width: 100%;
       max-height: 90vh;
+      max-height: min(90dvh, 880px);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -79,7 +80,7 @@ import { CommonModule } from '@angular/common';
     .modal-sm { max-width: 420px; }
     .modal-md { max-width: 560px; }
     .modal-lg { max-width: 780px; }
-    .modal-full { max-width: 95vw; height: 90vh; }
+    .modal-full { max-width: 95vw; height: 90vh; height: min(92dvh, 92vh); }
 
     .modal-header {
       padding: var(--space-4, 16px) var(--space-5, 20px);
@@ -172,8 +173,8 @@ import { CommonModule } from '@angular/common';
       .modal-dialog {
         width: 100%;
         max-width: 100%;
-        max-height: calc(100dvh - 20px);
         max-height: calc(100vh - 20px);
+        max-height: calc(100dvh - 20px);
         border-radius: var(--radius-lg, 14px);
         margin: 0;
       }
@@ -184,6 +185,7 @@ import { CommonModule } from '@angular/common';
 
       .modal-full {
         max-width: 100vw;
+        height: 100vh;
         height: 100dvh;
         max-height: 100dvh;
         border-radius: 0;
@@ -209,8 +211,8 @@ import { CommonModule } from '@angular/common';
 
       .modal-body {
         padding: 14px 16px;
-        max-height: calc(100dvh - 130px);
         max-height: calc(100vh - 130px);
+        max-height: calc(100dvh - 130px);
       }
 
       .modal-footer {

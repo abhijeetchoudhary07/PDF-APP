@@ -521,6 +521,12 @@
 }
 
 @media (max-width: 600px) {
+  .mode-tabs-wrap {
+    margin-bottom: var(--space-3, 12px);
+  }
+  .tool-group-card {
+    padding: var(--space-4, 16px);
+  }
   .config-grid {
     grid-template-columns: 1fr;
   }

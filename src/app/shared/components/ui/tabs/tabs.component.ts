@@ -87,11 +87,20 @@ export interface TabItem {
       justify-content: center;
     }
 
+    /*
+     * Tabs are the mode switcher on sixteen screens -- Organize/Merge/Split on
+     * the organizer, the tool tabs on the PDF hub -- and at 8px/14px they
+     * measured 29px tall. They carry the touch floor like every other control:
+     * the padding stays for the horizontal rhythm and the height comes from
+     * --control-h-md, which the theme already raises to 44px on a coarse
+     * pointer or a phone-width viewport.
+     */
     .tab-btn {
       display: inline-flex;
       align-items: center;
       gap: var(--space-2, 8px);
-      padding: 8px 14px;
+      min-height: var(--control-h-md, 44px);
+      padding: 0 14px;
       font-size: var(--font-small, 13px);
       font-weight: var(--font-weight-medium, 500);
       color: var(--color-text-secondary);
@@ -141,7 +150,7 @@ export interface TabItem {
     .tabs-pills .tab-btn {
       border: 1px solid var(--color-border);
       border-radius: var(--radius-full, 9999px);
-      padding: 6px 14px;
+      padding: 0 14px;
     }
     .tabs-pills .tab-btn.active {
       background-color: var(--color-primary);

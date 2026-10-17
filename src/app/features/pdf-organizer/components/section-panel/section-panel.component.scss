@@ -1,0 +1,413 @@
+/*
+ * Phone-first, same contract as the split panel: one column, full-width
+ * controls, sizes from the fluid control scale so every target clears the 44px
+ * floor on a handset.
+ */
+:host {
+  display: block;
+}
+
+.section-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.mode-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.config-hint {
+  margin: 0;
+  font-size: var(--font-small);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+.field-label {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.panel-input {
+  width: 100%;
+  min-height: var(--control-h-md);
+  padding: 0 var(--control-pad-x-sm);
+  font-size: var(--font-body);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: var(--focus-ring);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+  }
+}
+
+/* ─────────── Rows x columns ─────────── */
+
+.grid-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.grid-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.grid-times {
+  padding-bottom: var(--space-2);
+  font-size: var(--font-h3);
+  color: var(--color-text-muted);
+}
+
+/* ─────────── Chips & segmented controls ─────────── */
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+
+  @media (max-width: 359px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.preset-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--min-touch-target);
+  padding: var(--space-2) var(--space-1);
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+
+  &.active {
+    color: var(--color-organize);
+    background: var(--color-organize-soft);
+    border-color: var(--color-organize);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.segmented {
+  display: flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.segment {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: calc(var(--control-h-md) - 8px);
+  padding: 0 var(--space-1);
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+
+  /*
+   * The segments sit inside the strip's 3px padding, so matching the input
+   * height would leave them short of the touch floor on a phone.
+   */
+  @media (pointer: coarse), (max-width: 768px) {
+    min-height: var(--min-touch-target);
+  }
+
+  &.active {
+    color: var(--color-organize);
+    background: var(--color-surface);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+/* ─────────── Toggles ─────────── */
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: max(var(--control-h-lg), 56px);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+
+  &.on {
+    background: var(--color-organize-soft);
+    border-color: var(--color-organize);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  color: var(--color-organize);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toggle-label {
+  font-size: var(--font-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.toggle-desc {
+  font-size: var(--font-caption);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+.toggle-pip {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 24px;
+  background: var(--color-border-hover);
+  border-radius: var(--radius-full);
+  transition: background var(--transition-fast);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: #ffffff;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast);
+  }
+}
+
+.toggle-row.on .toggle-pip {
+  background: var(--color-organize);
+
+  &::after {
+    transform: translateX(16px);
+  }
+}
+
+/* ─────────── Scan & notices ─────────── */
+
+.scan-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-soft-hover);
+  border-radius: var(--radius-md);
+}
+
+.panel-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-small);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+
+  app-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &.warning {
+    color: var(--color-text);
+    background: var(--color-warning-soft);
+    border-left-color: var(--color-warning);
+  }
+
+  &.danger {
+    color: var(--color-text);
+    background: var(--color-error-soft);
+    border-left-color: var(--color-error);
+  }
+}
+
+/* ─────────── Preview ─────────── */
+
+.preview-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.plan-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+
+  &.strong {
+    color: var(--color-organize);
+    background: var(--color-organize-soft);
+    border-color: var(--color-organize);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &.muted {
+    color: var(--color-text-muted);
+  }
+}
+
+.preview-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  figcaption {
+    font-size: var(--font-caption);
+    line-height: var(--line-height-normal);
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+}
+
+/*
+ * Capped by height as well as width: a tall poster would otherwise push the
+ * controls off a phone screen entirely.
+ */
+.preview-stage {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  max-height: 46vh;
+  margin: 0 auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.preview-page,
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.preview-page {
+  object-fit: fill;
+  opacity: 0.85;
+}
+
+.piece-rect {
+  fill: none;
+  stroke: var(--color-organize);
+  vector-effect: non-scaling-stroke;
+
+  /* Tiles overlap, so each gets a wash to make the seams visible. */
+  &.tile {
+    fill: var(--color-organize);
+    fill-opacity: 0.08;
+    stroke-dasharray: 6 4;
+  }
+}
+
+.piece-label {
+  fill: var(--color-organize);
+  font-weight: 700;
+  opacity: 0.85;
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}

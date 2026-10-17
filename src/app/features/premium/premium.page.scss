@@ -204,9 +204,17 @@
   color: var(--color-text-muted, #94a3b8);
 }
 
+/*
+ * An inline button inside a sentence, so it cannot take a 44px box without
+ * tearing the paragraph apart. It gets vertical padding instead, which grows
+ * the hit area into the line's leading while leaving the text where it sits.
+ */
 .inline-link {
   border: 0;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--min-touch-target, 44px);
+  padding: 0 2px;
   background: none;
   font: inherit;
   font-weight: 600;

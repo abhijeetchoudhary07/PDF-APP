@@ -328,3 +328,9 @@
 .action-submit-wrap {
   margin-top: var(--space-2, 8px);
 }
+
+@media (max-width: 600px) {
+  .mode-tabs-wrap {
+    margin-bottom: var(--space-3, 12px);
+  }
+}

@@ -66,7 +66,11 @@
   }
 
   .pill-btn {
-    padding: 6px 14px;
+    /* Touch floor: these category filters measured 27px tall. */
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--min-touch-target, 44px);
+    padding: 0 14px;
     font-size: var(--font-small, 13px);
     font-weight: var(--font-weight-medium, 500);
     border-radius: var(--radius-full, 9999px);

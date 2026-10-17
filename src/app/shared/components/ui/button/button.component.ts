@@ -1,4 +1,16 @@
-import { Component, Input, Output, EventEmitter, HostBinding, ChangeDetectionStrategy } from '@angular/core';
+import {
+  AfterContentChecked,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  Input,
+  Output,
+  Renderer2,
+  ViewChild,
+  inject
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
@@ -11,6 +23,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
   imports: [CommonModule],
   template: `
     <button
+      #btnEl
       [type]="type"
       class="btn"
       [ngClass]="[
@@ -44,7 +57,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       }
     
       <!-- Button Content -->
-      <span class="btn-text">
+      <span class="btn-text" #btnText>
         <ng-content></ng-content>
       </span>
     
@@ -104,20 +117,20 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       transform: translateY(1px) scale(0.985);
     }
 
-    /* Sizes */
+    /* Fluid Responsive Sizes */
     .btn-sm {
-      height: 32px;
-      padding: 0 var(--space-3, 12px);
+      min-height: var(--control-h-sm, 32px);
+      padding: 0 var(--control-pad-x-sm, 12px);
       font-size: var(--font-small, 13px);
     }
     .btn-md {
-      height: 42px;
-      padding: 0 var(--space-4, 16px);
+      min-height: var(--control-h-md, 42px);
+      padding: 0 var(--control-pad-x-md, 16px);
       font-size: var(--font-body, 15px);
     }
     .btn-lg {
-      height: 48px;
-      padding: 0 var(--space-6, 24px);
+      min-height: var(--control-h-lg, 48px);
+      padding: 0 var(--control-pad-x-lg, 24px);
       font-size: var(--font-body, 15px);
       font-weight: var(--font-weight-semibold, 600);
     }
@@ -224,9 +237,50 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       align-items: center;
       justify-content: center;
     }
+
+    /*
+     * An icon in a button is the size of that button's text.
+     *
+     * app-icon renders a 20px SVG by default, which next to 13px (sm) or 15px
+     * (md) label text read as an icon with a caption rather than a label with
+     * an icon. 1em ties the glyph to whatever font-size the button has at this
+     * breakpoint, so the pair grows and shrinks together on the fluid control
+     * scale instead of drifting apart.
+     *
+     * ::ng-deep because the icon is projected in from the calling template
+     * and carries that component's encapsulation attribute rather than this
+     * one's, so a plainly scoped selector would never match it. The modal
+     * component reaches its projected footer the same way. The width/height
+     * here win over the SVG's own presentation attributes.
+     *
+     * .btn-icon-only is set from TypeScript when nothing but icons was
+     * projected: 19 buttons in the app are a bare icon with no label, and
+     * shrinking those to 13px would leave a glyph far too small to aim at.
+     * Those keep app-icon's own size.
+     */
+    .btn:not(.btn-icon-only) .btn-text ::ng-deep app-icon > svg,
+    .btn:not(.btn-icon-only) .btn-icon ::ng-deep app-icon > svg,
+    .btn:not(.btn-icon-only) .btn-text ::ng-deep > svg,
+    .btn:not(.btn-icon-only) .btn-icon ::ng-deep > svg {
+      width: 1em;
+      height: 1em;
+    }
+
+    /*
+     * Keeps the glyph optically centred against the text baseline: the SVG box
+     * is the full font-size while the letters only fill the cap height.
+     */
+    .btn-text ::ng-deep app-icon {
+      flex-shrink: 0;
+    }
   `]
 })
-export class AppButtonComponent {
+export class AppButtonComponent implements AfterContentChecked {
+  private renderer = inject(Renderer2);
+
+  @ViewChild('btnEl', { static: true }) private btnEl!: ElementRef<HTMLButtonElement>;
+  @ViewChild('btnText', { static: true }) private btnText!: ElementRef<HTMLElement>;
+
   @Input() variant: ButtonVariant = 'primary';
   @Input() size: ButtonSize = 'md';
   @Input() type: 'button' | 'submit' | 'reset' = 'button';
@@ -256,6 +310,38 @@ export class AppButtonComponent {
   }
 
   @Output() clicked = new EventEmitter<MouseEvent>();
+
+  private wasIconOnly: boolean | null = null;
+
+  /**
+   * Flags a button whose projected content is icons and nothing else.
+   *
+   * The 1em icon rule in the styles above is right for a labelled button and
+   * wrong for a bare icon, and whether a label was projected is only knowable
+   * from the rendered content — `@ContentChildren` sees directives, not the
+   * text node a caller writes between the tags. So it is read off the DOM
+   * here, after content has been checked, which also catches a label that
+   * appears later because its `@if` turned true or its translation resolved.
+   *
+   * Applied through Renderer2 rather than a template binding on purpose: a
+   * binding written during `ngAfterContentChecked` is exactly what trips
+   * dev-mode's ExpressionChangedAfterItHasBeenCheckedError.
+   */
+  ngAfterContentChecked(): void {
+    const textWrap = this.btnText?.nativeElement;
+    const host = this.btnEl?.nativeElement;
+    if (!textWrap || !host) return;
+
+    const iconOnly = (textWrap.textContent ?? '').trim().length === 0;
+    if (iconOnly === this.wasIconOnly) return;
+    this.wasIconOnly = iconOnly;
+
+    if (iconOnly) {
+      this.renderer.addClass(host, 'btn-icon-only');
+    } else {
+      this.renderer.removeClass(host, 'btn-icon-only');
+    }
+  }
 
   onClick(event: MouseEvent) {
     if (!this.disabled && !this.loading) {

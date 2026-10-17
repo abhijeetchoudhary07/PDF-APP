@@ -1,0 +1,585 @@
+/*
+ * Phone-first: one column, full-width controls, nothing that needs sideways
+ * scrolling. Heights come off the fluid control scale in variables.scss, which
+ * has a 44px floor on a coarse pointer, so every tap target here clears the
+ * accessibility minimum on a handset without hard-coding a pixel size.
+ */
+:host {
+  display: block;
+}
+
+.split-mode-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+/* ─────────── Mode configuration ─────────── */
+
+.mode-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.config-hint {
+  margin: 0;
+  font-size: var(--font-small);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+.config-foot {
+  margin: 0;
+  font-size: var(--font-caption);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-muted);
+}
+
+.field-label {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.panel-input {
+  width: 100%;
+  min-height: var(--control-h-md);
+  padding: 0 var(--control-pad-x-sm);
+  font-size: var(--font-body);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: var(--focus-ring);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+  }
+}
+
+/* Keep the pattern readable: it is code, not prose. */
+#split-pattern {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-small);
+}
+
+/* ─────────── Size ceiling (B1) ─────────── */
+
+.size-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.size-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.unit-toggle {
+  display: flex;
+  flex: 0 0 auto;
+  padding: 3px;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.unit-btn {
+  min-width: 48px;
+  min-height: calc(var(--control-h-md) - 8px);
+  /*
+   * The KB/MB buttons sit inside the toggle's 3px padding, so matching the
+   * input's height would leave them 6px short of the 44px touch floor. On a
+   * touch screen they take the floor themselves and the row grows to fit.
+   */
+  @media (pointer: coarse), (max-width: 768px) {
+    min-height: var(--min-touch-target);
+  }
+  padding: 0 var(--space-2);
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+
+  &.active {
+    color: var(--color-text);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+/* ─────────── Preset chips ─────────── */
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+
+  /* Two per row on the narrowest handsets, so no label has to truncate. */
+  @media (max-width: 359px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.preset-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--min-touch-target);
+  padding: var(--space-2) var(--space-1);
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+
+  small {
+    font-size: var(--font-caption);
+    color: var(--color-text-muted);
+  }
+
+  &.active {
+    color: var(--color-organize);
+    background: var(--color-organize-soft);
+    border-color: var(--color-organize);
+
+    small {
+      color: inherit;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.level-chip .level-name {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ─────────── Document-count stepper (B2) ─────────── */
+
+.stepper-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stepper-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--min-touch-target);
+  height: var(--min-touch-target);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.count-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+  font-size: var(--font-h3);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ─────────── Toggle rows (B4, B5) ─────────── */
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: max(var(--control-h-lg), 56px);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+
+  &.on {
+    background: var(--color-organize-soft);
+    border-color: var(--color-organize);
+  }
+
+  &.sub {
+    margin-left: var(--space-4);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  color: var(--color-organize);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toggle-label {
+  font-size: var(--font-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.toggle-desc {
+  font-size: var(--font-caption);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+/* A bar-and-knob switch drawn from tokens; no third-party control needed. */
+.toggle-pip {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 24px;
+  background: var(--color-border-hover);
+  border-radius: var(--radius-full);
+  transition: background var(--transition-fast);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: #ffffff;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast);
+  }
+}
+
+.toggle-row.on .toggle-pip {
+  background: var(--color-organize);
+
+  &::after {
+    transform: translateX(16px);
+  }
+}
+
+/* ─────────── Analyze & notices ─────────── */
+
+.analyze-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-soft-hover);
+  border-radius: var(--radius-md);
+}
+
+.panel-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-small);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+
+  app-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &.warning {
+    color: var(--color-text);
+    background: var(--color-warning-soft);
+    border-left-color: var(--color-warning);
+  }
+
+  &.danger {
+    color: var(--color-text);
+    background: var(--color-error-soft);
+    border-left-color: var(--color-error);
+  }
+}
+
+/* ─────────── Plan preview ─────────── */
+
+.plan-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+
+  /* A plan that no longer matches the settings reads as provisional. */
+  &.stale {
+    opacity: 0.72;
+  }
+}
+
+.plan-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+
+  &.strong {
+    color: var(--color-organize);
+    background: var(--color-organize-soft);
+    border-color: var(--color-organize);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &.muted {
+    color: var(--color-text-muted);
+  }
+}
+
+.part-list,
+.row-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.part-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  &.over {
+    border-color: var(--color-warning);
+    background: var(--color-warning-soft);
+  }
+}
+
+.part-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-organize);
+  background: var(--color-organize-soft);
+  border-radius: var(--radius-full);
+}
+
+.part-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.part-name {
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  /* A bookmark title or a decoded payload can be long and have no spaces. */
+  overflow-wrap: anywhere;
+}
+
+.part-meta {
+  font-size: var(--font-caption);
+  color: var(--color-text-muted);
+
+  .dot {
+    margin: 0 var(--space-1);
+  }
+
+  .part-size {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.part-flag {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 2px var(--space-2);
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  background: var(--color-warning-soft);
+  border-radius: var(--radius-full);
+}
+
+/* ─────────── Per-page detail ─────────── */
+
+.page-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-divider);
+}
+
+.rows-title {
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.value-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+
+  &.boundary {
+    border-left: 3px solid var(--color-organize);
+  }
+
+  &.dropped {
+    opacity: 0.68;
+    text-decoration: line-through;
+  }
+}
+
+.row-page {
+  flex-shrink: 0;
+  min-width: 44px;
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.row-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--font-caption);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.row-empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.row-tag {
+  flex-shrink: 0;
+  padding: 1px var(--space-1);
+  font-size: var(--font-caption);
+  color: var(--color-organize);
+  background: var(--color-organize-soft);
+  border-radius: var(--radius-xs);
+}
+
+.rows-toggle {
+  min-height: var(--min-touch-target);
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-organize);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+}
+
+.btn-icon {
+  margin-right: var(--space-1);
+}
+
+/* Tablet and up: the chips and part rows get more room, nothing re-flows. */
+@media (min-width: 768px) {
+  .preset-grid {
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  }
+}

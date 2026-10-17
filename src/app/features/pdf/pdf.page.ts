@@ -14,6 +14,7 @@ import { SingleFileWorkflowState, ProcessingStage, getProcessingStageLabel } fro
 import { TranslationService } from '../../core/services/translation.service';
 import { ResultPreviewComponent, PreviewData } from '../../shared/components/result-preview/result-preview.component';
 import { ToastService } from '../../core/services/toast.service';
+import { DocumentBridgeService } from '../../core/services/document-bridge.service';
 import {
   AppHeaderComponent,
   AppFooterComponent,
@@ -69,6 +70,7 @@ export class PdfPage implements OnInit, OnDestroy {
   translationService = inject(TranslationService);
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
+  private documentBridge = inject(DocumentBridgeService);
 
   mode: 'dashboard' | 'compress' | 'create' | 'extract' = 'dashboard';
   workflowState: SingleFileWorkflowState = 'EMPTY';
@@ -123,6 +125,28 @@ export class PdfPage implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }
     });
+
+    this.loadBridgedCompressTarget();
+  }
+
+  /**
+   * Picks up a document another tool handed over for compression — today the
+   * `max-size` split, when a single page is over the ceiling on its own and no
+   * split can bring it down.
+   *
+   * Nothing changes for any other way of arriving here: with no hand-off
+   * waiting, `getCompressTarget()` returns null and this returns immediately.
+   */
+  private loadBridgedCompressTarget(): void {
+    if (this.mode !== 'compress') return;
+
+    const handOff = this.documentBridge.getCompressTarget();
+    if (!handOff?.file) return;
+
+    if (handOff.suggestedTargetKB && handOff.suggestedTargetKB > 0) {
+      this.selectedTargetKB = Math.max(1, Math.round(handOff.suggestedTargetKB));
+    }
+    void this.onCompressPdfSelected(handOff.file);
   }
 
   ngOnDestroy(): void {

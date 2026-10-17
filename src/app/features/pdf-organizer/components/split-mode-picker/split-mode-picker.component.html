@@ -1,0 +1,16 @@
+<div class="split-mode-grid" role="radiogroup" [attr.aria-label]="groupLabel">
+  @for (option of modes; track option.id) {
+    <button
+      type="button"
+      class="split-mode-card"
+      role="radio"
+      [class.active]="activeMode === option.id"
+      [attr.aria-checked]="activeMode === option.id"
+      [disabled]="disabled"
+      (click)="modeSelected.emit(option.id)">
+      <app-icon [name]="option.icon" size="md" class="mode-card-icon"></app-icon>
+      <span class="mode-card-label">{{ option.labelKey | translate }}</span>
+      <span class="mode-card-hint">{{ option.hintKey | translate }}</span>
+    </button>
+  }
+</div>
