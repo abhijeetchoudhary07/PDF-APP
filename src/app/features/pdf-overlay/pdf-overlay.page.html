@@ -1,0 +1,410 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        [title]="'tools.pdf_overlay.title' | translate"
+        [subtitle]="'overlay.subtitle' | translate"
+        [breadcrumbs]="[
+          { label: ('tools.pdf_dashboard.title' | translate), url: '/features/pdf' },
+          { label: ('tools.pdf_overlay.title' | translate) }
+        ]"
+        badge="OVERLAY"
+        badgeVariant="organize"
+        backUrl="/features/pdf">
+      </app-page-header>
+
+      <div class="overlay-workspace">
+        <!-- ─────────── 1. Base document ─────────── -->
+        <section class="step-card">
+          <div class="step-head">
+            <span class="step-number">1</span>
+            <div class="step-title-group">
+              <strong>{{ 'overlay.stepBaseTitle' | translate }}</strong>
+              <span>{{ 'overlay.stepBaseDesc' | translate }}</span>
+            </div>
+          </div>
+
+          @if (!baseFile) {
+            <app-file-dropzone
+              accept="application/pdf"
+              icon="document"
+              [title]="'overlay.baseDropTitle' | translate"
+              [description]="'overlay.baseDropDesc' | translate"
+              (fileSelected)="onBaseSelected($event)">
+            </app-file-dropzone>
+          } @else {
+            <app-file-preview
+              [file]="baseFile"
+              format="PDF"
+              [pageCount]="basePageCount"
+              [showPreviewBtn]="false"
+              (remove)="removeBase()"
+              (replace)="pickBase()">
+            </app-file-preview>
+          }
+        </section>
+
+        <!-- ─────────── 2. Overlay documents ─────────── -->
+        <section class="step-card">
+          <div class="step-head">
+            <span class="step-number">2</span>
+            <div class="step-title-group">
+              <strong>{{ 'overlay.stepLayersTitle' | translate }}</strong>
+              <span>{{ 'overlay.stepLayersDesc' | translate }}</span>
+            </div>
+          </div>
+
+          @if (layers.length === 0) {
+            <app-file-dropzone
+              accept="application/pdf"
+              icon="layers"
+              [multiple]="true"
+              [title]="'overlay.layerDropTitle' | translate"
+              [description]="'overlay.layerDropDesc' | translate"
+              (filesSelected)="onLayersSelected($event)"
+              (fileSelected)="onLayersSelected([$event])">
+            </app-file-dropzone>
+          } @else {
+            <ul class="layer-list">
+              @for (layer of layers; track layer.id) {
+                <li class="layer-row">
+                  <div class="layer-top">
+                    <span class="layer-letter">{{ layerLetter($index) }}</span>
+                    <span class="layer-name">{{ layer.name }}</span>
+                  </div>
+
+                  <div class="layer-meta">
+                    <span>{{ 'overlay.layerPages' | translate:{ count: layer.pageCount } }}</span>
+                  </div>
+
+                  <label class="layer-field" [attr.for]="'opacity-' + layer.id">
+                    {{ 'overlay.opacityLabel' | translate:{ percent: opacityPercent(layer) } }}
+                  </label>
+                  <input
+                    [id]="'opacity-' + layer.id"
+                    class="panel-range"
+                    type="range"
+                    min="0.02"
+                    max="1"
+                    step="0.02"
+                    [disabled]="working"
+                    [ngModel]="layer.opacity"
+                    (ngModelChange)="onOpacityChange(layer.id, $event)" />
+
+                  <label class="switch-row">
+                    <input
+                      type="checkbox"
+                      [disabled]="working"
+                      [ngModel]="layer.scaleToFit"
+                      (ngModelChange)="updateLayer(layer.id, { scaleToFit: $event })" />
+                    <span class="switch-text">
+                      <strong>{{ 'overlay.scaleToFitLabel' | translate }}</strong>
+                      <small>{{ 'overlay.scaleToFitDesc' | translate }}</small>
+                    </span>
+                  </label>
+
+                  <div class="layer-actions">
+                    <button
+                      type="button"
+                      class="row-btn"
+                      [disabled]="working || $index === 0"
+                      [attr.aria-label]="'common.moveUp' | translate"
+                      (click)="moveLayer($index, -1)">
+                      <app-icon name="arrow-up" size="sm"></app-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="row-btn"
+                      [disabled]="working || $index === layers.length - 1"
+                      [attr.aria-label]="'common.moveDown' | translate"
+                      (click)="moveLayer($index, 1)">
+                      <app-icon name="arrow-down" size="sm"></app-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="row-btn danger"
+                      [disabled]="working"
+                      [attr.aria-label]="'common.remove' | translate"
+                      (click)="removeLayer(layer.id)">
+                      <app-icon name="trash" size="sm"></app-icon>
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+
+            <app-button variant="outline" size="md" [block]="true" [disabled]="working" (clicked)="addLayers()">
+              <app-icon name="add" class="btn-icon"></app-icon>
+              {{ 'overlay.addLayer' | translate }}
+            </app-button>
+          }
+        </section>
+
+        <!-- ─────────── 3. How it is applied ─────────── -->
+        <section class="step-card">
+          <div class="step-head">
+            <span class="step-number">3</span>
+            <div class="step-title-group">
+              <strong>{{ 'overlay.stepSettingsTitle' | translate }}</strong>
+              <span>{{ 'overlay.stepSettingsDesc' | translate }}</span>
+            </div>
+          </div>
+
+          <span class="field-label">{{ 'overlay.presetLabel' | translate }}</span>
+          <div class="preset-grid">
+            @for (preset of presets; track preset.id) {
+              <button
+                type="button"
+                class="preset-btn"
+                [class.active]="activePreset === preset.id"
+                [disabled]="working"
+                (click)="applyPreset(preset)">
+                <strong>{{ preset.labelKey | translate }}</strong>
+                <small>{{ preset.descriptionKey | translate }}</small>
+              </button>
+            }
+          </div>
+
+          <span class="field-label">{{ 'overlay.positionLabel' | translate }}</span>
+          <div class="seg-row" role="radiogroup" [attr.aria-label]="'overlay.positionLabel' | translate">
+            <button
+              type="button"
+              class="seg-btn"
+              role="radio"
+              [class.active]="options.position === 'background'"
+              [attr.aria-checked]="options.position === 'background'"
+              [disabled]="working"
+              (click)="setPosition('background')">
+              {{ 'overlay.positionBackground' | translate }}
+            </button>
+            <button
+              type="button"
+              class="seg-btn"
+              role="radio"
+              [class.active]="options.position === 'foreground'"
+              [attr.aria-checked]="options.position === 'foreground'"
+              [disabled]="working"
+              (click)="setPosition('foreground')">
+              {{ 'overlay.positionForeground' | translate }}
+            </button>
+          </div>
+          <p class="card-foot">
+            {{ (options.position === 'background'
+              ? 'overlay.positionBackgroundDesc'
+              : 'overlay.positionForegroundDesc') | translate }}
+          </p>
+
+          <span class="field-label">{{ 'overlay.mappingLabel' | translate }}</span>
+          <div class="mode-list" role="radiogroup" [attr.aria-label]="'overlay.mappingLabel' | translate">
+            @for (mode of mappingModes; track mode) {
+              <button
+                type="button"
+                class="mode-btn"
+                role="radio"
+                [class.active]="options.mode === mode"
+                [attr.aria-checked]="options.mode === mode"
+                [disabled]="working"
+                (click)="setMode(mode)">
+                <strong>{{ modeLabelKey(mode) | translate }}</strong>
+                <small>{{ modeDescKey(mode) | translate }}</small>
+              </button>
+            }
+          </div>
+
+          @if (options.mode === 'fixed-repeat') {
+            <label class="field-label" for="overlay-repeat">
+              {{ 'overlay.repeatLabel' | translate }}
+            </label>
+            <input
+              id="overlay-repeat"
+              class="panel-input"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              max="200"
+              [disabled]="working"
+              [ngModel]="options.repeatCount"
+              (ngModelChange)="onRepeatChange($event)" />
+            <p class="card-foot">{{ 'overlay.repeatDesc' | translate }}</p>
+          }
+
+          <label class="switch-row">
+            <input
+              type="checkbox"
+              [disabled]="working"
+              [ngModel]="options.cycle"
+              (ngModelChange)="updateOptions({ cycle: $event })" />
+            <span class="switch-text">
+              <strong>{{ 'overlay.cycleLabel' | translate }}</strong>
+              <small>{{ 'overlay.cycleDesc' | translate }}</small>
+            </span>
+          </label>
+
+          @if (plan) {
+            <span class="field-label">{{ 'overlay.mappingPreviewLabel' | translate }}</span>
+            <div class="map-row scroll-row" [appAutoScroll]="true" [autoScrollSpeed]="0.4">
+              @for (label of mappingLabels; track $index) {
+                <span class="map-chip" [class.bare]="label.endsWith('—')">{{ label }}</span>
+              }
+              @if (plan.basePageCount > mappingLabels.length) {
+                <span class="map-chip more">
+                  +{{ plan.basePageCount - mappingLabels.length }}
+                </span>
+              }
+            </div>
+
+            @if (uncoveredCount > 0) {
+              <p class="card-foot warn">
+                {{ 'overlay.uncoveredNote' | translate:{ count: uncoveredCount } }}
+              </p>
+            }
+          }
+        </section>
+
+        <!-- ─────────── Preview ─────────── -->
+        @if (baseFile && layers.length > 0) {
+          <section class="preview-card">
+            <div class="preview-head">
+              <strong>{{ 'overlay.previewTitle' | translate }}</strong>
+              <app-button
+                variant="ghost"
+                size="sm"
+                [disabled]="previewLoading || working"
+                (clicked)="renderPreview()">
+                <app-icon name="refresh" size="sm"></app-icon>
+              </app-button>
+            </div>
+
+            @if (previewLoading) {
+              <div class="preview-placeholder">
+                <div class="preview-spinner" aria-hidden="true"></div>
+                <span>{{ 'overlay.previewLoading' | translate }}</span>
+              </div>
+            } @else if (previewUrl) {
+              <img
+                class="preview-image"
+                [src]="previewUrl"
+                [alt]="'overlay.previewTitle' | translate" />
+              <p class="card-foot">{{ 'overlay.previewNote' | translate }}</p>
+            } @else {
+              <div class="preview-placeholder">
+                <app-icon name="image" size="lg"></app-icon>
+                <span>{{ 'overlay.previewUnavailable' | translate }}</span>
+              </div>
+            }
+          </section>
+        }
+
+        <!-- ─────────── Progress ─────────── -->
+        @if (working) {
+          <div class="work-card">
+            <app-progress
+              [value]="workPercent"
+              [stage]="'overlay.working' | translate"
+              color="primary">
+            </app-progress>
+            <app-button variant="ghost" size="md" [block]="true" (clicked)="cancelExport()">
+              {{ 'common.cancel' | translate }}
+            </app-button>
+          </div>
+        }
+
+        <!-- ─────────── Error ─────────── -->
+        @if (errorMessage && !working) {
+          <div class="error-card" role="alert">
+            <app-icon name="alert-circle" size="sm"></app-icon>
+            <span>{{ errorMessage }}</span>
+          </div>
+        }
+
+        <!-- ─────────── Result ─────────── -->
+        @if (result) {
+          <section class="result-card">
+            <div class="result-head">
+              <app-icon name="checkmark-circle" size="lg"></app-icon>
+              <div class="result-title-group">
+                <strong>{{ 'overlay.resultTitle' | translate }}</strong>
+                <span class="result-name">{{ result.name }}</span>
+              </div>
+            </div>
+
+            <div class="result-stats">
+              <div class="stat">
+                <span class="stat-label">{{ 'common.pages' | translate }}</span>
+                <strong>{{ result.pageCount }}</strong>
+              </div>
+              <div class="stat">
+                <span class="stat-label">{{ 'common.size' | translate }}</span>
+                <strong>
+                  {{ (result.sizeBytes / 1024) | number:'1.0-0' }} {{ 'common.kb' | translate }}
+                </strong>
+              </div>
+            </div>
+
+            @if (result.notices.length > 0) {
+              <ul class="notice-list">
+                @for (notice of result.notices; track $index) {
+                  <li [class.warn]="isWarningNotice(notice)">
+                    <app-icon
+                      [name]="isWarningNotice(notice) ? 'warning' : 'information-circle'"
+                      size="sm">
+                    </app-icon>
+                    <span>{{ noticeKey(notice) | translate:noticeParams(notice) }}</span>
+                  </li>
+                }
+              </ul>
+            }
+
+            <div class="result-actions">
+              <app-button variant="success" size="lg" [block]="true" (clicked)="saveResult()">
+                <app-icon name="save" class="btn-icon"></app-icon>
+                {{ 'common.save' | translate }}
+              </app-button>
+              <div class="result-actions-row">
+                <app-button variant="outline" size="md" (clicked)="previewResult()">
+                  <app-icon name="eye" class="btn-icon"></app-icon>
+                  {{ 'common.preview' | translate }}
+                </app-button>
+                <app-button variant="outline" size="md" (clicked)="shareResult()">
+                  <app-icon name="share-social" class="btn-icon"></app-icon>
+                  {{ 'common.share' | translate }}
+                </app-button>
+              </div>
+              <app-button variant="ghost" size="sm" [block]="true" (clicked)="startOver()">
+                {{ 'overlay.changeSettings' | translate }}
+              </app-button>
+            </div>
+          </section>
+        }
+
+        <!-- ─────────── Sticky export bar ─────────── -->
+        @if (!result && !working) {
+          <div class="export-bar">
+            @if (blockedReasonKey) {
+              <p class="blocked-note">{{ blockedReasonKey | translate }}</p>
+            }
+            <app-button
+              variant="primary"
+              size="lg"
+              [block]="true"
+              [disabled]="!!blockedReasonKey"
+              (clicked)="runExport()">
+              <app-icon name="layers" class="btn-icon"></app-icon>
+              {{ 'overlay.exportBtn' | translate }}
+            </app-button>
+          </div>
+        }
+      </div>
+
+      <app-related-tools
+        currentToolId="pdf_overlay"
+        category="ORGANIZE"
+        [limit]="4">
+      </app-related-tools>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

@@ -1,0 +1,900 @@
+<div class="mode-panel">
+  <!-- ═══════════════ D1 — normalize page size & scale ═══════════════ -->
+  @if (mode === 'normalize') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'layout.normalizeHint' | translate }}</p>
+
+      @if (survey?.mixed) {
+        <div class="notice-card warn">
+          <app-icon name="warning" size="sm"></app-icon>
+          <div class="notice-text">
+            <strong>{{ 'layout.mixedSizesTitle' | translate:{ count: survey!.groups.length } }}</strong>
+            <span>{{ 'layout.mixedSizesBody' | translate }}</span>
+          </div>
+        </div>
+        <div class="size-group-list">
+          @for (group of survey!.groups; track group.key) {
+            <div class="size-group-row">
+              <span class="group-dims">
+                {{ group.standardName || (group.widthPt + ' × ' + group.heightPt + ' pt') }}
+              </span>
+              <span class="group-count">
+                {{ 'layout.groupPageCount' | translate:{ count: group.pageNumbers.length } }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+
+      <span class="field-label">{{ 'layout.targetSizeLabel' | translate }}</span>
+      <div class="chip-row scroll-row" [appAutoScroll]="true" [autoScrollSpeed]="0.4">
+        @for (choice of sizeChoices; track choice.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="config.normalize.target === choice.value"
+            [disabled]="busy"
+            (click)="updateNormalize({ target: choice.value })">
+            {{ choice.labelKey ? (choice.labelKey | translate) : choice.label }}
+          </button>
+        }
+      </div>
+
+      <span class="field-label">{{ 'layout.orientationLabel' | translate }}</span>
+      <div class="seg-row" role="radiogroup" [attr.aria-label]="'layout.orientationLabel' | translate">
+        @for (option of orientations; track option.value) {
+          <button
+            type="button"
+            class="seg-btn"
+            role="radio"
+            [class.active]="config.normalize.orientation === option.value"
+            [attr.aria-checked]="config.normalize.orientation === option.value"
+            [disabled]="busy"
+            (click)="updateNormalize({ orientation: option.value })">
+            {{ option.labelKey | translate }}
+          </button>
+        }
+      </div>
+
+      <label class="field-label" for="layout-scale">{{ 'layout.scaleLabel' | translate }}</label>
+      <div class="number-row">
+        <input
+          id="layout-scale"
+          class="panel-input"
+          type="number"
+          inputmode="numeric"
+          min="10"
+          max="400"
+          step="5"
+          [disabled]="busy"
+          [ngModel]="scalePercent"
+          (ngModelChange)="onScalePercentChange($event)" />
+        <span class="unit-suffix">%</span>
+      </div>
+      <div class="chip-row">
+        @for (preset of scalePresets; track preset) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="config.normalize.scale === preset"
+            [disabled]="busy"
+            (click)="updateNormalize({ scale: preset })">
+            {{ preset * 100 }}%
+          </button>
+        }
+      </div>
+
+      <label class="switch-row">
+        <input
+          type="checkbox"
+          [disabled]="busy"
+          [ngModel]="config.normalize.centre"
+          (ngModelChange)="updateNormalize({ centre: $event })" />
+        <span class="switch-text">
+          <strong>{{ 'layout.centreLabel' | translate }}</strong>
+          <small>{{ 'layout.centreDesc' | translate }}</small>
+        </span>
+      </label>
+
+      <label class="switch-row">
+        <input
+          type="checkbox"
+          [disabled]="busy"
+          [ngModel]="config.normalize.shrinkOnly"
+          (ngModelChange)="updateNormalize({ shrinkOnly: $event })" />
+        <span class="switch-text">
+          <strong>{{ 'layout.shrinkOnlyLabel' | translate }}</strong>
+          <small>{{ 'layout.shrinkOnlyDesc' | translate }}</small>
+        </span>
+      </label>
+    </div>
+  }
+
+  <!-- ═══════════════ D2 — crop / trim margins ═══════════════ -->
+  @if (mode === 'crop') {
+    <div class="mode-config">
+      <div class="seg-row" role="radiogroup" [attr.aria-label]="'layout.cropModeLabel' | translate">
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.crop.mode === 'auto'"
+          [attr.aria-checked]="config.crop.mode === 'auto'"
+          [disabled]="busy"
+          (click)="updateCrop({ mode: 'auto' })">
+          {{ 'layout.cropModeAuto' | translate }}
+        </button>
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.crop.mode === 'manual'"
+          [attr.aria-checked]="config.crop.mode === 'manual'"
+          [disabled]="busy"
+          (click)="updateCrop({ mode: 'manual' })">
+          {{ 'layout.cropModeManual' | translate }}
+        </button>
+      </div>
+
+      @if (config.crop.mode === 'auto') {
+        <p class="config-hint">{{ 'layout.cropAutoHint' | translate }}</p>
+
+        <label class="field-label" for="crop-padding">{{ 'layout.cropPaddingLabel' | translate }}</label>
+        <div class="number-row">
+          <input
+            id="crop-padding"
+            class="panel-input"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            max="50"
+            step="0.5"
+            [disabled]="busy || scanning"
+            [ngModel]="config.crop.paddingMm"
+            (ngModelChange)="onPaddingChange($event)" />
+          <span class="unit-suffix">mm</span>
+        </div>
+        <div class="chip-row">
+          @for (preset of paddingPresets; track preset) {
+            <button
+              type="button"
+              class="chip"
+              [class.active]="config.crop.paddingMm === preset"
+              [disabled]="busy || scanning"
+              (click)="updateCrop({ paddingMm: preset })">
+              {{ preset }} mm
+            </button>
+          }
+        </div>
+
+        <label class="switch-row">
+          <input
+            type="checkbox"
+            [disabled]="busy || scanning"
+            [ngModel]="config.crop.uniform"
+            (ngModelChange)="updateCrop({ uniform: $event })" />
+          <span class="switch-text">
+            <strong>{{ 'layout.cropUniformLabel' | translate }}</strong>
+            <small>{{ 'layout.cropUniformDesc' | translate }}</small>
+          </span>
+        </label>
+
+        <label class="field-label" for="crop-ink">{{ 'layout.cropInkLabel' | translate }}</label>
+        <input
+          id="crop-ink"
+          class="panel-range"
+          type="range"
+          min="100"
+          max="254"
+          step="1"
+          [disabled]="busy || scanning"
+          [ngModel]="config.crop.inkThreshold"
+          (ngModelChange)="onInkThresholdChange($event)" />
+        <p class="config-foot">{{ 'layout.cropInkDesc' | translate:{ value: config.crop.inkThreshold } }}</p>
+
+        @if (scanning) {
+          <app-progress
+            [value]="scanPercent"
+            [stage]="'layout.cropScanning' | translate"
+            color="primary">
+          </app-progress>
+          <app-button variant="ghost" size="md" [block]="true" (clicked)="cancelScan.emit()">
+            {{ 'common.cancel' | translate }}
+          </app-button>
+        } @else {
+          <app-button
+            variant="outline"
+            size="md"
+            [block]="true"
+            [disabled]="busy || pageCount === 0"
+            (clicked)="autoTrim.emit()">
+            <app-icon name="scan" class="btn-icon"></app-icon>
+            {{ 'layout.cropAutoTrimBtn' | translate }}
+          </app-button>
+        }
+
+        @if (autoCropFound > 0) {
+          <p class="config-foot ok">
+            {{ 'layout.cropScanResult' | translate:{ count: autoCropFound } }}
+          </p>
+        }
+        @if (autoCropBlank > 0) {
+          <p class="config-foot warn">
+            {{ 'layout.cropScanBlank' | translate:{ count: autoCropBlank } }}
+          </p>
+        }
+      } @else {
+        <p class="config-hint">{{ 'layout.cropManualHint' | translate }}</p>
+
+        <span class="field-label">{{ 'layout.cropTrimLabel' | translate }}</span>
+        <div class="edge-grid">
+          @for (edge of marginEdges; track edge.key) {
+            <div class="edge-field">
+              <label [attr.for]="'crop-edge-' + edge.key">{{ edge.labelKey | translate }}</label>
+              <div class="number-row compact">
+                <input
+                  [id]="'crop-edge-' + edge.key"
+                  class="panel-input"
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  max="45"
+                  step="0.5"
+                  [disabled]="busy"
+                  [ngModel]="cropEdgePercent(edge.key)"
+                  (ngModelChange)="onCropEdgeChange(edge.key, $event)" />
+                <span class="unit-suffix">%</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <app-button variant="ghost" size="md" [block]="true" [disabled]="busy" (clicked)="resetCrop.emit()">
+          {{ 'layout.cropResetBtn' | translate }}
+        </app-button>
+      }
+
+      <span class="field-label">{{ 'layout.scopeLabel' | translate }}</span>
+      <div class="seg-row" role="radiogroup" [attr.aria-label]="'layout.scopeLabel' | translate">
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.crop.scope === 'all'"
+          [attr.aria-checked]="config.crop.scope === 'all'"
+          [disabled]="busy"
+          (click)="updateCrop({ scope: 'all' })">
+          {{ 'layout.scopeAll' | translate:{ count: pageCount } }}
+        </button>
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.crop.scope === 'current'"
+          [attr.aria-checked]="config.crop.scope === 'current'"
+          [disabled]="busy"
+          (click)="updateCrop({ scope: 'current' })">
+          {{ 'layout.scopeCurrent' | translate }}
+        </button>
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.crop.scope === 'range'"
+          [attr.aria-checked]="config.crop.scope === 'range'"
+          [disabled]="busy"
+          (click)="updateCrop({ scope: 'range' })">
+          {{ 'layout.scopeRange' | translate }}
+        </button>
+      </div>
+
+      @if (config.crop.scope === 'range') {
+        <label class="field-label" for="crop-range">{{ 'layout.rangeLabel' | translate }}</label>
+        <input
+          id="crop-range"
+          class="panel-input"
+          type="text"
+          inputmode="numeric"
+          placeholder="1-3, 7"
+          [disabled]="busy"
+          [ngModel]="config.crop.rangeString || ''"
+          (ngModelChange)="updateCrop({ rangeString: $event })" />
+        <p class="config-foot">{{ 'layout.rangeHint' | translate:{ max: pageCount } }}</p>
+      }
+    </div>
+  }
+
+  <!-- ═══════════════ D3 — add margins & padding ═══════════════ -->
+  @if (mode === 'margins') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'layout.marginsHint' | translate }}</p>
+
+      <label class="switch-row">
+        <input
+          type="checkbox"
+          [disabled]="busy"
+          [ngModel]="config.margins.growToNextPaper"
+          (ngModelChange)="updateMargins({ growToNextPaper: $event })" />
+        <span class="switch-text">
+          <strong>{{ 'layout.growNextLabel' | translate }}</strong>
+          <small>{{ 'layout.growNextDesc' | translate }}</small>
+        </span>
+      </label>
+
+      @if (!config.margins.growToNextPaper) {
+        <span class="field-label">{{ 'layout.unitLabel' | translate }}</span>
+        <div class="seg-row" role="radiogroup" [attr.aria-label]="'layout.unitLabel' | translate">
+          <button
+            type="button"
+            class="seg-btn"
+            role="radio"
+            [class.active]="config.margins.unit === 'mm'"
+            [attr.aria-checked]="config.margins.unit === 'mm'"
+            [disabled]="busy"
+            (click)="updateMargins({ unit: 'mm' })">
+            mm
+          </button>
+          <button
+            type="button"
+            class="seg-btn"
+            role="radio"
+            [class.active]="config.margins.unit === 'pt'"
+            [attr.aria-checked]="config.margins.unit === 'pt'"
+            [disabled]="busy"
+            (click)="updateMargins({ unit: 'pt' })">
+            pt
+          </button>
+        </div>
+
+        <label class="switch-row">
+          <input
+            type="checkbox"
+            [disabled]="busy"
+            [ngModel]="config.margins.uniform"
+            (ngModelChange)="updateMargins({ uniform: $event })" />
+          <span class="switch-text">
+            <strong>{{ 'layout.marginsUniformLabel' | translate }}</strong>
+            <small>{{ 'layout.marginsUniformDesc' | translate }}</small>
+          </span>
+        </label>
+
+        @if (config.margins.uniform) {
+          <label class="field-label" for="margin-all">{{ 'layout.marginAllLabel' | translate }}</label>
+          <div class="number-row">
+            <input
+              id="margin-all"
+              class="panel-input"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              max="200"
+              step="1"
+              [disabled]="busy"
+              [ngModel]="config.margins.all"
+              (ngModelChange)="onMarginAllChange($event)" />
+            <span class="unit-suffix">{{ config.margins.unit }}</span>
+          </div>
+          <div class="chip-row">
+            @for (preset of marginPresets; track preset) {
+              <button
+                type="button"
+                class="chip"
+                [class.active]="config.margins.all === preset"
+                [disabled]="busy"
+                (click)="updateMargins({ all: preset })">
+                {{ preset }} {{ config.margins.unit }}
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="edge-grid">
+            @for (edge of marginEdges; track edge.key) {
+              <div class="edge-field">
+                <label [attr.for]="'margin-' + edge.key">{{ edge.labelKey | translate }}</label>
+                <div class="number-row compact">
+                  <input
+                    [id]="'margin-' + edge.key"
+                    class="panel-input"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    max="200"
+                    step="1"
+                    [disabled]="busy"
+                    [ngModel]="marginEdgeValue(edge.key)"
+                    (ngModelChange)="onMarginEdgeChange(edge.key, $event)" />
+                  <span class="unit-suffix">{{ config.margins.unit }}</span>
+                </div>
+              </div>
+            }
+          </div>
+          <p class="config-foot">{{ 'layout.bindingEdgeHint' | translate }}</p>
+        }
+      }
+    </div>
+  }
+
+  <!-- ═══════════════ D4 — N-up multi-page layout ═══════════════ -->
+  @if (mode === 'nup') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'layout.nupHint' | translate }}</p>
+
+      <span class="field-label">{{ 'layout.perSheetLabel' | translate }}</span>
+      <div class="chip-row">
+        @for (choice of nupChoices; track choice) {
+          <button
+            type="button"
+            class="chip wide"
+            [class.active]="config.nup.perSheet === choice"
+            [disabled]="busy"
+            (click)="updateNup({ perSheet: choice })">
+            {{ 'layout.nupPerSheet' | translate:{ count: choice } }}
+          </button>
+        }
+      </div>
+
+      <span class="field-label">{{ 'layout.nupOrderLabel' | translate }}</span>
+      <div class="seg-row" role="radiogroup" [attr.aria-label]="'layout.nupOrderLabel' | translate">
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.nup.order === 'row-major'"
+          [attr.aria-checked]="config.nup.order === 'row-major'"
+          [disabled]="busy"
+          (click)="updateNup({ order: 'row-major' })">
+          {{ 'layout.nupOrderRow' | translate }}
+        </button>
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.nup.order === 'column-major'"
+          [attr.aria-checked]="config.nup.order === 'column-major'"
+          [disabled]="busy"
+          (click)="updateNup({ order: 'column-major' })">
+          {{ 'layout.nupOrderColumn' | translate }}
+        </button>
+      </div>
+
+      <span class="field-label">{{ 'layout.sheetSizeLabel' | translate }}</span>
+      <div class="chip-row scroll-row" [appAutoScroll]="true" [autoScrollSpeed]="0.4">
+        @for (choice of sizeChoices; track choice.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="config.nup.sheet === choice.value"
+            [disabled]="busy"
+            (click)="updateNup({ sheet: choice.value })">
+            {{ choice.labelKey ? (choice.labelKey | translate) : choice.label }}
+          </button>
+        }
+      </div>
+
+      <div class="seg-row" role="radiogroup" [attr.aria-label]="'layout.orientationLabel' | translate">
+        @for (option of orientations; track option.value) {
+          <button
+            type="button"
+            class="seg-btn"
+            role="radio"
+            [class.active]="config.nup.orientation === option.value"
+            [attr.aria-checked]="config.nup.orientation === option.value"
+            [disabled]="busy"
+            (click)="updateNup({ orientation: option.value })">
+            {{ option.labelKey | translate }}
+          </button>
+        }
+      </div>
+
+      <div class="edge-grid">
+        <div class="edge-field">
+          <label for="nup-gutter">{{ 'layout.gutterLabel' | translate }}</label>
+          <div class="number-row compact">
+            <input
+              id="nup-gutter"
+              class="panel-input"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              max="50"
+              step="1"
+              [disabled]="busy"
+              [ngModel]="config.nup.gutterMm"
+              (ngModelChange)="onGutterChange($event)" />
+            <span class="unit-suffix">mm</span>
+          </div>
+        </div>
+        <div class="edge-field">
+          <label for="nup-margin">{{ 'layout.sheetMarginLabel' | translate }}</label>
+          <div class="number-row compact">
+            <input
+              id="nup-margin"
+              class="panel-input"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              max="50"
+              step="1"
+              [disabled]="busy"
+              [ngModel]="config.nup.marginMm"
+              (ngModelChange)="onNupMarginChange($event)" />
+            <span class="unit-suffix">mm</span>
+          </div>
+        </div>
+      </div>
+
+      <label class="switch-row">
+        <input
+          type="checkbox"
+          [disabled]="busy"
+          [ngModel]="config.nup.border"
+          (ngModelChange)="updateNup({ border: $event })" />
+        <span class="switch-text">
+          <strong>{{ 'layout.cellBorderLabel' | translate }}</strong>
+          <small>{{ 'layout.cellBorderDesc' | translate }}</small>
+        </span>
+      </label>
+
+      @if (nupPlan) {
+        <div class="plan-card">
+          <div class="plan-row">
+            <span>{{ 'layout.nupGridLabel' | translate }}</span>
+            <strong>{{ nupPlan.rows }} × {{ nupPlan.columns }}</strong>
+          </div>
+          <div class="plan-row">
+            <span>{{ 'layout.nupSheetCountLabel' | translate }}</span>
+            <strong>{{ 'layout.sheetCount' | translate:{ count: nupPlan.sheetCount } }}</strong>
+          </div>
+          @if (nupPlan.emptyCellCount > 0) {
+            <p class="config-foot">
+              {{ 'layout.nupEmptyCells' | translate:{ count: nupPlan.emptyCellCount } }}
+            </p>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ═══════════════ D5 — booklet imposition ═══════════════ -->
+  @if (mode === 'booklet') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'layout.bookletHint' | translate }}</p>
+
+      <span class="field-label">{{ 'layout.sheetSizeLabel' | translate }}</span>
+      <div class="chip-row scroll-row" [appAutoScroll]="true" [autoScrollSpeed]="0.4">
+        @for (choice of sizeChoices; track choice.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="config.booklet.sheet === choice.value"
+            [disabled]="busy"
+            (click)="updateBooklet({ sheet: choice.value })">
+            {{ choice.labelKey ? (choice.labelKey | translate) : choice.label }}
+          </button>
+        }
+      </div>
+
+      <span class="field-label">{{ 'layout.bindingLabel' | translate }}</span>
+      <div class="seg-row" role="radiogroup" [attr.aria-label]="'layout.bindingLabel' | translate">
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.booklet.binding === 'left'"
+          [attr.aria-checked]="config.booklet.binding === 'left'"
+          [disabled]="busy"
+          (click)="updateBooklet({ binding: 'left' })">
+          {{ 'layout.bindingLeft' | translate }}
+        </button>
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.booklet.binding === 'right'"
+          [attr.aria-checked]="config.booklet.binding === 'right'"
+          [disabled]="busy"
+          (click)="updateBooklet({ binding: 'right' })">
+          {{ 'layout.bindingRight' | translate }}
+        </button>
+      </div>
+
+      <label class="field-label" for="booklet-creep">{{ 'layout.creepLabel' | translate }}</label>
+      <div class="number-row">
+        <input
+          id="booklet-creep"
+          class="panel-input"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          max="20"
+          step="0.5"
+          [disabled]="busy"
+          [ngModel]="config.booklet.creepMm"
+          (ngModelChange)="onCreepChange($event)" />
+        <span class="unit-suffix">mm</span>
+      </div>
+      <div class="chip-row">
+        @for (preset of creepPresets; track preset) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="config.booklet.creepMm === preset"
+            [disabled]="busy"
+            (click)="updateBooklet({ creepMm: preset })">
+            {{ preset }} mm
+          </button>
+        }
+      </div>
+      <p class="config-foot">{{ 'layout.creepDesc' | translate }}</p>
+
+      <label class="switch-row">
+        <input
+          type="checkbox"
+          [disabled]="busy"
+          [ngModel]="config.booklet.foldMark"
+          (ngModelChange)="updateBooklet({ foldMark: $event })" />
+        <span class="switch-text">
+          <strong>{{ 'layout.foldMarkLabel' | translate }}</strong>
+          <small>{{ 'layout.foldMarkDesc' | translate }}</small>
+        </span>
+      </label>
+
+      @if (bookletPlan) {
+        <div class="plan-card">
+          <div class="plan-row">
+            <span>{{ 'layout.bookletSheetsLabel' | translate }}</span>
+            <strong>{{ 'layout.sheetCount' | translate:{ count: bookletPlan.sheetCount } }}</strong>
+          </div>
+          <div class="plan-row">
+            <span>{{ 'layout.bookletSidesLabel' | translate }}</span>
+            <strong>{{ bookletPlan.sides.length }}</strong>
+          </div>
+          @if (bookletPlan.blanksAdded > 0) {
+            <p class="config-foot">
+              {{ 'layout.bookletPadding' | translate:{ count: bookletPlan.blanksAdded, total: bookletPlan.paddedPageCount } }}
+            </p>
+          }
+          <div class="seq-row">
+            <span class="seq-label">{{ 'layout.bookletOrderLabel' | translate }}</span>
+            <div class="seq-chips" [appAutoScroll]="true" [autoScrollSpeed]="0.4">
+              @for (page of bookletPlan.sequence; track $index) {
+                <span class="seq-chip" [class.blank]="page > pageCount">
+                  {{ page > pageCount ? '–' : page }}
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="notice-card info">
+        <app-icon name="information-circle" size="sm"></app-icon>
+        <div class="notice-text">
+          <strong>{{ 'layout.printNoteTitle' | translate }}</strong>
+          <span>{{ 'layout.printNoteBody' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════ D6 — single long page ═══════════════ -->
+  @if (mode === 'long-page') {
+    <div class="mode-config">
+      <p class="config-hint">{{ 'layout.longHint' | translate }}</p>
+
+      <span class="field-label">{{ 'layout.widthModeLabel' | translate }}</span>
+      <div class="seg-row" role="radiogroup" [attr.aria-label]="'layout.widthModeLabel' | translate">
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.longPage.widthMode === 'widest'"
+          [attr.aria-checked]="config.longPage.widthMode === 'widest'"
+          [disabled]="busy"
+          (click)="updateLongPage({ widthMode: 'widest' })">
+          {{ 'layout.widthWidest' | translate }}
+        </button>
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.longPage.widthMode === 'narrowest'"
+          [attr.aria-checked]="config.longPage.widthMode === 'narrowest'"
+          [disabled]="busy"
+          (click)="updateLongPage({ widthMode: 'narrowest' })">
+          {{ 'layout.widthNarrowest' | translate }}
+        </button>
+        <button
+          type="button"
+          class="seg-btn"
+          role="radio"
+          [class.active]="config.longPage.widthMode === 'first'"
+          [attr.aria-checked]="config.longPage.widthMode === 'first'"
+          [disabled]="busy"
+          (click)="updateLongPage({ widthMode: 'first' })">
+          {{ 'layout.widthFirst' | translate }}
+        </button>
+      </div>
+
+      <label class="field-label" for="long-gap">{{ 'layout.gapLabel' | translate }}</label>
+      <div class="number-row">
+        <input
+          id="long-gap"
+          class="panel-input"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          max="50"
+          step="1"
+          [disabled]="busy"
+          [ngModel]="config.longPage.gapMm"
+          (ngModelChange)="onGapChange($event)" />
+        <span class="unit-suffix">mm</span>
+      </div>
+      <div class="chip-row">
+        @for (preset of gapPresets; track preset) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="config.longPage.gapMm === preset"
+            [disabled]="busy"
+            (click)="updateLongPage({ gapMm: preset })">
+            {{ preset }} mm
+          </button>
+        }
+      </div>
+
+      <label class="switch-row">
+        <input
+          type="checkbox"
+          [disabled]="busy"
+          [ngModel]="config.longPage.fillGaps"
+          (ngModelChange)="updateLongPage({ fillGaps: $event })" />
+        <span class="switch-text">
+          <strong>{{ 'layout.fillGapsLabel' | translate }}</strong>
+          <small>{{ 'layout.fillGapsDesc' | translate }}</small>
+        </span>
+      </label>
+
+      @if (longPlan) {
+        <div class="plan-card" [class.warn]="longExceedsLimit">
+          <div class="plan-row">
+            <span>{{ 'layout.longWidthLabel' | translate }}</span>
+            <strong>{{ longPlan.widthPt | number:'1.0-0' }} pt</strong>
+          </div>
+          <div class="plan-row">
+            <span>{{ 'layout.longHeightLabel' | translate }}</span>
+            <strong>{{ longHeightPt | number:'1.0-0' }} pt</strong>
+          </div>
+          <div class="plan-row">
+            <span>{{ 'layout.longOutputLabel' | translate }}</span>
+            <strong>{{ 'common.pages' | translate }}: {{ longPlan.outputPageCount }}</strong>
+          </div>
+        </div>
+      }
+
+      @if (longExceedsLimit) {
+        <div class="notice-card warn">
+          <app-icon name="warning" size="sm"></app-icon>
+          <div class="notice-text">
+            <strong>{{ 'layout.longLimitTitle' | translate:{ limit: maxPageDimension } }}</strong>
+            <span>{{ 'layout.longLimitBody' | translate:{ height: longHeightPt } }}</span>
+          </div>
+        </div>
+
+        <label class="switch-row">
+          <input
+            type="checkbox"
+            [disabled]="busy"
+            [ngModel]="config.longPage.splitWhenTooTall"
+            (ngModelChange)="updateLongPage({ splitWhenTooTall: $event })" />
+          <span class="switch-text">
+            <strong>{{ 'layout.longSplitLabel' | translate }}</strong>
+            <small>{{ 'layout.longSplitDesc' | translate:{ count: longPlan?.outputPageCount || 1 } }}</small>
+          </span>
+        </label>
+      }
+    </div>
+  }
+
+  <!-- ═══════════════ D7 — tone passes ═══════════════ -->
+  @if (mode === 'tone') {
+    <div class="mode-config">
+      <div class="notice-card warn">
+        <app-icon name="warning" size="sm"></app-icon>
+        <div class="notice-text">
+          <strong>{{ 'layout.toneRasterTitle' | translate }}</strong>
+          <span>{{ 'layout.toneRasterBody' | translate }}</span>
+        </div>
+      </div>
+
+      <span class="field-label">{{ 'layout.tonePassLabel' | translate }}</span>
+      <div class="tone-grid" role="radiogroup" [attr.aria-label]="'layout.tonePassLabel' | translate">
+        @for (pass of tonePasses; track pass) {
+          <button
+            type="button"
+            class="tone-btn"
+            role="radio"
+            [class.active]="config.tone.pass === pass"
+            [attr.aria-checked]="config.tone.pass === pass"
+            [disabled]="busy"
+            (click)="updateTone({ pass: pass })">
+            <span class="tone-swatch" [class]="'tone-swatch ' + pass"></span>
+            <span>{{ tonePassKey(pass) | translate }}</span>
+          </button>
+        }
+      </div>
+      <p class="config-foot">{{ tonePassDescKey(config.tone.pass) | translate }}</p>
+
+      @if (config.tone.pass === 'high-contrast') {
+        <label class="field-label" for="tone-threshold">{{ 'layout.toneThresholdLabel' | translate }}</label>
+        <input
+          id="tone-threshold"
+          class="panel-range"
+          type="range"
+          min="40"
+          max="220"
+          step="1"
+          [disabled]="busy"
+          [ngModel]="config.tone.threshold"
+          (ngModelChange)="onThresholdChange($event)" />
+        <p class="config-foot">{{ 'layout.toneThresholdDesc' | translate:{ value: config.tone.threshold } }}</p>
+      }
+
+      <span class="field-label">{{ 'layout.toneDpiLabel' | translate }}</span>
+      <div class="chip-row">
+        @for (dpi of dpiChoices; track dpi) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="config.tone.dpi === dpi"
+            [disabled]="busy"
+            (click)="updateTone({ dpi: dpi })">
+            {{ dpi }} DPI
+          </button>
+        }
+      </div>
+
+      <label class="field-label" for="tone-quality">{{ 'common.quality' | translate }}</label>
+      <input
+        id="tone-quality"
+        class="panel-range"
+        type="range"
+        min="0.3"
+        max="1"
+        step="0.02"
+        [disabled]="busy"
+        [ngModel]="config.tone.quality"
+        (ngModelChange)="onQualityChange($event)" />
+      <p class="config-foot">{{ 'layout.toneQualityDesc' | translate:{ percent: (config.tone.quality * 100) | number:'1.0-0' } }}</p>
+
+      <app-button
+        variant="outline"
+        size="md"
+        [block]="true"
+        [disabled]="busy || toneEstimating || pageCount === 0"
+        (clicked)="estimateTone.emit()">
+        <app-icon name="speedometer" class="btn-icon"></app-icon>
+        {{ toneEstimating ? ('layout.toneEstimating' | translate) : ('layout.toneEstimateBtn' | translate) }}
+      </app-button>
+
+      @if (toneEstimate) {
+        @if (toneEstimate.unavailableReason) {
+          <p class="config-foot warn">{{ 'layout.toneEstimateUnavailable' | translate }}</p>
+        } @else {
+          <div class="plan-card">
+            <div class="plan-row">
+              <span>{{ 'layout.toneEstimateLabel' | translate }}</span>
+              <strong>{{ toneEstimateKb | number:'1.0-0' }} {{ 'common.kb' | translate }}</strong>
+            </div>
+            <div class="plan-row">
+              <span>{{ 'layout.tonePixelsLabel' | translate }}</span>
+              <strong>{{ toneEstimate.samplePixels.width }} × {{ toneEstimate.samplePixels.height }}</strong>
+            </div>
+            <p class="config-foot">{{ 'layout.toneEstimateNote' | translate }}</p>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

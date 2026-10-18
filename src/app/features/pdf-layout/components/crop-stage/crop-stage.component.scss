@@ -1,0 +1,207 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.crop-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.crop-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.crop-title {
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.crop-kept {
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.crop-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 220px;
+  padding: var(--space-4);
+  background: var(--color-surface-sunken);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-caption);
+  text-align: center;
+}
+
+.crop-spinner {
+  width: 26px;
+  height: 26px;
+  border: 2.5px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: crop-spin 0.9s linear infinite;
+}
+
+@keyframes crop-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crop-spinner { animation-duration: 2.4s; }
+}
+
+/*
+ * The stage is the image's own box, so every fraction in the overlay is a
+ * fraction of the page rather than of some padded container. `touch-action:
+ * none` is what stops the browser from scrolling the page out from under a
+ * drag — without it a handle can be grabbed and the page moves instead.
+ */
+.crop-stage {
+  position: relative;
+  align-self: center;
+  max-width: 100%;
+  line-height: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+
+  &.is-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+.crop-image {
+  display: block;
+  max-width: 100%;
+  max-height: 46vh;
+  height: auto;
+  background: #ffffff;
+  pointer-events: none;
+}
+
+.crop-shade {
+  position: absolute;
+  background: rgba(15, 23, 42, 0.52);
+  pointer-events: none;
+
+  &.top { top: 0; left: 0; right: 0; }
+  &.bottom { bottom: 0; left: 0; right: 0; }
+  &.left { left: 0; }
+  &.right { right: 0; }
+}
+
+.crop-box {
+  position: absolute;
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  cursor: move;
+  touch-action: none;
+}
+
+/* Rule-of-thirds guides, drawn with gradients so there are no extra nodes. */
+.crop-thirds {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to right, transparent 33.3%, rgba(255, 255, 255, 0.45) 33.3%, rgba(255, 255, 255, 0.45) calc(33.3% + 1px), transparent calc(33.3% + 1px), transparent 66.6%, rgba(255, 255, 255, 0.45) 66.6%, rgba(255, 255, 255, 0.45) calc(66.6% + 1px), transparent calc(66.6% + 1px)),
+    linear-gradient(to bottom, transparent 33.3%, rgba(255, 255, 255, 0.45) 33.3%, rgba(255, 255, 255, 0.45) calc(33.3% + 1px), transparent calc(33.3% + 1px), transparent 66.6%, rgba(255, 255, 255, 0.45) 66.6%, rgba(255, 255, 255, 0.45) calc(66.6% + 1px), transparent calc(66.6% + 1px));
+}
+
+/*
+ * The hit area is the button; the dot is its ::after. That is what lets the
+ * target be 44px for a thumb while the thing on screen stays a 14px dot that
+ * does not hide the page it is cropping.
+ */
+.crop-handle {
+  position: absolute;
+  width: var(--min-touch-target, 44px);
+  height: var(--min-touch-target, 44px);
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  touch-action: none;
+  cursor: pointer;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 14px;
+    height: 14px;
+    background: var(--color-surface);
+    border: 2.5px solid var(--color-primary);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:focus-visible::after {
+    box-shadow: var(--focus-ring);
+  }
+
+  &.edge::after {
+    width: 22px;
+    height: 8px;
+    border-radius: var(--radius-full);
+  }
+
+  &.handle-w::after,
+  &.handle-e::after {
+    width: 8px;
+    height: 22px;
+  }
+}
+
+.handle-nw { top: 0; left: 0; transform: translate(-50%, -50%); }
+.handle-ne { top: 0; right: 0; transform: translate(50%, -50%); }
+.handle-sw { bottom: 0; left: 0; transform: translate(-50%, 50%); }
+.handle-se { bottom: 0; right: 0; transform: translate(50%, 50%); }
+
+.handle-n { top: 0; left: 50%; transform: translate(-50%, -50%); }
+.handle-s { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+.handle-w { left: 0; top: 50%; transform: translate(-50%, -50%); }
+.handle-e { right: 0; top: 50%; transform: translate(50%, -50%); }
+
+.crop-hint {
+  margin: 0;
+  font-size: var(--font-caption);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* A small crop box on a phone would otherwise have overlapping handles. */
+@media (max-width: 480px) {
+  .crop-handle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .crop-image {
+    max-height: 40vh;
+  }
+}

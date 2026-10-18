@@ -1,0 +1,128 @@
+<app-modal
+  [isOpen]="isOpen"
+  [hasFooter]="true"
+  size="md"
+  [title]="'combine.preflightTitle' | translate"
+  [subtitle]="'combine.preflightSubtitle' | translate"
+  (closed)="closed.emit()"
+  (closeModal)="closed.emit()">
+  <div class="preflight-body">
+    @if (report) {
+      <!-- ─────────── Colliding field names ─────────── -->
+      @if (hasCollisions) {
+        <section class="pf-section">
+          <div class="pf-head warn">
+            <app-icon name="warning" size="sm"></app-icon>
+            <div class="pf-head-text">
+              <strong>
+                {{ 'combine.collisionTitle' | translate:{ count: report.collisions.length } }}
+              </strong>
+              <span>{{ 'combine.collisionBody' | translate }}</span>
+            </div>
+          </div>
+
+          <ul class="pf-rows">
+            @for (collision of report.collisions; track collision.fieldName) {
+              <li>
+                <code class="pf-field">{{ collision.fieldName }}</code>
+                <span class="pf-sources">{{ collisionSources($index) }}</span>
+              </li>
+            }
+          </ul>
+
+          <span class="pf-label">{{ 'combine.fieldsChoiceLabel' | translate }}</span>
+          <div class="pf-choices" role="radiogroup" [attr.aria-label]="'combine.fieldsChoiceLabel' | translate">
+            @for (choice of fieldChoices; track choice.value) {
+              <button
+                type="button"
+                class="pf-choice"
+                role="radio"
+                [class.active]="resolution.fields === choice.value"
+                [attr.aria-checked]="resolution.fields === choice.value"
+                [disabled]="busy"
+                (click)="setFields(choice.value)">
+                <app-icon [name]="choice.icon" size="md"></app-icon>
+                <span class="pf-choice-text">
+                  <strong>{{ choice.labelKey | translate }}</strong>
+                  <small>{{ choice.descKey | translate }}</small>
+                </span>
+              </button>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- ─────────── Signatures ─────────── -->
+      @if (hasSignatures) {
+        <section class="pf-section">
+          <div class="pf-head warn">
+            <app-icon name="shield" size="sm"></app-icon>
+            <div class="pf-head-text">
+              <strong>
+                {{ 'combine.signatureTitle' | translate:{ count: report.signatures.length } }}
+              </strong>
+              <span>{{ 'combine.signatureBody' | translate }}</span>
+            </div>
+          </div>
+
+          <ul class="pf-rows">
+            @for (finding of report.signatures; track finding.sourceIndex) {
+              <li>
+                <span class="pf-field plain">{{ finding.sourceName }}</span>
+                <span class="pf-sources">
+                  @if (finding.hasSignedValue) {
+                    {{ 'combine.signatureSigned' | translate }}
+                  } @else {
+                    {{ 'combine.signatureField' | translate }}
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+
+          <span class="pf-label">{{ 'combine.signatureChoiceLabel' | translate }}</span>
+          <div class="pf-choices" role="radiogroup" [attr.aria-label]="'combine.signatureChoiceLabel' | translate">
+            @for (choice of signatureChoices; track choice.value) {
+              <button
+                type="button"
+                class="pf-choice"
+                role="radio"
+                [class.active]="resolution.signatures === choice.value"
+                [attr.aria-checked]="resolution.signatures === choice.value"
+                [disabled]="busy"
+                (click)="setSignatures(choice.value)">
+                <app-icon [name]="choice.icon" size="md"></app-icon>
+                <span class="pf-choice-text">
+                  <strong>{{ choice.labelKey | translate }}</strong>
+                  <small>{{ choice.descKey | translate }}</small>
+                </span>
+              </button>
+            }
+          </div>
+        </section>
+      }
+
+      @if (!hasCollisions && !hasSignatures) {
+        <div class="pf-head ok">
+          <app-icon name="checkmark-circle" size="sm"></app-icon>
+          <div class="pf-head-text">
+            <strong>{{ 'combine.preflightCleanTitle' | translate }}</strong>
+            <span>
+              {{ 'combine.preflightCleanBody' | translate:{ count: report.totalFieldCount } }}
+            </span>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <div class="modal-footer-actions" modal-footer>
+    <app-button variant="ghost" size="md" [disabled]="busy" (clicked)="closed.emit()">
+      {{ 'common.cancel' | translate }}
+    </app-button>
+    <app-button variant="primary" size="md" [disabled]="busy" (clicked)="proceed.emit()">
+      <app-icon name="git-merge" class="btn-icon"></app-icon>
+      {{ 'combine.preflightProceed' | translate }}
+    </app-button>
+  </div>
+</app-modal>

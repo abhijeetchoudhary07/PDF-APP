@@ -1,0 +1,77 @@
+<div class="crop-wrap">
+  <div class="crop-head">
+    <span class="crop-title">
+      {{ 'layout.cropStageTitle' | translate:{ page: pageNumber } }}
+    </span>
+    <span class="crop-kept">{{ 'layout.cropKept' | translate:{ percent: keptPercent } }}</span>
+  </div>
+
+  @if (loading) {
+    <div class="crop-placeholder">
+      <div class="crop-spinner" aria-hidden="true"></div>
+      <span>{{ 'layout.previewLoading' | translate }}</span>
+    </div>
+  } @else if (!imageUrl) {
+    <div class="crop-placeholder">
+      <app-icon name="image" size="lg"></app-icon>
+      <span>{{ unavailableKey | translate }}</span>
+    </div>
+  } @else {
+    <div
+      #stage
+      class="crop-stage"
+      [class.is-disabled]="disabled"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp($event)"
+      (pointercancel)="onPointerUp($event)">
+      <img
+        class="crop-image"
+        [src]="imageUrl"
+        [alt]="'layout.cropStageTitle' | translate:{ page: pageNumber }"
+        draggable="false" />
+
+      <!-- The four shaded bands outside the kept region. -->
+      <div class="crop-shade top" [style.height.%]="region.y * 100"></div>
+      <div
+        class="crop-shade bottom"
+        [style.height.%]="(1 - region.y - region.height) * 100"></div>
+      <div
+        class="crop-shade left"
+        [style.top.%]="region.y * 100"
+        [style.height.%]="region.height * 100"
+        [style.width.%]="region.x * 100"></div>
+      <div
+        class="crop-shade right"
+        [style.top.%]="region.y * 100"
+        [style.height.%]="region.height * 100"
+        [style.width.%]="(1 - region.x - region.width) * 100"></div>
+
+      <div
+        class="crop-box"
+        [ngStyle]="boxStyle"
+        (pointerdown)="onPointerDown($event, 'move')">
+        <span class="crop-thirds" aria-hidden="true"></span>
+
+        @for (edge of edges; track edge.kind) {
+          <button
+            type="button"
+            [class]="'crop-handle edge handle-' + edge.kind"
+            [disabled]="disabled"
+            [attr.aria-label]="edge.labelKey | translate"
+            (pointerdown)="onPointerDown($event, edge.kind)"></button>
+        }
+
+        @for (corner of corners; track corner.kind) {
+          <button
+            type="button"
+            [class]="'crop-handle corner handle-' + corner.kind"
+            [disabled]="disabled"
+            [attr.aria-label]="corner.labelKey | translate"
+            (pointerdown)="onPointerDown($event, corner.kind)"></button>
+        }
+      </div>
+    </div>
+
+    <p class="crop-hint">{{ 'layout.cropDragHint' | translate }}</p>
+  }
+</div>

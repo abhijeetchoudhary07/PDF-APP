@@ -338,6 +338,65 @@ const TOOL_CATALOGUE: ToolItem[] = [
       badge: '100% Private',
       keywords: ['intelligence', 'summarize', 'summary', 'translate', 'qa', 'question answering', 'citations', 'hindi', 'marathi', 'bengali', 'punjabi', 'ai'],
       relatedIds: ['pdf_ocr', 'pdf_extractor', 'qr_barcode', 'pdf_compare']
+    },
+    /*
+     * Part C and Part D. Each of these is a route the hub did not have, so
+     * nothing above changes: the organizer still owns the quick merge, split
+     * and page organize, and these are the screens for what it does not do.
+     *
+     * The keywords carry the sub-operations deliberately. The Layout Studio is
+     * one screen with seven tabs, and someone searching for "crop" or
+     * "booklet" has to find it without a separate catalogue entry per tab.
+     */
+    {
+      id: 'pdf_layout',
+      category: 'ORGANIZE',
+      title: 'Page Size & Layout Studio',
+      description: 'Resize pages to one size, crop margins, add binding space, print 2-up or as a booklet, or stack a document into one long page.',
+      route: '/features/pdf/layout',
+      icon: 'resize-outline',
+      color: 'organize',
+      keywords: [
+        'layout', 'page size', 'resize pdf', 'a4', 'a5', 'letter', 'legal', 'normalize',
+        'crop', 'crop pdf', 'trim margins', 'auto crop', 'whitespace',
+        'margins', 'binding margin', 'padding',
+        'n-up', 'nup', '2 up', '4 up', 'multiple pages per sheet',
+        'booklet', 'saddle stitch', 'imposition', 'fold',
+        'long page', 'single page', 'tall page', 'scroll',
+        'grayscale', 'greyscale', 'black and white', 'invert', 'dark mode', 'high contrast'
+      ],
+      relatedIds: ['pdf_organize', 'pdf_combine', 'pdf_overlay', 'pdf_compress']
+    },
+    {
+      id: 'pdf_combine',
+      category: 'ORGANIZE',
+      title: 'Combine Studio',
+      description: 'Merge with per-file page ranges, generated bookmarks and a contents page, alternate two scans page by page, or insert pages at an exact position.',
+      route: '/features/pdf/combine',
+      icon: 'git-merge-outline',
+      color: 'organize',
+      keywords: [
+        'combine', 'merge pdf', 'advanced merge', 'page subset', 'page range per file',
+        'sort files', 'bookmarks', 'outline', 'table of contents', 'toc', 'cover page', 'separator',
+        'alternate', 'mix', 'interleave', 'front and back', 'duplex scan',
+        'insert pages', 'insert pdf', 'insert blank page', 'add page',
+        'form fields', 'acroform', 'signature warning'
+      ],
+      relatedIds: ['pdf_merge', 'pdf_organize', 'pdf_layout', 'pdf_overlay']
+    },
+    {
+      id: 'pdf_overlay',
+      category: 'ORGANIZE',
+      title: 'Overlay & Underlay',
+      description: 'Lay one PDF over or under another: letterhead, a pre-printed form, a watermark sheet or a stamp page.',
+      route: '/features/pdf/overlay',
+      icon: 'albums-outline',
+      color: 'organize',
+      keywords: [
+        'overlay', 'underlay', 'letterhead', 'stationery', 'pre-printed form', 'preprinted',
+        'watermark sheet', 'stamp', 'background pdf', 'foreground', 'combine layers', 'imprint'
+      ],
+      relatedIds: ['pdf_layout', 'pdf_combine', 'pdf_editor', 'pdf_organize']
     }
 ];
 

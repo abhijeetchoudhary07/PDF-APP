@@ -543,6 +543,13 @@ Acceptance:
 
 ## Part C — Combining
 
+> **Status — built, not yet released.** C1–C5 ship as the Combine Studio
+> (`/features/pdf/combine`, with `/interleave` and `/insert` route modes) and
+> C6 as Overlay & Underlay (`/features/pdf/overlay`). Engines:
+> `pdf-combine.service.ts`, `pdf-merge-preflight.service.ts`,
+> `pdf-overlay.service.ts`. The organizer's own merge is untouched and is still
+> the quick path. Nothing here is in the store listing or `APP_FEATURES.md`.
+
 ### C1 — Alternate & Mix (interleave)
 **Depends on:** nothing · **Effort:** S
 
@@ -656,6 +663,12 @@ Acceptance:
 ---
 
 ## Part D — Page geometry
+
+> **Status — built, not yet released.** D0 is
+> `src/app/core/utilities/pdf-draw-page.util.ts`; D1–D6 are
+> `pdf-layout.service.ts` and D7 is `pdf-tone.service.ts`, all behind the Page
+> Size & Layout Studio (`/features/pdf/layout`, one route per mode). Nothing
+> here is in the store listing or `APP_FEATURES.md`.
 
 **D0 first** — every other prompt in this part uses its helper.
 

@@ -1,0 +1,252 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        [title]="'tools.pdf_layout.title' | translate"
+        [subtitle]="'layout.subtitle' | translate"
+        [breadcrumbs]="[
+          { label: ('tools.pdf_dashboard.title' | translate), url: '/features/pdf' },
+          { label: ('tools.pdf_layout.title' | translate) }
+        ]"
+        badge="LAYOUT"
+        badgeVariant="organize"
+        backUrl="/features/pdf">
+      </app-page-header>
+
+      <!-- ─────────── Empty: choose a document ─────────── -->
+      @if (!file) {
+        <div class="layout-empty">
+          <app-file-dropzone
+            accept="application/pdf"
+            icon="resize"
+            [title]="'layout.dropzoneTitle' | translate"
+            [description]="'layout.dropzoneDesc' | translate"
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+
+          <div class="capability-grid">
+            @for (mode of modeTabs; track mode.id) {
+              <button
+                type="button"
+                class="capability-card"
+                (click)="onModeChange(mode.id)">
+                <span class="cap-title">{{ mode.label }}</span>
+                <span class="cap-desc">{{ 'layout.capability.' + mode.id | translate }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ─────────── Working on a document ─────────── -->
+      @if (file) {
+        <div class="layout-workspace">
+          <app-file-preview
+            [file]="file"
+            format="PDF"
+            [pageCount]="pageCount"
+            [badgeText]="'common.pages' | translate"
+            [showPreviewBtn]="false"
+            (remove)="removeFile()"
+            (replace)="pickFile()">
+          </app-file-preview>
+
+          <div class="mode-tabs">
+            <app-tabs
+              [tabs]="modeTabs"
+              [activeTab]="mode"
+              variant="segment"
+              [autoScroll]="true"
+              (tabChange)="onModeChange($event)">
+            </app-tabs>
+          </div>
+
+          <!-- Crop gets a live page preview; the rest show a plan. -->
+          @if (isCropMode) {
+            <app-crop-stage
+              [imageUrl]="previewUrl"
+              [region]="config.crop.region"
+              [pageNumber]="currentPage"
+              [loading]="previewLoading"
+              [disabled]="working || scanning"
+              (regionChange)="onCropRegionChange($event)">
+            </app-crop-stage>
+
+            @if (pageCount > 1) {
+              <div class="pager-row">
+                <app-button
+                  variant="outline"
+                  size="sm"
+                  [disabled]="currentPage <= 1 || previewLoading"
+                  [ariaLabel]="'layout.prevPage' | translate"
+                  (clicked)="goToPage(-1)">
+                  <app-icon name="chevron-back" size="sm"></app-icon>
+                </app-button>
+                <span class="pager-label">
+                  {{ 'layout.pageOf' | translate:{ page: currentPage, total: pageCount } }}
+                </span>
+                <app-button
+                  variant="outline"
+                  size="sm"
+                  [disabled]="currentPage >= pageCount || previewLoading"
+                  [ariaLabel]="'layout.nextPage' | translate"
+                  (clicked)="goToPage(1)">
+                  <app-icon name="chevron-forward" size="sm"></app-icon>
+                </app-button>
+              </div>
+            }
+          }
+
+          <section class="settings-card">
+            <app-layout-mode-panel
+              [mode]="mode"
+              [config]="config"
+              [pageCount]="pageCount"
+              [busy]="working"
+              [survey]="survey"
+              [nupPlan]="nupPlan"
+              [bookletPlan]="bookletPlan"
+              [longPlan]="longPlan"
+              [scanning]="scanning"
+              [scanPercent]="scanPercent"
+              [autoCropFound]="autoCropFound"
+              [autoCropBlank]="autoCropBlank"
+              [toneEstimate]="toneEstimate"
+              [toneEstimating]="toneEstimating"
+              (configChange)="onConfigChange($event)"
+              (autoTrim)="runAutoTrim()"
+              (cancelScan)="cancelScan()"
+              (resetCrop)="resetCropRegion()"
+              (estimateTone)="runToneEstimate()">
+            </app-layout-mode-panel>
+          </section>
+
+          <!-- ─────────── Progress ─────────── -->
+          @if (working) {
+            <div class="work-card">
+              <app-progress
+                [value]="workPercent"
+                [stage]="'layout.working' | translate"
+                color="primary">
+              </app-progress>
+              <app-button variant="ghost" size="md" [block]="true" (clicked)="cancelExport()">
+                {{ 'common.cancel' | translate }}
+              </app-button>
+            </div>
+          }
+
+          <!-- ─────────── Error ─────────── -->
+          @if (errorMessage && !working) {
+            <div class="error-card" role="alert">
+              <app-icon name="alert-circle" size="sm"></app-icon>
+              <span>{{ errorMessage }}</span>
+            </div>
+          }
+
+          <!-- ─────────── Result ─────────── -->
+          @if (result) {
+            <section class="result-card">
+              <div class="result-head">
+                <app-icon name="checkmark-circle" size="lg"></app-icon>
+                <div class="result-title-group">
+                  <strong>{{ 'layout.resultTitle' | translate }}</strong>
+                  <span class="result-name">{{ result.name }}</span>
+                </div>
+              </div>
+
+              <div class="result-stats">
+                <div class="stat">
+                  <span class="stat-label">{{ 'common.pages' | translate }}</span>
+                  <strong>{{ result.sourcePageCount }} → {{ result.pageCount }}</strong>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">{{ 'common.size' | translate }}</span>
+                  <strong>
+                    {{ (result.sizeBytes / 1024) | number:'1.0-0' }} {{ 'common.kb' | translate }}
+                  </strong>
+                </div>
+                @if (result.outputSize) {
+                  <div class="stat">
+                    <span class="stat-label">{{ 'layout.outputSizeLabel' | translate }}</span>
+                    <strong>
+                      {{ result.outputSize.width | number:'1.0-0' }} ×
+                      {{ result.outputSize.height | number:'1.0-0' }} pt
+                    </strong>
+                  </div>
+                }
+                <div class="stat">
+                  <span class="stat-label">{{ 'layout.sizeChangeLabel' | translate }}</span>
+                  <strong [class.up]="sizeDeltaPercent > 0" [class.down]="sizeDeltaPercent < 0">
+                    {{ sizeDeltaPercent > 0 ? '+' : '' }}{{ sizeDeltaPercent }}%
+                  </strong>
+                </div>
+              </div>
+
+              @if (result.notices.length > 0) {
+                <ul class="notice-list">
+                  @for (notice of result.notices; track $index) {
+                    <li [class.warn]="isWarningNotice(notice)">
+                      <app-icon
+                        [name]="isWarningNotice(notice) ? 'warning' : 'information-circle'"
+                        size="sm">
+                      </app-icon>
+                      <span>{{ noticeKey(notice) | translate:noticeParams(notice) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+
+              <div class="result-actions">
+                <app-button variant="success" size="lg" [block]="true" (clicked)="saveResult()">
+                  <app-icon name="save" class="btn-icon"></app-icon>
+                  {{ 'common.save' | translate }}
+                </app-button>
+                <div class="result-actions-row">
+                  <app-button variant="outline" size="md" (clicked)="previewResult()">
+                    <app-icon name="eye" class="btn-icon"></app-icon>
+                    {{ 'common.preview' | translate }}
+                  </app-button>
+                  <app-button variant="outline" size="md" (clicked)="shareResult()">
+                    <app-icon name="share-social" class="btn-icon"></app-icon>
+                    {{ 'common.share' | translate }}
+                  </app-button>
+                </div>
+                <app-button variant="ghost" size="sm" [block]="true" (clicked)="startOver()">
+                  {{ 'layout.changeSettings' | translate }}
+                </app-button>
+              </div>
+            </section>
+          }
+
+          <!-- ─────────── Sticky export bar ─────────── -->
+          @if (!result && !working) {
+            <div class="export-bar">
+              @if (blockedReasonKey) {
+                <p class="blocked-note">{{ blockedReasonKey | translate }}</p>
+              }
+              <app-button
+                variant="primary"
+                size="lg"
+                [block]="true"
+                [disabled]="!!blockedReasonKey"
+                (clicked)="runExport()">
+                <app-icon name="checkmark-done" class="btn-icon"></app-icon>
+                {{ exportLabelKey() | translate }}
+              </app-button>
+            </div>
+          }
+        </div>
+
+        <app-related-tools
+          currentToolId="pdf_layout"
+          category="ORGANIZE"
+          [limit]="4">
+        </app-related-tools>
+      }
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

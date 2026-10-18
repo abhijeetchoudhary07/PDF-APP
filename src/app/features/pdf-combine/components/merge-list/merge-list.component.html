@@ -1,0 +1,131 @@
+<div class="merge-list">
+  <div class="list-head">
+    <span class="list-title">
+      {{ 'combine.fileCount' | translate:{ count: sources.length } }}
+    </span>
+    @if (plan) {
+      <span class="list-total">
+        {{ 'combine.outputPages' | translate:{ count: plan.totalPageCount } }}
+      </span>
+    }
+  </div>
+
+  @if (showSubsets) {
+    <div class="sort-bar">
+      <span class="field-label">{{ 'combine.sortLabel' | translate }}</span>
+      <div class="sort-row">
+        <div class="chip-row scroll-row" [appAutoScroll]="true" [autoScrollSpeed]="0.4">
+          @for (field of sortFields; track field.value) {
+            <button
+              type="button"
+              class="chip"
+              [class.active]="options.sortBy === field.value"
+              [disabled]="busy"
+              (click)="setSort(field.value)">
+              {{ field.labelKey | translate }}
+            </button>
+          }
+        </div>
+        <button
+          type="button"
+          class="dir-btn"
+          [disabled]="busy || options.sortBy === 'none'"
+          [attr.aria-label]="(options.sortDirection === 'asc' ? 'combine.sortAsc' : 'combine.sortDesc') | translate"
+          (click)="toggleDirection()">
+          <app-icon [name]="options.sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'" size="sm"></app-icon>
+        </button>
+      </div>
+    </div>
+  }
+
+  <ul class="rows">
+    @for (source of orderedSources; track trackById($index, source)) {
+      <li class="row" [class.invalid]="subsetInvalid(source.id)">
+        <div class="row-top">
+          <span class="row-index">{{ $index + 1 }}</span>
+          <span class="row-name">{{ source.name }}</span>
+        </div>
+
+        <div class="row-meta">
+          <span>{{ 'combine.rowPages' | translate:{ count: source.pageCount } }}</span>
+          <span>{{ sizeKb(source.sizeBytes) }} {{ 'common.kb' | translate }}</span>
+          @if (plan) {
+            <span class="row-contrib">
+              {{ 'combine.rowContributes' | translate:{ count: contributedPages(source.id) } }}
+            </span>
+            @if (firstOutputPage(source.id)) {
+              <span class="row-from">
+                {{ 'combine.rowStartsAt' | translate:{ page: firstOutputPage(source.id) } }}
+              </span>
+            }
+          }
+        </div>
+
+        @if (showSubsets) {
+          <div class="row-subset">
+            <label [attr.for]="'subset-' + source.id">
+              {{ 'combine.subsetLabel' | translate }}
+            </label>
+            <input
+              [id]="'subset-' + source.id"
+              class="panel-input"
+              type="text"
+              inputmode="numeric"
+              [placeholder]="'combine.subsetPlaceholder' | translate:{ max: source.pageCount }"
+              [disabled]="busy"
+              [ngModel]="subsetFor(source.id)"
+              (ngModelChange)="onSubsetChange(source.id, $event)" />
+          </div>
+          @if (subsetInvalid(source.id)) {
+            <p class="row-warn">{{ 'combine.subsetInvalid' | translate }}</p>
+          }
+        }
+
+        <div class="row-actions">
+          @if (canReorder) {
+            <button
+              type="button"
+              class="row-btn"
+              [disabled]="busy || $index === 0"
+              [attr.aria-label]="'common.moveUp' | translate"
+              (click)="moveSource.emit({ index: $index, delta: -1 })">
+              <app-icon name="arrow-up" size="sm"></app-icon>
+            </button>
+            <button
+              type="button"
+              class="row-btn"
+              [disabled]="busy || $index === orderedSources.length - 1"
+              [attr.aria-label]="'common.moveDown' | translate"
+              (click)="moveSource.emit({ index: $index, delta: 1 })">
+              <app-icon name="arrow-down" size="sm"></app-icon>
+            </button>
+          }
+          <button
+            type="button"
+            class="row-btn danger"
+            [disabled]="busy"
+            [attr.aria-label]="'common.remove' | translate"
+            (click)="removeSource.emit(source.id)">
+            <app-icon name="trash" size="sm"></app-icon>
+          </button>
+        </div>
+      </li>
+    }
+  </ul>
+
+  @if (!canReorder) {
+    <p class="list-foot">{{ 'combine.sortedNote' | translate }}</p>
+  }
+
+  <div class="list-actions">
+    <app-button variant="outline" size="md" [disabled]="busy" (clicked)="addFiles.emit()">
+      <app-icon name="add" class="btn-icon"></app-icon>
+      {{ 'combine.addFiles' | translate }}
+    </app-button>
+    @if (showSubsets && hasSubsets) {
+      <app-button variant="ghost" size="md" [disabled]="busy" (clicked)="clearSubsets()">
+        {{ 'combine.clearSubsets' | translate }}
+      </app-button>
+    }
+  </div>
+</div>

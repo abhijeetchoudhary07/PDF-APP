@@ -1,0 +1,492 @@
+/*
+ * Layout Studio controls.
+ *
+ * One column, full-width controls, nothing below the 44px touch floor, and
+ * every row that could overflow either wraps or scrolls. Sizes come from the
+ * fluid control scale in variables.scss rather than fixed pixels, so the same
+ * markup reads correctly from a 320px phone to a desktop.
+ */
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.mode-panel {
+  min-width: 0;
+}
+
+.mode-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.config-hint {
+  margin: 0;
+  font-size: var(--font-small);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.config-foot {
+  margin: 0;
+  font-size: var(--font-caption);
+  line-height: 1.45;
+  color: var(--color-text-muted);
+
+  &.ok { color: var(--color-success); }
+  &.warn { color: var(--color-warning-hover); }
+}
+
+.field-label {
+  display: block;
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+/* ── Inputs ─────────────────────────────────────────────────────── */
+
+.panel-input {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-h-md);
+  padding: 0 var(--control-pad-x-sm);
+  font-size: var(--font-body);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  /* iOS zooms the page in on a focused input smaller than 16px. */
+  font-size: max(var(--font-body), 16px);
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: var(--focus-ring);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.number-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+
+  .panel-input { flex: 1 1 auto; }
+
+  &.compact .panel-input { text-align: center; }
+}
+
+.unit-suffix {
+  flex: 0 0 auto;
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+.panel-range {
+  width: 100%;
+  min-height: var(--min-touch-target, 44px);
+  accent-color: var(--color-primary);
+  background: transparent;
+
+  &:disabled { opacity: 0.55; }
+}
+
+/* ── Chips & segments ───────────────────────────────────────────── */
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+  /*
+   * A scrolling row must not wrap, or the auto-scroll has nothing to scroll.
+   * The class is explicit rather than selecting on [appAutoScroll]: Angular
+   * does not leave a property binding in the DOM, so an attribute selector
+   * would never match the elements that actually carry the directive.
+   */
+  &.scroll-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+
+    &::-webkit-scrollbar { display: none; }
+  }
+}
+
+.chip {
+  flex: 0 0 auto;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--control-pad-x-sm);
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-elevated);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+
+  &.wide { min-width: 84px; }
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary-light, var(--color-border-focus));
+    color: var(--color-text);
+  }
+
+  &.active {
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.seg-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.seg-btn {
+  flex: 1 1 96px;
+  min-height: var(--control-h-md);
+  padding: 0 var(--control-pad-x-sm);
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-elevated);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+
+  &.active {
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* ── Switches ───────────────────────────────────────────────────── */
+
+.switch-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--min-touch-target, 44px);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    accent-color: var(--color-primary);
+  }
+}
+
+.switch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  strong {
+    font-size: var(--font-small);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+  }
+
+  small {
+    font-size: var(--font-caption);
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+  }
+}
+
+/* ── Edge grid (margins, crop trims) ───────────────────────────── */
+
+.edge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.edge-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  label {
+    font-size: var(--font-caption);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+}
+
+/* ── Notices & plan cards ──────────────────────────────────────── */
+
+.notice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-elevated);
+
+  &.warn {
+    color: var(--color-warning-hover);
+    background: var(--color-warning-soft);
+    border-color: var(--color-warning);
+  }
+
+  &.info {
+    color: var(--color-info);
+    background: var(--color-info-soft);
+    border-color: var(--color-info);
+  }
+}
+
+.notice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  strong {
+    font-size: var(--font-small);
+    font-weight: var(--font-weight-bold);
+  }
+
+  span {
+    font-size: var(--font-caption);
+    line-height: 1.45;
+    color: var(--color-text-secondary);
+  }
+}
+
+.notice-card.warn .notice-text span,
+.notice-card.info .notice-text span {
+  color: inherit;
+  opacity: 0.88;
+}
+
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+
+  &.warn {
+    background: var(--color-warning-soft);
+    border-color: var(--color-warning);
+  }
+}
+
+.plan-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-small);
+
+  span {
+    color: var(--color-text-secondary);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  strong {
+    flex: 0 0 auto;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.size-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.size-group-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-caption);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.group-dims {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.group-count {
+  flex: 0 0 auto;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Booklet sequence ──────────────────────────────────────────── */
+
+.seq-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.seq-label {
+  font-size: var(--font-caption);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+}
+
+.seq-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.seq-chip {
+  flex: 0 0 auto;
+  min-width: 26px;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-xs);
+
+  &.blank {
+    color: var(--color-text-muted);
+    background: var(--color-surface-sunken);
+    border-color: var(--color-border);
+  }
+}
+
+/* ── Tone passes ───────────────────────────────────────────────── */
+
+.tone-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.tone-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: max(var(--control-h-lg), 76px);
+  padding: var(--space-2) 4px;
+  background: var(--color-surface-elevated);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+
+  span:not(.tone-swatch) {
+    font-size: 11px;
+    font-weight: var(--font-weight-bold);
+    line-height: 1.2;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  &.active {
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* A small swatch showing what each pass does to a page. */
+.tone-swatch {
+  width: 26px;
+  height: 18px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border);
+
+  &.grayscale {
+    background: linear-gradient(90deg, #ffffff 0%, #9ca3af 50%, #111827 100%);
+  }
+
+  &.invert {
+    background: linear-gradient(90deg, #111827 0%, #374151 50%, #f9fafb 100%);
+  }
+
+  &.high-contrast {
+    background: linear-gradient(90deg, #ffffff 0% 48%, #000000 52% 100%);
+  }
+}
+
+.btn-icon {
+  margin-right: 6px;
+}
+
+/* A 320px screen cannot take two number fields side by side comfortably. */
+@media (max-width: 360px) {
+  .edge-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

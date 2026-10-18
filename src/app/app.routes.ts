@@ -193,6 +193,69 @@ export const APP_ROUTES: Routes = [
     path: 'features/pdf/signature-request',
     loadComponent: () => import('./features/signature-request/signature-request.page').then(m => m.SignatureRequestPage)
   },
+  /*
+   * Part D — the Page Size & Layout Studio. One screen, seven operations; the
+   * route's `mode` picks which tab opens, the same way the security page's
+   * unlock/protect routes do. Every one of these is a new path, so nothing
+   * that already resolves is affected.
+   */
+  {
+    path: 'features/pdf/layout',
+    loadComponent: () => import('./features/pdf-layout/pdf-layout.page').then(m => m.PdfLayoutPage)
+  },
+  {
+    path: 'features/pdf/layout/crop',
+    loadComponent: () => import('./features/pdf-layout/pdf-layout.page').then(m => m.PdfLayoutPage),
+    data: { mode: 'crop' }
+  },
+  {
+    path: 'features/pdf/layout/margins',
+    loadComponent: () => import('./features/pdf-layout/pdf-layout.page').then(m => m.PdfLayoutPage),
+    data: { mode: 'margins' }
+  },
+  {
+    path: 'features/pdf/layout/nup',
+    loadComponent: () => import('./features/pdf-layout/pdf-layout.page').then(m => m.PdfLayoutPage),
+    data: { mode: 'nup' }
+  },
+  {
+    path: 'features/pdf/layout/booklet',
+    loadComponent: () => import('./features/pdf-layout/pdf-layout.page').then(m => m.PdfLayoutPage),
+    data: { mode: 'booklet' }
+  },
+  {
+    path: 'features/pdf/layout/long-page',
+    loadComponent: () => import('./features/pdf-layout/pdf-layout.page').then(m => m.PdfLayoutPage),
+    data: { mode: 'long-page' }
+  },
+  {
+    path: 'features/pdf/layout/tone',
+    loadComponent: () => import('./features/pdf-layout/pdf-layout.page').then(m => m.PdfLayoutPage),
+    data: { mode: 'tone' }
+  },
+  /*
+   * Part C — the Combine Studio and the overlay tool. The organizer's own
+   * /features/pdf/merge route is untouched and is still the quick merge; these
+   * are the cases it does not cover.
+   */
+  {
+    path: 'features/pdf/combine',
+    loadComponent: () => import('./features/pdf-combine/pdf-combine.page').then(m => m.PdfCombinePage)
+  },
+  {
+    path: 'features/pdf/combine/interleave',
+    loadComponent: () => import('./features/pdf-combine/pdf-combine.page').then(m => m.PdfCombinePage),
+    data: { mode: 'interleave' }
+  },
+  {
+    path: 'features/pdf/combine/insert',
+    loadComponent: () => import('./features/pdf-combine/pdf-combine.page').then(m => m.PdfCombinePage),
+    data: { mode: 'insert' }
+  },
+  {
+    path: 'features/pdf/overlay',
+    loadComponent: () => import('./features/pdf-overlay/pdf-overlay.page').then(m => m.PdfOverlayPage)
+  },
   {
     path: 'features/presets',
     loadComponent: () => import('./features/presets/presets.page').then(m => m.PresetsPage)

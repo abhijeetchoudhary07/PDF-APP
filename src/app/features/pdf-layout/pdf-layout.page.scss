@@ -1,0 +1,295 @@
+/*
+ * Page Size & Layout Studio.
+ *
+ * One column on a phone, widening to two on a tablet where there is room for
+ * the preview and the settings side by side. Nothing is positioned absolutely
+ * and nothing has a fixed width, so a long translated label grows its row
+ * rather than clipping.
+ */
+
+.layout-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-block: var(--space-3);
+}
+
+.capability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+
+.capability-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: var(--min-touch-target, 44px);
+  padding: var(--space-3);
+  text-align: start;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+
+  &:hover {
+    border-color: var(--color-organize);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.cap-title {
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.cap-desc {
+  font-size: var(--font-caption);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.layout-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  padding-block: var(--space-3);
+}
+
+.mode-tabs {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pager-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.pager-label {
+  font-size: var(--font-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-card {
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+.work-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.error-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-small);
+  line-height: 1.45;
+  color: var(--color-error);
+  background: var(--color-error-soft);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+
+  span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ── Result ─────────────────────────────────────────────────────── */
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.result-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-success);
+  min-width: 0;
+}
+
+.result-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  strong {
+    font-size: var(--font-h3);
+    color: var(--color-text);
+  }
+}
+
+.result-name {
+  font-size: var(--font-caption);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: var(--space-2);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-md);
+  min-width: 0;
+
+  strong {
+    font-size: var(--font-small);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+
+    &.up { color: var(--color-warning-hover); }
+    &.down { color: var(--color-success); }
+  }
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-caption);
+    line-height: 1.45;
+    color: var(--color-text-secondary);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-sm);
+
+    span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    &.warn {
+      color: var(--color-warning-hover);
+      background: var(--color-warning-soft);
+    }
+  }
+}
+
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.result-actions-row {
+  display: flex;
+  gap: var(--space-2);
+
+  app-button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* ── Export bar ─────────────────────────────────────────────────── */
+
+/*
+ * `.export-bar` picks up the shared sticky-bottom treatment from global.scss
+ * at <=768px, so on a phone the primary action is pinned above the gesture
+ * pill and never scrolls out of reach.
+ */
+.export-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.blocked-note {
+  margin: 0;
+  font-size: var(--font-caption);
+  line-height: 1.45;
+  text-align: center;
+  color: var(--color-warning-hover);
+}
+
+.btn-icon {
+  margin-right: 6px;
+}
+
+/* ── Tablet and up ──────────────────────────────────────────────── */
+
+@media (min-width: 900px) {
+  .layout-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'file file'
+      'tabs tabs'
+      'stage settings'
+      'pager settings'
+      'work settings'
+      'error error'
+      'result result'
+      'bar bar';
+    align-items: start;
+    column-gap: var(--space-5);
+  }
+
+  app-file-preview { grid-area: file; }
+  .mode-tabs { grid-area: tabs; }
+  app-crop-stage { grid-area: stage; }
+  .pager-row { grid-area: pager; }
+  .settings-card { grid-area: settings; }
+  .work-card { grid-area: work; }
+  .error-card { grid-area: error; }
+  .result-card { grid-area: result; }
+  .export-bar { grid-area: bar; }
+}

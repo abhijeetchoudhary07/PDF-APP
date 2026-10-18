@@ -1,0 +1,477 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        [title]="'tools.pdf_combine.title' | translate"
+        [subtitle]="'combine.subtitle' | translate"
+        [breadcrumbs]="[
+          { label: ('tools.pdf_dashboard.title' | translate), url: '/features/pdf' },
+          { label: ('tools.pdf_combine.title' | translate) }
+        ]"
+        badge="COMBINE"
+        badgeVariant="organize"
+        backUrl="/features/pdf">
+      </app-page-header>
+
+      <!-- ─────────── Empty ─────────── -->
+      @if (sources.length === 0) {
+        <div class="combine-empty">
+          <app-file-dropzone
+            accept="application/pdf"
+            icon="git-merge"
+            [multiple]="true"
+            [title]="'combine.dropzoneTitle' | translate"
+            [description]="'combine.dropzoneDesc' | translate"
+            (filesSelected)="onFilesSelected($event)"
+            (fileSelected)="onFilesSelected([$event])">
+          </app-file-dropzone>
+
+          <div class="capability-grid">
+            @for (tab of modeTabs; track tab.id) {
+              <button type="button" class="capability-card" (click)="onModeChange(tab.id)">
+                <span class="cap-title">{{ tab.label }}</span>
+                <span class="cap-desc">{{ 'combine.capability.' + tab.id | translate }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ─────────── Working ─────────── -->
+      @if (sources.length > 0) {
+        <div class="combine-workspace">
+          <div class="mode-tabs">
+            <app-tabs
+              [tabs]="modeTabs"
+              [activeTab]="mode"
+              variant="segment"
+              [autoScroll]="true"
+              (tabChange)="onModeChange($event)">
+            </app-tabs>
+          </div>
+
+          <section class="list-card">
+            <app-merge-list
+              [sources]="sources"
+              [options]="mergeOptions"
+              [plan]="plan"
+              [busy]="working || inspecting"
+              [showSubsets]="mode === 'merge'"
+              (optionsChange)="onMergeOptionsChange($event)"
+              (moveSource)="moveSource($event)"
+              (removeSource)="removeSource($event)"
+              (addFiles)="addFiles()">
+            </app-merge-list>
+          </section>
+
+          <!-- ═══════════ C4 — structure options ═══════════ -->
+          @if (mode === 'merge') {
+            <section class="settings-card">
+              <h2 class="card-title">{{ 'combine.structureTitle' | translate }}</h2>
+              <p class="card-hint">{{ 'combine.structureHint' | translate }}</p>
+
+              <label class="switch-row">
+                <input
+                  type="checkbox"
+                  [disabled]="working"
+                  [ngModel]="structure.bookmarks"
+                  (ngModelChange)="toggleStructure('bookmarks', $event)" />
+                <span class="switch-text">
+                  <strong>{{ 'combine.bookmarksLabel' | translate }}</strong>
+                  <small>{{ 'combine.bookmarksDesc' | translate }}</small>
+                </span>
+              </label>
+
+              <label class="switch-row">
+                <input
+                  type="checkbox"
+                  [disabled]="working"
+                  [ngModel]="structure.tableOfContents"
+                  (ngModelChange)="toggleStructure('tableOfContents', $event)" />
+                <span class="switch-text">
+                  <strong>{{ 'combine.tocLabel' | translate }}</strong>
+                  <small>{{ 'combine.tocDesc' | translate }}</small>
+                </span>
+              </label>
+
+              <label class="switch-row">
+                <input
+                  type="checkbox"
+                  [disabled]="working"
+                  [ngModel]="structure.coverPage"
+                  (ngModelChange)="toggleStructure('coverPage', $event)" />
+                <span class="switch-text">
+                  <strong>{{ 'combine.coverLabel' | translate }}</strong>
+                  <small>{{ 'combine.coverDesc' | translate }}</small>
+                </span>
+              </label>
+
+              @if (structure.coverPage) {
+                <label class="field-label" for="cover-title">
+                  {{ 'combine.coverTitleLabel' | translate }}
+                </label>
+                <input
+                  id="cover-title"
+                  class="panel-input"
+                  type="text"
+                  [placeholder]="'combine.coverTitlePlaceholder' | translate"
+                  [disabled]="working"
+                  [ngModel]="structure.coverTitle"
+                  (ngModelChange)="onCoverTitleChange($event)" />
+              }
+
+              <label class="switch-row">
+                <input
+                  type="checkbox"
+                  [disabled]="working"
+                  [ngModel]="structure.separators"
+                  (ngModelChange)="toggleStructure('separators', $event)" />
+                <span class="switch-text">
+                  <strong>{{ 'combine.separatorsLabel' | translate }}</strong>
+                  <small>{{ 'combine.separatorsDesc' | translate }}</small>
+                </span>
+              </label>
+
+              <p class="card-foot">{{ 'combine.structureFontNote' | translate }}</p>
+            </section>
+          }
+
+          <!-- ═══════════ C1 — interleave ═══════════ -->
+          @if (mode === 'interleave') {
+            <section class="settings-card">
+              <h2 class="card-title">{{ 'combine.interleaveTitle' | translate }}</h2>
+              <p class="card-hint">{{ 'combine.interleaveHint' | translate }}</p>
+
+              <div class="reverse-list">
+                @for (source of sources; track source.id) {
+                  <label class="switch-row">
+                    <input
+                      type="checkbox"
+                      [disabled]="working"
+                      [checked]="isReversed($index)"
+                      (change)="toggleReversed($index)" />
+                    <span class="switch-text">
+                      <strong>
+                        {{ 'combine.reverseFor' | translate:{ letter: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[$index % 26] } }}
+                      </strong>
+                      <small>{{ source.name }}</small>
+                    </span>
+                  </label>
+                }
+              </div>
+
+              <span class="field-label">{{ 'combine.orderPreviewLabel' | translate }}</span>
+              <div class="order-row scroll-row" [appAutoScroll]="true" [autoScrollSpeed]="0.4">
+                @for (label of interleavePreview; track $index) {
+                  <span class="order-chip">{{ label }}</span>
+                }
+                @if (interleaveTotal > interleavePreview.length) {
+                  <span class="order-chip more">
+                    +{{ interleaveTotal - interleavePreview.length }}
+                  </span>
+                }
+              </div>
+
+              <div class="plan-row">
+                <span>{{ 'combine.outputPagesLabel' | translate }}</span>
+                <strong>{{ interleaveTotal }}</strong>
+              </div>
+
+              @if (interleaveUneven) {
+                <div class="notice-card info">
+                  <app-icon name="information-circle" size="sm"></app-icon>
+                  <div class="notice-text">
+                    <strong>{{ 'combine.unevenTitle' | translate }}</strong>
+                    <span>{{ 'combine.unevenBody' | translate }}</span>
+                  </div>
+                </div>
+              }
+            </section>
+          }
+
+          <!-- ═══════════ C2 — insert ═══════════ -->
+          @if (mode === 'insert') {
+            <section class="settings-card">
+              <h2 class="card-title">{{ 'combine.insertTitle' | translate }}</h2>
+              <p class="card-hint">
+                {{ 'combine.insertHint' | translate:{ name: baseSource?.name || '' } }}
+              </p>
+
+              <span class="field-label">{{ 'combine.insertWhatLabel' | translate }}</span>
+              <div class="seg-row" role="radiogroup" [attr.aria-label]="'combine.insertWhatLabel' | translate">
+                <button
+                  type="button"
+                  class="seg-btn"
+                  role="radio"
+                  [class.active]="insertOptions.kind === 'pdf'"
+                  [attr.aria-checked]="insertOptions.kind === 'pdf'"
+                  [disabled]="working"
+                  (click)="updateInsert({ kind: 'pdf' })">
+                  {{ 'combine.insertPdf' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="seg-btn"
+                  role="radio"
+                  [class.active]="insertOptions.kind === 'image'"
+                  [attr.aria-checked]="insertOptions.kind === 'image'"
+                  [disabled]="working"
+                  (click)="updateInsert({ kind: 'image' })">
+                  {{ 'combine.insertImage' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="seg-btn"
+                  role="radio"
+                  [class.active]="insertOptions.kind === 'blank'"
+                  [attr.aria-checked]="insertOptions.kind === 'blank'"
+                  [disabled]="working"
+                  (click)="updateInsert({ kind: 'blank' })">
+                  {{ 'combine.insertBlank' | translate }}
+                </button>
+              </div>
+
+              @if (insertOptions.kind === 'pdf') {
+                <app-button variant="outline" size="md" [block]="true" [disabled]="working" (clicked)="pickInsertPdf()">
+                  <app-icon name="document-attach" class="btn-icon"></app-icon>
+                  {{ insertPdf ? insertPdf.name : ('combine.choosePdf' | translate) }}
+                </app-button>
+                @if (insertPdf) {
+                  <p class="card-foot">
+                    {{ 'combine.insertPdfPages' | translate:{ count: insertPdfPageCount } }}
+                  </p>
+                }
+              }
+
+              @if (insertOptions.kind === 'image') {
+                <app-button variant="outline" size="md" [block]="true" [disabled]="working" (clicked)="pickInsertImages()">
+                  <app-icon name="images" class="btn-icon"></app-icon>
+                  {{ insertImages.length > 0
+                    ? ('combine.insertImageCount' | translate:{ count: insertImages.length })
+                    : ('combine.chooseImages' | translate) }}
+                </app-button>
+              }
+
+              @if (insertOptions.kind === 'blank') {
+                <label class="field-label" for="blank-count">
+                  {{ 'combine.blankCountLabel' | translate }}
+                </label>
+                <input
+                  id="blank-count"
+                  class="panel-input"
+                  type="number"
+                  inputmode="numeric"
+                  min="1"
+                  [max]="combineMaxBlanks"
+                  [disabled]="working"
+                  [ngModel]="insertOptions.blankCount"
+                  (ngModelChange)="onBlankCountChange($event)" />
+
+                <span class="field-label">{{ 'combine.blankSizeLabel' | translate }}</span>
+                <div class="chip-row scroll-row" [appAutoScroll]="true" [autoScrollSpeed]="0.4">
+                  @for (size of blankSizes; track size) {
+                    <button
+                      type="button"
+                      class="chip"
+                      [class.active]="insertOptions.blankSize === size"
+                      [disabled]="working"
+                      (click)="updateInsert({ blankSize: $any(size) })">
+                      {{ size === 'neighbour' ? ('combine.blankSizeNeighbour' | translate) : size }}
+                    </button>
+                  }
+                </div>
+                @if (insertOptions.blankSize !== 'neighbour') {
+                  <label class="switch-row">
+                    <input
+                      type="checkbox"
+                      [disabled]="working"
+                      [ngModel]="insertOptions.blankLandscape"
+                      (ngModelChange)="updateInsert({ blankLandscape: $event })" />
+                    <span class="switch-text">
+                      <strong>{{ 'combine.blankLandscapeLabel' | translate }}</strong>
+                      <small>{{ 'combine.blankLandscapeDesc' | translate }}</small>
+                    </span>
+                  </label>
+                }
+              }
+
+              <label class="field-label" for="insert-anchor">
+                {{ 'combine.anchorLabel' | translate }}
+              </label>
+              <input
+                id="insert-anchor"
+                class="panel-input"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                [max]="baseSource?.pageCount || 1"
+                [disabled]="working"
+                [ngModel]="insertOptions.anchorPage"
+                (ngModelChange)="onAnchorChange($event)" />
+              <p class="card-foot">
+                {{ 'combine.anchorHint' | translate:{ max: baseSource?.pageCount || 1 } }}
+              </p>
+
+              <div class="seg-row" role="radiogroup" [attr.aria-label]="'combine.sideLabel' | translate">
+                <button
+                  type="button"
+                  class="seg-btn"
+                  role="radio"
+                  [class.active]="insertOptions.side === 'before'"
+                  [attr.aria-checked]="insertOptions.side === 'before'"
+                  [disabled]="working"
+                  (click)="updateInsert({ side: 'before' })">
+                  {{ 'combine.sideBefore' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="seg-btn"
+                  role="radio"
+                  [class.active]="insertOptions.side === 'after'"
+                  [attr.aria-checked]="insertOptions.side === 'after'"
+                  [disabled]="working"
+                  (click)="updateInsert({ side: 'after' })">
+                  {{ 'combine.sideAfter' | translate }}
+                </button>
+              </div>
+
+              <div class="plan-row">
+                <span>{{ 'combine.outputPagesLabel' | translate }}</span>
+                <strong>
+                  {{ baseSource?.pageCount || 0 }} + {{ insertCount }} = {{ insertResultPageCount }}
+                </strong>
+              </div>
+            </section>
+          }
+
+          <!-- ─────────── Progress ─────────── -->
+          @if (working || inspecting) {
+            <div class="work-card">
+              <app-progress
+                [value]="inspecting ? 0 : workPercent"
+                [indeterminate]="inspecting"
+                [stage]="(inspecting ? 'combine.inspecting' : 'combine.working') | translate"
+                color="primary">
+              </app-progress>
+              @if (working) {
+                <app-button variant="ghost" size="md" [block]="true" (clicked)="cancelExport()">
+                  {{ 'common.cancel' | translate }}
+                </app-button>
+              }
+            </div>
+          }
+
+          <!-- ─────────── Error ─────────── -->
+          @if (errorMessage && !working) {
+            <div class="error-card" role="alert">
+              <app-icon name="alert-circle" size="sm"></app-icon>
+              <span>{{ errorMessage }}</span>
+            </div>
+          }
+
+          <!-- ─────────── Result ─────────── -->
+          @if (result) {
+            <section class="result-card">
+              <div class="result-head">
+                <app-icon name="checkmark-circle" size="lg"></app-icon>
+                <div class="result-title-group">
+                  <strong>{{ 'combine.resultTitle' | translate }}</strong>
+                  <span class="result-name">{{ result.name }}</span>
+                </div>
+              </div>
+
+              <div class="result-stats">
+                <div class="stat">
+                  <span class="stat-label">{{ 'common.pages' | translate }}</span>
+                  <strong>{{ result.sourcePageCount }} → {{ result.pageCount }}</strong>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">{{ 'common.size' | translate }}</span>
+                  <strong>
+                    {{ (result.sizeBytes / 1024) | number:'1.0-0' }} {{ 'common.kb' | translate }}
+                  </strong>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">{{ 'combine.inputSizeLabel' | translate }}</span>
+                  <strong>{{ totalInputSizeKb | number:'1.0-0' }} {{ 'common.kb' | translate }}</strong>
+                </div>
+              </div>
+
+              @if (result.notices.length > 0) {
+                <ul class="notice-list">
+                  @for (notice of result.notices; track $index) {
+                    <li [class.warn]="isWarningNotice(notice)">
+                      <app-icon
+                        [name]="isWarningNotice(notice) ? 'warning' : 'information-circle'"
+                        size="sm">
+                      </app-icon>
+                      <span>{{ noticeKey(notice) | translate:noticeParams(notice) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+
+              <div class="result-actions">
+                <app-button variant="success" size="lg" [block]="true" (clicked)="saveResult()">
+                  <app-icon name="save" class="btn-icon"></app-icon>
+                  {{ 'common.save' | translate }}
+                </app-button>
+                <div class="result-actions-row">
+                  <app-button variant="outline" size="md" (clicked)="previewResult()">
+                    <app-icon name="eye" class="btn-icon"></app-icon>
+                    {{ 'common.preview' | translate }}
+                  </app-button>
+                  <app-button variant="outline" size="md" (clicked)="shareResult()">
+                    <app-icon name="share-social" class="btn-icon"></app-icon>
+                    {{ 'common.share' | translate }}
+                  </app-button>
+                </div>
+                <app-button variant="ghost" size="sm" [block]="true" (clicked)="startOver()">
+                  {{ 'combine.changeSettings' | translate }}
+                </app-button>
+              </div>
+            </section>
+          }
+
+          <!-- ─────────── Sticky export bar ─────────── -->
+          @if (!result && !working && !inspecting) {
+            <div class="export-bar">
+              @if (blockedReasonKey) {
+                <p class="blocked-note">{{ blockedReasonKey | translate }}</p>
+              }
+              <app-button
+                variant="primary"
+                size="lg"
+                [block]="true"
+                [disabled]="!!blockedReasonKey"
+                (clicked)="startExport()">
+                <app-icon name="git-merge" class="btn-icon"></app-icon>
+                {{ exportLabelKey() | translate }}
+              </app-button>
+            </div>
+          }
+        </div>
+
+        <app-related-tools
+          currentToolId="pdf_combine"
+          category="ORGANIZE"
+          [limit]="4">
+        </app-related-tools>
+      }
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+
+  <app-preflight-sheet
+    [isOpen]="preflightOpen"
+    [report]="preflightReport"
+    [resolution]="resolution"
+    [busy]="working"
+    (resolutionChange)="onResolutionChange($event)"
+    (proceed)="proceedFromPreflight()"
+    (closed)="closePreflight()">
+  </app-preflight-sheet>
+</div>
