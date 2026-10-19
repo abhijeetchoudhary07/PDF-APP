@@ -1,0 +1,760 @@
+<app-header></app-header>
+
+<main class="page-container optimize-page">
+  <app-page-header
+    [title]="'optimize.title' | translate"
+    [subtitle]="'optimize.subtitle' | translate"
+    [badge]="'optimize.badge' | translate"
+    [badgeVariant]="'primary'"
+    [showBack]="true"
+    [backUrl]="'/home'"
+  ></app-page-header>
+
+  <!-- STUDIO MODE SWITCHER RAIL (F1 - F6) -->
+  <nav class="studio-mode-selector appAutoScroll" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="activeMode === 'images'"
+      (click)="setMode('images')"
+    >
+      <app-icon name="images" [size]="18"></app-icon>
+      <span>{{ 'optimize.tabImages' | translate }}</span>
+    </button>
+
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="activeMode === 'colour'"
+      (click)="setMode('colour')"
+    >
+      <app-icon name="color-wand" [size]="18"></app-icon>
+      <span>{{ 'optimize.tabColour' | translate }}</span>
+    </button>
+
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="activeMode === 'duplicates'"
+      (click)="setMode('duplicates')"
+    >
+      <app-icon name="copy" [size]="18"></app-icon>
+      <span>{{ 'optimize.tabDuplicates' | translate }}</span>
+    </button>
+
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="activeMode === 'proof'"
+      (click)="setMode('proof')"
+    >
+      <app-icon name="eye" [size]="18"></app-icon>
+      <span>{{ 'optimize.tabProof' | translate }}</span>
+    </button>
+
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="activeMode === 'fit'"
+      (click)="setMode('fit')"
+    >
+      <app-icon name="speedometer" [size]="18"></app-icon>
+      <span>{{ 'optimize.tabFit' | translate }}</span>
+    </button>
+
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="activeMode === 'structure'"
+      (click)="setMode('structure')"
+    >
+      <app-icon name="layers" [size]="18"></app-icon>
+      <span>{{ 'optimize.tabStructure' | translate }}</span>
+    </button>
+  </nav>
+
+  <!-- STEP 1: SELECT FILE -->
+  @if (currentStep === 'select') {
+    <section class="select-section">
+      <div class="dropzone-wrapper">
+        <app-file-dropzone
+          [accept]="'.pdf,application/pdf'"
+          [title]="'optimize.selectPrompt' | translate"
+          [description]="'optimize.dropPrompt' | translate"
+          (fileSelected)="onFileSelected($event)"
+        ></app-file-dropzone>
+      </div>
+
+      <div class="features-showcase">
+        <div class="showcase-card">
+          <span class="card-icon">🎯</span>
+          <h4>{{ 'optimize.featDpiTitle' | translate }}</h4>
+          <p>{{ 'optimize.featDpiDesc' | translate }}</p>
+        </div>
+
+        <div class="showcase-card">
+          <span class="card-icon">📑</span>
+          <h4>{{ 'optimize.featScanTitle' | translate }}</h4>
+          <p>{{ 'optimize.featScanDesc' | translate }}</p>
+        </div>
+
+        <div class="showcase-card">
+          <span class="card-icon">⚡</span>
+          <h4>{{ 'optimize.featLosslessTitle' | translate }}</h4>
+          <p>{{ 'optimize.featLosslessDesc' | translate }}</p>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- STEP 2: CONFIGURE OPTIMIZATION -->
+  @if (currentStep === 'configure') {
+    <section class="configure-section">
+      <!-- DOCUMENT HEADER STRIP -->
+      <div class="doc-summary-card">
+        <div class="doc-info">
+          <div class="doc-icon-wrap">
+            <app-icon name="document-text" [size]="24"></app-icon>
+          </div>
+          <div class="doc-meta">
+            <h3 class="doc-name">{{ selectedFile?.name }}</h3>
+            <p class="doc-stats">
+              <span>{{ (fileSizeBytes / 1024) | number:'1.0-1' }} KB</span>
+              <span class="dot">•</span>
+              <span>{{ pageCount }} {{ 'optimize.pages' | translate }}</span>
+              @if (inventory) {
+                <span class="dot">•</span>
+                <span>{{ inventory.images.length }} {{ 'optimize.imagesFound' | translate }}</span>
+              }
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="change-file-btn"
+          (click)="resetAll()"
+        >
+          <app-icon name="close" [size]="16"></app-icon>
+          <span>{{ 'optimize.changeFile' | translate }}</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: DPI CEILING (F1) -->
+      @if (activeMode === 'images') {
+        <div class="studio-card">
+          <div class="card-header">
+            <h3>{{ 'optimize.f1Title' | translate }}</h3>
+            <p class="card-desc">{{ 'optimize.f1Desc' | translate }}</p>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">{{ 'optimize.selectCeiling' | translate }}</label>
+            <div class="chip-grid">
+              @for (ceiling of dpiCeilings; track ceiling) {
+                <button
+                  type="button"
+                  class="chip-btn"
+                  [class.active]="downsampleCeiling === ceiling"
+                  (click)="downsampleCeiling = ceiling; recalculateDownsamplePlan()"
+                >
+                  @if (ceiling === 'none') {
+                    {{ 'optimize.noCeiling' | translate }}
+                  } @else {
+                    {{ ceiling }} DPI
+                  }
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="slider-header">
+              <label class="control-label">{{ 'optimize.jpegQuality' | translate }}</label>
+              <span class="slider-value">{{ (downsampleQuality * 100) | number:'1.0-0' }}%</span>
+            </div>
+            <input
+              type="range"
+              class="range-slider"
+              min="0.3"
+              max="1"
+              step="0.05"
+              [(ngModel)]="downsampleQuality"
+              (ngModelChange)="recalculateDownsamplePlan()"
+            />
+          </div>
+
+          @if (downsamplePlan) {
+            <div class="report-box">
+              <div class="report-metrics">
+                <div class="metric-item">
+                  <span class="metric-num">{{ downsamplePlan.candidateCount }}</span>
+                  <span class="metric-label">{{ 'optimize.candidates' | translate }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-num">{{ (downsamplePlan.estimatedSavedBytes / 1024) | number:'1.0-1' }} KB</span>
+                  <span class="metric-label">{{ 'optimize.estSavings' | translate }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-num">{{ (downsamplePlan.totalImageBytes / 1024) | number:'1.0-1' }} KB</span>
+                  <span class="metric-label">{{ 'optimize.totalImageBytes' | translate }}</span>
+                </div>
+              </div>
+
+              @if (downsamplePlan.rows.length > 0) {
+                <div class="table-responsive">
+                  <table class="report-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'optimize.thImage' | translate }}</th>
+                        <th>{{ 'optimize.thPages' | translate }}</th>
+                        <th>{{ 'optimize.thResolution' | translate }}</th>
+                        <th>{{ 'optimize.thSaved' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of downsamplePlan.rows; track row.imageKey) {
+                        <tr>
+                          <td>
+                            <span class="img-badge">{{ row.imageKey }}</span>
+                          </td>
+                          <td>{{ row.pageNumbers.join(', ') || '1' }}</td>
+                          <td>
+                            {{ row.originalDpi }} DPI &rarr; {{ row.newDpi }} DPI
+                          </td>
+                          <td>
+                            @if (row.skippedReason) {
+                              <span class="skipped-tag">{{ row.skippedReason }}</span>
+                            } @else {
+                              <span class="saved-tag">+{{ (row.savedBytes / 1024) | number:'1.0-1' }} KB</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TAB 2: SCAN TONE PATHS (F2) -->
+      @if (activeMode === 'colour') {
+        <div class="studio-card">
+          <div class="card-header">
+            <h3>{{ 'optimize.f2Title' | translate }}</h3>
+            <p class="card-desc">{{ 'optimize.f2Desc' | translate }}</p>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">{{ 'optimize.colourMode' | translate }}</label>
+            <div class="chip-grid">
+              @for (path of colourPaths; track path) {
+                <button
+                  type="button"
+                  class="chip-btn"
+                  [class.active]="colourPath === path"
+                  (click)="colourPath = path"
+                >
+                  {{ 'optimize.path_' + path | translate }}
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (colourPath === 'mono') {
+            <div class="control-group">
+              <div class="slider-header">
+                <label class="control-label">{{ 'optimize.monoBias' | translate }}</label>
+                <span class="slider-value">{{ monoBias > 0 ? '+' : '' }}{{ monoBias }}</span>
+              </div>
+              <input
+                type="range"
+                class="range-slider"
+                min="-64"
+                max="64"
+                step="2"
+                [(ngModel)]="monoBias"
+              />
+              <p class="hint-text">{{ 'optimize.monoBiasHint' | translate }}</p>
+            </div>
+          }
+
+          @if (colourPath !== 'colour') {
+            <div class="control-group">
+              <label class="control-label">{{ 'optimize.renderDpi' | translate }}</label>
+              <div class="chip-grid">
+                @for (dpi of [72, 150, 200, 300]; track dpi) {
+                  <button
+                    type="button"
+                    class="chip-btn"
+                    [class.active]="colourDpi === dpi"
+                    (click)="colourDpi = dpi"
+                  >
+                    {{ dpi }} DPI
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (textLayerReport?.hasTextLayer) {
+              <div class="warning-banner">
+                <div class="warning-icon">
+                  <app-icon name="warning" [size]="20"></app-icon>
+                </div>
+                <div class="warning-content">
+                  <h4>{{ 'optimize.textLayerWarningTitle' | translate }}</h4>
+                  <p>{{ 'optimize.textLayerWarningDesc' | translate: { chars: textLayerReport.characterCount } }}</p>
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="confirmedScan"
+                    />
+                    <span>{{ 'optimize.confirmScanCheck' | translate }}</span>
+                  </label>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- TAB 3: DEDUPE (F3) -->
+      @if (activeMode === 'duplicates') {
+        <div class="studio-card">
+          <div class="card-header">
+            <h3>{{ 'optimize.f3Title' | translate }}</h3>
+            <p class="card-desc">{{ 'optimize.f3Desc' | translate }}</p>
+          </div>
+
+          @if (dedupePlan) {
+            <div class="dedupe-status-card">
+              @if (dedupePlan.duplicateCount > 0) {
+                <div class="duplicate-found">
+                  <div class="dedupe-icon">
+                    <app-icon name="copy" [size]="28"></app-icon>
+                  </div>
+                  <div class="dedupe-info">
+                    <h4>{{ 'optimize.duplicatesFound' | translate: { count: dedupePlan.duplicateCount } }}</h4>
+                    <p>{{ 'optimize.dedupeSavings' | translate: { kb: (dedupePlan.estimatedSavedBytes / 1024) | number:'1.0-1' } }}</p>
+                  </div>
+                </div>
+
+                <div class="group-list">
+                  @for (group of dedupePlan.groups; track group.keepKey) {
+                    <div class="group-card">
+                      <div class="group-header">
+                        <span class="keep-badge">{{ 'optimize.keepObject' | translate }}: {{ group.keepKey }}</span>
+                        <span class="dim-badge">{{ group.pixelWidth }}&times;{{ group.pixelHeight }} px</span>
+                      </div>
+                      <p class="drop-text">
+                        {{ 'optimize.replaces' | translate }}: {{ group.dropKeys.join(', ') }}
+                      </p>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="empty-state">
+                  <app-icon name="checkmark-circle" [size]="36"></app-icon>
+                  <h4>{{ 'optimize.noDuplicatesFound' | translate }}</h4>
+                  <p>{{ 'optimize.noDuplicatesDesc' | translate }}</p>
+                </div>
+              }
+            </div>
+
+            <div class="note-box">
+              <app-icon name="shield-checkmark" [size]="18"></app-icon>
+              <span>{{ 'optimize.dedupeVerifyNote' | translate }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TAB 4: BEFORE / AFTER PROOF (F4) -->
+      @if (activeMode === 'proof') {
+        <div class="studio-card">
+          <div class="card-header">
+            <h3>{{ 'optimize.f4Title' | translate }}</h3>
+            <p class="card-desc">{{ 'optimize.f4Desc' | translate }}</p>
+          </div>
+
+          <div class="proof-toolbar">
+            <div class="page-stepper">
+              <button
+                type="button"
+                class="stepper-btn"
+                [disabled]="proofCurrentPage <= 1"
+                (click)="setProofPage(proofCurrentPage - 1)"
+              >
+                <app-icon name="arrow-back" [size]="16"></app-icon>
+              </button>
+              <span class="stepper-label">
+                {{ 'optimize.pageOf' | translate: { current: proofCurrentPage, total: pageCount } }}
+              </span>
+              <button
+                type="button"
+                class="stepper-btn"
+                [disabled]="proofCurrentPage >= pageCount"
+                (click)="setProofPage(proofCurrentPage + 1)"
+              >
+                <app-icon name="arrow-forward" [size]="16"></app-icon>
+              </button>
+            </div>
+
+            <div class="view-mode-toggle">
+              <button
+                type="button"
+                class="view-mode-btn"
+                [class.active]="proofViewMode === 'split'"
+                (click)="setProofViewMode('split')"
+              >
+                {{ 'optimize.viewSplit' | translate }}
+              </button>
+              <button
+                type="button"
+                class="view-mode-btn"
+                [class.active]="proofViewMode === 'before'"
+                (click)="setProofViewMode('before')"
+              >
+                {{ 'optimize.viewBefore' | translate }}
+              </button>
+              <button
+                type="button"
+                class="view-mode-btn"
+                [class.active]="proofViewMode === 'after'"
+                (click)="setProofViewMode('after')"
+              >
+                {{ 'optimize.viewAfter' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <div class="proof-canvas-stage">
+            @if (isRenderingProof) {
+              <div class="proof-loading">
+                <app-progress [value]="50" [indeterminate]="true"></app-progress>
+                <p>{{ 'optimize.renderingProof' | translate }}</p>
+              </div>
+            } @else if (proofRender) {
+              @if (proofRender.unavailableReason) {
+                <div class="empty-state">
+                  <p>{{ proofRender.unavailableReason }}</p>
+                </div>
+              } @else {
+                <div class="proof-comparison" [ngClass]="proofViewMode">
+                  @if (proofViewMode === 'split' || proofViewMode === 'before') {
+                    <div class="proof-side before-side">
+                      <span class="side-badge">{{ 'optimize.original' | translate }}</span>
+                      @if (proofRender.beforeUrl) {
+                        <img [src]="proofRender.beforeUrl" alt="Before optimization" class="proof-img" />
+                      }
+                    </div>
+                  }
+                  @if (proofViewMode === 'split' || proofViewMode === 'after') {
+                    <div class="proof-side after-side">
+                      <span class="side-badge after-badge">{{ 'optimize.optimized' | translate }}</span>
+                      @if (proofRender.afterUrl) {
+                        <img [src]="proofRender.afterUrl" alt="After optimization" class="proof-img" />
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <!-- TAB 5: FIT THE UPLOAD LIMIT (F5) -->
+      @if (activeMode === 'fit') {
+        <div class="studio-card">
+          <div class="card-header">
+            <h3>{{ 'optimize.f5Title' | translate }}</h3>
+            <p class="card-desc">{{ 'optimize.f5Desc' | translate }}</p>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">{{ 'optimize.targetSize' | translate }}</label>
+            <div class="target-input-row">
+              <input
+                type="number"
+                class="number-input"
+                min="10"
+                max="50000"
+                [(ngModel)]="targetKB"
+              />
+              <span class="unit-badge">KB</span>
+            </div>
+
+            <div class="preset-pills appAutoScroll">
+              @for (preset of targetPresets; track preset) {
+                <button
+                  type="button"
+                  class="pill-btn"
+                  [class.active]="targetKB === preset"
+                  (click)="setTargetPreset(preset)"
+                >
+                  {{ preset >= 1024 ? ((preset / 1024) | number:'1.0-0') + ' MB' : preset + ' KB' }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">{{ 'optimize.allowedSteps' | translate }}</label>
+            <div class="steps-checklist">
+              @for (step of fitStepKinds; track step) {
+                <label class="step-checkbox">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="allowedSteps[step]"
+                  />
+                  <div class="step-label-info">
+                    <span class="step-name">{{ 'optimize.step_' + step | translate }}</span>
+                    <span class="step-desc">{{ 'optimize.step_desc_' + step | translate }}</span>
+                  </div>
+                </label>
+              }
+            </div>
+          </div>
+
+          @if (allowedSteps['downsample']) {
+            <div class="control-group">
+              <label class="control-label">{{ 'optimize.downsampleCeiling' | translate }}</label>
+              <div class="chip-grid">
+                @for (c of availableFitCeilings; track c) {
+                  <button
+                    type="button"
+                    class="chip-btn"
+                    [class.active]="fitDownsampleCeiling === c"
+                    (click)="setFitCeiling(c)"
+                  >
+                    {{ c }} DPI
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TAB 6: STRUCTURE OPTIMIZER (F6) -->
+      @if (activeMode === 'structure') {
+        <div class="studio-card">
+          <div class="card-header">
+            <h3>{{ 'optimize.f6Title' | translate }}</h3>
+            <p class="card-desc">{{ 'optimize.f6Desc' | translate }}</p>
+          </div>
+
+          <div class="switches-list">
+            <label class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">{{ 'optimize.dropOrphans' | translate }}</span>
+                <span class="switch-desc">{{ 'optimize.dropOrphansDesc' | translate }}</span>
+              </div>
+              <input
+                type="checkbox"
+                class="switch-input"
+                [(ngModel)]="structureDropOrphans"
+              />
+            </label>
+
+            <label class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">{{ 'optimize.objectStreams' | translate }}</span>
+                <span class="switch-desc">{{ 'optimize.objectStreamsDesc' | translate }}</span>
+              </div>
+              <input
+                type="checkbox"
+                class="switch-input"
+                [(ngModel)]="structureUseObjectStreams"
+              />
+            </label>
+
+            <label class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">{{ 'optimize.stripMetadata' | translate }}</span>
+                <span class="switch-desc">{{ 'optimize.stripMetadataDesc' | translate }}</span>
+              </div>
+              <input
+                type="checkbox"
+                class="switch-input"
+                [(ngModel)]="structureStripMetadata"
+              />
+            </label>
+
+            <label class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">{{ 'optimize.verifyOutput' | translate }}</span>
+                <span class="switch-desc">{{ 'optimize.verifyOutputDesc' | translate }}</span>
+              </div>
+              <input
+                type="checkbox"
+                class="switch-input"
+                [(ngModel)]="structureVerify"
+              />
+            </label>
+          </div>
+
+          <div class="notice-info">
+            <app-icon name="information-circle" [size]="18"></app-icon>
+            <span>{{ 'optimize.structureFwvNotice' | translate }}</span>
+          </div>
+        </div>
+      }
+
+      <!-- PRIMARY ACTION BAR -->
+      <div class="action-dock">
+        <app-button
+          variant="primary"
+          size="lg"
+          [block]="true"
+          (clicked)="runCurrentOptimization()"
+        >
+          <app-icon name="speedometer" [size]="20"></app-icon>
+          <span>{{ 'optimize.startOptimizeBtn' | translate }}</span>
+        </app-button>
+      </div>
+    </section>
+  }
+
+  <!-- STEP 3: PROCESSING -->
+  @if (currentStep === 'processing') {
+    <section class="processing-section">
+      <div class="processing-card">
+        <div class="processing-spinner-wrap">
+          <div class="spinner-ring"></div>
+        </div>
+
+        <h3 class="processing-title">{{ 'optimize.processingTitle' | translate }}</h3>
+        <p class="processing-subtitle">{{ progressLabel || progressPhase }}</p>
+
+        <div class="progress-container">
+          <app-progress [value]="progressPercent"></app-progress>
+          <span class="progress-pct">{{ progressPercent }}%</span>
+        </div>
+
+        <div class="cancel-wrap">
+          <app-button
+            variant="outline"
+            size="md"
+            (clicked)="cancelProcessing()"
+          >
+            <span>{{ 'optimize.cancelBtn' | translate }}</span>
+          </app-button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- STEP 4: SUCCESS RESULTS -->
+  @if (currentStep === 'result' && outputResult) {
+    <section class="result-section">
+      <div class="result-card">
+        <div class="result-header">
+          <div class="success-icon-wrap">
+            <app-icon name="checkmark-circle" [size]="32"></app-icon>
+          </div>
+          <h3>{{ 'optimize.completedTitle' | translate }}</h3>
+          <p class="result-subtitle">{{ outputResult.name }}</p>
+        </div>
+
+        <div class="size-comparison-banner">
+          <div class="size-col">
+            <span class="size-lbl">{{ 'optimize.originalSize' | translate }}</span>
+            <span class="size-val">{{ (outputResult.originalSizeBytes / 1024) | number:'1.0-1' }} KB</span>
+          </div>
+          <div class="size-arrow">&rarr;</div>
+          <div class="size-col">
+            <span class="size-lbl">{{ 'optimize.newSize' | translate }}</span>
+            <span class="size-val new-val">{{ (outputResult.sizeBytes / 1024) | number:'1.0-1' }} KB</span>
+          </div>
+          <div class="saving-chip" [class.negative]="outputResult.savedBytes < 0">
+            {{ outputResult.savedPercent }}% {{ 'optimize.smaller' | translate }}
+          </div>
+        </div>
+
+        @if (outputResult.notices.length > 0) {
+          <div class="notices-list">
+            <h4>{{ 'optimize.passReport' | translate }}</h4>
+            @for (notice of outputResult.notices; track notice.kind) {
+              <div class="notice-badge-item">
+                <app-icon name="checkmark" [size]="14"></app-icon>
+                <span>{{ 'optimize.notice_' + notice.kind | translate: { count: notice.count || 0, bytes: ((notice.bytes || 0) / 1024) | number:'1.0-1' } }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        @if (fitResult?.suggestSplit) {
+          <div class="split-suggest-box">
+            <app-icon name="alert-circle" [size]="20"></app-icon>
+            <div class="split-suggest-text">
+              <h4>{{ 'optimize.splitSuggestTitle' | translate }}</h4>
+              <p>{{ 'optimize.splitSuggestDesc' | translate }}</p>
+            </div>
+            <app-button
+              variant="secondary"
+              size="sm"
+              (clicked)="handOffToSplit()"
+            >
+              <span>{{ 'optimize.handOffSplitBtn' | translate }}</span>
+            </app-button>
+          </div>
+        }
+
+        <div class="result-actions">
+          <app-button
+            variant="primary"
+            size="lg"
+            [block]="true"
+            [loading]="isSaving"
+            (clicked)="saveOutput()"
+          >
+            <app-icon name="download" [size]="20"></app-icon>
+            <span>{{ 'optimize.saveBtn' | translate }}</span>
+          </app-button>
+
+          <div class="secondary-btn-grid">
+            <app-button
+              variant="outline"
+              size="md"
+              (clicked)="shareOutput()"
+            >
+              <app-icon name="share-social" [size]="18"></app-icon>
+              <span>{{ 'optimize.shareBtn' | translate }}</span>
+            </app-button>
+
+            <app-button
+              variant="outline"
+              size="md"
+              (clicked)="viewProofFromResults()"
+            >
+              <app-icon name="eye" [size]="18"></app-icon>
+              <span>{{ 'optimize.viewProofBtn' | translate }}</span>
+            </app-button>
+          </div>
+
+          <button
+            type="button"
+            class="reset-link-btn"
+            (click)="resetAll()"
+          >
+            {{ 'optimize.startOverBtn' | translate }}
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <app-related-tools [currentToolId]="'pdf_optimize'"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

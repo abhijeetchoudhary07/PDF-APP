@@ -256,6 +256,56 @@ export const APP_ROUTES: Routes = [
     path: 'features/pdf/overlay',
     loadComponent: () => import('./features/pdf-overlay/pdf-overlay.page').then(m => m.PdfOverlayPage)
   },
+  /*
+   * Part E — Navigation & Page Labels Studio (E1 Bookmarks & E2 Logical Page Labels).
+   */
+  {
+    path: 'features/pdf/navigation',
+    loadComponent: () => import('./features/pdf-navigation/pdf-navigation.page').then(m => m.PdfNavigationPage)
+  },
+  {
+    path: 'features/pdf/bookmarks',
+    loadComponent: () => import('./features/pdf-navigation/pdf-navigation.page').then(m => m.PdfNavigationPage),
+    data: { mode: 'bookmarks' }
+  },
+  {
+    path: 'features/pdf/page-labels',
+    loadComponent: () => import('./features/pdf-navigation/pdf-navigation.page').then(m => m.PdfNavigationPage),
+    data: { mode: 'labels' }
+  },
+  {
+    path: 'features/pdf/labels',
+    redirectTo: 'features/pdf/page-labels',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf/outline',
+    redirectTo: 'features/pdf/bookmarks',
+    pathMatch: 'full'
+  },
+  /*
+   * Part F — Size & Output Control (F1 - F6)
+   * Optimize Studio: DPI downsampling, grayscale/mono scan paths, deduplication,
+   * proof view, upload limit fit chain, and structure optimization.
+   */
+  {
+    path: 'features/pdf/optimize',
+    loadComponent: () => import('./features/pdf-optimize/pdf-optimize.page').then(m => m.PdfOptimizePage)
+  },
+  {
+    path: 'features/pdf/optimize/:mode',
+    loadComponent: () => import('./features/pdf-optimize/pdf-optimize.page').then(m => m.PdfOptimizePage)
+  },
+  {
+    path: 'features/pdf-optimize',
+    redirectTo: 'features/pdf/optimize',
+    pathMatch: 'full'
+  },
+  {
+    path: 'optimize',
+    redirectTo: 'features/pdf/optimize',
+    pathMatch: 'full'
+  },
   {
     path: 'features/presets',
     loadComponent: () => import('./features/presets/presets.page').then(m => m.PresetsPage)
@@ -283,6 +333,16 @@ export const APP_ROUTES: Routes = [
   {
     path: 'features/pdf-header-footer',
     loadComponent: () => import('./features/pdf-header-footer/pdf-header-footer.page').then(m => m.PdfHeaderFooterPage)
+  },
+  {
+    path: 'features/pdf-header-footer/bates',
+    loadComponent: () => import('./features/pdf-header-footer/pdf-header-footer.page').then(m => m.PdfHeaderFooterPage),
+    data: { mode: 'bates' }
+  },
+  {
+    path: 'features/pdf/bates',
+    redirectTo: 'features/pdf-header-footer/bates',
+    pathMatch: 'full'
   },
   {
     path: 'features/pdf-repair',
@@ -358,6 +418,31 @@ export const APP_ROUTES: Routes = [
   {
     path: 'header-footer',
     redirectTo: 'features/pdf-header-footer',
+    pathMatch: 'full'
+  },
+  {
+    path: 'bates',
+    redirectTo: 'features/pdf-header-footer/bates',
+    pathMatch: 'full'
+  },
+  {
+    path: 'bookmarks',
+    redirectTo: 'features/pdf/bookmarks',
+    pathMatch: 'full'
+  },
+  {
+    path: 'page-labels',
+    redirectTo: 'features/pdf/page-labels',
+    pathMatch: 'full'
+  },
+  {
+    path: 'labels',
+    redirectTo: 'features/pdf/page-labels',
+    pathMatch: 'full'
+  },
+  {
+    path: 'navigation',
+    redirectTo: 'features/pdf/navigation',
     pathMatch: 'full'
   },
   {

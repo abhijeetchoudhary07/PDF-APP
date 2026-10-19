@@ -93,4 +93,17 @@ export class DocumentBridgeService {
     this.compressTargetSubject.next(null);
     return val;
   }
+
+  private genericDocumentSubject = new BehaviorSubject<BridgeDocument | null>(null);
+  public genericDocument$ = this.genericDocumentSubject.asObservable();
+
+  setDocument(file: File, source: BridgeDocument['source'] = 'pdf', metadata?: Record<string, any>): void {
+    this.genericDocumentSubject.next({ file, source, metadata });
+  }
+
+  consumeDocument(): BridgeDocument | null {
+    const val = this.genericDocumentSubject.value;
+    this.genericDocumentSubject.next(null);
+    return val;
+  }
 }

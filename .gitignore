@@ -44,6 +44,8 @@ __pycache__/
 playwright-report/
 test-results/
 videos/
+scratch/
+screenshots/
 
 
 # --- Android / Capacitor ---------------------------------------------------

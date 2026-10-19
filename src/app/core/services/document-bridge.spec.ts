@@ -111,4 +111,20 @@ describe('DocumentBridgeService', () => {
 
     expect(bridge.getIntelligenceTarget()).toMatchObject({ text: 'extracted body', source: 'ocr' });
   });
+
+  describe('generic document channel', () => {
+    it('sets and consumes a document once', () => {
+      const f = file();
+      bridge.setDocument(f, 'pdf', { tag: 'optimize' });
+
+      const consumed = bridge.consumeDocument();
+      expect(consumed).not.toBeNull();
+      expect(consumed?.file).toBe(f);
+      expect(consumed?.source).toBe('pdf');
+      expect(consumed?.metadata?.tag).toBe('optimize');
+
+      // Subsequent consumption yields null
+      expect(bridge.consumeDocument()).toBeNull();
+    });
+  });
 });

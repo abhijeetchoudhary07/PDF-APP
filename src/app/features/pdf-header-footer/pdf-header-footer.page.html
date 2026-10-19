@@ -2,46 +2,106 @@
 
 <main class="page-container header-footer-page">
   <app-page-header
-    [title]="'headerFooter.title' | translate"
-    [subtitle]="'headerFooter.subtitle' | translate"
+    [title]="(studioMode === 'bates' ? 'headerFooter.modeBates' : 'headerFooter.title') | translate"
+    [subtitle]="(studioMode === 'bates' ? 'headerFooter.batesSubtitle' : 'headerFooter.subtitle') | translate"
     [badge]="'headerFooter.badge' | translate"
     [badgeVariant]="'primary'"
     [showBack]="true"
     [backUrl]="'/home'"
   ></app-page-header>
 
+  <!-- STUDIO MODE SWITCHER -->
+  <div class="studio-mode-selector" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="studioMode === 'headerFooter'"
+      (click)="switchStudioMode('headerFooter')"
+    >
+      <app-icon name="text" [size]="18"></app-icon>
+      <span>{{ 'headerFooter.modeHeaderFooter' | translate }}</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="studioMode === 'bates'"
+      (click)="switchStudioMode('bates')"
+    >
+      <app-icon name="list-number" [size]="18"></app-icon>
+      <span>{{ 'headerFooter.modeBates' | translate }}</span>
+    </button>
+  </div>
+
   <!-- STEP 1: SELECT FILE -->
   @if (currentStep === 'select') {
     <section class="select-section">
       <div class="dropzone-wrapper">
-        <app-file-dropzone
-          [accept]="'.pdf,application/pdf'"
-          [title]="'headerFooter.selectPrompt' | translate"
-          [description]="'headerFooter.dropPrompt' | translate"
-          (fileSelected)="onFileSelected($event)"
-        ></app-file-dropzone>
+        @if (studioMode === 'bates') {
+          <app-file-dropzone
+            [accept]="'.pdf,application/pdf'"
+            [multiple]="true"
+            [title]="'headerFooter.selectPrompt' | translate"
+            [description]="'headerFooter.batesSubtitle' | translate"
+            (fileSelected)="onBatesFilesSelected([$event])"
+            (filesSelected)="onBatesFilesSelected($event)"
+          ></app-file-dropzone>
+        } @else {
+          <app-file-dropzone
+            [accept]="'.pdf,application/pdf'"
+            [title]="'headerFooter.selectPrompt' | translate"
+            [description]="'headerFooter.dropPrompt' | translate"
+            (fileSelected)="onFileSelected($event)"
+          ></app-file-dropzone>
+        }
       </div>
+
       <!-- Presets / Quick Templates Preview -->
-      <div class="templates-showcase">
-        <div class="template-card">
-          <span class="tpl-icon">🔢</span>
-          <h4>{{ 'headerFooter.tplPageNum' | translate }}</h4>
-          <p>{{ 'headerFooter.tplPageNumDesc' | translate }}</p>
-          <code>Page &#123;page&#125; of &#123;totalPages&#125;</code>
+      @if (studioMode === 'headerFooter') {
+        <div class="templates-showcase">
+          <div class="template-card">
+            <span class="tpl-icon">🔢</span>
+            <h4>{{ 'headerFooter.tplPageNum' | translate }}</h4>
+            <p>{{ 'headerFooter.tplPageNumDesc' | translate }}</p>
+            <code>Page &#123;page&#125; of &#123;totalPages&#125;</code>
+          </div>
+          <div class="template-card">
+            <span class="tpl-icon">📅</span>
+            <h4>{{ 'headerFooter.tplDateTitle' | translate }}</h4>
+            <p>{{ 'headerFooter.tplDateTitleDesc' | translate }}</p>
+            <code>&#123;title&#125; • &#123;date&#125;</code>
+          </div>
+          <div class="template-card">
+            <span class="tpl-icon">🔒</span>
+            <h4>{{ 'headerFooter.tplConfidential' | translate }}</h4>
+            <p>{{ 'headerFooter.tplConfidentialDesc' | translate }}</p>
+            <code>CONFIDENTIAL - Page &#123;page&#125;</code>
+          </div>
         </div>
-        <div class="template-card">
-          <span class="tpl-icon">📅</span>
-          <h4>{{ 'headerFooter.tplDateTitle' | translate }}</h4>
-          <p>{{ 'headerFooter.tplDateTitleDesc' | translate }}</p>
-          <code>&#123;title&#125; • &#123;date&#125;</code>
+      } @else {
+        <!-- Bates Features Showcase -->
+        <div class="templates-showcase">
+          <div class="template-card">
+            <span class="tpl-icon">📑</span>
+            <h4>{{ 'headerFooter.batesBatchPlan' | translate }}</h4>
+            <p>{{ 'headerFooter.batesSubtitle' | translate }}</p>
+            <code>CONF-000001 ... CONF-000142</code>
+          </div>
+          <div class="template-card">
+            <span class="tpl-icon">📐</span>
+            <h4>{{ 'headerFooter.batesPosition' | translate }}</h4>
+            <p>{{ 'headerFooter.livePreviewHint' | translate }}</p>
+            <code>Top / Bottom • Left / Centre / Right</code>
+          </div>
+          <div class="template-card">
+            <span class="tpl-icon">🔒</span>
+            <h4>100% Offline & Safe</h4>
+            <p>{{ 'common.offlineNote' | translate }}</p>
+            <code>Zero network calls</code>
+          </div>
         </div>
-        <div class="template-card">
-          <span class="tpl-icon">🔒</span>
-          <h4>{{ 'headerFooter.tplConfidential' | translate }}</h4>
-          <p>{{ 'headerFooter.tplConfidentialDesc' | translate }}</p>
-          <code>CONFIDENTIAL - Page &#123;page&#125;</code>
-        </div>
-      </div>
+      }
     </section>
   }
 
@@ -51,218 +111,447 @@
       <div class="studio-grid">
         <!-- Controls Column -->
         <div class="controls-panel">
-          <div class="tabs-bar">
-            <app-tabs
-              [tabs]="tabs"
-              [selectedTab]="activeTab"
-              (tabChange)="activeTab = $any($event)"
-            ></app-tabs>
-          </div>
-          <!-- Dynamic Tag Helper Bar -->
-          <div class="dynamic-tags-bar">
-            <span class="tags-label">{{ 'headerFooter.insertVariable' | translate }}:</span>
-            <div class="tags-list">
-              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{page}')">&#123;page&#125;</button>
-              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{totalPages}')">&#123;totalPages&#125;</button>
-              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{date}')">&#123;date&#125;</button>
-              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{filename}')">&#123;filename&#125;</button>
-              <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{title}')">&#123;title&#125;</button>
-            </div>
-          </div>
-          <!-- TAB: FOOTER -->
-          @if (activeTab === 'footer') {
-            <div class="tab-content" data-testid="footer-fields">
-              <div class="input-group">
-                <label>{{ 'headerFooter.footerLeft' | translate }}</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  [(ngModel)]="config.footer.leftText"
-                  (ngModelChange)="updatePreviewOverlay()"
-                  [placeholder]="'headerFooter.placeholderLeft' | translate"
-                  />
-              </div>
-              <div class="input-group">
-                <label>{{ 'headerFooter.footerCenter' | translate }}</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  [(ngModel)]="config.footer.centerText"
-                  (ngModelChange)="updatePreviewOverlay()"
-                  [placeholder]="'headerFooter.placeholderCenter' | translate"
-                  />
-              </div>
-              <div class="input-group">
-                <label>{{ 'headerFooter.footerRight' | translate }}</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  [(ngModel)]="config.footer.rightText"
-                  (ngModelChange)="updatePreviewOverlay()"
-                  [placeholder]="'headerFooter.placeholderRight' | translate"
-                  />
-              </div>
-            </div>
-          }
-          <!-- TAB: HEADER -->
-          @if (activeTab === 'header') {
-            <div class="tab-content" data-testid="header-fields">
-              <div class="input-group">
-                <label>{{ 'headerFooter.headerLeft' | translate }}</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  [(ngModel)]="config.header.leftText"
-                  (ngModelChange)="updatePreviewOverlay()"
-                  [placeholder]="'headerFooter.placeholderLeft' | translate"
-                  />
-              </div>
-              <div class="input-group">
-                <label>{{ 'headerFooter.headerCenter' | translate }}</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  [(ngModel)]="config.header.centerText"
-                  (ngModelChange)="updatePreviewOverlay()"
-                  [placeholder]="'headerFooter.placeholderCenter' | translate"
-                  />
-              </div>
-              <div class="input-group">
-                <label>{{ 'headerFooter.headerRight' | translate }}</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  [(ngModel)]="config.header.rightText"
-                  (ngModelChange)="updatePreviewOverlay()"
-                  [placeholder]="'headerFooter.placeholderRight' | translate"
-                  />
-              </div>
-            </div>
-          }
-          <!-- TAB: TYPOGRAPHY & MARGINS -->
-          @if (activeTab === 'settings') {
-            <div class="tab-content">
-              <div class="settings-row">
-                <div class="input-group">
-                  <label>{{ 'headerFooter.fontFamily' | translate }}</label>
-                  <select class="form-select" [(ngModel)]="config.fontFamily" (ngModelChange)="updatePreviewOverlay()">
-                    <option value="Helvetica">Helvetica (Standard)</option>
-                    <option value="Helvetica-Bold">Helvetica Bold</option>
-                    <option value="Times-Roman">Times New Roman</option>
-                    <option value="Courier">Courier Monospace</option>
-                  </select>
+          <!-- BATES MODE CONTROLS -->
+          @if (studioMode === 'bates') {
+            <!-- Batch Overview Card -->
+            @if (batesBatchPlan) {
+              <div class="bates-plan-card">
+                <div class="plan-header">
+                  <div class="plan-header-title">
+                    <app-icon name="list-number" [size]="20"></app-icon>
+                    <h4>{{ 'headerFooter.batesBatchPlan' | translate }}</h4>
+                  </div>
+                  <span class="pages-badge">
+                    {{ batesBatchPlan.totalPages }} {{ 'common.pages' | translate }} ({{ batesFiles.length }} docs)
+                  </span>
                 </div>
-                <div class="input-group">
-                  <label>{{ 'headerFooter.fontSize' | translate }}: {{ config.fontSize }}pt</label>
-                  <input
-                    type="range"
-                    min="8"
-                    max="24"
-                    step="1"
-                    class="form-range"
-                    [(ngModel)]="config.fontSize"
-                    (ngModelChange)="updatePreviewOverlay()"
-                    />
+
+                <div class="stamps-preview-strip">
+                  <div class="stamp-chip">
+                    <span class="stamp-label">{{ 'headerFooter.batesFirstStamp' | translate }}</span>
+                    <span class="stamp-val">{{ batesBatchPlan.firstStamp || '---' }}</span>
+                  </div>
+                  <span class="stamp-arrow">➔</span>
+                  <div class="stamp-chip">
+                    <span class="stamp-label">{{ 'headerFooter.batesLastStamp' | translate }}</span>
+                    <span class="stamp-val">{{ batesBatchPlan.lastStamp || '---' }}</span>
+                  </div>
                 </div>
-              </div>
-              <div class="input-group">
-                <label>{{ 'headerFooter.fontColor' | translate }}</label>
-                <div class="color-picker-row">
-                  <input type="color" class="color-input" [(ngModel)]="config.fontColor" (ngModelChange)="updatePreviewOverlay()" />
-                  <div class="color-swatches">
-                    @for (c of colorPresets; track c) {
-                      <button
-                        type="button"
-                        class="swatch"
-                        [style.background]="c"
-                        [class.active]="config.fontColor === c"
-                        (click)="config.fontColor = c; updatePreviewOverlay()"
-                      ></button>
+
+                @if (batesBatchPlan.overflowsWidth) {
+                  <div class="warning-banner">
+                    <app-icon name="warning" [size]="18"></app-icon>
+                    <span>{{ 'headerFooter.batesOverflowWarning' | translate }}</span>
+                  </div>
+                }
+
+                <!-- Batch Files List -->
+                <div class="batch-files-accordion">
+                  <div class="batch-files-header">
+                    <span class="batch-files-label">Batch Files ({{ batesFiles.length }})</span>
+                    <label class="add-more-label">
+                      + Add PDF
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        multiple
+                        class="hidden-file-input"
+                        (change)="addMoreBatesFiles($any($event.target).files)"
+                      />
+                    </label>
+                  </div>
+                  <div class="batch-files-list">
+                    @for (plan of batesBatchPlan.files; track plan.name + $index) {
+                      <div class="batch-file-row">
+                        <div class="file-info-col">
+                          <span class="file-name" [title]="plan.name">{{ plan.name }}</span>
+                          <span class="file-sub">{{ plan.pageCount }} {{ 'common.pages' | translate }} • {{ plan.firstStamp }} - {{ plan.lastStamp }}</span>
+                        </div>
+                        <button
+                          type="button"
+                          class="remove-file-btn"
+                          (click)="removeBatesFile($index)"
+                          [attr.aria-label]="'common.remove' | translate"
+                        >
+                          <app-icon name="close" [size]="14"></app-icon>
+                        </button>
+                      </div>
                     }
                   </div>
                 </div>
               </div>
-              <div class="settings-row margins-grid">
+            }
+
+            <!-- Bates Settings Controls -->
+            <div class="bates-settings-box">
+              <div class="settings-row two-cols">
                 <div class="input-group">
-                  <label>{{ 'headerFooter.topMargin' | translate }} (pt)</label>
-                  <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.topMargin" (ngModelChange)="updatePreviewOverlay()" />
+                  <label>{{ 'headerFooter.batesPrefix' | translate }}</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    [(ngModel)]="batesOptions.prefix"
+                    (ngModelChange)="updateBatesPlan()"
+                    [placeholder]="'headerFooter.batesPrefixPlaceholder' | translate"
+                  />
                 </div>
                 <div class="input-group">
-                  <label>{{ 'headerFooter.bottomMargin' | translate }} (pt)</label>
-                  <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.bottomMargin" (ngModelChange)="updatePreviewOverlay()" />
+                  <label>{{ 'headerFooter.batesSuffix' | translate }}</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    [(ngModel)]="batesOptions.suffix"
+                    (ngModelChange)="updateBatesPlan()"
+                    [placeholder]="'headerFooter.batesSuffixPlaceholder' | translate"
+                  />
+                </div>
+              </div>
+
+              <div class="settings-row three-cols">
+                <div class="input-group">
+                  <label>{{ 'headerFooter.batesWidth' | translate }}</label>
+                  <div class="pills-row">
+                    @for (w of [4, 6, 8, 10]; track w) {
+                      <button
+                        type="button"
+                        class="pill-btn"
+                        [class.active]="batesOptions.width === w"
+                        (click)="setBatesWidth(w)"
+                      >{{ w }}</button>
+                    }
+                  </div>
                 </div>
                 <div class="input-group">
-                  <label>{{ 'headerFooter.leftMargin' | translate }} (pt)</label>
-                  <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.leftMargin" (ngModelChange)="updatePreviewOverlay()" />
+                  <label>{{ 'headerFooter.batesStartNumber' | translate }}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    class="form-input"
+                    [(ngModel)]="batesOptions.startNumber"
+                    (ngModelChange)="updateBatesPlan()"
+                  />
                 </div>
                 <div class="input-group">
-                  <label>{{ 'headerFooter.rightMargin' | translate }} (pt)</label>
-                  <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.rightMargin" (ngModelChange)="updatePreviewOverlay()" />
+                  <label>{{ 'headerFooter.batesStep' | translate }}</label>
+                  <input
+                    type="number"
+                    min="1"
+                    class="form-input"
+                    [(ngModel)]="batesOptions.step"
+                    (ngModelChange)="updateBatesPlan()"
+                  />
+                </div>
+              </div>
+
+              <!-- Position Grid -->
+              <div class="input-group">
+                <label>{{ 'headerFooter.batesPosition' | translate }}</label>
+                <div class="position-grid">
+                  <button
+                    type="button"
+                    class="pos-btn"
+                    [class.active]="batesOptions.position === 'top-left'"
+                    (click)="setBatesPosition('top-left')"
+                  >{{ 'headerFooter.posTopLeft' | translate }}</button>
+                  <button
+                    type="button"
+                    class="pos-btn"
+                    [class.active]="batesOptions.position === 'top-centre'"
+                    (click)="setBatesPosition('top-centre')"
+                  >{{ 'headerFooter.posTopCentre' | translate }}</button>
+                  <button
+                    type="button"
+                    class="pos-btn"
+                    [class.active]="batesOptions.position === 'top-right'"
+                    (click)="setBatesPosition('top-right')"
+                  >{{ 'headerFooter.posTopRight' | translate }}</button>
+                  <button
+                    type="button"
+                    class="pos-btn"
+                    [class.active]="batesOptions.position === 'bottom-left'"
+                    (click)="setBatesPosition('bottom-left')"
+                  >{{ 'headerFooter.posBottomLeft' | translate }}</button>
+                  <button
+                    type="button"
+                    class="pos-btn"
+                    [class.active]="batesOptions.position === 'bottom-centre'"
+                    (click)="setBatesPosition('bottom-centre')"
+                  >{{ 'headerFooter.posBottomCentre' | translate }}</button>
+                  <button
+                    type="button"
+                    class="pos-btn"
+                    [class.active]="batesOptions.position === 'bottom-right'"
+                    (click)="setBatesPosition('bottom-right')"
+                  >{{ 'headerFooter.posBottomRight' | translate }}</button>
+                </div>
+              </div>
+
+              <!-- Typography & Margins -->
+              <div class="settings-row two-cols">
+                <div class="input-group">
+                  <label>{{ 'headerFooter.fontSize' | translate }}: {{ batesOptions.fontSize }}pt</label>
+                  <input
+                    type="range"
+                    min="6"
+                    max="18"
+                    step="1"
+                    class="form-range"
+                    [(ngModel)]="batesOptions.fontSize"
+                    (ngModelChange)="updateBatesPreviewOverlay()"
+                  />
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.fontColor' | translate }}</label>
+                  <div class="color-picker-row">
+                    <input
+                      type="color"
+                      class="color-input"
+                      [(ngModel)]="batesOptions.fontColor"
+                      (ngModelChange)="updateBatesPreviewOverlay()"
+                    />
+                    <div class="color-swatches">
+                      @for (c of colorPresets; track c) {
+                        <button
+                          type="button"
+                          class="swatch"
+                          [style.background]="c"
+                          [class.active]="batesOptions.fontColor === c"
+                          (click)="batesOptions.fontColor = c; updateBatesPreviewOverlay()"
+                        ></button>
+                      }
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          }
-          <!-- TAB: FIRST PAGE RULES & TARGETING -->
-          @if (activeTab === 'firstPage') {
-            <div class="tab-content">
-              <div class="input-group">
-                <label>{{ 'headerFooter.firstPageBehavior' | translate }}</label>
-                <div class="radio-options">
-                  <label class="radio-label">
-                    <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="include" />
-                    <span>{{ 'headerFooter.firstPageInclude' | translate }}</span>
-                  </label>
-                  <label class="radio-label">
-                    <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="skip" />
-                    <span>{{ 'headerFooter.firstPageSkip' | translate }}</span>
-                  </label>
-                  <label class="radio-label">
-                    <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="different" />
-                    <span>{{ 'headerFooter.firstPageDifferent' | translate }}</span>
-                  </label>
-                </div>
-              </div>
-              <!-- Different first page header/footer inputs if selected -->
-              @if (config.firstPageMode === 'different') {
-                <div class="different-first-page-box">
-                  <h4>{{ 'headerFooter.firstPageCustomText' | translate }}</h4>
-                  <div class="input-group">
-                    <label>{{ 'headerFooter.firstPageHeaderCenter' | translate }}</label>
-                    <input type="text" class="form-input" [(ngModel)]="config.firstPageHeader!.centerText" (ngModelChange)="updatePreviewOverlay()" />
-                  </div>
-                  <div class="input-group">
-                    <label>{{ 'headerFooter.firstPageFooterCenter' | translate }}</label>
-                    <input type="text" class="form-input" [(ngModel)]="config.firstPageFooter!.centerText" (ngModelChange)="updatePreviewOverlay()" />
-                  </div>
-                </div>
-              }
-              <div class="input-group">
-                <label>{{ 'headerFooter.pageTargetMode' | translate }}</label>
-                <select class="form-select" [(ngModel)]="config.pageTargetMode">
-                  <option value="all">{{ 'headerFooter.targetAll' | translate }}</option>
-                  <option value="odd">{{ 'headerFooter.targetOdd' | translate }}</option>
-                  <option value="even">{{ 'headerFooter.targetEven' | translate }}</option>
-                  <option value="custom">{{ 'headerFooter.targetCustom' | translate }}</option>
-                </select>
-              </div>
-              @if (config.pageTargetMode === 'custom') {
-                <div class="input-group">
-                  <label>{{ 'headerFooter.customPageRange' | translate }} (e.g. 2-5, 8)</label>
-                  <input type="text" class="form-input" [(ngModel)]="config.customPageRange" placeholder="2-5, 8" />
-                </div>
-              }
-              <div class="input-group">
-                <label>{{ 'headerFooter.startPageNumber' | translate }}</label>
-                <input type="number" min="1" class="form-input" [(ngModel)]="config.startPageNumber" />
+          } @else {
+            <!-- STANDARD HEADER/FOOTER CONTROLS -->
+            <div class="tabs-bar">
+              <app-tabs
+                [tabs]="tabs"
+                [selectedTab]="activeTab"
+                (tabChange)="activeTab = $any($event)"
+              ></app-tabs>
+            </div>
+            <!-- Dynamic Tag Helper Bar -->
+            <div class="dynamic-tags-bar">
+              <span class="tags-label">{{ 'headerFooter.insertVariable' | translate }}:</span>
+              <div class="tags-list">
+                <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{page}')">&#123;page&#125;</button>
+                <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{totalPages}')">&#123;totalPages&#125;</button>
+                <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{date}')">&#123;date&#125;</button>
+                <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{filename}')">&#123;filename&#125;</button>
+                <button type="button" class="tag-chip" (click)="insertTag(activeTab === 'header' ? 'headerCenter' : 'footerCenter', '{title}')">&#123;title&#125;</button>
               </div>
             </div>
+
+            <!-- TAB: FOOTER -->
+            @if (activeTab === 'footer') {
+              <div class="tab-content" data-testid="footer-fields">
+                <div class="input-group">
+                  <label>{{ 'headerFooter.footerLeft' | translate }}</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    [(ngModel)]="config.footer.leftText"
+                    (ngModelChange)="updatePreviewOverlay()"
+                    [placeholder]="'headerFooter.placeholderLeft' | translate"
+                  />
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.footerCenter' | translate }}</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    [(ngModel)]="config.footer.centerText"
+                    (ngModelChange)="updatePreviewOverlay()"
+                    [placeholder]="'headerFooter.placeholderCenter' | translate"
+                  />
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.footerRight' | translate }}</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    [(ngModel)]="config.footer.rightText"
+                    (ngModelChange)="updatePreviewOverlay()"
+                    [placeholder]="'headerFooter.placeholderRight' | translate"
+                  />
+                </div>
+              </div>
+            }
+
+            <!-- TAB: HEADER -->
+            @if (activeTab === 'header') {
+              <div class="tab-content" data-testid="header-fields">
+                <div class="input-group">
+                  <label>{{ 'headerFooter.headerLeft' | translate }}</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    [(ngModel)]="config.header.leftText"
+                    (ngModelChange)="updatePreviewOverlay()"
+                    [placeholder]="'headerFooter.placeholderLeft' | translate"
+                  />
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.headerCenter' | translate }}</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    [(ngModel)]="config.header.centerText"
+                    (ngModelChange)="updatePreviewOverlay()"
+                    [placeholder]="'headerFooter.placeholderCenter' | translate"
+                  />
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.headerRight' | translate }}</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    [(ngModel)]="config.header.rightText"
+                    (ngModelChange)="updatePreviewOverlay()"
+                    [placeholder]="'headerFooter.placeholderRight' | translate"
+                  />
+                </div>
+              </div>
+            }
+
+            <!-- TAB: TYPOGRAPHY & MARGINS -->
+            @if (activeTab === 'settings') {
+              <div class="tab-content">
+                <div class="settings-row">
+                  <div class="input-group">
+                    <label>{{ 'headerFooter.fontFamily' | translate }}</label>
+                    <select class="form-select" [(ngModel)]="config.fontFamily" (ngModelChange)="updatePreviewOverlay()">
+                      <option value="Helvetica">Helvetica (Standard)</option>
+                      <option value="Helvetica-Bold">Helvetica Bold</option>
+                      <option value="Times-Roman">Times New Roman</option>
+                      <option value="Courier">Courier Monospace</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label>{{ 'headerFooter.fontSize' | translate }}: {{ config.fontSize }}pt</label>
+                    <input
+                      type="range"
+                      min="8"
+                      max="24"
+                      step="1"
+                      class="form-range"
+                      [(ngModel)]="config.fontSize"
+                      (ngModelChange)="updatePreviewOverlay()"
+                    />
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label>{{ 'headerFooter.fontColor' | translate }}</label>
+                  <div class="color-picker-row">
+                    <input type="color" class="color-input" [(ngModel)]="config.fontColor" (ngModelChange)="updatePreviewOverlay()" />
+                    <div class="color-swatches">
+                      @for (c of colorPresets; track c) {
+                        <button
+                          type="button"
+                          class="swatch"
+                          [style.background]="c"
+                          [class.active]="config.fontColor === c"
+                          (click)="config.fontColor = c; updatePreviewOverlay()"
+                        ></button>
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-row margins-grid">
+                  <div class="input-group">
+                    <label>{{ 'headerFooter.topMargin' | translate }} (pt)</label>
+                    <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.topMargin" (ngModelChange)="updatePreviewOverlay()" />
+                  </div>
+                  <div class="input-group">
+                    <label>{{ 'headerFooter.bottomMargin' | translate }} (pt)</label>
+                    <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.bottomMargin" (ngModelChange)="updatePreviewOverlay()" />
+                  </div>
+                  <div class="input-group">
+                    <label>{{ 'headerFooter.leftMargin' | translate }} (pt)</label>
+                    <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.leftMargin" (ngModelChange)="updatePreviewOverlay()" />
+                  </div>
+                  <div class="input-group">
+                    <label>{{ 'headerFooter.rightMargin' | translate }} (pt)</label>
+                    <input type="number" min="10" max="150" class="form-input" [(ngModel)]="config.rightMargin" (ngModelChange)="updatePreviewOverlay()" />
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- TAB: FIRST PAGE RULES & TARGETING -->
+            @if (activeTab === 'firstPage') {
+              <div class="tab-content">
+                <div class="input-group">
+                  <label>{{ 'headerFooter.firstPageBehavior' | translate }}</label>
+                  <div class="radio-options">
+                    <label class="radio-label">
+                      <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="include" />
+                      <span>{{ 'headerFooter.firstPageInclude' | translate }}</span>
+                    </label>
+                    <label class="radio-label">
+                      <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="skip" />
+                      <span>{{ 'headerFooter.firstPageSkip' | translate }}</span>
+                    </label>
+                    <label class="radio-label">
+                      <input type="radio" name="firstPageMode" [(ngModel)]="config.firstPageMode" (ngModelChange)="updatePreviewOverlay()" value="different" />
+                      <span>{{ 'headerFooter.firstPageDifferent' | translate }}</span>
+                    </label>
+                  </div>
+                </div>
+
+                @if (config.firstPageMode === 'different') {
+                  <div class="different-first-page-box">
+                    <h4>{{ 'headerFooter.firstPageCustomText' | translate }}</h4>
+                    <div class="input-group">
+                      <label>{{ 'headerFooter.firstPageHeaderCenter' | translate }}</label>
+                      <input type="text" class="form-input" [(ngModel)]="config.firstPageHeader!.centerText" (ngModelChange)="updatePreviewOverlay()" />
+                    </div>
+                    <div class="input-group">
+                      <label>{{ 'headerFooter.firstPageFooterCenter' | translate }}</label>
+                      <input type="text" class="form-input" [(ngModel)]="config.firstPageFooter!.centerText" (ngModelChange)="updatePreviewOverlay()" />
+                    </div>
+                  </div>
+                }
+
+                <div class="input-group">
+                  <label>{{ 'headerFooter.pageTargetMode' | translate }}</label>
+                  <select class="form-select" [(ngModel)]="config.pageTargetMode">
+                    <option value="all">{{ 'headerFooter.targetAll' | translate }}</option>
+                    <option value="odd">{{ 'headerFooter.targetOdd' | translate }}</option>
+                    <option value="even">{{ 'headerFooter.targetEven' | translate }}</option>
+                    <option value="custom">{{ 'headerFooter.targetCustom' | translate }}</option>
+                  </select>
+                </div>
+                @if (config.pageTargetMode === 'custom') {
+                  <div class="input-group">
+                    <label>{{ 'headerFooter.customPageRange' | translate }} (e.g. 2-5, 8)</label>
+                    <input type="text" class="form-input" [(ngModel)]="config.customPageRange" placeholder="2-5, 8" />
+                  </div>
+                }
+                <div class="input-group">
+                  <label>{{ 'headerFooter.startPageNumber' | translate }}</label>
+                  <input type="number" min="1" class="form-input" [(ngModel)]="config.startPageNumber" />
+                </div>
+              </div>
+            }
           }
+
+          <!-- Sticky Apply Bar -->
           <div class="apply-action-bar">
             <app-button
               variant="primary"
               size="lg"
               (clicked)="applyAndGenerate()"
-            >{{ 'headerFooter.applyBtn' | translate }}</app-button>
+            >
+              @if (studioMode === 'bates') {
+                {{ (batesFiles.length > 1 ? 'headerFooter.batesApplyBatchBtn' : 'headerFooter.batesApplyBtn') | translate: { count: batesFiles.length } }}
+              } @else {
+                {{ 'headerFooter.applyBtn' | translate }}
+              }
+            </app-button>
             <app-button
               variant="outline"
               size="md"
@@ -270,6 +559,7 @@
             >{{ 'common.chooseAnother' | translate }}</app-button>
           </div>
         </div>
+
         <!-- Live Preview Column -->
         <div class="preview-panel">
           <div class="preview-panel-header">
@@ -295,39 +585,79 @@
     <section class="processing-section">
       <div class="proc-card">
         <div class="spinner"></div>
-        <h3>{{ 'headerFooter.processingTitle' | translate }}</h3>
-        <p>{{ 'headerFooter.processingDesc' | translate }}</p>
+        <h3>{{ (studioMode === 'bates' ? 'headerFooter.modeBates' : 'headerFooter.processingTitle') | translate }}</h3>
+        <p>{{ batesProgressText || ('headerFooter.processingDesc' | translate) }}</p>
+        @if (studioMode === 'bates') {
+          <app-progress [value]="batesProgress" [label]="batesProgress + '%'"></app-progress>
+        }
       </div>
     </section>
   }
 
   <!-- STEP 4: RESULT -->
-  @if (currentStep === 'result' && outputFile) {
+  @if (currentStep === 'result') {
     <section class="result-section">
       <div class="result-card">
         <div class="success-banner">
           <span class="check-icon">✓</span>
           <div class="success-text">
-            <h3>{{ 'headerFooter.resultSuccess' | translate }}</h3>
-            <p>{{ pagesModifiedCount }} {{ 'headerFooter.pagesUpdated' | translate }}</p>
+            <h3>{{ (studioMode === 'bates' ? 'headerFooter.batesResultSuccess' : 'headerFooter.resultSuccess') | translate }}</h3>
+            <p>
+              @if (studioMode === 'bates') {
+                {{ 'headerFooter.batesFilesUpdated' | translate: { count: batesOutputs.length } }}
+              } @else {
+                {{ pagesModifiedCount }} {{ 'headerFooter.pagesUpdated' | translate }}
+              }
+            </p>
           </div>
         </div>
-        @if (outputArrayBuffer) {
+
+        <!-- Bates Batch Results list if multiple files -->
+        @if (studioMode === 'bates' && batesOutputs.length > 1) {
+          <div class="batch-results-list">
+            <div class="batch-results-header">
+              <h4>Stamped Documents ({{ batesOutputs.length }})</h4>
+              <app-button variant="primary" size="sm" (clicked)="downloadAllBates()">
+                {{ 'headerFooter.batesDownloadAll' | translate }}
+              </app-button>
+            </div>
+            @for (out of batesOutputs; track out.name) {
+              <div class="batch-result-row">
+                <div class="result-info">
+                  <span class="res-name">{{ out.name }}</span>
+                  <span class="res-stamp-badge">{{ out.firstStamp }} ➔ {{ out.lastStamp }}</span>
+                  <span class="res-meta">{{ out.pagesStamped }} pages • {{ (out.sizeBytes / 1024) | number:'1.0-0' }} KB</span>
+                </div>
+                <div class="row-actions">
+                  <button type="button" class="action-btn" (click)="downloadSingleBates(out)" [attr.aria-label]="'common.download' | translate">
+                    <app-icon name="download" [size]="16"></app-icon>
+                  </button>
+                  <button type="button" class="action-btn" (click)="shareSingleBates(out)" [attr.aria-label]="'common.share' | translate">
+                    <app-icon name="share-social" [size]="16"></app-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (outputArrayBuffer) {
           <div class="preview-result-wrapper">
             <app-pdf-preview [arrayBuffer]="outputArrayBuffer" [initialPage]="1"></app-pdf-preview>
           </div>
         }
+
         <div class="result-actions">
-          <app-button
-            variant="primary"
-            size="lg"
-            (clicked)="downloadResult()"
-          >{{ 'common.download' | translate }}</app-button>
-          <app-button
-            variant="outline"
-            size="lg"
-            (clicked)="shareResult()"
-          >{{ 'common.share' | translate }}</app-button>
+          @if (studioMode !== 'bates' || batesOutputs.length === 1) {
+            <app-button
+              variant="primary"
+              size="lg"
+              (clicked)="downloadResult()"
+            >{{ 'common.download' | translate }}</app-button>
+            <app-button
+              variant="outline"
+              size="lg"
+              (clicked)="shareResult()"
+            >{{ 'common.share' | translate }}</app-button>
+          }
           <app-button
             variant="ghost"
             size="md"

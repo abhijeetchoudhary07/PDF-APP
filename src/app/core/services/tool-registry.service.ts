@@ -397,6 +397,35 @@ const TOOL_CATALOGUE: ToolItem[] = [
         'watermark sheet', 'stamp', 'background pdf', 'foreground', 'combine layers', 'imprint'
       ],
       relatedIds: ['pdf_layout', 'pdf_combine', 'pdf_editor', 'pdf_organize']
+    },
+    {
+      id: 'pdf_navigation',
+      category: 'ORGANIZE',
+      title: 'Navigation & Page Labels',
+      description: 'Create and edit bookmarks, auto-generate outlines from headings, and set logical page numbering.',
+      route: '/features/pdf/bookmarks',
+      icon: 'bookmark-outline',
+      color: 'organize',
+      keywords: [
+        'navigation', 'bookmarks', 'outline', 'table of contents', 'toc', 'headings',
+        'page labels', 'page numbering', 'roman numerals', 'bates', 'logical pages'
+      ],
+      relatedIds: ['pdf_header_footer', 'pdf_organize', 'pdf_combine', 'pdf_reader']
+    },
+    {
+      id: 'pdf_optimize',
+      category: 'PDF',
+      title: 'Size & Structure Optimizer',
+      description: 'Lossless structure cleanup, DPI downsampling with visual proof, image deduplication, and scan tone compression.',
+      route: '/features/pdf/optimize',
+      icon: 'speedometer-outline',
+      color: 'pdf',
+      keywords: [
+        'optimize', 'optimizer', 'dpi', 'downsample', 'resolution', 'dedupe',
+        'duplicate images', 'grayscale', 'mono', 'black and white', '1-bit',
+        'proof', 'structure', 'fast web view', 'upload limit', 'fit size'
+      ],
+      relatedIds: ['pdf_compress', 'pdf_organize', 'pdf_layout', 'pdf_repair']
     }
 ];
 

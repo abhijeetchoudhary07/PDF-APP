@@ -5,6 +5,14 @@ import {
   HeaderFooterConfig,
   HeaderFooterZone
 } from '../models/pdf-analysis.types';
+import {
+  BatesBatchPlan,
+  BatesFilePlan,
+  BatesOptions,
+  BatesOutput,
+  BatesPosition,
+  NavigationProgress
+} from '../models/pdf-navigation.types';
 import { PdfRangeParserUtil } from '../utilities/pdf-range-parser.util';
 
 @Injectable({
@@ -134,6 +142,197 @@ export class PdfHeaderFooterService {
       .replace(/\{date\}/gi, dateStr)
       .replace(/\{filename\}/gi, fileName)
       .replace(/\{title\}/gi, title);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // E3 — Bates numbering
+  //
+  // Added alongside the header and footer path above, which is unchanged:
+  // `applyHeaderFooter` and `resolveTemplate` behave exactly as they always
+  // have, and nothing below is reachable from them.
+  // ════════════════════════════════════════════════════════════════════
+
+  /** Most pages one Bates run will stamp, so a huge batch cannot hang a phone. */
+  readonly MAX_BATES_PAGES = 10000;
+
+  /**
+   * One stamp: prefix, the number zero-padded to a fixed width, then suffix.
+   *
+   * The width is a minimum, never a truncation. A counter that outgrows its
+   * width keeps all its digits and the plan reports it, because a Bates series
+   * that silently wraps from 999 to 000 is worse than one that prints four
+   * digits where three were asked for — these numbers are how a document is
+   * referred to afterwards, and they have to stay unique.
+   */
+  formatBatesNumber(value: number, options: Pick<BatesOptions, 'prefix' | 'suffix' | 'width'>): string {
+    const safe = Math.max(0, Math.floor(Number.isFinite(value) ? value : 0));
+    const width = Math.min(12, Math.max(1, Math.floor(options.width) || 1));
+    return `${options.prefix ?? ''}${String(safe).padStart(width, '0')}${options.suffix ?? ''}`;
+  }
+
+  /**
+   * How a batch of files shares one counter.
+   *
+   * The counter does **not** restart per document. A three-file batch of 4, 3
+   * and 5 pages starting at 1 runs 1-4, 5-7 and 8-12, so the last stamp at
+   * width 3 is `012`. A stamp that restarts per file is not a Bates number,
+   * and the mistake is invisible until the files have been filed somewhere.
+   */
+  planBatesBatch(
+    files: Array<{ name: string; pageCount: number }>,
+    options: BatesOptions
+  ): BatesBatchPlan {
+    const step = Math.max(1, Math.floor(options.step) || 1);
+    const start = Math.max(0, Math.floor(options.startNumber) || 0);
+
+    const plans: BatesFilePlan[] = [];
+    let counter = start;
+    let totalPages = 0;
+
+    files.forEach((file, index) => {
+      const pageCount = Math.max(0, Math.floor(file.pageCount) || 0);
+      if (pageCount === 0) {
+        plans.push({
+          index,
+          name: file.name,
+          pageCount: 0,
+          firstNumber: counter,
+          lastNumber: counter,
+          firstStamp: '',
+          lastStamp: ''
+        });
+        return;
+      }
+
+      const firstNumber = counter;
+      const lastNumber = counter + (pageCount - 1) * step;
+
+      plans.push({
+        index,
+        name: file.name,
+        pageCount,
+        firstNumber,
+        lastNumber,
+        firstStamp: this.formatBatesNumber(firstNumber, options),
+        lastStamp: this.formatBatesNumber(lastNumber, options)
+      });
+
+      counter = lastNumber + step;
+      totalPages += pageCount;
+    });
+
+    const stamped = plans.filter(plan => plan.pageCount > 0);
+    const firstNumber = stamped.length > 0 ? stamped[0].firstNumber : start;
+    const lastNumber = stamped.length > 0 ? stamped[stamped.length - 1].lastNumber : start;
+    const width = Math.min(12, Math.max(1, Math.floor(options.width) || 1));
+
+    return {
+      files: plans,
+      totalPages,
+      firstNumber,
+      lastNumber,
+      firstStamp: this.formatBatesNumber(firstNumber, options),
+      lastStamp: this.formatBatesNumber(lastNumber, options),
+      overflowsWidth: String(lastNumber).length > width
+    };
+  }
+
+  /** Where a stamp sits on the page, in PDF user space. */
+  batesAnchor(
+    position: BatesPosition,
+    pageWidth: number,
+    pageHeight: number,
+    textWidth: number,
+    options: Pick<BatesOptions, 'marginX' | 'marginY' | 'fontSize'>
+  ): { x: number; y: number } {
+    const marginX = Math.max(0, options.marginX);
+    const marginY = Math.max(0, options.marginY);
+    const top = position.startsWith('top');
+    const y = top ? pageHeight - marginY - options.fontSize : marginY;
+
+    if (position.endsWith('left')) return { x: marginX, y };
+    if (position.endsWith('centre')) return { x: (pageWidth - textWidth) / 2, y };
+    return { x: pageWidth - marginX - textWidth, y };
+  }
+
+  /**
+   * Stamps one document, starting the counter at `startNumber`.
+   *
+   * The caller passes the number rather than reading it from `options`, which
+   * is what lets a batch run this once per file while the counter keeps
+   * climbing. `planBatesBatch` works out what each file's start should be.
+   */
+  async applyBatesNumbering(
+    source: File | ArrayBuffer,
+    options: BatesOptions,
+    startNumber: number,
+    outputFileName = 'document_bates.pdf',
+    onProgress?: (p: NavigationProgress) => void,
+    signal?: AbortSignal
+  ): Promise<BatesOutput> {
+    const arrayBuffer = source instanceof File ? await source.arrayBuffer() : source;
+    const pdfDoc = await PDFDocument.load(arrayBuffer.slice(0), { ignoreEncryption: true });
+
+    const pages = pdfDoc.getPages();
+    const total = Math.min(pages.length, this.MAX_BATES_PAGES);
+    if (total === 0) throw new Error('This document has no pages.');
+
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const colour = this.hexToRgb(options.fontColor || '#333333');
+    const step = Math.max(1, Math.floor(options.step) || 1);
+
+    let firstStamp = '';
+    let lastStamp = '';
+
+    for (let i = 0; i < total; i++) {
+      if (signal?.aborted) throw new Error('Bates numbering cancelled by user.');
+
+      const page = pages[i];
+      const { width, height } = page.getSize();
+      const stamp = this.formatBatesNumber(startNumber + i * step, options);
+
+      /*
+       * The stamp is drawn in the page's own space, so a page carrying a
+       * /Rotate shows it turned with the rest of the content rather than
+       * floating sideways in a corner. That is the same thing the header and
+       * footer path does, and is what keeps a mixed-rotation scan consistent.
+       */
+      const textWidth = font.widthOfTextAtSize(stamp, options.fontSize);
+      const anchor = this.batesAnchor(options.position, width, height, textWidth, options);
+
+      page.drawText(stamp, {
+        x: anchor.x,
+        y: anchor.y,
+        size: options.fontSize,
+        font,
+        color: rgb(colour.r, colour.g, colour.b)
+      });
+
+      if (i === 0) firstStamp = stamp;
+      lastStamp = stamp;
+
+      onProgress?.({
+        phase: 'writing',
+        completed: i + 1,
+        total,
+        percent: Math.round(((i + 1) / total) * 100)
+      });
+    }
+
+    const bytes = await pdfDoc.save({ useObjectStreams: false });
+    const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' });
+    const file = new File([blob], outputFileName, { type: 'application/pdf' });
+
+    return {
+      name: outputFileName,
+      file,
+      blob,
+      sizeBytes: file.size,
+      pageCount: pages.length,
+      firstStamp,
+      lastStamp,
+      pagesStamped: total
+    };
   }
 
   private renderZone(

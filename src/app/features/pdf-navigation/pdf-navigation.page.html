@@ -1,0 +1,539 @@
+<app-header></app-header>
+
+<main class="page-container navigation-page">
+  <app-page-header
+    [title]="'navigation.title' | translate"
+    [subtitle]="'navigation.subtitle' | translate"
+    [badge]="'navigation.badge' | translate"
+    [badgeVariant]="'primary'"
+    [showBack]="true"
+    [backUrl]="'/home'"
+  ></app-page-header>
+
+  <!-- STUDIO MODE SWITCHER -->
+  <div class="studio-mode-selector" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="activeMode === 'bookmarks'"
+      (click)="setMode('bookmarks')"
+    >
+      <app-icon name="bookmark" [size]="18"></app-icon>
+      <span>{{ 'navigation.tabBookmarks' | translate }}</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="mode-btn"
+      [class.active]="activeMode === 'labels'"
+      (click)="setMode('labels')"
+    >
+      <app-icon name="list-number" [size]="18"></app-icon>
+      <span>{{ 'navigation.tabLabels' | translate }}</span>
+    </button>
+  </div>
+
+  <!-- STEP 1: SELECT FILE -->
+  @if (currentStep === 'select') {
+    <section class="select-section">
+      <div class="dropzone-wrapper">
+        <app-file-dropzone
+          [accept]="'.pdf,application/pdf'"
+          [title]="'navigation.selectPrompt' | translate"
+          [description]="'navigation.dropPrompt' | translate"
+          (fileSelected)="onFileSelected($event)"
+        ></app-file-dropzone>
+      </div>
+
+      <div class="templates-showcase">
+        <div class="template-card">
+          <span class="tpl-icon">📑</span>
+          <h4>{{ 'navigation.tabBookmarks' | translate }}</h4>
+          <p>{{ 'navigation.subtitle' | translate }}</p>
+          <code>Chapters • Subsections • Headings</code>
+        </div>
+        <div class="template-card">
+          <span class="tpl-icon">🔢</span>
+          <h4>{{ 'navigation.tabLabels' | translate }}</h4>
+          <p>{{ 'navigation.labelsDesc' | translate }}</p>
+          <code>i, ii, iii • 1, 2, 3 • A-1, A-2</code>
+        </div>
+        <div class="template-card">
+          <span class="tpl-icon">🔒</span>
+          <h4>100% On-Device</h4>
+          <p>{{ 'common.offlineNote' | translate }}</p>
+          <code>Fast & Private</code>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- STEP 2: CONFIGURE STUDIO -->
+  @if (currentStep === 'configure') {
+    <section class="configure-section">
+      <!-- TAB 1: BOOKMARKS & OUTLINE (E1) -->
+      @if (activeMode === 'bookmarks') {
+        <div class="studio-card">
+          <div class="studio-toolbar">
+            <div class="toolbar-left">
+              <span class="tree-badge">
+                {{ 'navigation.bookmarkCount' | translate: { count: outlineNodes.length } }}
+              </span>
+            </div>
+            <div class="toolbar-actions">
+              <app-button
+                variant="outline"
+                size="sm"
+                [loading]="isScanningHeadings"
+                (clicked)="autoGenerateFromHeadings()"
+              >
+                <app-icon name="color-wand" [size]="14"></app-icon>
+                <span>{{ 'navigation.autoGenerateBtn' | translate }}</span>
+              </app-button>
+              <app-button
+                variant="primary"
+                size="sm"
+                (clicked)="openAddBookmarkModal()"
+              >
+                <app-icon name="add" [size]="14"></app-icon>
+                <span>{{ 'navigation.addBookmark' | translate }}</span>
+              </app-button>
+              @if (outlineNodes.length > 0) {
+                <button
+                  type="button"
+                  class="icon-action-btn"
+                  (click)="clearOutline()"
+                  [attr.aria-label]="'navigation.clearOutline' | translate"
+                >
+                  <app-icon name="trash" [size]="16"></app-icon>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Heading Scan Progress Banner -->
+          @if (isScanningHeadings) {
+            <div class="scan-progress-box">
+              <div class="scan-progress-header">
+                <span>{{ scanProgressText || ('navigation.scanningHeadings' | translate) }}</span>
+                <span>{{ scanPercent }}%</span>
+              </div>
+              <app-progress [value]="scanPercent"></app-progress>
+            </div>
+          }
+
+          <!-- Outline Tree View -->
+          <div class="outline-tree-container">
+            @if (visibleOutlineRows.length === 0) {
+              <div class="empty-outline-box">
+                <app-icon name="bookmark" [size]="40" class="empty-icon"></app-icon>
+                <h4>{{ 'navigation.noOutlineTitle' | translate }}</h4>
+                <p>{{ 'navigation.noOutlineDesc' | translate }}</p>
+                <div class="empty-actions">
+                  <app-button
+                    variant="primary"
+                    size="md"
+                    [loading]="isScanningHeadings"
+                    (clicked)="autoGenerateFromHeadings()"
+                  >
+                    <app-icon name="color-wand" [size]="16"></app-icon>
+                    <span>{{ 'navigation.autoGenerateBtn' | translate }}</span>
+                  </app-button>
+                  <app-button
+                    variant="outline"
+                    size="md"
+                    (clicked)="openAddBookmarkModal()"
+                  >
+                    <app-icon name="add" [size]="16"></app-icon>
+                    <span>{{ 'navigation.addFirstBookmark' | translate }}</span>
+                  </app-button>
+                </div>
+              </div>
+            } @else {
+              <div class="outline-tree-list">
+                @for (row of visibleOutlineRows; track row.node.id) {
+                  <div
+                    class="outline-tree-row"
+                    [style.padding-left.px]="getRowIndent(row.depth)"
+                  >
+                    <!-- Expand/Collapse or Bullet -->
+                    <div class="row-indicator">
+                      @if (row.hasChildren) {
+                        <button
+                          type="button"
+                          class="toggle-btn"
+                          (click)="toggleCollapse(row.node)"
+                          [attr.aria-label]="row.isCollapsed ? 'Expand' : 'Collapse'"
+                        >
+                          <app-icon
+                            [name]="row.isCollapsed ? 'chevron-forward' : 'chevron-down'"
+                            [size]="16"
+                          ></app-icon>
+                        </button>
+                      } @else {
+                        <span class="leaf-dot"></span>
+                      }
+                    </div>
+
+                    <!-- Title & Target Page -->
+                    <div class="row-content" (click)="openEditBookmarkModal(row.node)">
+                      <span class="node-title">{{ row.node.title }}</span>
+                      <span class="node-page-badge">
+                        {{ 'common.pages' | translate }} {{ row.node.pageIndex + 1 }}
+                      </span>
+                    </div>
+
+                    <!-- Row Touch Actions -->
+                    <div class="row-actions">
+                      <button
+                        type="button"
+                        class="row-btn"
+                        (click)="openAddBookmarkModal(row.node.id)"
+                        [attr.aria-label]="'navigation.addChildBookmark' | translate"
+                      >
+                        <app-icon name="add" [size]="14"></app-icon>
+                      </button>
+                      <button
+                        type="button"
+                        class="row-btn"
+                        (click)="openEditBookmarkModal(row.node)"
+                        [attr.aria-label]="'navigation.editBookmark' | translate"
+                      >
+                        <app-icon name="pencil" [size]="14"></app-icon>
+                      </button>
+                      @if (row.canIndent) {
+                        <button
+                          type="button"
+                          class="row-btn"
+                          (click)="indentNode(row.node.id)"
+                          [attr.aria-label]="'navigation.indent' | translate"
+                        >
+                          <app-icon name="arrow-forward" [size]="14"></app-icon>
+                        </button>
+                      }
+                      @if (row.canOutdent) {
+                        <button
+                          type="button"
+                          class="row-btn"
+                          (click)="outdentNode(row.node.id)"
+                          [attr.aria-label]="'navigation.outdent' | translate"
+                        >
+                          <app-icon name="arrow-back" [size]="14"></app-icon>
+                        </button>
+                      }
+                      @if (!row.isFirst) {
+                        <button
+                          type="button"
+                          class="row-btn"
+                          (click)="moveNodeUp(row.node.id)"
+                          [attr.aria-label]="'navigation.moveUp' | translate"
+                        >
+                          <app-icon name="arrow-up" [size]="14"></app-icon>
+                        </button>
+                      }
+                      @if (!row.isLast) {
+                        <button
+                          type="button"
+                          class="row-btn"
+                          (click)="moveNodeDown(row.node.id)"
+                          [attr.aria-label]="'navigation.moveDown' | translate"
+                        >
+                          <app-icon name="arrow-down" [size]="14"></app-icon>
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="row-btn danger"
+                        (click)="deleteNode(row.node.id)"
+                        [attr.aria-label]="'navigation.deleteBookmark' | translate"
+                      >
+                        <app-icon name="trash" [size]="14"></app-icon>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Sticky Export Action Bar -->
+          <div class="apply-action-bar">
+            <app-button
+              variant="primary"
+              size="lg"
+              [disabled]="outlineNodes.length === 0"
+              (clicked)="exportBookmarks()"
+            >
+              {{ 'navigation.saveBookmarksBtn' | translate }}
+            </app-button>
+            <app-button
+              variant="outline"
+              size="md"
+              (clicked)="reset()"
+            >{{ 'common.chooseAnother' | translate }}</app-button>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 2: PAGE LABELS (E2) -->
+      @if (activeMode === 'labels') {
+        <div class="studio-card">
+          <div class="labels-layout-grid">
+            <!-- Left Column: Ranges Editor -->
+            <div class="ranges-editor-col">
+              <div class="editor-header">
+                <div>
+                  <h4>{{ 'navigation.rangesList' | translate }}</h4>
+                  <p class="editor-sub">{{ 'navigation.labelsDesc' | translate }}</p>
+                </div>
+                <app-button variant="outline" size="sm" (clicked)="addRange()">
+                  <app-icon name="add" [size]="14"></app-icon>
+                  <span>{{ 'navigation.addRangeBtn' | translate }}</span>
+                </app-button>
+              </div>
+
+              <!-- Duplicate warning banner if any -->
+              @if (duplicateLabels.length > 0) {
+                <div class="duplicate-warning-banner">
+                  <app-icon name="warning" [size]="16"></app-icon>
+                  <span>{{ 'navigation.duplicateWarning' | translate: { labels: duplicateLabels.join(', ') } }}</span>
+                </div>
+              }
+
+              <!-- Range Cards List -->
+              <div class="range-cards-list">
+                @for (range of labelRanges; track range.id; let idx = $index) {
+                  <div class="range-card">
+                    <div class="range-card-header">
+                      <div class="range-card-title">
+                        <span class="range-num-badge">#{{ idx + 1 }}</span>
+                        <span class="range-name">{{ 'navigation.rangeTitle' | translate: { number: idx + 1 } }}</span>
+                      </div>
+                      @if (labelRanges.length > 1 && idx > 0) {
+                        <button
+                          type="button"
+                          class="remove-range-btn"
+                          (click)="removeRange(range.id)"
+                          [attr.aria-label]="'navigation.removeRange' | translate"
+                        >
+                          <app-icon name="trash" [size]="14"></app-icon>
+                        </button>
+                      }
+                    </div>
+
+                    <div class="range-inputs-grid">
+                      <div class="input-group">
+                        <label>{{ 'navigation.startPage' | translate }}</label>
+                        <input
+                          type="number"
+                          min="1"
+                          [max]="pageCount || 9999"
+                          class="form-input"
+                          [(ngModel)]="range.startPage"
+                          (ngModelChange)="refreshLabelPreview()"
+                        />
+                      </div>
+                      <div class="input-group">
+                        <label>{{ 'navigation.style' | translate }}</label>
+                        <select
+                          class="form-select"
+                          [(ngModel)]="range.style"
+                          (ngModelChange)="refreshLabelPreview()"
+                        >
+                          <option value="decimal">{{ 'navigation.styleDecimal' | translate }}</option>
+                          <option value="roman-lower">{{ 'navigation.styleRomanLower' | translate }}</option>
+                          <option value="roman-upper">{{ 'navigation.styleRomanUpper' | translate }}</option>
+                          <option value="letters-lower">{{ 'navigation.styleLettersLower' | translate }}</option>
+                          <option value="letters-upper">{{ 'navigation.styleLettersUpper' | translate }}</option>
+                          <option value="none">{{ 'navigation.styleNone' | translate }}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="range-inputs-grid">
+                      <div class="input-group">
+                        <label>{{ 'navigation.prefix' | translate }}</label>
+                        <input
+                          type="text"
+                          class="form-input"
+                          [(ngModel)]="range.prefix"
+                          (ngModelChange)="refreshLabelPreview()"
+                          [placeholder]="'navigation.prefixPlaceholder' | translate"
+                        />
+                      </div>
+                      <div class="input-group">
+                        <label>{{ 'navigation.startValue' | translate }}</label>
+                        <input
+                          type="number"
+                          min="1"
+                          class="form-input"
+                          [(ngModel)]="range.startValue"
+                          (ngModelChange)="refreshLabelPreview()"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="range-bottom-actions">
+                <app-button variant="ghost" size="sm" (clicked)="resetLabels()">
+                  {{ 'navigation.clearLabelsBtn' | translate }}
+                </app-button>
+              </div>
+            </div>
+
+            <!-- Right Column: Live Label Preview -->
+            <div class="preview-labels-col">
+              <div class="preview-col-header">
+                <h4>{{ 'navigation.livePreview' | translate }}</h4>
+                <span class="preview-sub">{{ pageCount }} {{ 'common.pages' | translate }}</span>
+              </div>
+
+              <div class="preview-labels-list">
+                @for (row of previewRows; track row.pageNumber) {
+                  <div class="label-preview-row" [class.is-range-start]="row.rangeStart">
+                    <div class="page-meta">
+                      <span class="phys-page">
+                        {{ 'navigation.physicalPage' | translate }} {{ row.pageNumber }}
+                      </span>
+                      @if (row.rangeStart) {
+                        <span class="range-indicator-pill">
+                          {{ 'navigation.rangeStartBadge' | translate }}
+                        </span>
+                      }
+                    </div>
+                    <span class="printed-label-pill">{{ row.label || '—' }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Sticky Export Action Bar -->
+          <div class="apply-action-bar">
+            <app-button
+              variant="primary"
+              size="lg"
+              (clicked)="exportLabels()"
+            >
+              {{ 'navigation.saveLabelsBtn' | translate }}
+            </app-button>
+            <app-button
+              variant="outline"
+              size="md"
+              (clicked)="reset()"
+            >{{ 'common.chooseAnother' | translate }}</app-button>
+          </div>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- STEP 3: PROCESSING -->
+  @if (currentStep === 'processing') {
+    <section class="processing-section">
+      <div class="proc-card">
+        <div class="spinner"></div>
+        <h3>{{ 'navigation.savingDoc' | translate }}</h3>
+        <p>{{ processingText }}</p>
+        <app-progress [value]="processingProgress"></app-progress>
+      </div>
+    </section>
+  }
+
+  <!-- STEP 4: RESULT -->
+  @if (currentStep === 'result' && outputFile) {
+    <section class="result-section">
+      <div class="result-card">
+        <div class="success-banner">
+          <span class="check-icon">✓</span>
+          <div class="success-text">
+            <h3>{{ 'navigation.resultSuccess' | translate }}</h3>
+            <p>
+              @if (activeMode === 'bookmarks') {
+                {{ 'navigation.bookmarksUpdated' | translate: { count: bookmarksWrittenCount } }}
+              } @else {
+                {{ 'navigation.labelsUpdated' | translate: { count: rangesWrittenCount } }}
+              }
+            </p>
+          </div>
+        </div>
+
+        @if (outputArrayBuffer) {
+          <div class="preview-result-wrapper">
+            <app-pdf-preview [arrayBuffer]="outputArrayBuffer" [initialPage]="1"></app-pdf-preview>
+          </div>
+        }
+
+        <div class="result-actions">
+          <app-button
+            variant="primary"
+            size="lg"
+            (clicked)="downloadResult()"
+          >{{ 'common.download' | translate }}</app-button>
+          <app-button
+            variant="outline"
+            size="lg"
+            (clicked)="shareResult()"
+          >{{ 'common.share' | translate }}</app-button>
+          <app-button
+            variant="ghost"
+            size="md"
+            (clicked)="reset()"
+          >{{ 'common.chooseAnother' | translate }}</app-button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- MODAL FOR ADD/EDIT BOOKMARK -->
+  @if (isModalOpen) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h4>{{ (modalMode === 'add' ? 'navigation.addBookmark' : 'navigation.editBookmark') | translate }}</h4>
+          <button type="button" class="close-modal-btn" (click)="closeModal()" [attr.aria-label]="'common.close' | translate">
+            <app-icon name="close" [size]="18"></app-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group">
+            <label>{{ 'navigation.bookmarkTitle' | translate }}</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="editTitle"
+              [placeholder]="'navigation.bookmarkTitlePlaceholder' | translate"
+              autofocus
+            />
+          </div>
+          <div class="input-group">
+            <label>{{ 'navigation.targetPage' | translate }} (1 - {{ pageCount || 1 }})</label>
+            <input
+              type="number"
+              min="1"
+              [max]="pageCount || 9999"
+              class="form-input"
+              [(ngModel)]="editPage"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <app-button variant="outline" size="md" (clicked)="closeModal()">
+            {{ 'common.cancel' | translate }}
+          </app-button>
+          <app-button variant="primary" size="md" (clicked)="saveBookmarkFromModal()">
+            {{ 'common.save' | translate }}
+          </app-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Related Tools -->
+  <app-related-tools [currentToolId]="'pdf_navigation'"></app-related-tools>
+</main>
+
+<app-footer></app-footer>
