@@ -302,6 +302,53 @@
     }
   }
 
+  .triage-callout-card {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08);
+
+    .triage-callout-icon {
+      font-size: 2.25rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .triage-callout-body {
+      flex: 1;
+      min-width: 0;
+
+      h4 {
+        margin: 0 0 0.5rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #92400e;
+      }
+
+      p {
+        margin: 0 0 1.25rem;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: #78350f;
+      }
+
+      .triage-callout-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+
+        app-button {
+          min-height: 44px;
+        }
+      }
+    }
+  }
+
   .diagnostic-actions {
     display: flex;
     justify-content: center;
@@ -493,6 +540,26 @@
     .checks-grid {
       grid-template-columns: 1fr;
       gap: 8px;
+    }
+
+    .triage-callout-card {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 1.25rem 1rem;
+      gap: 0.75rem;
+
+      .triage-callout-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+
+        app-button {
+          width: 100%;
+          min-height: 44px;
+          display: block;
+        }
+      }
     }
 
     .diagnostic-actions {

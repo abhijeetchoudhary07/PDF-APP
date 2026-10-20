@@ -364,6 +364,30 @@ export const en = {
     pdf_signature_status: {
       title: 'Signature Status Panel',
       description: 'Report-only analysis of cryptographic signature structures and byte-range coverage.'
+    },
+    pdf_archival: {
+      title: 'Archival Preparation',
+      description: 'Prepare documents for long-term preservation with sRGB intent, font embedding, and conforming XMP metadata.',
+      noticeTitle: 'Prepared for Archiving — Not Independently Validated',
+      noticeDescription: 'Full PDF/A conformance certification is a specialized validator-suite job that cannot be certified on-device. This tool prepares standard XMP metadata, sRGB output intent, font embedding, and strips disallowed scripts.',
+      selectPdf: 'Select PDF for Archival Preparation',
+      uploadPrompt: 'Audit readiness, embed fonts, register sRGB intent, and write XMP archival metadata.',
+      browseFiles: 'Choose PDF File',
+      changeFile: 'Change File',
+      auditingText: 'Auditing document readiness for archival preparation...',
+      readinessTitle: 'Archival Readiness Checklist',
+      readyForPrep: 'Ready for Preparation',
+      attentionRequired: 'Attention Required',
+      statusPass: 'Conforms',
+      statusFixable: 'Auto-Adjusted',
+      statusAction: 'Manual Check',
+      prepareArchivalBtn: 'Prepare Document for Archiving',
+      successTitle: 'Archival Preparation Complete',
+      outputSize: 'Output Size',
+      pageCount: 'Pages',
+      sRgbSet: 'sRGB IEC61966-2.1',
+      colorProfile: 'Color Output Intent',
+      saveArchivalBtn: 'Save Archival PDF'
     }
   },
   search: {
@@ -966,7 +990,11 @@ export const en = {
     recoveredPages: 'Pages Recovered',
     unrecoverable: 'Unrecoverable',
     recoveryOperationsLog: 'Recovery Operations Log',
-    downloadRecoveredBtn: 'Download Repaired PDF'
+    downloadRecoveredBtn: 'Download Repaired PDF',
+    triageEncryptedTitle: 'Password Protected Document Detected',
+    triageEncryptedDesc: 'This document is encrypted with a password, not structurally damaged or corrupt. PDF Repair is intended for damaged files. To remove password protection, please use Unlock PDF.',
+    triageUnlockBtn: 'Open in Unlock PDF',
+    downloadLogBtn: 'Download Recovery Log'
   },
   extractor: {
     title: 'PDF Content Extractor',

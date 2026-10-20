@@ -327,6 +327,11 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./features/pdf-compare/pdf-compare.page').then(m => m.PdfComparePage)
   },
   {
+    path: 'features/pdf/compare',
+    redirectTo: 'features/pdf-compare',
+    pathMatch: 'full'
+  },
+  {
     path: 'features/pdf-privacy-sanitizer',
     loadComponent: () => import('./features/pdf-privacy-sanitizer/pdf-privacy-sanitizer.page').then(m => m.PdfPrivacySanitizerPage)
   },
@@ -347,6 +352,11 @@ export const APP_ROUTES: Routes = [
   {
     path: 'features/pdf-repair',
     loadComponent: () => import('./features/pdf-repair/pdf-repair.page').then(m => m.PdfRepairPage)
+  },
+  {
+    path: 'features/pdf/repair',
+    redirectTo: 'features/pdf-repair',
+    pathMatch: 'full'
   },
   /*
    * Part G — Diagnostic, Integrity & Trust (G1 - G5)
@@ -394,6 +404,25 @@ export const APP_ROUTES: Routes = [
   {
     path: 'features/pdf-signature-status',
     redirectTo: 'features/pdf/signature-status',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf/archival',
+    loadComponent: () => import('./features/pdf-archival/pdf-archival.page').then(m => m.PdfArchivalPage)
+  },
+  {
+    path: 'features/pdf-archival',
+    redirectTo: 'features/pdf/archival',
+    pathMatch: 'full'
+  },
+  {
+    path: 'archival',
+    redirectTo: 'features/pdf/archival',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-archival',
+    redirectTo: 'features/pdf/archival',
     pathMatch: 'full'
   },
   {

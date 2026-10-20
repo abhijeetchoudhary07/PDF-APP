@@ -358,6 +358,30 @@ export const bn = {
     pdf_signature_status: {
       title: 'স্বাক্ষর স্থিতি প্যানেল',
       description: 'ক্রিপ্টোগ্রাফিক স্বাক্ষর গঠন এবং বাইট-পরিসীমা কভারেজের প্রতিবেদন-ভিত্তিক বিশ্লেষণ।'
+    },
+    pdf_archival: {
+      title: 'সংরক্ষণাগার প্রস্তুতি',
+      description: 'sRGB ইনটেন্ট, ফন্ট এম্বেডিং এবং উপযুক্ত XMP মেটাডেটা সহ দীর্ঘমেয়াদী সংরক্ষণের জন্য নথি প্রস্তুত করুন।',
+      noticeTitle: 'সংরক্ষণের জন্য প্রস্তুত — স্বাধীনভাবে যাচাইকৃত নয়',
+      noticeDescription: 'সম্পূর্ণ PDF/A সঙ্গতি যাচাইকরণ বিশেষ অফলাইন টুল দ্বারা প্রত্যয়িত হয়। এই টুলটি মানক মেটাডেটা এবং ফন্ট এম্বেডিং প্রস্তুত করে।',
+      selectPdf: 'সংরক্ষণাগার প্রস্তুতির জন্য PDF নির্বাচন করুন',
+      uploadPrompt: 'প্রস্তুতির অডিট করুন, ফন্ট এম্বেড করুন এবং মানক মেটাডেটা লিখুন।',
+      browseFiles: 'ফাইল ব্রাউজ করুন',
+      changeFile: 'ফাইল পরিবর্তন করুন',
+      auditingText: 'সংরক্ষণাগার প্রস্তুতির নিরীক্ষা করা হচ্ছে...',
+      readinessTitle: 'সংরক্ষণাগার প্রস্তুতি চেকলিস্ট',
+      readyForPrep: 'প্রস্তুতির জন্য প্রস্তুত',
+      attentionRequired: 'মনোযোগ প্রয়োজন',
+      statusPass: 'অনুরূপ',
+      statusFixable: 'স্বয়ংক্রিয়ভাবে সমন্বয়কৃত',
+      statusAction: 'পর্যালোচনা প্রয়োজন',
+      prepareArchivalBtn: 'সংরক্ষণের জন্য নথি প্রস্তুত করুন',
+      successTitle: 'সংরক্ষণাগার প্রস্তুতি সম্পন্ন',
+      outputSize: 'আউটপুট আকার',
+      pageCount: 'পৃষ্ঠা',
+      sRgbSet: 'sRGB IEC61966-2.1',
+      colorProfile: 'রঙ আউটপুট ইনটেন্ট',
+      saveArchivalBtn: 'সংরক্ষণাগার PDF সংরক্ষণ করুন'
     }
   },
   search: {
@@ -960,7 +984,11 @@ export const bn = {
     recoveredPages: 'পুনরুদ্ধার করা পৃষ্ঠা',
     unrecoverable: 'অপঠনযোগ্য পৃষ্ঠা',
     recoveryOperationsLog: 'পুনরুদ্ধার কাজের লগ',
-    downloadRecoveredBtn: 'মেরামত করা PDF ডাউনলোড করুন'
+    downloadRecoveredBtn: 'মেরামত করা PDF ডাউনলোড করুন',
+    triageEncryptedTitle: 'পাসওয়ার্ড সুরক্ষিত নথি সনাক্ত হয়েছে',
+    triageEncryptedDesc: 'এই নথিটি পাসওয়ার্ড দ্বারা সুরক্ষিত (এনক্রিপ্ট করা), কাঠামোগতভাবে ক্ষতিগ্রস্ত বা দূষিত নয়। PDF Repair ক্ষতিগ্রস্ত ফাইলের জন্য উপযুক্ত। পাসওয়ার্ড সরাতে Unlock PDF ব্যবহার করুন।',
+    triageUnlockBtn: 'Unlock PDF-এ খুলুন',
+    downloadLogBtn: 'পুনরুদ্ধার লগ ডাউনলোড করুন'
   },
   extractor: {
     title: 'PDF সামগ্রী নিষ্কাশন',

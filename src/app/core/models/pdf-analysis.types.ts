@@ -30,6 +30,43 @@ export interface PageDiffResult {
   modifiedCanvasUrl?: string;
 }
 
+export interface CompareOptions {
+  ignoreWhitespace?: boolean;
+  ignoreCase?: boolean;
+  headerZonePercent?: number; // e.g. 0.10 (top 10% excluded)
+  footerZonePercent?: number; // e.g. 0.10 (bottom 10% excluded)
+}
+
+export interface MetadataPropertyDiff<T = string> {
+  original?: T;
+  modified?: T;
+  matches: boolean;
+}
+
+export interface PageGeometryDiff {
+  pageNumber: number;
+  originalDimensions: string;
+  modifiedDimensions: string;
+  matches: boolean;
+}
+
+export interface CompareMetadataDiff {
+  hasDifferences: boolean;
+  pageCount: MetadataPropertyDiff<number>;
+  pageGeometry: PageGeometryDiff[];
+  producer: MetadataPropertyDiff<string>;
+  creator: MetadataPropertyDiff<string>;
+  creationDate: MetadataPropertyDiff<string>;
+  modificationDate: MetadataPropertyDiff<string>;
+  fonts: {
+    original: string[];
+    modified: string[];
+    added: string[];
+    removed: string[];
+    matches: boolean;
+  };
+}
+
 export interface CompareSummary {
   pagesCompared: number;
   pagesIdentical: number;
@@ -40,6 +77,8 @@ export interface CompareSummary {
   totalRemovedWords: number;
   totalChangedWords: number;
   pageMatches: PageDiffResult[];
+  options?: CompareOptions;
+  metadataDiff?: CompareMetadataDiff;
 }
 
 // ==========================================
@@ -196,6 +235,9 @@ export interface PdfHealthReport {
   isScannedVerdict?: boolean;
   searchableTextPercentage?: number;
   byteAudit?: PdfByteAuditReport;
+
+  // Triage & Routing (G10)
+  triageRecommendation?: 'unlock' | 'repair' | 'none';
 }
 
 export interface PageRecoveryDetail {

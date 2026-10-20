@@ -317,3 +317,27 @@
 .export-actions {
   margin-top: var(--space-4, 16px);
 }
+
+.flatten-report-card {
+  width: 100%;
+  box-sizing: border-box;
+
+  .report-items-list {
+    div {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .mode-option {
+    padding: 12px 10px;
+    min-height: 48px;
+  }
+
+  .comparison-metrics-card {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

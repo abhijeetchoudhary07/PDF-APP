@@ -81,6 +81,37 @@
           }
         </div>
       </div>
+
+      <!-- Comparison Options (G8) -->
+      <div class="compare-options-card" style="margin: 20px 0; background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; padding: 16px;">
+        <h3 style="margin: 0 0 12px; font-size: 1rem; font-weight: 600; color: var(--color-text, #0f172a);">
+          Comparison Options
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+            <input type="checkbox" [(ngModel)]="ignoreWhitespace" style="margin-top: 3px;" />
+            <div>
+              <strong style="font-size: 0.9rem; color: var(--color-text, #0f172a); display: block;">Ignore Whitespace Variations</strong>
+              <span style="font-size: 0.8rem; color: var(--color-text-secondary, #64748b);">Treat extra spacing, blank lines, and text reflows as identical</span>
+            </div>
+          </label>
+          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+            <input type="checkbox" [(ngModel)]="ignoreCase" style="margin-top: 3px;" />
+            <div>
+              <strong style="font-size: 0.9rem; color: var(--color-text, #0f172a); display: block;">Ignore Text Case</strong>
+              <span style="font-size: 0.8rem; color: var(--color-text-secondary, #64748b);">Compare letters case-insensitively (e.g. "ABC" = "abc")</span>
+            </div>
+          </label>
+          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+            <input type="checkbox" [(ngModel)]="excludeHeaderFooter" style="margin-top: 3px;" />
+            <div>
+              <strong style="font-size: 0.9rem; color: var(--color-text, #0f172a); display: block;">Exclude Header & Footer Zones (10%)</strong>
+              <span style="font-size: 0.8rem; color: var(--color-text-secondary, #64748b);">Ignore differences in top and bottom 10% margins (page numbers, running titles)</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
       <div class="action-bar-center">
         <app-button
           variant="primary"
@@ -131,6 +162,38 @@
           <span class="metric-label">{{ 'compare.wordsRemoved' | translate }}</span>
         </div>
       </div>
+
+      <!-- Metadata & Geometry Differences (G9) -->
+      @if (summary.metadataDiff) {
+        <div class="metadata-diff-box" style="margin-bottom: 16px; background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+            <strong style="font-size: 0.95rem; color: var(--color-text, #0f172a);">Metadata & Geometry Audit</strong>
+            <app-badge [variant]="summary.metadataDiff.hasDifferences ? 'warning' : 'success'">
+              {{ summary.metadataDiff.hasDifferences ? 'Differences Detected' : 'All Attributes Match' }}
+            </app-badge>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            <div style="background: var(--color-background, #f8fafc); padding: 8px 12px; border-radius: 8px;">
+              <span style="font-size: 0.75rem; color: var(--color-text-secondary, #64748b); display: block;">Page Count</span>
+              <strong style="font-size: 0.85rem; color: var(--color-text, #0f172a);">
+                Original: {{ summary.metadataDiff.pageCount.original }} | Modified: {{ summary.metadataDiff.pageCount.modified }}
+              </strong>
+            </div>
+            <div style="background: var(--color-background, #f8fafc); padding: 8px 12px; border-radius: 8px;">
+              <span style="font-size: 0.75rem; color: var(--color-text-secondary, #64748b); display: block;">Page Dimensions</span>
+              <strong style="font-size: 0.85rem; color: var(--color-text, #0f172a);">
+                {{ summary.metadataDiff.pageGeometry[0]?.originalDimensions || 'N/A' }} → {{ summary.metadataDiff.pageGeometry[0]?.modifiedDimensions || 'N/A' }}
+              </strong>
+            </div>
+            <div style="background: var(--color-background, #f8fafc); padding: 8px 12px; border-radius: 8px;">
+              <span style="font-size: 0.75rem; color: var(--color-text-secondary, #64748b); display: block;">Font Changes</span>
+              <strong style="font-size: 0.85rem; color: var(--color-text, #0f172a);">
+                +{{ summary.metadataDiff.fonts.added.length }} added, -{{ summary.metadataDiff.fonts.removed.length }} removed
+              </strong>
+            </div>
+          </div>
+        </div>
+      }
       <!-- Change Step Navigator Toolbar -->
       @if (totalChanges > 0) {
         <div class="change-navigator-bar">
@@ -364,6 +427,14 @@
       <div class="result-actions-bar">
         <app-button
           variant="primary"
+          size="md"
+          [disabled]="isExportingPdf"
+          (clicked)="exportPdfReport()"
+        >
+          {{ isExportingPdf ? 'Exporting PDF Report...' : 'Export PDF Report' }}
+        </app-button>
+        <app-button
+          variant="outline"
           size="md"
           data-testid="download-report"
           (clicked)="downloadReport()"

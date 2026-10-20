@@ -1,0 +1,144 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        [title]="'tools.pdf_archival.title' | translate"
+        [subtitle]="'tools.pdf_archival.description' | translate"
+        [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Archival Preparation' }]"
+        badge="PDF/A-2b"
+        badgeVariant="primary"
+        backUrl="/home">
+      </app-page-header>
+
+      <div class="archival-container">
+        <!-- Notice & Honest Scope Banner (No false PDF/A compliance claim) -->
+        <div class="disclaimer-banner">
+          <div class="banner-icon">
+            <app-icon name="info" [size]="24"></app-icon>
+          </div>
+          <div class="banner-text">
+            <h4>{{ 'tools.pdf_archival.noticeTitle' | translate }}</h4>
+            <p>{{ 'tools.pdf_archival.noticeDescription' | translate }}</p>
+          </div>
+        </div>
+
+        <!-- Empty State / File Uploader -->
+        <div *ngIf="!selectedFile" class="upload-section">
+          <app-file-dropzone
+            accept="application/pdf"
+            icon="archive"
+            [title]="'tools.pdf_archival.selectPdf' | translate"
+            [description]="'tools.pdf_archival.uploadPrompt' | translate"
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+
+        <!-- Active Document & Readiness Report -->
+        <div *ngIf="selectedFile" class="active-section">
+          <!-- File Info Bar -->
+          <div class="card file-summary-card">
+            <div class="file-row">
+              <div class="file-meta">
+                <app-icon name="document" [size]="28" class="doc-icon"></app-icon>
+                <div class="meta-texts">
+                  <span class="file-name">{{ selectedFile.name }}</span>
+                  <span class="file-size">{{ (selectedFile.size / 1024).toFixed(1) }} KB</span>
+                </div>
+              </div>
+              <app-button variant="outline" size="sm" (clicked)="reset()">
+                {{ 'tools.pdf_archival.changeFile' | translate }}
+              </app-button>
+            </div>
+          </div>
+
+          <!-- Loading Spinner for Audit -->
+          <div *ngIf="isAuditing" class="loading-state">
+            <div class="spinner"></div>
+            <p>{{ 'tools.pdf_archival.auditingText' | translate }}</p>
+          </div>
+
+          <!-- Readiness Checklist Card -->
+          <div *ngIf="report && !isAuditing" class="card report-box">
+            <div class="report-header">
+              <div class="report-title-area">
+                <h3>{{ 'tools.pdf_archival.readinessTitle' | translate }}</h3>
+                <span class="disclaimer-badge">{{ report.disclaimer }}</span>
+              </div>
+              <app-badge [variant]="report.overallStatus === 'prepared' ? 'success' : 'warning'">
+                {{ report.overallStatus === 'prepared' ? ('tools.pdf_archival.readyForPrep' | translate) : ('tools.pdf_archival.attentionRequired' | translate) }}
+              </app-badge>
+            </div>
+
+            <div class="checklist-grid">
+              <div *ngFor="let item of report.items" class="checklist-item">
+                <div class="item-header">
+                  <span class="item-name">{{ item.name }}</span>
+                  <app-badge [variant]="item.status === 'ready' ? 'success' : item.status === 'repaired' ? 'primary' : 'warning'">
+                    {{ item.status === 'ready' ? ('tools.pdf_archival.statusPass' | translate) : item.status === 'repaired' ? ('tools.pdf_archival.statusFixable' | translate) : ('tools.pdf_archival.statusAction' | translate) }}
+                  </app-badge>
+                </div>
+                <p class="item-details">{{ item.details }}</p>
+                <div *ngIf="item.actionTaken" class="item-action">
+                  <app-icon name="check-circle" [size]="14"></app-icon>
+                  <span>{{ item.actionTaken }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Section -->
+            <div class="action-footer" *ngIf="!conversionResult">
+              <app-button
+                variant="primary"
+                size="lg"
+                [block]="true"
+                [disabled]="isConverting || !report.canProceed"
+                (clicked)="convertToArchival()"
+              >
+                <span>{{ 'tools.pdf_archival.prepareArchivalBtn' | translate }}</span>
+              </app-button>
+            </div>
+          </div>
+
+          <!-- Post-Conversion Result Card -->
+          <div *ngIf="conversionResult" class="card result-card">
+            <div class="result-header">
+              <app-icon name="check-circle" [size]="32" class="success-icon"></app-icon>
+              <div>
+                <h4>{{ 'tools.pdf_archival.successTitle' | translate }}</h4>
+                <p class="result-note">{{ report?.disclaimer }}</p>
+              </div>
+            </div>
+
+            <div class="metrics-row">
+              <div class="metric-item">
+                <span class="m-val">{{ (conversionResult.sizeBytes / 1024).toFixed(1) }} KB</span>
+                <span class="m-lbl">{{ 'tools.pdf_archival.outputSize' | translate }}</span>
+              </div>
+              <div class="metric-item">
+                <span class="m-val">{{ conversionResult.pageCount }}</span>
+                <span class="m-lbl">{{ 'tools.pdf_archival.pageCount' | translate }}</span>
+              </div>
+              <div class="metric-item">
+                <span class="m-val">{{ 'tools.pdf_archival.sRgbSet' | translate }}</span>
+                <span class="m-lbl">{{ 'tools.pdf_archival.colorProfile' | translate }}</span>
+              </div>
+            </div>
+
+            <div class="download-action">
+              <app-button variant="primary" size="lg" [block]="true" (clicked)="saveArchivalFile()">
+                <app-icon name="download" [size]="18"></app-icon>
+                {{ 'tools.pdf_archival.saveArchivalBtn' | translate }}
+              </app-button>
+            </div>
+          </div>
+        </div>
+
+        <app-related-tools currentToolId="pdf_archival"></app-related-tools>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

@@ -127,4 +127,66 @@ describe('PdfRepairService (G2: Studio Health Strip & Byte Audit)', () => {
     // Verified that list is sorted descending
     expect(audit.pages[0].estimatedSizeBytes).toBeGreaterThanOrEqual(audit.pages[1].estimatedSizeBytes);
   });
+
+  describe('G10 — Repair: salvage, triage & log', () => {
+    it('distinguishes ENCRYPTED from DAMAGED: sets triageRecommendation to "unlock" without reporting corruption', async () => {
+      const cleanBytes = await createCleanDoc();
+      const encBytes = new Uint8Array(cleanBytes.length + 50);
+      encBytes.set(cleanBytes);
+      const encMarker = new TextEncoder().encode('\n/Encrypt 12 0 R\n');
+      encBytes.set(encMarker, 100);
+
+      const report = await service.diagnosePdf(encBytes.buffer);
+      expect(report.isEncrypted).toBe(true);
+      expect(report.triageRecommendation).toBe('unlock');
+      expect(report.issues.some(i => i.code === 'ENCRYPTED_NOT_CORRUPT')).toBe(true);
+      expect(report.issues.some(i => i.code === 'STRUCTURE_UNPARSEABLE')).toBe(false);
+    });
+
+    it('repairPdf rejects encrypted document with guidance to Unlock PDF', async () => {
+      const cleanBytes = await createCleanDoc();
+      const encBytes = new Uint8Array(cleanBytes.length + 50);
+      encBytes.set(cleanBytes);
+      const encMarker = new TextEncoder().encode('\n/Encrypt 12 0 R\n');
+      encBytes.set(encMarker, 100);
+
+      await expect(service.repairPdf(encBytes.buffer)).rejects.toThrow(/password protected/i);
+    });
+
+    it('recovers readable pages from a truncated PDF fixture (missing %%EOF marker)', async () => {
+      const cleanBytes = await createCleanDoc();
+      // Cut off the tail containing %%EOF
+      const truncatedBytes = cleanBytes.subarray(0, cleanBytes.length - 35);
+      const result = await service.repairPdf(truncatedBytes.buffer);
+
+      expect(result.recoveredPagesCount).toBeGreaterThan(0);
+      expect(result.recoveredFile.size).toBeGreaterThan(0);
+      expect(result.recoveryLog.some(l => l.includes('Truncated tail') || l.includes('recovered'))).toBe(true);
+    });
+
+    it('lists per-page recovery strategies in pageDetails', async () => {
+      const cleanBytes = await createCleanDoc();
+      const result = await service.repairPdf(cleanBytes.buffer);
+
+      expect(result.pageDetails.length).toBe(2);
+      expect(result.pageDetails[0].pageNumber).toBe(1);
+      expect(result.pageDetails[0].strategyUsed).toBeTruthy();
+      expect(result.pageDetails[1].pageNumber).toBe(2);
+      expect(result.pageDetails[1].strategyUsed).toBeTruthy();
+    });
+
+    it('exports recovery log as formatted text file containing audit trail and strategy breakdown', async () => {
+      const cleanBytes = await createCleanDoc();
+      const result = await service.repairPdf(cleanBytes.buffer);
+      const logBlob = service.exportRecoveryLog(result, 'damaged_file.pdf');
+
+      expect(logBlob.type).toContain('text/plain');
+      const text = await logBlob.text();
+      expect(text).toContain('DOCUMENT RECOVERY AUDIT LOG');
+      expect(text).toContain('damaged_file.pdf');
+      expect(text).toContain('PER-PAGE RECOVERY STRATEGY BREAKDOWN:');
+      expect(text).toContain('Page   1');
+      expect(text).toContain('OPERATIONS AUDIT TRAIL:');
+    });
+  });
 });

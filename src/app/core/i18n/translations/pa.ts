@@ -358,6 +358,30 @@ export const pa = {
     pdf_signature_status: {
       title: 'ਦਸਤਖ਼ਤ ਸਥਿਤੀ ਪੈਨਲ',
       description: 'ਕ੍ਰਿਪਟੋਗ੍ਰਾਫਿਕ ਦਸਤਖ਼ਤ ਢਾਂਚੇ ਅਤੇ ਬਾਈਟ-ਰੇਂਜ ਕਵਰੇਜ ਦਾ ਰਿਪੋਰਟ-ਆਧਾਰਿਤ ਵਿਸ਼ਲੇਸ਼ਣ।'
+    },
+    pdf_archival: {
+      title: 'ਪੁਰਾਲੇਖ ਤਿਆਰੀ',
+      description: 'sRGB ਇਰਾਦੇ, ਫੌਂਟ ਏਮਬੈਡਿੰਗ ਅਤੇ ਅਨੁਕੂਲ XMP ਮੈਟਾਡੇਟਾ ਨਾਲ ਲੰਬੇ ਸਮੇਂ ਦੀ ਸਾਂਭ-ਸੰਭਾਲ ਲਈ ਦਸਤਾਵੇਜ਼ ਤਿਆਰ ਕਰੋ।',
+      noticeTitle: 'ਸੰਭਾਲ ਲਈ ਤਿਆਰ — ਸੁਤੰਤਰ ਤੌਰ ਤੇ ਪ੍ਰਮਾਣਿਤ ਨਹੀਂ',
+      noticeDescription: 'ਪੂਰੀ PDF/A ਅਨੁਕੂਲਤਾ ਤਸਦੀਕ ਵਿਸ਼ੇਸ਼ ਆਫ਼ਲਾਈਨ ਟੂਲਜ਼ ਦੁਆਰਾ ਪ੍ਰਮਾਣਿਤ ਹੁੰਦੀ ਹੈ। ਇਹ ਟੂਲ ਮਿਆਰੀ ਮੈਟਾਡੇਟਾ ਅਤੇ ਫੌਂਟ ਏਮਬੈਡਿੰਗ ਤਿਆਰ ਕਰਦਾ ਹੈ।',
+      selectPdf: 'ਪੁਰਾਲੇਖ ਤਿਆਰੀ ਲਈ PDF ਚੁਣੋ',
+      uploadPrompt: 'ਤਿਆਰੀ ਦੀ ਜਾਂਚ ਕਰੋ, ਫੌਂਟ ਏਮਬੈਡ ਕਰੋ ਅਤੇ ਮਿਆਰੀ ਮੈਟਾਡੇਟਾ ਲਿਖੋ।',
+      browseFiles: 'ਫਾਈਲ ਚੁਣੋ',
+      changeFile: 'ਫਾਈਲ ਬਦਲੋ',
+      auditingText: 'ਪੁਰਾਲੇਖ ਤਿਆਰੀ ਦੀ ਜਾਂਚ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ...',
+      readinessTitle: 'ਪੁਰਾਲੇਖ ਤਿਆਰੀ ਚੈੱਕਲਿਸਟ',
+      readyForPrep: 'ਤਿਆਰੀ ਲਈ ਤਿਆਰ',
+      attentionRequired: 'ਧਿਆਨ ਲੋੜੀਂਦਾ',
+      statusPass: 'ਅਨੁਕੂਲ',
+      statusFixable: 'ਆਟੋ-ਐਡਜਸਟ',
+      statusAction: 'ਜਾਂਚ ਲੋੜੀਂਦੀ',
+      prepareArchivalBtn: 'ਸੰਭਾਲ ਲਈ ਦਸਤਾਵੇਜ਼ ਤਿਆਰ ਕਰੋ',
+      successTitle: 'ਪੁਰਾਲੇਖ ਤਿਆਰੀ ਸੰਪੂਰਨ',
+      outputSize: 'ਆਉਟਪੁੱਟ ਆਕਾਰ',
+      pageCount: 'ਸਫ਼ੇ',
+      sRgbSet: 'sRGB IEC61966-2.1',
+      colorProfile: 'ਰੰਗ ਆਉਟਪੁੱਟ ਇਰਾਦਾ',
+      saveArchivalBtn: 'ਪੁਰਾਲੇਖ PDF ਸੰਭਾਲੋ'
     }
   },
   search: {
@@ -960,7 +984,11 @@ export const pa = {
     recoveredPages: 'ਬਚਾਏ ਗਏ ਪੰਨੇ',
     unrecoverable: 'ਨਾ-ਪੜ੍ਹਨਯੋਗ ਪੰਨੇ',
     recoveryOperationsLog: 'ਰਿਕਵਰੀ ਕਾਰਵਾਈਆਂ ਦਾ ਲੌਗ',
-    downloadRecoveredBtn: 'ਮੁਰੰਮਤ ਕੀਤੀ PDF ਡਾਊਨਲੋਡ ਕਰੋ'
+    downloadRecoveredBtn: 'ਮੁਰੰਮਤ ਕੀਤੀ PDF ਡਾਊਨਲੋਡ ਕਰੋ',
+    triageEncryptedTitle: 'ਪਾਸਵਰਡ ਸੁਰੱਖਿਅਤ ਦਸਤਾਵੇਜ਼ ਲੱਭਿਆ',
+    triageEncryptedDesc: 'ਇਹ ਦਸਤਾਵੇਜ਼ ਪਾਸਵਰਡ ਨਾਲ ਸੁਰੱਖਿਅਤ (ਇਨਕ੍ਰਿਪਟਡ) ਹੈ, ਖ਼ਰਾਬ ਜਾਂ ਨੁਕਸਾਨਿਆ ਨਹੀਂ ਹੈ। PDF ਰਿਪੇਅਰ ਖ਼ਰਾਬ ਫ਼ਾਈਲਾਂ ਲਈ ਹੈ। ਪਾਸਵਰਡ ਹਟਾਉਣ ਲਈ Unlock PDF ਵਰਤੋ।',
+    triageUnlockBtn: 'Unlock PDF ਵਿੱਚ ਖੋਲ੍ਹੋ',
+    downloadLogBtn: 'ਰਿਕਵਰੀ ਲੌਗ ਡਾਊਨਲੋਡ ਕਰੋ'
   },
   extractor: {
     title: 'PDF ਸਮੱਗਰੀ ਨਿਕਾਸੀ',

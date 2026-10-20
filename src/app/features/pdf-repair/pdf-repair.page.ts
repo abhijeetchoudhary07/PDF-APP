@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { PdfRepairService } from '../../core/services/pdf-repair.service';
 import { FileService } from '../../core/services/file.service';
 import { ShareService } from '../../core/services/share.service';
@@ -54,6 +54,7 @@ export class PdfRepairPage {
   private shareService = inject(ShareService);
   private historyService = inject(HistoryService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
   currentStep: RepairStep = 'select';
@@ -136,6 +137,19 @@ export class PdfRepairPage {
       this.fileService.downloadFile(this.recoveryResult.recoveredFile);
       this.toastService.success('Repaired PDF downloaded.');
     }
+  }
+
+  downloadRecoveryLog(): void {
+    if (!this.recoveryResult) return;
+    const origName = this.selectedFile?.name || 'document.pdf';
+    const logBlob = this.repairService.exportRecoveryLog(this.recoveryResult, origName);
+    const logFilename = origName.replace(/\.pdf$/i, '') + '_recovery_log.txt';
+    this.fileService.downloadBlob(logBlob, logFilename);
+    this.toastService.success('Recovery audit log downloaded.');
+  }
+
+  goToUnlock(): void {
+    this.router.navigate(['/features/pdf/unlock']);
   }
 
   shareRecovered(): void {

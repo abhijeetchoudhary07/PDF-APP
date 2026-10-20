@@ -474,6 +474,18 @@ const TOOL_CATALOGUE: ToolItem[] = [
       badge: 'Diagnostic',
       keywords: ['signature', 'status', 'signer', 'byte range', 'coverage', 'appended', 'revisions'],
       relatedIds: ['pdf_signing', 'pdf_fingerprint', 'pdf_inspect', 'pdf_privacy_sanitizer']
+    },
+    {
+      id: 'pdf_archival',
+      category: 'PDF',
+      title: 'Archival Preparation',
+      description: 'Prepare documents for long-term preservation with sRGB intent, font embedding, and conforming XMP metadata.',
+      route: '/features/pdf/archival',
+      icon: 'archive',
+      color: 'pdf',
+      badge: 'Preservation',
+      keywords: ['archival', 'pdf/a', 'pdf/a-2b', 'preservation', 'xmp', 'srgb', 'embed fonts'],
+      relatedIds: ['pdf_preflight', 'pdf_fingerprint', 'pdf_repair', 'pdf_optimize']
     }
 ];
 

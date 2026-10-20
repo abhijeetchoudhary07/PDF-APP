@@ -693,4 +693,17 @@
       display: block;
     }
   }
+
+  .compare-options-card {
+    padding: 12px;
+
+    label {
+      min-height: 44px;
+    }
+  }
+
+  .metadata-diff-box {
+    padding: 10px;
+  }
 }
+

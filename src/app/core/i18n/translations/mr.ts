@@ -358,6 +358,30 @@ export const mr = {
     pdf_signature_status: {
       title: 'स्वाक्षरी स्थिती पॅनेल',
       description: 'क्रिप्टोग्राफिक स्वाक्षरी रचना आणि बाइट-श्रेणी कव्हरेजचे केवळ-अहवाल विश्लेषण.'
+    },
+    pdf_archival: {
+      title: 'अभिलेखीय तयारी',
+      description: 'sRGB हेतू, फॉन्ट एम्बेडिंग आणि अनुरुप XMP मेटाडेटासह दीर्घकालीन संरक्षणासाठी दस्तऐवज तयार करा.',
+      noticeTitle: 'संग्रहणासाठी तयार — स्वतंत्रपणे प्रमाणित नाही',
+      noticeDescription: 'संपूर्ण PDF/A अनुरुपतेची पडताळणी विशेष ऑफलाइन साधनांद्वारे केली जाते. हे साधन मानक मेटाडेटा आणि फॉन्ट एम्बेडिंग तयार करते.',
+      selectPdf: 'अभिलेखीय तयारीसाठी PDF निवडा',
+      uploadPrompt: 'तयारीचे ऑडिट करा, फॉन्ट एम्बेड करा आणि मानक मेटाडेटा लिहा.',
+      browseFiles: 'फाइल निवडा',
+      changeFile: 'फाइल बदला',
+      auditingText: 'अभिलेखीय तयारीची तपासणी केली जात आहे...',
+      readinessTitle: 'अभिलेखीय तयारी चेकलिस्ट',
+      readyForPrep: 'तयारीसाठी सज्ज',
+      attentionRequired: 'लक्ष आवश्यक',
+      statusPass: 'अनुरुप',
+      statusFixable: 'आपोआप समायोजित',
+      statusAction: 'तपासणी आवश्यक',
+      prepareArchivalBtn: 'संग्रहणासाठी दस्तऐवज तयार करा',
+      successTitle: 'अभिलेखीय तयारी पूर्ण',
+      outputSize: 'आउटपुट आकार',
+      pageCount: 'पृष्ठे',
+      sRgbSet: 'sRGB IEC61966-2.1',
+      colorProfile: 'रंग आउटपुट हेतू',
+      saveArchivalBtn: 'अभिलेखीय PDF सेव्ह करा'
     }
   },
   search: {
@@ -960,7 +984,11 @@ export const mr = {
     recoveredPages: 'पुनर्प्राप्त पृष्ठे',
     unrecoverable: 'न वाचता येणारी पृष्ठे',
     recoveryOperationsLog: 'पुनर्प्राप्ती ऑपरेशन लॉग',
-    downloadRecoveredBtn: 'दुरुस्त केलेली PDF डाउनलोड करा'
+    downloadRecoveredBtn: 'दुरुस्त केलेली PDF डाउनलोड करा',
+    triageEncryptedTitle: 'पासवर्ड संरक्षित दस्तऐवज आढळला',
+    triageEncryptedDesc: 'हा दस्तऐवज पासवर्ड संरक्षित (एन्क्रिप्टेड) आहे, खराब किंवा दूषित झालेला नाही. PDF रिपेअर खराब झालेल्या फाइल्ससाठी आहे. पासवर्ड काढण्यासाठी Unlock PDF वापरा.',
+    triageUnlockBtn: 'Unlock PDF मध्ये उघडा',
+    downloadLogBtn: 'पुनर्प्राप्ती लॉग डाउनलोड करा'
   },
   extractor: {
     title: 'PDF सामग्री निष्कर्षण',

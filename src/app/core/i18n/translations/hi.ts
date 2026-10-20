@@ -358,6 +358,30 @@ export const hi = {
     pdf_signature_status: {
       title: 'हस्ताक्षर स्थिति पैनल',
       description: 'क्रिप्टोग्राफ़िक हस्ताक्षर संरचना और बाइट-रेंज कवरेज का केवल-रिपोर्ट विश्लेषण।'
+    },
+    pdf_archival: {
+      title: 'अभिलेखीय तैयारी',
+      description: 'sRGB इंटेंट, फ़ॉन्ट एम्बेडिंग और अनुरूप XMP मेटाडेटा के साथ दीर्घकालिक संरक्षण के लिए दस्तावेज़ तैयार करें।',
+      noticeTitle: 'संग्रहण के लिए तैयार — स्वतंत्र रूप से सत्यापित नहीं',
+      noticeDescription: 'पूर्ण PDF/A अनुरूपता सत्यापन ऑफ़लाइन टूल द्वारा प्रमाणित होता है। यह टूल मानक मेटाडेटा और फ़ॉन्ट एम्बेडिंग तैयार करता है।',
+      selectPdf: 'अभिलेखीय तैयारी के लिए PDF चुनें',
+      uploadPrompt: 'तैयारी का ऑडिट करें, फ़ॉन्ट एम्बेड करें और मानक मेटाडेटा लिखें।',
+      browseFiles: 'फ़ाइल चुनें',
+      changeFile: 'फ़ाइल बदलें',
+      auditingText: 'अभिलेखीय तैयारी की जांच की जा रही है...',
+      readinessTitle: 'अभिलेखीय तैयारी चेकलिस्ट',
+      readyForPrep: 'तैयारी के लिए तैयार',
+      attentionRequired: 'ध्यान आवश्यक',
+      statusPass: 'अनुरूप',
+      statusFixable: 'स्वतः समायोजित',
+      statusAction: 'समीक्षा आवश्यक',
+      prepareArchivalBtn: 'संग्रहण के लिए दस्तावेज़ तैयार करें',
+      successTitle: 'अभिलेखीय तैयारी पूर्ण',
+      outputSize: 'आउटपुट आकार',
+      pageCount: 'पृष्ठ',
+      sRgbSet: 'sRGB IEC61966-2.1',
+      colorProfile: 'रंग आउटपुट इंटेंट',
+      saveArchivalBtn: 'अभिलेखीय PDF सहेजें'
     }
   },
   search: {
@@ -960,7 +984,11 @@ export const hi = {
     recoveredPages: 'पुनर्प्राप्त पृष्ठ',
     unrecoverable: 'अपठनीय पृष्ठ',
     recoveryOperationsLog: 'पुनर्प्राप्ति ऑपरेशन लॉग',
-    downloadRecoveredBtn: 'सुधारा गया PDF डाउनलोड करें'
+    downloadRecoveredBtn: 'सुधारा गया PDF डाउनलोड करें',
+    triageEncryptedTitle: 'पासवर्ड संरक्षित दस्तावेज़ मिला',
+    triageEncryptedDesc: 'यह दस्तावेज़ पासवर्ड से सुरक्षित (एन्क्रिप्टेड) है, संरचनात्मक रूप से क्षतिग्रस्त नहीं है। PDF सुधार क्षतिग्रस्त फ़ाइलों के लिए है। पासवर्ड सुरक्षा हटाने के लिए Unlock PDF का उपयोग करें।',
+    triageUnlockBtn: 'Unlock PDF में खोलें',
+    downloadLogBtn: 'पुनर्प्राप्ति लॉग डाउनलोड करें'
   },
   extractor: {
     title: 'PDF सामग्री निष्कर्षण',

@@ -3,7 +3,7 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertController } from '@ionic/angular';
 import { FileService } from '../../core/services/file.service';
-import { PdfFlattenService, FlattenInspectionResult, FlattenResult } from '../../core/services/pdf-flatten.service';
+import { PdfFlattenService, FlattenInspectionResult, FlattenResult, FlattenTarget } from '../../core/services/pdf-flatten.service';
 import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
@@ -74,6 +74,7 @@ export class PdfFlattenPage {
   inspection?: FlattenInspectionResult;
 
   mode: 'vector' | 'raster' = 'vector';
+  target: FlattenTarget = 'everything';
   flattenProgress = 0;
   isFlattening = false;
 
@@ -139,7 +140,8 @@ export class PdfFlattenPage {
           this.flattenProgress = p;
           if (p >= 80) this.currentStage = 'optimizing';
           this.cdr.markForCheck();
-        }
+        },
+        this.target
       );
 
       this.currentStage = 'complete';

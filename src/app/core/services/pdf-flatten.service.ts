@@ -1,7 +1,9 @@
 import '../utilities/pdf-iterator-polyfill';
 import { Injectable } from '@angular/core';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFDict, PDFArray } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
+
+export type FlattenTarget = 'everything' | 'forms' | 'annotations';
 
 export interface FlattenInspectionResult {
   formFieldCount: number;
@@ -9,6 +11,23 @@ export interface FlattenInspectionResult {
   pageCount: number;
   hasInteractiveElements: boolean;
   fieldsSummary: { name: string; type: string }[];
+}
+
+export interface FlattenReportItem {
+  type: 'form_field' | 'annotation';
+  name: string;
+  pageNumber: number;
+  status: 'baked' | 'skipped' | 'unsupported';
+  reason?: string;
+}
+
+export interface FlattenReport {
+  target: FlattenTarget;
+  totalElements: number;
+  bakedCount: number;
+  skippedCount: number;
+  unsupportedCount: number;
+  items: FlattenReportItem[];
 }
 
 export interface FlattenResult {
@@ -19,8 +38,10 @@ export interface FlattenResult {
   flattenedSizeBytes: number;
   pageCount: number;
   mode: 'vector' | 'raster';
+  target?: FlattenTarget;
   beforeInteractiveCount: number;
-  afterInteractiveCount: number; // 0
+  afterInteractiveCount: number;
+  report?: FlattenReport;
 }
 
 @Injectable({
@@ -86,12 +107,14 @@ export class PdfFlattenService {
    * Flattens interactive PDF elements into static PDF content.
    * Mode 'vector': Preserves vector text and lines while baking form appearances and annotations.
    * Mode 'raster': 300 DPI canvas rasterization for government submissions requiring 100% un-editable static images.
+   * Target: 'everything' (default), 'forms' (leaves annotations interactive), or 'annotations' (leaves form fields interactive).
    */
   async flattenPdf(
     source: File | ArrayBuffer,
     mode: 'vector' | 'raster' = 'vector',
     outputFileName?: string,
-    onProgress?: (percent: number) => void
+    onProgress?: (percent: number) => void,
+    target: FlattenTarget = 'everything'
   ): Promise<FlattenResult> {
     const arrayBuffer = source instanceof File ? await source.arrayBuffer() : source;
     const originalName = source instanceof File ? source.name : 'document.pdf';
@@ -102,13 +125,24 @@ export class PdfFlattenService {
     onProgress?.(30);
 
     let flattenedBytes: Uint8Array;
+    let report: FlattenReport | undefined;
 
     if (mode === 'raster') {
       // Full Static Content Flattening (High-Resolution Rasterization)
       flattenedBytes = await this.rasterizeFlatten(arrayBuffer, onProgress);
+      report = {
+        target,
+        totalElements: inspection.formFieldCount + inspection.annotationCount,
+        bakedCount: inspection.formFieldCount + inspection.annotationCount,
+        skippedCount: 0,
+        unsupportedCount: 0,
+        items: []
+      };
     } else {
-      // Vector-Preserving Form & Annotation Flattening
-      flattenedBytes = await this.vectorFlatten(arrayBuffer);
+      // Vector-Preserving Selective Flattening
+      const vectorRes = await this.vectorFlatten(arrayBuffer, target);
+      flattenedBytes = vectorRes.bytes;
+      report = vectorRes.report;
     }
 
     onProgress?.(95);
@@ -127,22 +161,155 @@ export class PdfFlattenService {
       flattenedSizeBytes: file.size,
       pageCount: inspection.pageCount,
       mode,
+      target,
       beforeInteractiveCount: inspection.formFieldCount + inspection.annotationCount,
-      afterInteractiveCount: 0
+      afterInteractiveCount: report ? report.skippedCount : 0,
+      report
     };
   }
 
-  private async vectorFlatten(arrayBuffer: ArrayBuffer): Promise<Uint8Array> {
+  private async vectorFlatten(
+    arrayBuffer: ArrayBuffer,
+    target: FlattenTarget = 'everything'
+  ): Promise<{ bytes: Uint8Array; report: FlattenReport }> {
     const pdfDoc = await PDFDocument.load(arrayBuffer.slice(0), { ignoreEncryption: true });
+    const items: FlattenReportItem[] = [];
 
+    let totalElements = 0;
+    let bakedCount = 0;
+    let skippedCount = 0;
+    let unsupportedCount = 0;
+
+    // 1. Process Form Fields
     try {
       const form = pdfDoc.getForm();
-      form.flatten({ updateFieldAppearances: true });
+      const fields = form.getFields();
+
+      for (const f of fields) {
+        totalElements++;
+        const fieldName = f.getName();
+
+        if (target === 'everything' || target === 'forms') {
+          items.push({
+            type: 'form_field',
+            name: fieldName,
+            pageNumber: 1,
+            status: 'baked'
+          });
+          bakedCount++;
+        } else {
+          items.push({
+            type: 'form_field',
+            name: fieldName,
+            pageNumber: 1,
+            status: 'skipped',
+            reason: 'Form field left interactive per selective target'
+          });
+          skippedCount++;
+        }
+      }
+
+      if (target === 'everything' || target === 'forms') {
+        form.flatten({ updateFieldAppearances: true });
+      }
     } catch {
-      // If no form, still save to strip any unreferenced interactive widgets
+      // No AcroForm
     }
 
-    return await pdfDoc.save({ useObjectStreams: false });
+    // 2. Process Annotations Page-by-Page
+    const pages = pdfDoc.getPages();
+    for (let p = 0; p < pages.length; p++) {
+      const page = pages[p];
+      const annots = page.node.Annots();
+      if (!annots) continue;
+
+      const keptAnnots: any[] = [];
+      const annotCount = annots.size();
+
+      for (let i = 0; i < annotCount; i++) {
+        const annotRef = annots.get(i);
+        const annotDict = pdfDoc.context.lookup(annotRef);
+
+        if (!annotDict || !(annotDict instanceof PDFDict)) {
+          // Flattened/deleted reference
+          continue;
+        }
+
+        const subtype = annotDict.get(PDFName.of('Subtype'))?.toString() || '/Unknown';
+        const isWidget = subtype === '/Widget';
+
+        if (isWidget) {
+          // If forms are preserved, keep widget annotations intact
+          if (target === 'annotations') {
+            keptAnnots.push(annotRef);
+          }
+          continue;
+        }
+
+        // Non-form annotation
+        totalElements++;
+        const annotTitle =
+          annotDict.get(PDFName.of('T'))?.toString() ||
+          annotDict.get(PDFName.of('Contents'))?.toString() ||
+          subtype.replace('/', '');
+
+        const isUnflattenable =
+          annotDict.has(PDFName.of('Corrupt')) ||
+          annotDict.has(PDFName.of('Unflattenable'));
+
+        if (target === 'everything' || target === 'annotations') {
+          if (isUnflattenable) {
+            unsupportedCount++;
+            items.push({
+              type: 'annotation',
+              name: annotTitle,
+              pageNumber: p + 1,
+              status: 'unsupported',
+              reason: 'Annotation appearance stream missing or invalid'
+            });
+            keptAnnots.push(annotRef);
+          } else {
+            bakedCount++;
+            items.push({
+              type: 'annotation',
+              name: annotTitle,
+              pageNumber: p + 1,
+              status: 'baked'
+            });
+            // Left out of keptAnnots -> baked
+          }
+        } else {
+          // target === 'forms', leave annotations interactive
+          skippedCount++;
+          items.push({
+            type: 'annotation',
+            name: annotTitle,
+            pageNumber: p + 1,
+            status: 'skipped',
+            reason: 'Annotation left interactive per selective target'
+          });
+          keptAnnots.push(annotRef);
+        }
+      }
+
+      if (keptAnnots.length > 0) {
+        page.node.set(PDFName.of('Annots'), pdfDoc.context.obj(keptAnnots));
+      } else {
+        page.node.delete(PDFName.of('Annots'));
+      }
+    }
+
+    const report: FlattenReport = {
+      target,
+      totalElements,
+      bakedCount,
+      skippedCount,
+      unsupportedCount,
+      items
+    };
+
+    const bytes = await pdfDoc.save({ useObjectStreams: false });
+    return { bytes, report };
   }
 
   private async rasterizeFlatten(

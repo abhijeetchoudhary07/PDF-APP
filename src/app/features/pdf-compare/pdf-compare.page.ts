@@ -8,11 +8,13 @@ import { FileService } from '../../core/services/file.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
 import { ToastService } from '../../core/services/toast.service';
+import { StorageService } from '../../core/services/storage.service';
 import {
   CompareSummary,
   PageDiffResult,
   ComparisonMode,
-  TextDiffToken
+  TextDiffToken,
+  CompareOptions
 } from '../../core/models/pdf-analysis.types';
 import {
   AppHeaderComponent,
@@ -66,6 +68,7 @@ export class PdfComparePage {
   private fileService = inject(FileService);
   private shareService = inject(ShareService);
   private historyService = inject(HistoryService);
+  private storageService = inject(StorageService);
   private toastService = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
 
@@ -75,6 +78,12 @@ export class PdfComparePage {
   currentStep: CompareStep = 'select';
   originalFile?: File;
   modifiedFile?: File;
+
+  // Comparison options (G8)
+  ignoreWhitespace = false;
+  ignoreCase = false;
+  excludeHeaderFooter = false;
+  isExportingPdf = false;
 
   // Processing state
   isProcessing = false;
@@ -128,6 +137,13 @@ export class PdfComparePage {
     this.progressMessage = 'Preparing documents for comparison...';
 
     try {
+      const options: CompareOptions = {
+        ignoreWhitespace: this.ignoreWhitespace,
+        ignoreCase: this.ignoreCase,
+        headerZonePercent: this.excludeHeaderFooter ? 0.10 : 0,
+        footerZonePercent: this.excludeHeaderFooter ? 0.10 : 0
+      };
+
       this.summary = await this.compareService.compareDocuments(
         this.originalFile,
         this.modifiedFile,
@@ -135,7 +151,8 @@ export class PdfComparePage {
           this.progressPercent = pct;
           this.progressMessage = msg;
           this.cdr.detectChanges();
-        }
+        },
+        options
       );
 
       this.buildChangesList();
@@ -327,6 +344,34 @@ export class PdfComparePage {
     const file = new File([blob], 'pdf_comparison_report.txt', { type: 'text/plain' });
     this.fileService.downloadFile(file);
     this.toastService.success('Report downloaded.');
+  }
+
+  async exportPdfReport(): Promise<void> {
+    if (!this.summary || !this.originalFile || !this.modifiedFile) return;
+
+    this.isExportingPdf = true;
+    try {
+      const pdfBlob = await this.compareService.exportComparisonPdfReport(
+        this.summary,
+        this.originalFile.name,
+        this.modifiedFile.name
+      );
+      const safeName = `comparison_report_${Date.now()}.pdf`;
+      const file = new File([pdfBlob], safeName, { type: 'application/pdf' });
+
+      try {
+        await this.storageService.saveFile(file, safeName);
+        this.toastService.success('Comparison PDF report saved to device');
+      } catch {
+        this.fileService.downloadFile(file);
+        this.toastService.success('Comparison PDF report downloaded');
+      }
+    } catch (err: any) {
+      this.toastService.error('Failed to export PDF report: ' + (err?.message || err));
+    } finally {
+      this.isExportingPdf = false;
+      this.cdr.detectChanges();
+    }
   }
 
   reset(): void {

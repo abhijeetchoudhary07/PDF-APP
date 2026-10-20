@@ -136,20 +136,44 @@
             }
           </div>
         }
-        <!-- Recovery Trigger -->
-        <div class="diagnostic-actions">
-          <app-button
-            variant="primary"
-            size="lg"
-            data-testid="start-recovery"
-            (clicked)="startRecovery()"
-          >{{ 'repair.startRecoveryBtn' | translate }}</app-button>
-          <app-button
-            variant="outline"
-            size="md"
-            (clicked)="reset()"
-          >{{ 'common.chooseAnother' | translate }}</app-button>
-        </div>
+        <!-- Triage Encrypted Banner (G10) -->
+        @if (healthReport.triageRecommendation === 'unlock') {
+          <div class="triage-callout-card" data-testid="triage-encrypted-banner">
+            <div class="triage-callout-icon">🔒</div>
+            <div class="triage-callout-body">
+              <h4>{{ 'repair.triageEncryptedTitle' | translate }}</h4>
+              <p>{{ 'repair.triageEncryptedDesc' | translate }}</p>
+              <div class="triage-callout-actions">
+                <app-button
+                  variant="primary"
+                  size="md"
+                  data-testid="route-unlock-btn"
+                  (clicked)="goToUnlock()"
+                >{{ 'repair.triageUnlockBtn' | translate }}</app-button>
+                <app-button
+                  variant="outline"
+                  size="md"
+                  (clicked)="reset()"
+                >{{ 'common.chooseAnother' | translate }}</app-button>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <!-- Recovery Trigger -->
+          <div class="diagnostic-actions">
+            <app-button
+              variant="primary"
+              size="lg"
+              data-testid="start-recovery"
+              (clicked)="startRecovery()"
+            >{{ 'repair.startRecoveryBtn' | translate }}</app-button>
+            <app-button
+              variant="outline"
+              size="md"
+              (clicked)="reset()"
+            >{{ 'common.chooseAnother' | translate }}</app-button>
+          </div>
+        }
       </div>
     </section>
   }
@@ -219,8 +243,15 @@
           <app-button
             variant="primary"
             size="lg"
+            data-testid="download-repaired-btn"
             (clicked)="downloadRecovered()"
           >{{ 'repair.downloadRecoveredBtn' | translate }}</app-button>
+          <app-button
+            variant="outline"
+            size="lg"
+            data-testid="download-recovery-log-btn"
+            (clicked)="downloadRecoveryLog()"
+          >{{ 'repair.downloadLogBtn' | translate }}</app-button>
           <app-button
             variant="outline"
             size="lg"
