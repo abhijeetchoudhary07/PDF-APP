@@ -348,6 +348,54 @@ export const APP_ROUTES: Routes = [
     path: 'features/pdf-repair',
     loadComponent: () => import('./features/pdf-repair/pdf-repair.page').then(m => m.PdfRepairPage)
   },
+  /*
+   * Part G — Diagnostic, Integrity & Trust (G1 - G5)
+   * G1: Document Fingerprint & Integrity Receipt
+   * G3: Preflight & Submission Check
+   * G4: Embedded Object Inspector
+   * G5: Signature Status Panel (Report-Only)
+   */
+  {
+    path: 'features/pdf/fingerprint',
+    loadComponent: () => import('./features/pdf-fingerprint/pdf-fingerprint.page').then(m => m.PdfFingerprintPage)
+  },
+  {
+    path: 'features/pdf-fingerprint',
+    redirectTo: 'features/pdf/fingerprint',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf/preflight',
+    loadComponent: () => import('./features/pdf-preflight/pdf-preflight.page').then(m => m.PdfPreflightPage)
+  },
+  {
+    path: 'features/pdf-preflight',
+    redirectTo: 'features/pdf/preflight',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf/inspect',
+    loadComponent: () => import('./features/pdf-inspect/pdf-inspect.page').then(m => m.PdfInspectPage)
+  },
+  {
+    path: 'features/pdf-inspect',
+    redirectTo: 'features/pdf/inspect',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf/signature-status',
+    loadComponent: () => import('./features/pdf-signature-status/pdf-signature-status.page').then(m => m.PdfSignatureStatusPage)
+  },
+  {
+    path: 'features/pdf/signatures',
+    redirectTo: 'features/pdf/signature-status',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/pdf-signature-status',
+    redirectTo: 'features/pdf/signature-status',
+    pathMatch: 'full'
+  },
   {
     path: 'features/pdf-extractor',
     loadComponent: () => import('./features/pdf-extractor/pdf-extractor.page').then(m => m.PdfExtractorPage)
@@ -493,6 +541,51 @@ export const APP_ROUTES: Routes = [
   {
     path: 'validator',
     redirectTo: 'features/document-validator',
+    pathMatch: 'full'
+  },
+  {
+    path: 'fingerprint',
+    redirectTo: 'features/pdf/fingerprint',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-fingerprint',
+    redirectTo: 'features/pdf/fingerprint',
+    pathMatch: 'full'
+  },
+  {
+    path: 'preflight',
+    redirectTo: 'features/pdf/preflight',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-preflight',
+    redirectTo: 'features/pdf/preflight',
+    pathMatch: 'full'
+  },
+  {
+    path: 'inspect',
+    redirectTo: 'features/pdf/inspect',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-inspect',
+    redirectTo: 'features/pdf/inspect',
+    pathMatch: 'full'
+  },
+  {
+    path: 'signature-status',
+    redirectTo: 'features/pdf/signature-status',
+    pathMatch: 'full'
+  },
+  {
+    path: 'signatures',
+    redirectTo: 'features/pdf/signature-status',
+    pathMatch: 'full'
+  },
+  {
+    path: 'pdf-signatures',
+    redirectTo: 'features/pdf/signature-status',
     pathMatch: 'full'
   },
   {

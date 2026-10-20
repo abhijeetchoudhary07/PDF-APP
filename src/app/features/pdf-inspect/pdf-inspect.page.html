@@ -1,0 +1,211 @@
+<app-header></app-header>
+
+<main class="page-container inspect-page">
+  <app-page-header
+    [title]="'pdfInspect.title' | translate"
+    [subtitle]="'pdfInspect.subtitle' | translate"
+    [badge]="'pdfInspect.badge' | translate"
+    badgeVariant="pdf"
+    [showBack]="true"
+    backUrl="/features/pdf"
+  ></app-page-header>
+
+  @if (!currentFile) {
+    <section class="upload-section">
+      <app-file-dropzone
+        icon="code"
+        [title]="'pdfInspect.dropzoneTitle' | translate"
+        [description]="'pdfInspect.dropzoneDesc' | translate"
+        accept="application/pdf"
+        (fileSelected)="onFileSelected($event)">
+      </app-file-dropzone>
+
+      <div class="read-only-banner">
+        <span class="shield-icon">🛡️</span>
+        <div>
+          <strong>{{ 'pdfInspect.readOnlyNoticeTitle' | translate }}</strong>
+          <p>{{ 'pdfInspect.readOnlyNoticeDesc' | translate }}</p>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (isInspecting) {
+    <div class="scanning-card">
+      <div class="spinner"></div>
+      <span>{{ 'pdfInspect.scanningObjects' | translate }}</span>
+    </div>
+  }
+
+  @if (report && !isInspecting) {
+    <section class="report-section">
+      <!-- File Overview Header -->
+      <div class="overview-box">
+        <div class="file-info-group">
+          <h3 class="file-name">{{ report.fileName }}</h3>
+          <span class="file-meta">
+            {{ (report.fileSizeBytes / 1024 | number:'1.1-1') }} KB · {{ report.pageCount }} {{ 'pdfInspect.pages' | translate }}
+          </span>
+        </div>
+
+        <div class="overview-actions">
+          <app-button variant="primary" size="sm" (clicked)="saveCleanedPdf()">
+            {{ 'pdfInspect.saveCleanedPdfBtn' | translate }}
+          </app-button>
+          <app-button variant="ghost" size="sm" (clicked)="resetCurrent()">
+            {{ 'pdfInspect.inspectAnotherBtn' | translate }}
+          </app-button>
+        </div>
+      </div>
+
+      <!-- Segment Tabs -->
+      <div class="inspect-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'attachments'"
+          (click)="activeTab = 'attachments'">
+          {{ 'pdfInspect.tabAttachments' | translate }} ({{ report.attachments.length }})
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'javascript'"
+          (click)="activeTab = 'javascript'">
+          {{ 'pdfInspect.tabJavaScript' | translate }} ({{ report.javaScriptActions.length }})
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'links'"
+          (click)="activeTab = 'links'">
+          {{ 'pdfInspect.tabLinks' | translate }} ({{ report.linkActions.length }})
+        </button>
+      </div>
+
+      <!-- TAB 1: ATTACHMENTS -->
+      @if (activeTab === 'attachments') {
+        <div class="tab-content">
+          @if (report.attachments.length === 0) {
+            <div class="empty-state">
+              <span class="empty-icon">📁</span>
+              <p>{{ 'pdfInspect.noAttachmentsFound' | translate }}</p>
+            </div>
+          } @else {
+            <div class="items-list">
+              @for (att of report.attachments; track att.id) {
+                <div class="object-card">
+                  <div class="object-info">
+                    <strong class="object-name">{{ att.name }}</strong>
+                    <span class="object-sub">{{ (att.sizeBytes / 1024 | number:'1.1-1') }} KB · {{ att.mimeType }}</span>
+                    @if (att.description) {
+                      <p class="object-desc">{{ att.description }}</p>
+                    }
+                  </div>
+                  <div class="object-actions">
+                    <app-button
+                      variant="secondary"
+                      size="sm"
+                      (clicked)="downloadAttachment(att)">
+                      {{ 'pdfInspect.extractBtn' | translate }}
+                    </app-button>
+                    <app-button
+                      variant="danger"
+                      size="sm"
+                      (clicked)="promptDeleteAttachment(att)">
+                      {{ 'pdfInspect.deleteBtn' | translate }}
+                    </app-button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TAB 2: JAVASCRIPT -->
+      @if (activeTab === 'javascript') {
+        <div class="tab-content">
+          @if (report.javaScriptActions.length === 0) {
+            <div class="empty-state">
+              <span class="empty-icon">✓</span>
+              <p>{{ 'pdfInspect.noScriptsFound' | translate }}</p>
+            </div>
+          } @else {
+            <div class="items-list">
+              @for (js of report.javaScriptActions; track js.id) {
+                <div class="object-card">
+                  <div class="script-header">
+                    <div class="script-meta">
+                      <app-badge variant="warning">{{ js.source }}</app-badge>
+                      <strong class="script-name">{{ js.name || js.source }}</strong>
+                    </div>
+                    <div class="script-actions">
+                      <button type="button" class="copy-code-btn" (click)="copyCode(js.code)">
+                        {{ 'pdfInspect.copyCodeBtn' | translate }}
+                      </button>
+                      <button type="button" class="delete-code-btn" (click)="promptDeleteScript(js)">
+                        {{ 'pdfInspect.deleteBtn' | translate }}
+                      </button>
+                    </div>
+                  </div>
+                  <pre class="code-view"><code>{{ js.code }}</code></pre>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TAB 3: LINKS & LAUNCH ACTIONS -->
+      @if (activeTab === 'links') {
+        <div class="tab-content">
+          @if (report.linkActions.length === 0) {
+            <div class="empty-state">
+              <span class="empty-icon">🔗</span>
+              <p>{{ 'pdfInspect.noLinksFound' | translate }}</p>
+            </div>
+          } @else {
+            <div class="items-list">
+              @for (link of report.linkActions; track link.id) {
+                <div class="object-card">
+                  <div class="link-info">
+                    <app-badge [variant]="link.type === 'Launch' ? 'danger' : 'primary'">
+                      {{ link.type }}
+                    </app-badge>
+                    <span class="page-tag">{{ 'pdfInspect.page' | translate }} {{ link.pageNumber }}</span>
+                    <code class="link-target">{{ link.target }}</code>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <!-- Confirm Deletion Modal -->
+  @if (showConfirmModal) {
+    <div class="modal-overlay" (click)="cancelDelete()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <h4 class="modal-title">{{ 'pdfInspect.confirmDeleteTitle' | translate }}</h4>
+        <p class="modal-msg">
+          {{ 'pdfInspect.confirmDeletePrompt' | translate }}: <strong>{{ pendingDeleteName }}</strong>?
+        </p>
+        <div class="modal-actions">
+          <app-button variant="danger" size="sm" (clicked)="confirmDelete()">
+            {{ 'pdfInspect.confirmDeleteBtn' | translate }}
+          </app-button>
+          <app-button variant="ghost" size="sm" (clicked)="cancelDelete()">
+            {{ 'pdfInspect.cancelBtn' | translate }}
+          </app-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <app-related-tools currentToolId="pdf_inspect"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

@@ -21,7 +21,7 @@ export async function uploadFileToDropzone(
   filePath: string,
   dropzoneIndex: number = 0
 ): Promise<void> {
-  const dropzoneCards = page.locator('.dropzone-card');
+  const dropzoneCards = page.locator('.dropzone-card, .dropzone-box, app-file-dropzone');
   const cardCount = await dropzoneCards.count();
   let fileInput: Locator;
   if (cardCount > dropzoneIndex) {

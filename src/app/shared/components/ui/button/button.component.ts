@@ -136,6 +136,11 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
     }
     .btn-block {
       width: 100%;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.25;
+      padding-top: 8px;
+      padding-bottom: 8px;
     }
 
     /* Variants */

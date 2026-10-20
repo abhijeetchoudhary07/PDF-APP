@@ -127,6 +127,12 @@ export const ICON_PATHS: Record<string, string> = {
   'bookmark': '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
   'qr-code': '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="17" y2="14"/><line x1="20" y1="14" x2="21" y2="14"/><line x1="14" y1="17" x2="14" y2="21"/><line x1="17" y1="17" x2="21" y2="21"/>',
   'text-search': '<line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="11" x2="11" y2="11"/><line x1="4" y1="16" x2="9" y2="16"/><circle cx="16.5" cy="15.5" r="4"/><line x1="19.5" y1="18.5" x2="22" y2="21"/>',
+
+  // --- Integrity & Inspection (G1-G5) ---
+  'fingerprint': '<path d="M12 2a10 10 0 0 0-6.88 2.77"/><path d="M8.56 5.5A8 8 0 0 1 12 4a8 8 0 0 1 8 8v2"/><path d="M4 12a8 8 0 0 0 2.2 5.5"/><path d="M12 8a4 4 0 0 1 4 4v7"/><path d="M8 14v5"/><path d="M12 12a1 1 0 0 1 1 1v7"/><path d="M16 16v4"/><path d="M20 16v3"/>',
+  'pulse': '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  'code': '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+  'ribbon': '<circle cx="12" cy="8" r="6"/><path d="M15.48 13.92 18 22l-6-3-6 3 2.52-8.08"/>',
 };
 
 /** ionicon names map onto the base glyphs above; `-outline` is the same path. */

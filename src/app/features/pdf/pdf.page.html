@@ -38,6 +38,185 @@
             <h2>Client-Side PDF Workstation</h2>
             <p>Every tool runs 100% in your browser memory. No documents are uploaded to cloud servers.</p>
           </div>
+
+          <!-- FEATURE G2: AT-A-GLANCE HEALTH STRIP & BYTE AUDIT -->
+          <div class="health-strip-card">
+            <div class="health-strip-header">
+              <div class="health-title-group">
+                <span class="health-badge-icon">⚡</span>
+                <div>
+                  <h3 class="health-title">{{ 'pdfStudioHealth.title' | translate }}</h3>
+                  <p class="health-subtitle">{{ 'pdfStudioHealth.subtitle' | translate }}</p>
+                </div>
+              </div>
+              @if (healthReport) {
+                <button type="button" class="clear-audit-btn" (click)="clearHealthAudit()">
+                  {{ 'pdfStudioHealth.clearBtn' | translate }}
+                </button>
+              }
+            </div>
+
+            @if (!healthReport && !isAuditingHealth) {
+              <div class="health-upload-dropzone">
+                <app-file-dropzone
+                  icon="pulse"
+                  [title]="'pdfStudioHealth.dropzoneTitle' | translate"
+                  [description]="'pdfStudioHealth.dropzoneDesc' | translate"
+                  accept="application/pdf"
+                  (fileSelected)="onAuditFileSelected($event)">
+                </app-file-dropzone>
+              </div>
+            }
+
+            @if (isAuditingHealth) {
+              <div class="health-scanning-banner">
+                <div class="spinner"></div>
+                <span>{{ 'pdfStudioHealth.analyzing' | translate }}</span>
+              </div>
+            }
+
+            @if (healthReport) {
+              <div class="health-report-container">
+                <!-- Health Strip Rows (Each linking to its fixing tool) -->
+                <div class="health-indicators-grid">
+                  <!-- Encryption -->
+                  <div class="health-row-item" [class.status-warn]="healthReport.isEncrypted">
+                    <div class="indicator-info">
+                      <span class="indicator-title">{{ 'pdfStudioHealth.encryption' | translate }}</span>
+                      <span class="indicator-val">{{ healthReport.isEncrypted ? ('pdfStudioHealth.encrypted' | translate) : ('pdfStudioHealth.clearUnencrypted' | translate) }}</span>
+                    </div>
+                    @if (healthReport.isEncrypted) {
+                      <a routerLink="/features/pdf/unlock" class="fix-link">{{ 'pdfStudioHealth.unlockAction' | translate }} →</a>
+                    } @else {
+                      <span class="ok-pill">✓ {{ 'pdfStudioHealth.clean' | translate }}</span>
+                    }
+                  </div>
+
+                  <!-- PDF Version & Linearized -->
+                  <div class="health-row-item">
+                    <div class="indicator-info">
+                      <span class="indicator-title">{{ 'pdfStudioHealth.version' | translate }}</span>
+                      <span class="indicator-val">PDF {{ healthReport.pdfVersion }} {{ healthReport.isLinearized ? ('pdfStudioHealth.linearized' | translate) : '' }}</span>
+                    </div>
+                    <span class="ok-pill">{{ healthReport.pageCount }} {{ 'pdfStudioHealth.pages' | translate }}</span>
+                  </div>
+
+                  <!-- Fonts: Embedded vs Referenced -->
+                  <div class="health-row-item" [class.status-warn]="(healthReport.fontsReferenced || 0) > 0">
+                    <div class="indicator-info">
+                      <span class="indicator-title">{{ 'pdfStudioHealth.fonts' | translate }}</span>
+                      <span class="indicator-val">
+                        {{ healthReport.fontsEmbedded || 0 }} {{ 'pdfStudioHealth.embedded' | translate }} · {{ healthReport.fontsReferenced || 0 }} {{ 'pdfStudioHealth.systemReferenced' | translate }}
+                      </span>
+                    </div>
+                    @if ((healthReport.fontsReferenced || 0) > 0) {
+                      <a routerLink="/features/pdf/optimize" class="fix-link">{{ 'pdfStudioHealth.optimizeAction' | translate }} →</a>
+                    } @else {
+                      <span class="ok-pill">✓ {{ 'pdfStudioHealth.embeddedAll' | translate }}</span>
+                    }
+                  </div>
+
+                  <!-- Page Sizes: Uniform vs Mixed -->
+                  <div class="health-row-item" [class.status-warn]="healthReport.hasMixedPageSizes">
+                    <div class="indicator-info">
+                      <span class="indicator-title">{{ 'pdfStudioHealth.pageDimensions' | translate }}</span>
+                      <span class="indicator-val">{{ healthReport.hasMixedPageSizes ? ('pdfStudioHealth.mixedSizes' | translate) : ('pdfStudioHealth.uniformSizes' | translate) }}</span>
+                    </div>
+                    @if (healthReport.hasMixedPageSizes) {
+                      <a routerLink="/features/pdf/layout" class="fix-link">{{ 'pdfStudioHealth.normalizeAction' | translate }} →</a>
+                    } @else {
+                      <span class="ok-pill">✓ {{ 'pdfStudioHealth.consistent' | translate }}</span>
+                    }
+                  </div>
+
+                  <!-- JavaScript -->
+                  <div class="health-row-item" [class.status-warn]="healthReport.hasJavaScript">
+                    <div class="indicator-info">
+                      <span class="indicator-title">{{ 'pdfStudioHealth.javascript' | translate }}</span>
+                      <span class="indicator-val">{{ healthReport.hasJavaScript ? ('pdfStudioHealth.jsDetected' | translate) : ('pdfStudioHealth.noJs' | translate) }}</span>
+                    </div>
+                    @if (healthReport.hasJavaScript) {
+                      <a routerLink="/features/pdf/inspect" class="fix-link">{{ 'pdfStudioHealth.inspectAction' | translate }} →</a>
+                    } @else {
+                      <span class="ok-pill">✓ {{ 'pdfStudioHealth.clean' | translate }}</span>
+                    }
+                  </div>
+
+                  <!-- Attachments -->
+                  <div class="health-row-item" [class.status-warn]="healthReport.hasAttachments">
+                    <div class="indicator-info">
+                      <span class="indicator-title">{{ 'pdfStudioHealth.attachments' | translate }}</span>
+                      <span class="indicator-val">{{ healthReport.hasAttachments ? ('pdfStudioHealth.attachmentsFound' | translate) : ('pdfStudioHealth.noAttachments' | translate) }}</span>
+                    </div>
+                    @if (healthReport.hasAttachments) {
+                      <a routerLink="/features/pdf/inspect" class="fix-link">{{ 'pdfStudioHealth.inspectAction' | translate }} →</a>
+                    } @else {
+                      <span class="ok-pill">✓ {{ 'pdfStudioHealth.none' | translate }}</span>
+                    }
+                  </div>
+
+                  <!-- Searchable text & Scanned verdict -->
+                  <div class="health-row-item" [class.status-warn]="healthReport.isScannedVerdict">
+                    <div class="indicator-info">
+                      <span class="indicator-title">{{ 'pdfStudioHealth.textCoverage' | translate }}</span>
+                      <span class="indicator-val">{{ healthReport.searchableTextPercentage }}% {{ 'pdfStudioHealth.searchable' | translate }} · {{ healthReport.isScannedVerdict ? ('pdfStudioHealth.scannedVerdict' | translate) : ('pdfStudioHealth.digitalVerdict' | translate) }}</span>
+                    </div>
+                    @if (healthReport.isScannedVerdict) {
+                      <a routerLink="/features/pdf-ocr" class="fix-link">{{ 'pdfStudioHealth.ocrAction' | translate }} →</a>
+                    } @else {
+                      <span class="ok-pill">✓ {{ 'pdfStudioHealth.digital' | translate }}</span>
+                    }
+                  </div>
+                </div>
+
+                <!-- Byte Audit Section (Which pages and images carry the size) -->
+                @if (healthReport.byteAudit) {
+                  <div class="byte-audit-container">
+                    <h4 class="byte-audit-title">{{ 'pdfStudioHealth.byteAuditHeader' | translate }}</h4>
+                    <p class="byte-audit-desc">{{ 'pdfStudioHealth.byteAuditDesc' | translate }}</p>
+
+                    <!-- Heavy Pages List -->
+                    @if (healthReport.byteAudit.pages.length > 0) {
+                      <div class="heavy-items-block">
+                        <span class="sub-label">{{ 'pdfStudioHealth.topHeavyPages' | translate }}</span>
+                        <div class="heavy-list">
+                          @for (pg of healthReport.byteAudit.pages.slice(0, 5); track pg.pageNumber) {
+                            <div class="heavy-row">
+                              <span class="item-name">{{ 'pdfStudioHealth.page' | translate }} {{ pg.pageNumber }} ({{ pg.dimensions }})</span>
+                              <div class="item-meta">
+                                <span class="size-text">{{ (pg.estimatedSizeBytes / 1024 | number:'1.1-1') }} KB</span>
+                                <span class="pct-pill">{{ pg.percentageOfTotal }}%</span>
+                                <a routerLink="/features/pdf-compress" class="mini-compress-link">{{ 'pdfStudioHealth.compressAction' | translate }}</a>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    <!-- Heavy Images List -->
+                    @if (healthReport.byteAudit.images.length > 0) {
+                      <div class="heavy-items-block ion-margin-top">
+                        <span class="sub-label">{{ 'pdfStudioHealth.embeddedImages' | translate }} ({{ healthReport.byteAudit.images.length }})</span>
+                        <div class="heavy-list">
+                          @for (img of healthReport.byteAudit.images.slice(0, 5); track img.id) {
+                            <div class="heavy-row">
+                              <span class="item-name">{{ img.format }} {{ img.width }}×{{ img.height }} px</span>
+                              <div class="item-meta">
+                                <span class="size-text">{{ (img.estimatedSizeBytes / 1024 | number:'1.1-1') }} KB</span>
+                                <span class="pct-pill">{{ img.percentageOfTotal }}%</span>
+                                <a routerLink="/features/pdf/optimize" class="mini-compress-link">{{ 'pdfStudioHealth.downsampleAction' | translate }}</a>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
           <!-- GROUP 1: CONVERT -->
           <div class="tool-group-card">
             <div class="group-header">

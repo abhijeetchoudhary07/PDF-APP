@@ -426,6 +426,54 @@ const TOOL_CATALOGUE: ToolItem[] = [
         'proof', 'structure', 'fast web view', 'upload limit', 'fit size'
       ],
       relatedIds: ['pdf_compress', 'pdf_organize', 'pdf_layout', 'pdf_repair']
+    },
+    {
+      id: 'pdf_fingerprint',
+      category: 'PDF',
+      title: 'Document Fingerprint',
+      description: 'Generate cryptographic SHA-256 integrity receipt and per-page fingerprint audit.',
+      route: '/features/pdf/fingerprint',
+      icon: 'fingerprint',
+      color: 'pdf',
+      badge: 'Audit Receipt',
+      keywords: ['fingerprint', 'sha256', 'hash', 'integrity', 'receipt', 'audit'],
+      relatedIds: ['pdf_preflight', 'pdf_inspect', 'pdf_signature_status', 'pdf_repair']
+    },
+    {
+      id: 'pdf_preflight',
+      category: 'PDF',
+      title: 'Preflight & Submission Check',
+      description: 'Check PDFs against portal and print submission requirements with 1-click fixes.',
+      route: '/features/pdf/preflight',
+      icon: 'shield-checkmark-outline',
+      color: 'pdf',
+      badge: 'Auto-Fix',
+      keywords: ['preflight', 'portal', 'submission', 'check', 'fix', 'page size', 'fonts'],
+      relatedIds: ['document_validator', 'pdf_optimize', 'pdf_fingerprint', 'pdf_inspect']
+    },
+    {
+      id: 'pdf_inspect',
+      category: 'PROTECT',
+      title: 'Embedded Object Inspector',
+      description: 'Inspect attachments, scripts, stream encodings, and links without risk of execution.',
+      route: '/features/pdf/inspect',
+      icon: 'code',
+      color: 'protect',
+      badge: 'Security',
+      keywords: ['inspect', 'attachments', 'javascript', 'links', 'embedded', 'extract', 'streams'],
+      relatedIds: ['pdf_privacy_sanitizer', 'pdf_repair', 'pdf_signature_status', 'pdf_fingerprint']
+    },
+    {
+      id: 'pdf_signature_status',
+      category: 'SIGN',
+      title: 'Signature Status Panel',
+      description: 'Report-only analysis of cryptographic signature structures and byte-range coverage.',
+      route: '/features/pdf/signature-status',
+      icon: 'ribbon',
+      color: 'sign',
+      badge: 'Diagnostic',
+      keywords: ['signature', 'status', 'signer', 'byte range', 'coverage', 'appended', 'revisions'],
+      relatedIds: ['pdf_signing', 'pdf_fingerprint', 'pdf_inspect', 'pdf_privacy_sanitizer']
     }
 ];
 

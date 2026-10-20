@@ -1,0 +1,213 @@
+<app-header></app-header>
+
+<main class="page-container preflight-page">
+  <app-page-header
+    [title]="'pdfPreflight.title' | translate"
+    [subtitle]="'pdfPreflight.subtitle' | translate"
+    [badge]="'pdfPreflight.badge' | translate"
+    badgeVariant="pdf"
+    [showBack]="true"
+    backUrl="/features/pdf"
+  ></app-page-header>
+
+  <!-- Profile Carousel / Selector Row -->
+  <section class="profile-selection-card">
+    <div class="profile-header-row">
+      <label class="section-label">{{ 'pdfPreflight.activeProfileLabel' | translate }}</label>
+      <button type="button" class="json-profile-btn" (click)="openProfileModal()">
+        {{ 'pdfPreflight.jsonProfilesBtn' | translate }}
+      </button>
+    </div>
+
+    <div class="profiles-chips" appAutoScroll [autoScrollSpeed]="0.5" [autoScrollPauseDelay]="3000">
+      @for (prof of profiles; track prof.id) {
+        <button
+          type="button"
+          class="profile-chip"
+          [class.active]="selectedProfile?.id === prof.id"
+          (click)="selectProfile(prof)">
+          {{ prof.name }}
+        </button>
+      }
+    </div>
+
+    @if (selectedProfile?.description) {
+      <p class="profile-desc">{{ selectedProfile.description }}</p>
+    }
+  </section>
+
+  <!-- File Upload Area -->
+  @if (!currentFile) {
+    <section class="upload-section">
+      <app-file-dropzone
+        icon="shield-checkmark"
+        [title]="'pdfPreflight.dropzoneTitle' | translate"
+        [description]="'pdfPreflight.dropzoneDesc' | translate"
+        accept="application/pdf"
+        (fileSelected)="onFileSelected($event)">
+      </app-file-dropzone>
+    </section>
+  }
+
+  <!-- Scanning Indicator -->
+  @if (isChecking) {
+    <div class="checking-banner">
+      <div class="spinner"></div>
+      <span>{{ 'pdfPreflight.verifyingRules' | translate }}</span>
+    </div>
+  }
+
+  <!-- Results Section -->
+  @if (preflightReport && !isChecking) {
+    <section class="preflight-results">
+      <!-- Overall Verdict Card -->
+      <div
+        class="verdict-banner"
+        [class.verdict-pass]="preflightReport.passed"
+        [class.verdict-fail]="!preflightReport.passed">
+        <div class="verdict-icon">
+          {{ preflightReport.passed ? '✓' : '⚠' }}
+        </div>
+        <div class="verdict-content">
+          <h3 class="verdict-title">
+            {{ preflightReport.passed ? ('pdfPreflight.verdictPassTitle' | translate) : ('pdfPreflight.verdictFailTitle' | translate) }}
+          </h3>
+          <p class="verdict-subtitle">
+            {{ preflightReport.passed ? ('pdfPreflight.verdictPassDesc' | translate) : ('pdfPreflight.verdictFailDesc' | translate) }}
+          </p>
+          <div class="score-pills">
+            <span class="pill-pass">{{ preflightReport.passCount }} {{ 'pdfPreflight.passed' | translate }}</span>
+            @if (preflightReport.failCount > 0) {
+              <span class="pill-fail">{{ preflightReport.failCount }} {{ 'pdfPreflight.failed' | translate }}</span>
+            }
+            @if (preflightReport.warnCount > 0) {
+              <span class="pill-warn">{{ preflightReport.warnCount }} {{ 'pdfPreflight.warnings' | translate }}</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Bar -->
+      <div class="quick-actions-bar">
+        @if (!preflightReport.passed && (preflightReport.failCount > 0)) {
+          <app-button
+            variant="warning"
+            size="md"
+            [block]="true"
+            [disabled]="isFixing"
+            (clicked)="fixAllFailedRules()">
+            {{ 'pdfPreflight.fixAllBtn' | translate }}
+          </app-button>
+        }
+        <app-button
+          variant="primary"
+          size="md"
+          [block]="true"
+          (clicked)="downloadFixedFile()">
+          {{ 'pdfPreflight.downloadVerifiedBtn' | translate }}
+        </app-button>
+        <app-button
+          variant="ghost"
+          size="md"
+          [block]="true"
+          (clicked)="resetCurrent()">
+          {{ 'pdfPreflight.checkAnotherFile' | translate }}
+        </app-button>
+      </div>
+
+      <!-- Rules List -->
+      <div class="rules-container">
+        <h4 class="rules-title">{{ 'pdfPreflight.ruleResultsTitle' | translate }}</h4>
+
+        <div class="rules-list">
+          @for (rule of preflightReport.rules; track rule.id) {
+            <div
+              class="rule-card"
+              [class.status-pass]="rule.status === 'pass'"
+              [class.status-fail]="rule.status === 'fail'"
+              [class.status-warn]="rule.status === 'warn'">
+              <div class="rule-top-row">
+                <div class="rule-name-group">
+                  <span class="rule-status-icon">
+                    @if (rule.status === 'pass') { ✓ }
+                    @else if (rule.status === 'fail') { ✗ }
+                    @else { ℹ }
+                  </span>
+                  <div>
+                    <strong class="rule-name">{{ rule.nameKey | translate }}</strong>
+                    <span class="rule-desc">{{ rule.descriptionKey | translate }}</span>
+                  </div>
+                </div>
+
+                <app-badge
+                  [variant]="rule.status === 'pass' ? 'success' : (rule.status === 'fail' ? 'danger' : 'warning')">
+                  {{ rule.status === 'pass' ? ('pdfPreflight.passBadge' | translate) : (rule.status === 'fail' ? ('pdfPreflight.failBadge' | translate) : ('pdfPreflight.warnBadge' | translate)) }}
+                </app-badge>
+              </div>
+
+              <!-- Measurements row -->
+              <div class="rule-metrics-row">
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'pdfPreflight.measuredValue' | translate }}:</span>
+                  <strong class="metric-val">{{ rule.actualValue }}</strong>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'pdfPreflight.requiredThreshold' | translate }}:</span>
+                  <span class="metric-val text-muted">{{ rule.thresholdValue }}</span>
+                </div>
+              </div>
+
+              <!-- One-tap fix button -->
+              @if (rule.fixable && rule.status !== 'pass') {
+                <div class="rule-fix-row">
+                  <button
+                    type="button"
+                    class="rule-fix-btn"
+                    [disabled]="isFixing"
+                    (click)="applyRuleFix(rule)">
+                    @if (isFixing && activeFixRuleId === rule.id) {
+                      <div class="mini-spinner"></div>
+                      <span>{{ 'pdfPreflight.fixing' | translate }}</span>
+                    } @else {
+                      ⚡ {{ (rule.fixLabelKey || 'pdfPreflight.autoFix') | translate }}
+                    }
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Profile Export/Import Modal -->
+  @if (showProfileModal) {
+    <div class="modal-overlay" (click)="closeProfileModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h4>{{ 'pdfPreflight.profileModalTitle' | translate }}</h4>
+          <button type="button" class="close-btn" (click)="closeProfileModal()">✕</button>
+        </div>
+        <p class="modal-desc">{{ 'pdfPreflight.profileModalDesc' | translate }}</p>
+        <textarea
+          class="json-textarea"
+          rows="10"
+          [(ngModel)]="jsonProfileText">
+        </textarea>
+        <div class="modal-actions">
+          <app-button variant="primary" size="sm" (clicked)="importProfile()">
+            {{ 'pdfPreflight.importJsonBtn' | translate }}
+          </app-button>
+          <app-button variant="ghost" size="sm" (clicked)="closeProfileModal()">
+            {{ 'pdfPreflight.cancel' | translate }}
+          </app-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <app-related-tools currentToolId="pdf_preflight"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

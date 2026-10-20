@@ -1,0 +1,320 @@
+<app-header></app-header>
+
+<main class="page-container fingerprint-page">
+  <app-page-header
+    [title]="'pdfFingerprint.title' | translate"
+    [subtitle]="'pdfFingerprint.subtitle' | translate"
+    [badge]="'pdfFingerprint.badge' | translate"
+    badgeVariant="pdf"
+    [showBack]="true"
+    backUrl="/features/pdf"
+  ></app-page-header>
+
+  <!-- Mobile Segment Mode Switcher -->
+  <div class="mode-tabs">
+    <button
+      type="button"
+      class="mode-tab-btn"
+      [class.active]="viewMode === 'generate'"
+      (click)="viewMode = 'generate'">
+      {{ 'pdfFingerprint.tabFingerprint' | translate }}
+    </button>
+    <button
+      type="button"
+      class="mode-tab-btn"
+      [class.active]="viewMode === 'verify'"
+      (click)="viewMode = 'verify'">
+      {{ 'pdfFingerprint.tabVerify' | translate }}
+    </button>
+    <button
+      type="button"
+      class="mode-tab-btn"
+      [class.active]="viewMode === 'saved'"
+      (click)="viewMode = 'saved'">
+      {{ 'pdfFingerprint.tabSavedReceipts' | translate }} ({{ savedReceipts.length }})
+    </button>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- 1. GENERATE FINGERPRINT MODE                   -->
+  <!-- ============================================== -->
+  @if (viewMode === 'generate') {
+    @if (!currentFingerprint) {
+      <section class="upload-section">
+        <app-file-dropzone
+          icon="fingerprint"
+          [title]="'pdfFingerprint.dropzoneTitle' | translate"
+          [description]="'pdfFingerprint.dropzoneDesc' | translate"
+          accept="application/pdf"
+          (fileSelected)="onFileSelected($event)">
+        </app-file-dropzone>
+
+        <div class="info-banner">
+          <span class="info-icon">ℹ️</span>
+          <div class="info-text">
+            <strong>{{ 'pdfFingerprint.infoNoticeTitle' | translate }}</strong>
+            <p>{{ 'pdfFingerprint.infoNoticeDesc' | translate }}</p>
+          </div>
+        </div>
+      </section>
+    } @else {
+      <section class="results-section">
+        <!-- Overview Card -->
+        <div class="overview-card">
+          <div class="overview-header">
+            <div class="file-meta">
+              <h3 class="file-name">{{ currentFingerprint.fileName }}</h3>
+              <span class="file-details">
+                {{ (currentFingerprint.fileSize / 1024 | number:'1.1-1') }} KB · {{ currentFingerprint.pageCount }} {{ 'pdfFingerprint.pagesLabel' | translate }}
+              </span>
+            </div>
+            <app-badge variant="success">{{ 'pdfFingerprint.readyBadge' | translate }}</app-badge>
+          </div>
+
+          <!-- Whole File SHA-256 Box -->
+          <div class="checksum-box">
+            <div class="checksum-label-row">
+              <span class="checksum-label">{{ 'pdfFingerprint.fileChecksumLabel' | translate }}</span>
+              <button
+                type="button"
+                class="copy-btn"
+                (click)="copyText(currentFingerprint.fileSha256)">
+                {{ copiedHash ? ('pdfFingerprint.copied' | translate) : ('pdfFingerprint.copy' | translate) }}
+              </button>
+            </div>
+            <code class="hash-string">{{ currentFingerprint.fileSha256 }}</code>
+          </div>
+
+          <!-- Actions Row -->
+          <div class="action-buttons-grid">
+            <app-button
+              variant="primary"
+              size="md"
+              [block]="true"
+              (clicked)="saveCurrentReceipt()">
+              {{ 'pdfFingerprint.saveReceiptBtn' | translate }}
+            </app-button>
+            <app-button
+              variant="secondary"
+              size="md"
+              [block]="true"
+              (clicked)="exportPdfReceipt()">
+              {{ 'pdfFingerprint.exportPdfBtn' | translate }}
+            </app-button>
+            <app-button
+              variant="ghost"
+              size="md"
+              [block]="true"
+              (clicked)="exportTextReceipt()">
+              {{ 'pdfFingerprint.exportTxtBtn' | translate }}
+            </app-button>
+            <app-button
+              variant="danger"
+              size="md"
+              [block]="true"
+              (clicked)="resetCurrent()">
+              {{ 'pdfFingerprint.resetBtn' | translate }}
+            </app-button>
+          </div>
+        </div>
+
+        <!-- Page-by-page hashes -->
+        <div class="pages-list-card">
+          <div class="card-title-row">
+            <h4>{{ 'pdfFingerprint.pageHashesHeader' | translate }}</h4>
+            <span class="page-count-badge">{{ currentFingerprint.pageHashes.length }} {{ 'pdfFingerprint.pagesLabel' | translate }}</span>
+          </div>
+          <p class="section-desc">{{ 'pdfFingerprint.pageHashesDesc' | translate }}</p>
+
+          <div class="page-hashes-scroll">
+            @for (item of currentFingerprint.pageHashes; track item.pageNumber) {
+              <div class="page-hash-row">
+                <div class="page-indicator">
+                  <span class="page-num">{{ 'pdfFingerprint.page' | translate }} {{ item.pageNumber }}</span>
+                </div>
+                <code class="page-hash-value" (click)="copyText(item.contentHash)">
+                  {{ item.contentHash }}
+                </code>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+  }
+
+  <!-- ============================================== -->
+  <!-- 2. VERIFY AGAINST RECEIPT MODE                 -->
+  <!-- ============================================== -->
+  @if (viewMode === 'verify') {
+    <section class="verify-section">
+      <!-- Step A: Selected Receipt Banner -->
+      <div class="verify-target-card">
+        <label class="section-label">{{ 'pdfFingerprint.referenceReceiptLabel' | translate }}</label>
+        @if (selectedReceiptForVerification) {
+          <div class="receipt-picked-box">
+            <div class="receipt-info">
+              <strong>{{ selectedReceiptForVerification.fileName }}</strong>
+              <span>{{ selectedReceiptForVerification.createdAt | date:'short' }} · {{ selectedReceiptForVerification.pageCount }} {{ 'pdfFingerprint.pagesLabel' | translate }}</span>
+              <code class="mini-hash">{{ selectedReceiptForVerification.fileSha256.slice(0, 20) }}...</code>
+            </div>
+            <button
+              type="button"
+              class="change-btn"
+              (click)="viewMode = 'saved'">
+              {{ 'pdfFingerprint.changeReceipt' | translate }}
+            </button>
+          </div>
+        } @else {
+          <div class="no-receipt-warning">
+            <p>{{ 'pdfFingerprint.noReceiptSelectedPrompt' | translate }}</p>
+            <app-button
+              variant="primary"
+              size="sm"
+              (clicked)="viewMode = 'saved'">
+              {{ 'pdfFingerprint.chooseFromSaved' | translate }}
+            </app-button>
+          </div>
+        }
+      </div>
+
+      <!-- Step B: Upload file to verify -->
+      @if (selectedReceiptForVerification) {
+        <div class="verify-upload-area">
+          <label class="section-label">{{ 'pdfFingerprint.uploadToVerifyLabel' | translate }}</label>
+          <app-file-dropzone
+            icon="shield-checkmark"
+            [title]="'pdfFingerprint.verifyDropzoneTitle' | translate"
+            [description]="'pdfFingerprint.verifyDropzoneDesc' | translate"
+            accept="application/pdf"
+            (fileSelected)="onVerifyFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+      }
+
+      <!-- Step C: Drift Report -->
+      @if (driftResult) {
+        <div class="drift-report-card">
+          <div class="drift-header" [class.success]="driftResult.status === 'identical'" [class.warning]="driftResult.status === 'metadata_only'" [class.danger]="driftResult.status === 'content_drift'">
+            <span class="drift-status-badge">
+              @if (driftResult.status === 'identical') {
+                ✓ {{ 'pdfFingerprint.statusIdentical' | translate }}
+              } @else if (driftResult.status === 'metadata_only') {
+                ℹ {{ 'pdfFingerprint.statusMetadataOnly' | translate }}
+              } @else {
+                ⚠ {{ 'pdfFingerprint.statusContentDrift' | translate }}
+              }
+            </span>
+            <p class="drift-message">{{ driftResult.message }}</p>
+          </div>
+
+          <!-- Page Drift Breakdown -->
+          <div class="drift-breakdown">
+            <!-- Changed Pages -->
+            @if (driftResult.changedPages.length > 0) {
+              <div class="drift-group group-danger">
+                <h5>{{ 'pdfFingerprint.changedPagesLabel' | translate }} ({{ driftResult.changedPages.length }})</h5>
+                <div class="chips-row">
+                  @for (p of driftResult.changedPages; track p) {
+                    <span class="page-chip chip-danger">{{ 'pdfFingerprint.page' | translate }} {{ p }}</span>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Added Pages -->
+            @if (driftResult.addedPages.length > 0) {
+              <div class="drift-group group-warning">
+                <h5>{{ 'pdfFingerprint.addedPagesLabel' | translate }} ({{ driftResult.addedPages.length }})</h5>
+                <div class="chips-row">
+                  @for (p of driftResult.addedPages; track p) {
+                    <span class="page-chip chip-warning">{{ 'pdfFingerprint.page' | translate }} {{ p }}</span>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Removed Pages -->
+            @if (driftResult.removedPages.length > 0) {
+              <div class="drift-group group-danger">
+                <h5>{{ 'pdfFingerprint.removedPagesLabel' | translate }} ({{ driftResult.removedPages.length }})</h5>
+                <div class="chips-row">
+                  @for (p of driftResult.removedPages; track p) {
+                    <span class="page-chip chip-danger">{{ 'pdfFingerprint.page' | translate }} {{ p }}</span>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Identical Pages -->
+            @if (driftResult.identicalPages.length > 0) {
+              <div class="drift-group group-success">
+                <h5>{{ 'pdfFingerprint.identicalPagesLabel' | translate }} ({{ driftResult.identicalPages.length }})</h5>
+                <div class="chips-row">
+                  @for (p of driftResult.identicalPages; track p) {
+                    <span class="page-chip chip-success">{{ 'pdfFingerprint.page' | translate }} {{ p }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- ============================================== -->
+  <!-- 3. SAVED RECEIPTS LIST                         -->
+  <!-- ============================================== -->
+  @if (viewMode === 'saved') {
+    <section class="saved-section">
+      <div class="saved-header">
+        <h4>{{ 'pdfFingerprint.savedReceiptsHeader' | translate }}</h4>
+        <span class="count-pill">{{ savedReceipts.length }}</span>
+      </div>
+
+      @if (savedReceipts.length === 0) {
+        <div class="empty-saved">
+          <p>{{ 'pdfFingerprint.noSavedReceipts' | translate }}</p>
+          <app-button
+            variant="primary"
+            size="sm"
+            (clicked)="viewMode = 'generate'">
+            {{ 'pdfFingerprint.generateFirstReceipt' | translate }}
+          </app-button>
+        </div>
+      } @else {
+        <div class="saved-list">
+          @for (receipt of savedReceipts; track receipt.id) {
+            <div class="saved-item-card">
+              <div class="saved-info">
+                <strong class="receipt-name">{{ receipt.fileName }}</strong>
+                <span class="receipt-time">{{ receipt.createdAt | date:'medium' }}</span>
+                <span class="receipt-stats">{{ (receipt.fileSize / 1024 | number:'1.1-1') }} KB · {{ receipt.pageCount }} {{ 'pdfFingerprint.pagesLabel' | translate }}</span>
+                <code class="receipt-hash">{{ receipt.fileSha256 }}</code>
+              </div>
+              <div class="saved-item-actions">
+                <app-button
+                  variant="primary"
+                  size="sm"
+                  (clicked)="selectReceiptToVerify(receipt)">
+                  {{ 'pdfFingerprint.verifyWithThis' | translate }}
+                </app-button>
+                <app-button
+                  variant="ghost"
+                  size="sm"
+                  (clicked)="deleteSavedReceipt(receipt.id)">
+                  {{ 'pdfFingerprint.delete' | translate }}
+                </app-button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <app-related-tools currentToolId="pdf_fingerprint"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

@@ -1,12 +1,15 @@
 import '../utilities/pdf-iterator-polyfill';
 import { Injectable } from '@angular/core';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFDict, PDFStream, PDFRawStream, PDFArray } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import {
   PdfHealthReport,
   PdfDiagnosticIssue,
   PdfRecoveryResult,
-  PageRecoveryDetail
+  PageRecoveryDetail,
+  PdfByteAuditReport,
+  PageByteAuditItem,
+  ImageByteAuditItem
 } from '../models/pdf-analysis.types';
 import '../utilities/pdfjs-worker';
 
@@ -145,13 +148,22 @@ export class PdfRepairService {
       });
     }
 
+    let pagesWithSearchableText = 0;
+
     // Test individual pages
     if (pdfJsDoc && pageCount > 0) {
       for (let p = 1; p <= pageCount; p++) {
         try {
           const page = await pdfJsDoc.getPage(p);
           // Test text/content stream parsing
-          await page.getTextContent();
+          const textContent = await page.getTextContent();
+          const charCount = (textContent?.items || []).reduce(
+            (acc: number, it: any) => acc + (it.str ? it.str.trim().length : 0),
+            0
+          );
+          if (charCount > 30) {
+            pagesWithSearchableText++;
+          }
           validPagesCount++;
         } catch (pageErr: any) {
           corruptedPagesCount++;
@@ -170,6 +182,129 @@ export class PdfRepairService {
     } else if (pdfLibDoc && pageCount > 0) {
       validPagesCount = pageCount;
     }
+
+    // 4. Health Strip Checks (G2)
+    // (a) Font embedding audit
+    let fontsEmbedded = 0;
+    let fontsReferenced = 0;
+    if (pdfLibDoc) {
+      try {
+        const indirectObjects = pdfLibDoc.context.enumerateIndirectObjects();
+        for (const [_ref, obj] of indirectObjects) {
+          if (obj instanceof PDFDict) {
+            const type = obj.get(PDFName.of('Type'))?.toString();
+            if (type === '/Font') {
+              const subtype = obj.get(PDFName.of('Subtype'))?.toString();
+              const descRef = obj.get(PDFName.of('FontDescriptor'));
+              if (descRef) {
+                const desc = pdfLibDoc.context.lookup(descRef);
+                if (desc instanceof PDFDict) {
+                  const hasFile =
+                    desc.has(PDFName.of('FontFile')) ||
+                    desc.has(PDFName.of('FontFile2')) ||
+                    desc.has(PDFName.of('FontFile3'));
+                  if (hasFile) fontsEmbedded++;
+                  else fontsReferenced++;
+                } else {
+                  fontsReferenced++;
+                }
+              } else if (subtype === '/Type3') {
+                fontsEmbedded++;
+              } else {
+                fontsReferenced++;
+              }
+            }
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    // (b) Page size uniformity
+    let hasMixedPageSizes = false;
+    const pageSizeVarieties: string[] = [];
+    if (pdfLibDoc && pageCount > 0) {
+      try {
+        const pages = pdfLibDoc.getPages();
+        const dimSet = new Set<string>();
+        for (const page of pages) {
+          const { width, height } = page.getSize();
+          const w = Math.round(width);
+          const h = Math.round(height);
+          dimSet.add(`${w}x${h}`);
+        }
+        hasMixedPageSizes = dimSet.size > 1;
+        pageSizeVarieties.push(...Array.from(dimSet));
+      } catch {
+        // Fallback
+      }
+    }
+
+    // (c) JavaScript presence
+    let hasJavaScript = false;
+    if (
+      headerSlice.includes('/JavaScript') ||
+      headerSlice.includes('/JS') ||
+      tailSlice.includes('/JavaScript') ||
+      tailSlice.includes('/JS')
+    ) {
+      hasJavaScript = true;
+    }
+    if (!hasJavaScript && pdfLibDoc) {
+      try {
+        const names = pdfLibDoc.catalog.get(PDFName.of('Names'));
+        if (names) {
+          const namesDict = pdfLibDoc.context.lookup(names);
+          if (namesDict instanceof PDFDict && namesDict.has(PDFName.of('JavaScript'))) {
+            hasJavaScript = true;
+          }
+        }
+        const openAction = pdfLibDoc.catalog.get(PDFName.of('OpenAction'));
+        if (openAction) {
+          const actionDict = pdfLibDoc.context.lookup(openAction);
+          if (actionDict instanceof PDFDict && actionDict.get(PDFName.of('S'))?.toString() === '/JavaScript') {
+            hasJavaScript = true;
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    // (d) Attachments presence
+    let hasAttachments = false;
+    let attachmentCount = 0;
+    if (
+      headerSlice.includes('/EmbeddedFiles') ||
+      tailSlice.includes('/EmbeddedFiles') ||
+      headerSlice.includes('/AF') ||
+      tailSlice.includes('/AF')
+    ) {
+      hasAttachments = true;
+    }
+    if (pdfLibDoc) {
+      try {
+        const names = pdfLibDoc.catalog.get(PDFName.of('Names'));
+        if (names) {
+          const namesDict = pdfLibDoc.context.lookup(names);
+          if (namesDict instanceof PDFDict && namesDict.has(PDFName.of('EmbeddedFiles'))) {
+            hasAttachments = true;
+            attachmentCount = 1;
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    // (e) Scanned verdict & searchable text percentage
+    const searchableTextPercentage =
+      pageCount > 0 ? Math.round((pagesWithSearchableText / pageCount) * 100) : 0;
+    const isScannedVerdict = pageCount > 0 && searchableTextPercentage < 20;
+
+    // (f) Byte audit breakdown
+    const byteAudit = await this.auditPdfBytes(source);
 
     // Determine overall health status
     let overallStatus: 'healthy' | 'warning' | 'error' = 'healthy';
@@ -192,8 +327,178 @@ export class PdfRepairService {
       xrefValid,
       trailerValid,
       pagesTreeValid,
-      fontsValid
+      fontsValid,
+      fontsEmbedded,
+      fontsReferenced,
+      hasMixedPageSizes,
+      pageSizeVarieties,
+      hasJavaScript,
+      hasAttachments,
+      attachmentCount,
+      isScannedVerdict,
+      searchableTextPercentage,
+      byteAudit
     };
+  }
+
+  /**
+   * Byte audit: analyzes which pages and embedded images carry the file size.
+   */
+  async auditPdfBytes(source: File | ArrayBuffer | Uint8Array): Promise<PdfByteAuditReport> {
+    const arrayBuffer: ArrayBuffer = source instanceof File
+      ? await source.arrayBuffer()
+      : source instanceof Uint8Array
+        ? (source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength) as ArrayBuffer)
+        : (source as ArrayBuffer);
+    const bytes = new Uint8Array(arrayBuffer);
+    const totalSizeBytes = bytes.length;
+
+    const pages: PageByteAuditItem[] = [];
+    const images: ImageByteAuditItem[] = [];
+
+    let pdfLibDoc: PDFDocument | null = null;
+    try {
+      pdfLibDoc = await PDFDocument.load(arrayBuffer.slice(0), { ignoreEncryption: true });
+    } catch {
+      return {
+        totalSizeBytes,
+        pages: [],
+        images: [],
+        structureSizeBytes: totalSizeBytes
+      };
+    }
+
+    const pageCount = pdfLibDoc.getPageCount();
+
+    // 1. Audit Images
+    try {
+      const indirectObjects = pdfLibDoc.context.enumerateIndirectObjects();
+      let imgCounter = 1;
+      for (const [_ref, obj] of indirectObjects) {
+        if (obj instanceof PDFStream || obj instanceof PDFRawStream) {
+          const dict = obj.dict;
+          const subtype = dict.get(PDFName.of('Subtype'))?.toString();
+          if (subtype === '/Image') {
+            const width = (dict.get(PDFName.of('Width')) as any)?.numberValue || 0;
+            const height = (dict.get(PDFName.of('Height')) as any)?.numberValue || 0;
+            const filter = dict.get(PDFName.of('Filter'))?.toString() || '';
+            const format = filter.includes('DCT')
+              ? 'JPEG'
+              : filter.includes('JPX')
+              ? 'JP2'
+              : filter.includes('Flate')
+              ? 'PNG'
+              : 'Bitmap';
+
+            let streamLength = 0;
+            try {
+              streamLength = obj.getContents()?.length || (dict.get(PDFName.of('Length')) as any)?.numberValue || 0;
+            } catch {
+              streamLength = (dict.get(PDFName.of('Length')) as any)?.numberValue || 0;
+            }
+
+            const pct =
+              totalSizeBytes > 0
+                ? Number(((streamLength / totalSizeBytes) * 100).toFixed(1))
+                : 0;
+
+            images.push({
+              id: `img_${imgCounter++}`,
+              pageNumber: 1,
+              width,
+              height,
+              estimatedSizeBytes: streamLength,
+              percentageOfTotal: pct,
+              format
+            });
+          }
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    // 2. Audit Pages
+    for (let i = 0; i < pageCount; i++) {
+      const page = pdfLibDoc.getPage(i);
+      const { width, height } = page.getSize();
+      let pageStreamBytes = 0;
+
+      try {
+        const contents = page.node.get(PDFName.of('Contents'));
+        if (contents) {
+          const chunks: Uint8Array[] = [];
+          this.extractStreamBytes(contents, pdfLibDoc, chunks);
+          pageStreamBytes = chunks.reduce((acc, c) => acc + c.length, 0);
+        }
+      } catch {
+        // Fallback
+      }
+
+      const w = Math.round(width);
+      const h = Math.round(height);
+      let dimLabel = `${w} × ${h} pt`;
+      if ((w === 595 && h === 842) || (w === 842 && h === 595)) dimLabel += ' (A4)';
+      else if ((w === 612 && h === 792) || (w === 792 && h === 612)) dimLabel += ' (Letter)';
+      else if ((w === 420 && h === 595) || (w === 595 && h === 420)) dimLabel += ' (A5)';
+
+      const estimatedPageSize = Math.max(pageStreamBytes, 1024);
+      const pagePct =
+        totalSizeBytes > 0
+          ? Number(((estimatedPageSize / totalSizeBytes) * 100).toFixed(1))
+          : 0;
+
+      pages.push({
+        pageNumber: i + 1,
+        estimatedSizeBytes: estimatedPageSize,
+        percentageOfTotal: pagePct,
+        imageCount: 0,
+        textLength: 0,
+        dimensions: dimLabel
+      });
+    }
+
+    // Sort descending by size
+    pages.sort((a, b) => b.estimatedSizeBytes - a.estimatedSizeBytes);
+    images.sort((a, b) => b.estimatedSizeBytes - a.estimatedSizeBytes);
+
+    const sumPages = pages.reduce((acc, p) => acc + p.estimatedSizeBytes, 0);
+    const structureSizeBytes = Math.max(0, totalSizeBytes - sumPages);
+
+    return {
+      totalSizeBytes,
+      pages,
+      images,
+      structureSizeBytes
+    };
+  }
+
+  private extractStreamBytes(obj: any, doc: PDFDocument, out: Uint8Array[]): void {
+    if (!obj) return;
+    if (obj instanceof PDFStream || obj instanceof PDFRawStream) {
+      try {
+        const data = obj.getContents();
+        if (data && data.length > 0) out.push(data);
+      } catch {
+        // Ignore
+      }
+      return;
+    }
+    if (obj instanceof PDFArray) {
+      for (let i = 0; i < obj.size(); i++) {
+        const item = obj.get(i);
+        this.extractStreamBytes(doc.context.lookup(item), doc, out);
+      }
+      return;
+    }
+    try {
+      const resolved = doc.context.lookup(obj);
+      if (resolved && resolved !== obj) {
+        this.extractStreamBytes(resolved, doc, out);
+      }
+    } catch {
+      // Ignore
+    }
   }
 
   /**

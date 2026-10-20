@@ -15,6 +15,8 @@ import { TranslationService } from '../../core/services/translation.service';
 import { ResultPreviewComponent, PreviewData } from '../../shared/components/result-preview/result-preview.component';
 import { ToastService } from '../../core/services/toast.service';
 import { DocumentBridgeService } from '../../core/services/document-bridge.service';
+import { PdfRepairService } from '../../core/services/pdf-repair.service';
+import { PdfHealthReport } from '../../core/models/pdf-analysis.types';
 import {
   AppHeaderComponent,
   AppFooterComponent,
@@ -71,9 +73,42 @@ export class PdfPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
   private documentBridge = inject(DocumentBridgeService);
+  private pdfRepairService = inject(PdfRepairService);
 
   mode: 'dashboard' | 'compress' | 'create' | 'extract' = 'dashboard';
   workflowState: SingleFileWorkflowState = 'EMPTY';
+
+  // Health Strip & Byte Audit State (G2)
+  auditFile?: File;
+  healthReport?: PdfHealthReport;
+  isAuditingHealth = false;
+
+  async onAuditFileSelected(file: File): Promise<void> {
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      this.toast.error('Please select a valid PDF document.');
+      return;
+    }
+    this.auditFile = file;
+    this.isAuditingHealth = true;
+    this.healthReport = undefined;
+    this.cdr.markForCheck();
+
+    try {
+      this.healthReport = await this.pdfRepairService.diagnosePdf(file);
+      this.toast.success('PDF health scan & byte audit complete.');
+    } catch (err: any) {
+      this.toast.error('Health audit failed: ' + (err?.message || err));
+    } finally {
+      this.isAuditingHealth = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  clearHealthAudit(): void {
+    this.auditFile = undefined;
+    this.healthReport = undefined;
+    this.cdr.markForCheck();
+  }
 
   // Compress State
   originalFile?: File;

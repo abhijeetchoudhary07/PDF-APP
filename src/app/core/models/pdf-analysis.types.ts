@@ -144,6 +144,32 @@ export interface PdfDiagnosticIssue {
   recoverable: boolean;
 }
 
+export interface PageByteAuditItem {
+  pageNumber: number;
+  estimatedSizeBytes: number;
+  percentageOfTotal: number;
+  imageCount: number;
+  textLength: number;
+  dimensions: string;
+}
+
+export interface ImageByteAuditItem {
+  id: string;
+  pageNumber: number;
+  width: number;
+  height: number;
+  estimatedSizeBytes: number;
+  percentageOfTotal: number;
+  format: string;
+}
+
+export interface PdfByteAuditReport {
+  totalSizeBytes: number;
+  pages: PageByteAuditItem[];
+  images: ImageByteAuditItem[];
+  structureSizeBytes: number;
+}
+
 export interface PdfHealthReport {
   overallStatus: PdfHealthStatus;
   isEncrypted: boolean;
@@ -158,6 +184,18 @@ export interface PdfHealthReport {
   trailerValid: boolean;
   pagesTreeValid: boolean;
   fontsValid: boolean;
+
+  // Studio Health Strip & Byte Audit (G2)
+  fontsEmbedded?: number;
+  fontsReferenced?: number;
+  hasMixedPageSizes?: boolean;
+  pageSizeVarieties?: string[];
+  hasJavaScript?: boolean;
+  hasAttachments?: boolean;
+  attachmentCount?: number;
+  isScannedVerdict?: boolean;
+  searchableTextPercentage?: number;
+  byteAudit?: PdfByteAuditReport;
 }
 
 export interface PageRecoveryDetail {
