@@ -105,5 +105,26 @@ describe('PdfFlattenService (G7)', () => {
     const item = result.report?.items.find(i => i.status === 'unsupported');
     expect(item).toBeDefined();
     expect(item?.reason).toContain('missing or invalid');
+
+    // An unsupported annotation is pushed back into /Annots, so it is still
+    // live in the output and has to be counted as such -- the comparison card
+    // reads this number and must not claim a fully static document.
+    expect(result.afterInteractiveCount).toBe(1);
+  });
+
+  it('reports elements left interactive by a selective target, so the UI cannot claim 100% static', async () => {
+    const buffer = await createFixtureWithFormAndAnnotation();
+
+    const formsOnly = await service.flattenPdf(buffer, 'vector', 'forms.pdf', undefined, 'forms');
+    expect(formsOnly.report?.skippedCount).toBeGreaterThan(0);
+    expect(formsOnly.afterInteractiveCount).toBe(formsOnly.report!.skippedCount);
+    expect(formsOnly.afterInteractiveCount).toBeGreaterThan(0);
+
+    const annotsOnly = await service.flattenPdf(buffer, 'vector', 'annots.pdf', undefined, 'annotations');
+    expect(annotsOnly.afterInteractiveCount).toBeGreaterThan(0);
+
+    // The all-in default is the only one allowed to report a fully static result.
+    const everything = await service.flattenPdf(buffer, 'vector', 'all.pdf', undefined, 'everything');
+    expect(everything.afterInteractiveCount).toBe(0);
   });
 });

@@ -34,6 +34,8 @@ export type CompareStep = 'select' | 'processing' | 'result';
 export interface ChangeItem {
   matchIndex: number;
   tokenIndex: number;
+  /** The added half of a changed pair, so stepping highlights both sides. */
+  pairedTokenIndex?: number;
   type: 'added' | 'removed' | 'changed';
   value: string;
   pageLabel: string;
@@ -189,17 +191,39 @@ export class PdfComparePage {
         ? `Page ${match.modifiedPageNumber}`
         : `Page ${match.originalPageNumber}`;
 
-      match.tokens.forEach((token, tokenIdx) => {
-        if (token.type === 'added' || token.type === 'removed') {
+      /*
+       * Pair a removed token with the added token right behind it and count
+       * the two as one change, which is exactly how PdfCompareService counts
+       * `totalChangedWords`. Counting them separately here is what produced
+       * the contradiction on screen: a one-word edit showed as "+0 added,
+       * -0 removed, ~1 changed" beside "Total Changes: 2".
+       */
+      for (let tokenIdx = 0; tokenIdx < match.tokens.length; tokenIdx++) {
+        const token = match.tokens[tokenIdx];
+        if (token.type !== 'added' && token.type !== 'removed') continue;
+
+        const next = match.tokens[tokenIdx + 1];
+        if (token.type === 'removed' && next?.type === 'added') {
           this.allChanges.push({
             matchIndex: matchIdx,
             tokenIndex: tokenIdx,
-            type: token.type,
-            value: token.value,
+            pairedTokenIndex: tokenIdx + 1,
+            type: 'changed',
+            value: `${token.value} → ${next.value}`,
             pageLabel
           });
+          tokenIdx++;
+          continue;
         }
-      });
+
+        this.allChanges.push({
+          matchIndex: matchIdx,
+          tokenIndex: tokenIdx,
+          type: token.type,
+          value: token.value,
+          pageLabel
+        });
+      }
     });
 
     this.currentChangeIndex = 0;
@@ -240,7 +264,8 @@ export class PdfComparePage {
 
   isTokenActiveChange(tokenIndex: number): boolean {
     const change = this.currentChange;
-    return !!change && change.matchIndex === this.activeMatchIndex && change.tokenIndex === tokenIndex;
+    if (!change || change.matchIndex !== this.activeMatchIndex) return false;
+    return change.tokenIndex === tokenIndex || change.pairedTokenIndex === tokenIndex;
   }
 
   setMode(mode: string): void {

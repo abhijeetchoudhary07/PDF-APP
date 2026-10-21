@@ -163,7 +163,13 @@ export class PdfFlattenService {
       mode,
       target,
       beforeInteractiveCount: inspection.formFieldCount + inspection.annotationCount,
-      afterInteractiveCount: report ? report.skippedCount : 0,
+      /*
+       * Unsupported items are pushed back into `keptAnnots`, so they are still
+       * in the output and still interactive. Counting only `skippedCount` here
+       * under-reported them and let the UI claim a fully static document while
+       * un-bakeable annotations were still live.
+       */
+      afterInteractiveCount: report ? report.skippedCount + report.unsupportedCount : 0,
       report
     };
   }

@@ -68,7 +68,7 @@ export type BadgeVariant =
     /* Statuses */
     .badge-primary {
       background-color: var(--color-primary-soft);
-      color: var(--color-primary);
+      color: var(--color-primary-text);
     }
     .badge-secondary {
       background-color: var(--color-secondary-soft);

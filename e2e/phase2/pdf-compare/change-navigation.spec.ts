@@ -11,8 +11,18 @@ test.describe('PDF Compare — Change Navigation Stepper @phase2 @compare', () =
     await setupCapacitorMocks(page);
     await page.goto('/features/pdf-compare');
 
-    const origPath = getPhase2FixturePath('text-changed-original.pdf');
-    const modPath = getPhase2FixturePath('text-changed-modified.pdf');
+    /*
+     * text-added, not text-changed. The pair below has to hold "several known
+     * differences" for the stepper assertions to mean anything, and
+     * text-changed holds exactly one: 1000 -> 5000. That read as two steps
+     * only while the navigator counted the removed and added halves of a
+     * single word edit separately -- the same double count that put "Total
+     * Changes: 2" next to "+0 added, -0 removed, ~1 changed" on screen. With
+     * the pair grouped into one 'changed' step the counts agree, and this
+     * fixture supplies the eight genuine changes the test wants.
+     */
+    const origPath = getPhase2FixturePath('text-added-original.pdf');
+    const modPath = getPhase2FixturePath('text-added-modified.pdf');
 
     await uploadFileToDropzone(page, origPath, 0);
     await uploadFileToDropzone(page, modPath, 1);

@@ -149,14 +149,14 @@
                       <span style="font-size: 0.8rem; color: var(--ion-color-step-600, #64748b);">Target: {{ flattenResult.report.target }}</span>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-                      <span style="background: #ecfdf5; color: #047857; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                      <span style="background: var(--color-success-soft); color: var(--color-success); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
                         Baked: {{ flattenResult.report.bakedCount }}
                       </span>
-                      <span style="background: #eff6ff; color: #1d4ed8; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                      <span style="background: var(--color-info-soft); color: var(--color-info); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
                         Kept Interactive: {{ flattenResult.report.skippedCount }}
                       </span>
                       @if (flattenResult.report.unsupportedCount > 0) {
-                        <span style="background: #fef2f2; color: #b91c1c; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                        <span style="background: var(--color-error-soft); color: var(--color-error); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
                           Unsupported: {{ flattenResult.report.unsupportedCount }}
                         </span>
                       }
@@ -166,7 +166,7 @@
                         @for (item of flattenResult.report.items; track item.name) {
                           <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; padding: 6px 8px; background: var(--ion-color-step-50, #f8fafc); border-radius: 6px;">
                             <span>Page {{ item.pageNumber }} • {{ item.type === 'form_field' ? 'Form Field' : 'Annotation' }}: <strong>{{ item.name }}</strong></span>
-                            <span [style.color]="item.status === 'baked' ? '#047857' : item.status === 'skipped' ? '#1d4ed8' : '#b91c1c'" style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">
+                            <span [style.color]="item.status === 'baked' ? 'var(--color-success)' : item.status === 'skipped' ? 'var(--color-info)' : 'var(--color-error)'" style="font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">
                               {{ item.status }}
                             </span>
                           </div>
@@ -187,8 +187,8 @@
                   </div>
                   <div class="metric-col">
                     <span class="metric-label">Flattened</span>
-                    <strong class="count text-success">0</strong>
-                    <span class="subtext">Interactive Elements (100% Static)</span>
+                    <strong class="count" [class.text-success]="flattenResult.afterInteractiveCount === 0" [class.text-warning]="flattenResult.afterInteractiveCount > 0">{{ flattenResult.afterInteractiveCount }}</strong>
+                    <span class="subtext">{{ flattenResult.afterInteractiveCount === 0 ? 'Interactive Elements (100% Static)' : 'Interactive Elements Kept (Selective Flatten)' }}</span>
                     <span class="size">{{ (flattenResult.flattenedSizeBytes / 1024) | number:'1.0-1' }} KB</span>
                   </div>
                 </div>

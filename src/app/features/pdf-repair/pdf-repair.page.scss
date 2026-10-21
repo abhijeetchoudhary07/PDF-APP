@@ -148,9 +148,9 @@
       padding: 0.35rem 0.85rem;
       border-radius: 2rem;
 
-      &.badge-healthy { background: #dcfce7; color: #15803d; }
-      &.badge-warning { background: #fef3c7; color: #b45309; }
-      &.badge-error { background: #fee2e2; color: #b91c1c; }
+      &.badge-healthy { background: var(--chip-success-bg); color: var(--chip-success-fg); }
+      &.badge-warning { background: var(--chip-warning-bg); color: var(--chip-warning-fg); }
+      &.badge-error { background: var(--chip-error-bg); color: var(--chip-error-fg); }
     }
   }
 
@@ -183,8 +183,8 @@
         color: var(--text-secondary, #64748b);
       }
 
-      &.valid .stat-num { color: #16a34a; }
-      &.corrupt .stat-num { color: #dc2626; }
+      &.valid .stat-num { color: var(--color-success); }
+      &.corrupt .stat-num { color: var(--color-error); }
     }
   }
 
@@ -204,13 +204,13 @@
       gap: 0.75rem;
       padding: 0.85rem 1rem;
       border-radius: 0.75rem;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
+      background: var(--chip-error-bg);
+      border: 1px solid var(--color-error-soft);
 
       .check-icon {
         font-size: 1.1rem;
         font-weight: 700;
-        color: #dc2626;
+        color: var(--color-error);
       }
 
       .check-text {
@@ -219,22 +219,22 @@
 
         strong {
           font-size: 0.9rem;
-          color: #991b1b;
+          color: var(--chip-error-fg);
         }
 
         span {
           font-size: 0.8rem;
-          color: #b91c1c;
+          color: var(--chip-error-fg);
         }
       }
 
       &.passed {
-        background: #f0fdf4;
-        border-color: #bbf7d0;
+        background: var(--chip-success-bg);
+        border-color: var(--color-success-soft);
 
-        .check-icon { color: #16a34a; }
-        .check-text strong { color: #166534; }
-        .check-text span { color: #15803d; }
+        .check-icon { color: var(--color-success); }
+        .check-text strong { color: var(--chip-success-fg); }
+        .check-text span { color: var(--chip-success-fg); }
       }
     }
   }
@@ -256,7 +256,7 @@
     .issue-item {
       padding: 0.75rem;
       border-radius: 0.5rem;
-      background: #ffffff;
+      background: var(--color-surface);
       border: 1px solid var(--border-color, #e2e8f0);
       margin-bottom: 0.75rem;
 
@@ -278,10 +278,10 @@
         .issue-code {
           font-size: 0.7rem;
           font-family: monospace;
-          background: #e2e8f0;
+          background: var(--chip-neutral-bg);
           padding: 0.1rem 0.35rem;
           border-radius: 0.25rem;
-          color: #475569;
+          color: var(--chip-neutral-fg);
         }
       }
 
@@ -293,12 +293,12 @@
 
       .issue-location {
         font-size: 0.75rem;
-        color: #94a3b8;
+        color: var(--color-text-muted);
       }
 
-      &.level-error { border-left: 4px solid #dc2626; }
-      &.level-warning { border-left: 4px solid #f59e0b; }
-      &.level-info { border-left: 4px solid #3b82f6; }
+      &.level-error { border-left: 4px solid var(--color-error); }
+      &.level-warning { border-left: 4px solid var(--color-warning); }
+      &.level-info { border-left: 4px solid var(--color-info); }
     }
   }
 
@@ -306,8 +306,8 @@
     display: flex;
     gap: 1.25rem;
     align-items: flex-start;
-    background: #fffbeb;
-    border: 1.5px solid #fde68a;
+    background: var(--chip-warning-bg);
+    border: 1.5px solid var(--color-warning-soft);
     border-radius: 1rem;
     padding: 1.5rem;
     margin-top: 1.5rem;
@@ -327,14 +327,14 @@
         margin: 0 0 0.5rem;
         font-size: 1.1rem;
         font-weight: 700;
-        color: #92400e;
+        color: var(--chip-warning-fg);
       }
 
       p {
         margin: 0 0 1.25rem;
         font-size: 0.9rem;
         line-height: 1.5;
-        color: #78350f;
+        color: var(--chip-warning-fg);
       }
 
       .triage-callout-actions {
@@ -379,8 +379,10 @@
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: #16a34a;
-      color: #ffffff;
+      /* The deeper green, not --color-success: white on #10b981 is 2.5:1,
+       * under the 3:1 floor even for a 40px glyph. */
+      background: var(--color-success-hover);
+      color: var(--color-success-contrast);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -402,11 +404,11 @@
         color: var(--text-secondary, #64748b);
 
         strong {
-          color: #16a34a;
+          color: var(--color-success);
         }
 
         .failed-badge {
-          color: #dc2626;
+          color: var(--color-error);
           font-weight: 600;
           margin-left: 0.35rem;
         }
@@ -440,9 +442,9 @@
         color: var(--text-secondary, #64748b);
       }
 
-      &.status-recovered_vector { border-left: 3px solid #16a34a; }
-      &.status-recovered_raster { border-left: 3px solid #2563eb; }
-      &.status-failed { border-left: 3px solid #dc2626; background: #fef2f2; }
+      &.status-recovered_vector { border-left: 3px solid var(--color-success); }
+      &.status-recovered_raster { border-left: 3px solid var(--color-info); }
+      &.status-failed { border-left: 3px solid var(--color-error); background: var(--color-error-soft); }
     }
   }
 
