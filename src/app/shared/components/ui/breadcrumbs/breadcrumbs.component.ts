@@ -78,7 +78,9 @@ export interface BreadcrumbItem {
       transition: color var(--transition-fast, 150ms);
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 4px;
+      min-height: var(--min-touch-target, 44px);
     }
 
     .breadcrumb-link:hover {
@@ -104,6 +106,7 @@ export interface BreadcrumbItem {
     .home-link {
       padding: 2px;
       border-radius: var(--radius-xs, 4px);
+      min-width: var(--min-touch-target, 44px);
     }
 
     .sr-only {

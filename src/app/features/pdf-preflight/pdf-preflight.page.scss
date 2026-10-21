@@ -45,7 +45,7 @@
       font-weight: var(--font-weight-semibold);
       cursor: pointer;
       padding: 4px 8px;
-      min-height: 32px;
+      min-height: var(--min-touch-target, 44px);
       border-radius: var(--radius-sm);
 
       &:hover {
@@ -416,8 +416,8 @@
       color: var(--color-text-muted);
       cursor: pointer;
       padding: 4px;
-      min-height: 36px;
-      min-width: 36px;
+      min-height: var(--min-touch-target, 44px);
+      min-width: var(--min-touch-target, 44px);
     }
   }
 

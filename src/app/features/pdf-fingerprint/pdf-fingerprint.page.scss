@@ -156,7 +156,7 @@
     font-size: var(--font-small);
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
-    min-height: 32px;
+    min-height: var(--min-touch-target, 44px);
     padding: 4px 8px;
     border-radius: var(--radius-sm);
 

@@ -5,189 +5,218 @@
     <app-page-header
       [title]="'pdfSignatureStatus.title' | translate"
       [subtitle]="'pdfSignatureStatus.description' | translate"
-      icon="ribbon"
+      [showBack]="true"
+      backUrl="/features/pdf"
     ></app-page-header>
 
     <!-- Upload Section -->
-    <section class="upload-section" *ngIf="!report">
-      <app-file-dropzone
-        [accept]="'.pdf'"
-        (fileSelected)="onFileSelected($event)"
-      ></app-file-dropzone>
+    @if (!report) {
+      <section class="upload-section">
+        <app-file-dropzone
+          [accept]="'.pdf'"
+          (fileSelected)="onFileSelected($event)"
+        ></app-file-dropzone>
 
-      <div class="loading-state" *ngIf="isAnalyzing">
-        <div class="spinner"></div>
-        <p>{{ 'pdfSignatureStatus.analyzing' | translate }}</p>
-      </div>
-    </section>
+        @if (isAnalyzing) {
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>{{ 'pdfSignatureStatus.analyzing' | translate }}</p>
+          </div>
+        }
+      </section>
+    }
 
     <!-- Analysis Results -->
-    <section class="report-section" *ngIf="report">
-      <!-- Prominent Neutral Offline Notice -->
-      <div class="offline-notice-box" role="note">
-        <div class="notice-icon-wrap">
-          <span class="info-symbol">ℹ</span>
-        </div>
-        <div class="notice-text">
-          <strong>{{ 'pdfSignatureStatus.offlineNoticeTitle' | translate }}</strong>
-          <p>{{ 'pdfSignatureStatus.offlineNoticeDesc' | translate }}</p>
-        </div>
-      </div>
-
-      <!-- Overview Header Card -->
-      <div class="overview-card">
-        <div class="overview-header">
-          <div class="doc-meta">
-            <h3 class="file-name">{{ report.fileName }}</h3>
-            <span class="file-size">{{ formatBytes(report.fileSizeBytes) }}</span>
+    @if (report) {
+      <section class="report-section">
+        <!-- Prominent Neutral Offline Notice -->
+        <div class="offline-notice-box" role="note">
+          <div class="notice-icon-wrap">
+            <span class="info-symbol">ℹ</span>
           </div>
-
-          <div class="overview-badge-group">
-            <app-badge
-              *ngIf="report.hasSignatures"
-              variant="neutral">
-              {{ 'pdfSignatureStatus.signatureCount' | translate: { count: report.signaturesFound } }}
-            </app-badge>
-
-            <app-badge
-              *ngIf="!report.hasSignatures"
-              variant="neutral">
-              {{ 'pdfSignatureStatus.unsignedDoc' | translate }}
-            </app-badge>
-
-            <app-badge
-              *ngIf="report.hasSignatures && report.hasAppendedRevisions"
-              variant="warning">
-              {{ 'pdfSignatureStatus.appendedRevisionsBadge' | translate }}
-            </app-badge>
-
-            <app-badge
-              *ngIf="report.hasSignatures && !report.hasAppendedRevisions"
-              variant="success">
-              {{ 'pdfSignatureStatus.fullCoverageBadge' | translate }}
-            </app-badge>
+          <div class="notice-text">
+            <strong>{{ 'pdfSignatureStatus.offlineNoticeTitle' | translate }}</strong>
+            <p>{{ 'pdfSignatureStatus.offlineNoticeDesc' | translate }}</p>
           </div>
         </div>
 
-        <p class="coverage-summary-text">{{ report.overallCoverageSummary }}</p>
-
-        <div class="overview-actions">
-          <app-button
-            variant="secondary"
-            size="sm"
-            (clicked)="reset()"
-          >
-            {{ 'pdfSignatureStatus.analyzeAnother' | translate }}
-          </app-button>
-        </div>
-      </div>
-
-      <!-- No Signatures Found State -->
-      <div class="empty-signatures" *ngIf="!report.hasSignatures">
-        <div class="empty-icon-wrap">
-          <span class="empty-symbol">📄</span>
-        </div>
-        <h4>{{ 'pdfSignatureStatus.noSignaturesTitle' | translate }}</h4>
-        <p>{{ 'pdfSignatureStatus.noSignaturesDesc' | translate }}</p>
-      </div>
-
-      <!-- Signatures List -->
-      <div class="signatures-list" *ngIf="report.hasSignatures">
-        <h3 class="section-title">{{ 'pdfSignatureStatus.signatureFieldsTitle' | translate }}</h3>
-
-        <div class="sig-card" *ngFor="let sig of report.signatures; let i = index">
-          <div class="sig-card-header">
-            <div class="sig-title-row">
-              <span class="sig-index">#{{ i + 1 }}</span>
-              <h4 class="sig-name">{{ sig.signerName }}</h4>
+        <!-- Overview Header Card -->
+        <div class="overview-card">
+          <div class="overview-header">
+            <div class="doc-meta">
+              <h3 class="file-name">{{ report.fileName }}</h3>
+              <span class="file-size">{{ formatBytes(report.fileSizeBytes) }}</span>
             </div>
 
-            <div class="sig-badge-row">
-              <app-badge
-                *ngIf="sig.isWholeFileCovered"
-                variant="success">
-                {{ 'pdfSignatureStatus.wholeFileCovered' | translate }}
-              </app-badge>
+            <div class="overview-badge-group">
+              @if (report.hasSignatures) {
+                <app-badge variant="neutral">
+                  {{ 'pdfSignatureStatus.signatureCount' | translate: { count: report.signaturesFound } }}
+                </app-badge>
+              } @else {
+                <app-badge variant="neutral">
+                  {{ 'pdfSignatureStatus.unsignedDoc' | translate }}
+                </app-badge>
+              }
 
-              <app-badge
-                *ngIf="sig.hasAppendedBytes"
-                variant="warning">
-                {{ 'pdfSignatureStatus.appendedBytesWarning' | translate: { count: sig.appendedByteCount } }}
-              </app-badge>
+              @if (report.hasSignatures && report.hasAppendedRevisions) {
+                <app-badge variant="warning">
+                  {{ 'pdfSignatureStatus.appendedRevisionsBadge' | translate }}
+                </app-badge>
+              }
+
+              <!--
+                Byte-range coverage is a structural fact, not a trust verdict:
+                this panel reads neutral rather than green, because a green tick
+                beside a signature reads as "signature good" to anyone not
+                looking closely, and that is the one claim it cannot make offline.
+              -->
+              @if (report.hasSignatures && !report.hasAppendedRevisions) {
+                <app-badge variant="neutral">
+                  {{ 'pdfSignatureStatus.fullCoverageBadge' | translate }}
+                </app-badge>
+              }
             </div>
           </div>
 
-          <!-- Coverage Progress Bar -->
-          <div class="coverage-bar-group">
-            <div class="coverage-bar-label">
-              <span>{{ 'pdfSignatureStatus.byteCoverage' | translate }}</span>
-              <span class="coverage-percentage">{{ (sig.signedByteCoverageRatio * 100) | number:'1.1-2' }}%</span>
-            </div>
-            <div class="progress-track">
-              <div
-                class="progress-fill"
-                [style.width.%]="sig.signedByteCoverageRatio * 100"
-                [class.has-appended]="sig.hasAppendedBytes"
-              ></div>
-            </div>
-          </div>
+          <p class="coverage-summary-text">{{ report.overallCoverageSummary }}</p>
 
-          <!-- Metadata Grid -->
-          <div class="sig-meta-grid">
-            <div class="meta-item" *ngIf="sig.claimedSigningTime">
-              <span class="meta-label">{{ 'pdfSignatureStatus.claimedDate' | translate }}</span>
-              <span class="meta-val">{{ sig.claimedSigningTime }}</span>
-            </div>
-
-            <div class="meta-item" *ngIf="sig.reason">
-              <span class="meta-label">{{ 'pdfSignatureStatus.reason' | translate }}</span>
-              <span class="meta-val">{{ sig.reason }}</span>
-            </div>
-
-            <div class="meta-item" *ngIf="sig.location">
-              <span class="meta-label">{{ 'pdfSignatureStatus.location' | translate }}</span>
-              <span class="meta-val">{{ sig.location }}</span>
-            </div>
-
-            <div class="meta-item" *ngIf="sig.contactInfo">
-              <span class="meta-label">{{ 'pdfSignatureStatus.contact' | translate }}</span>
-              <span class="meta-val">{{ sig.contactInfo }}</span>
-            </div>
-
-            <div class="meta-item" *ngIf="sig.filter">
-              <span class="meta-label">{{ 'pdfSignatureStatus.filter' | translate }}</span>
-              <span class="meta-val">{{ sig.filter }}</span>
-            </div>
-
-            <div class="meta-item" *ngIf="sig.subFilter">
-              <span class="meta-label">{{ 'pdfSignatureStatus.subFilter' | translate }}</span>
-              <span class="meta-val">{{ sig.subFilter }}</span>
-            </div>
-
-            <div class="meta-item full-span">
-              <span class="meta-label">{{ 'pdfSignatureStatus.byteRange' | translate }}</span>
-              <code class="meta-code">[{{ sig.byteRange.join(', ') }}]</code>
-            </div>
+          <div class="overview-actions">
+            <app-button
+              variant="secondary"
+              size="sm"
+              (clicked)="reset()"
+            >
+              {{ 'pdfSignatureStatus.analyzeAnother' | translate }}
+            </app-button>
           </div>
         </div>
-      </div>
 
-      <!-- Quick Resolution and Related Analysis Links -->
-      <div class="related-tools-box">
-        <h4 class="related-title">{{ 'pdfSignatureStatus.relatedToolsTitle' | translate }}</h4>
-        <div class="related-nav-chips">
-          <a routerLink="/features/pdf/fingerprint" class="chip-link">
-            {{ 'pdfSignatureStatus.navFingerprint' | translate }}
-          </a>
-          <a routerLink="/features/pdf/inspect" class="chip-link">
-            {{ 'pdfSignatureStatus.navInspect' | translate }}
-          </a>
-          <a routerLink="/features/pdf/preflight" class="chip-link">
-            {{ 'pdfSignatureStatus.navPreflight' | translate }}
-          </a>
+        <!-- No Signatures Found State -->
+        @if (!report.hasSignatures) {
+          <div class="empty-signatures">
+            <div class="empty-icon-wrap">
+              <span class="empty-symbol">📄</span>
+            </div>
+            <h4>{{ 'pdfSignatureStatus.noSignaturesTitle' | translate }}</h4>
+            <p>{{ 'pdfSignatureStatus.noSignaturesDesc' | translate }}</p>
+          </div>
+        }
+
+        <!-- Signatures List -->
+        @if (report.hasSignatures) {
+          <div class="signatures-list">
+            <h3 class="section-title">{{ 'pdfSignatureStatus.signatureFieldsTitle' | translate }}</h3>
+
+            @for (sig of report.signatures; track $index; let i = $index) {
+              <div class="sig-card">
+                <div class="sig-card-header">
+                  <div class="sig-title-row">
+                    <span class="sig-index">#{{ i + 1 }}</span>
+                    <h4 class="sig-name">{{ sig.signerName }}</h4>
+                  </div>
+
+                  <div class="sig-badge-row">
+                    @if (sig.isWholeFileCovered) {
+                      <app-badge variant="neutral">
+                        {{ 'pdfSignatureStatus.wholeFileCovered' | translate }}
+                      </app-badge>
+                    }
+
+                    @if (sig.hasAppendedBytes) {
+                      <app-badge variant="warning">
+                        {{ 'pdfSignatureStatus.appendedBytesWarning' | translate: { count: sig.appendedByteCount } }}
+                      </app-badge>
+                    }
+                  </div>
+                </div>
+
+                <!-- Coverage Progress Bar -->
+                <div class="coverage-bar-group">
+                  <div class="coverage-bar-label">
+                    <span>{{ 'pdfSignatureStatus.byteCoverage' | translate }}</span>
+                    <span class="coverage-percentage">{{ (sig.signedByteCoverageRatio * 100) | number:'1.1-2' }}%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div
+                      class="progress-fill"
+                      [style.width.%]="sig.signedByteCoverageRatio * 100"
+                      [class.has-appended]="sig.hasAppendedBytes"
+                    ></div>
+                  </div>
+                </div>
+
+                <!-- Metadata Grid -->
+                <div class="sig-meta-grid">
+                  @if (sig.claimedSigningTime) {
+                    <div class="meta-item">
+                      <span class="meta-label">{{ 'pdfSignatureStatus.claimedDate' | translate }}</span>
+                      <span class="meta-val">{{ sig.claimedSigningTime }}</span>
+                    </div>
+                  }
+
+                  @if (sig.reason) {
+                    <div class="meta-item">
+                      <span class="meta-label">{{ 'pdfSignatureStatus.reason' | translate }}</span>
+                      <span class="meta-val">{{ sig.reason }}</span>
+                    </div>
+                  }
+
+                  @if (sig.location) {
+                    <div class="meta-item">
+                      <span class="meta-label">{{ 'pdfSignatureStatus.location' | translate }}</span>
+                      <span class="meta-val">{{ sig.location }}</span>
+                    </div>
+                  }
+
+                  @if (sig.contactInfo) {
+                    <div class="meta-item">
+                      <span class="meta-label">{{ 'pdfSignatureStatus.contact' | translate }}</span>
+                      <span class="meta-val">{{ sig.contactInfo }}</span>
+                    </div>
+                  }
+
+                  @if (sig.filter) {
+                    <div class="meta-item">
+                      <span class="meta-label">{{ 'pdfSignatureStatus.filter' | translate }}</span>
+                      <span class="meta-val">{{ sig.filter }}</span>
+                    </div>
+                  }
+
+                  @if (sig.subFilter) {
+                    <div class="meta-item">
+                      <span class="meta-label">{{ 'pdfSignatureStatus.subFilter' | translate }}</span>
+                      <span class="meta-val">{{ sig.subFilter }}</span>
+                    </div>
+                  }
+
+                  <div class="meta-item full-span">
+                    <span class="meta-label">{{ 'pdfSignatureStatus.byteRange' | translate }}</span>
+                    <code class="meta-code">[{{ sig.byteRange.join(', ') }}]</code>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Quick Resolution and Related Analysis Links -->
+        <div class="related-tools-box">
+          <h4 class="related-title">{{ 'pdfSignatureStatus.relatedToolsTitle' | translate }}</h4>
+          <div class="related-nav-chips">
+            <a routerLink="/features/pdf/fingerprint" class="chip-link">
+              {{ 'pdfSignatureStatus.navFingerprint' | translate }}
+            </a>
+            <a routerLink="/features/pdf/inspect" class="chip-link">
+              {{ 'pdfSignatureStatus.navInspect' | translate }}
+            </a>
+            <a routerLink="/features/pdf/preflight" class="chip-link">
+              {{ 'pdfSignatureStatus.navPreflight' | translate }}
+            </a>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    }
 
     <app-related-tools currentToolId="pdf_signature_status"></app-related-tools>
   </div>

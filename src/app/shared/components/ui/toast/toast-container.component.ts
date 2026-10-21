@@ -190,8 +190,14 @@ import { ToastService, ToastMessage } from '../../../../core/services/toast.serv
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      width: 28px;
-      height: 28px;
+      /*
+       * A real 44px box rather than a pseudo-element overlay: the toast card
+       * clips, so an overlay grown past the card's top edge simply stopped
+       * receiving taps there. The card is taller than 44px whenever it has a
+       * title and a message, so this costs no height.
+       */
+      width: var(--min-touch-target, 44px);
+      height: var(--min-touch-target, 44px);
       margin: -2px -2px 0 0;
       background: transparent;
       border: none;
