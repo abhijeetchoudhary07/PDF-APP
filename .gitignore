@@ -46,6 +46,7 @@ test-results/
 videos/
 scratch/
 screenshots/
+e2e-screenshots/
 
 
 # --- Android / Capacitor ---------------------------------------------------

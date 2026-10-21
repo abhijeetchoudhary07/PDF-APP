@@ -13,7 +13,13 @@ export type EditorTool =
   | 'line'
   | 'arrow'
   | 'redact'
-  | 'crop';
+  | 'crop'
+  | 'find_replace'
+  | 'link'
+  | 'comment'
+  | 'whiteout'
+  | 'measure'
+  | 'edit_text';
 
 export type ShapeType = 'rectangle' | 'circle' | 'line' | 'arrow';
 export type AnnotationType = 'highlight' | 'underline' | 'strikethrough' | 'note' | 'textbox';
@@ -169,6 +175,11 @@ export interface PdfEditorPage {
   elements: PdfElement[];
   redactions: PdfRedaction[];
   thumbnailUrl?: string;
+  links?: any[];
+  comments?: any[];
+  whiteouts?: any[];
+  measurements?: any[];
+  textEdits?: any[];
 }
 
 export interface PdfEditorDocument {
@@ -205,7 +216,19 @@ export type EditorCommandType =
   | 'SET_PAGE_NUMBERING'
   | 'ADD_REDACTION'
   | 'APPLY_REDACTION'
-  | 'DELETE_REDACTION';
+  | 'DELETE_REDACTION'
+  | 'ADD_LINK'
+  | 'UPDATE_LINK'
+  | 'DELETE_LINK'
+  | 'ADD_COMMENT'
+  | 'UPDATE_COMMENT'
+  | 'RESOLVE_COMMENT'
+  | 'DELETE_COMMENT'
+  | 'ADD_WHITEOUT'
+  | 'DELETE_WHITEOUT'
+  | 'EDIT_EXISTING_TEXT'
+  | 'ADD_MEASUREMENT'
+  | 'DELETE_MEASUREMENT';
 
 export interface EditorCommand {
   id: string;

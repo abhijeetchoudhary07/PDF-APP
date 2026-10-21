@@ -1,20 +1,79 @@
-<div class="reader-container" (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)">
+<div
+  class="reader-container"
+  [class.theme-night]="preferences.theme === 'night'"
+  [class.theme-sepia]="preferences.theme === 'sepia'"
+  [class.spread-two-page]="preferences.pageSpread === 'two-page'"
+  [class.scroll-continuous]="preferences.scrollMode === 'continuous'"
+  (touchstart)="onTouchStart($event)"
+  (touchmove)="onTouchMove($event)"
+  (touchend)="onTouchEnd($event)"
+  >
   <!-- TOP CONTROLS BAR -->
   <div class="reader-toolbar">
-    <!-- Left: Thumbnails Toggle & Search Toggle -->
-    <div class="toolbar-section">
-      <button class="tool-btn" [class.active]="showThumbnails" (click)="toggleThumbnailsEvent.emit()" [title]="'editor.thumbnailsTitle' | translate">
-        <app-icon name="grid-outline"></app-icon>
+    <!-- Left Section: Navigation & Mode Controls -->
+    <div class="toolbar-section left-actions">
+      <!-- Thumbnails & Bookmarks Drawer Toggle -->
+      <button
+        class="tool-btn"
+        [class.active]="showThumbnails"
+        (click)="toggleThumbnailsEvent.emit()"
+        [title]="'editor.thumbnailsTitle' | translate"
+        >
+        <app-icon name="grid"></app-icon>
       </button>
-      <button class="tool-btn" [class.active]="showSearch" (click)="toggleSearchEvent.emit()" [title]="'editor.searchTitle' | translate">
-        <app-icon name="search-outline"></app-icon>
+
+      <!-- Incremental Search Toggle -->
+      <button
+        class="tool-btn"
+        [class.active]="showSearch"
+        (click)="toggleSearchEvent.emit()"
+        [title]="'editor.searchTitle' | translate"
+        >
+        <app-icon name="search"></app-icon>
       </button>
+
+      <!-- Reading Modes Popover Toggle -->
+      <button
+        class="tool-btn"
+        [class.active]="showReadingModesMenu"
+        (click)="toggleReadingModesMenu()"
+        [title]="'editor.readingModeTitle' | translate"
+        >
+        <app-icon [name]="preferences.theme === 'night' ? 'moon' : 'sunny'"></app-icon>
+      </button>
+
+      <!-- Text Reflow Toggle (L3) -->
+      <button
+        class="tool-btn"
+        [class.active]="preferences.reflowMode"
+        (click)="toggleReflow()"
+        [title]="'editor.reflowTitle' | translate"
+        >
+        <app-icon name="text"></app-icon>
+      </button>
+
+      <!-- Read-Aloud Web Speech API Toggle (L5) -->
+      @if (isTtsSupported) {
+        <button
+          class="tool-btn tts-btn"
+          [class.active]="readAloudState.isPlaying"
+          (click)="toggleReadAloud()"
+          [title]="'editor.readAloudTitle' | translate"
+          >
+          <app-icon [name]="readAloudState.isPlaying ? 'pause' : 'volume-high'"></app-icon>
+        </button>
+      }
     </div>
 
-    <!-- Center: Page Navigation -->
+    <!-- Center Section: Page Navigation -->
     <div class="toolbar-section page-nav">
-      <button class="tool-btn" (click)="prevPage()" [disabled]="state.currentPageNumber <= 1" [title]="'editor.prevPageTitle' | translate">
-        <app-icon name="chevron-back-outline"></app-icon>
+      <button
+        class="tool-btn"
+        (click)="prevPage()"
+        [disabled]="state.currentPageNumber <= 1"
+        [title]="'editor.prevPageTitle' | translate"
+        >
+        <app-icon name="arrow-back"></app-icon>
       </button>
 
       <div class="page-input-wrapper">
@@ -28,37 +87,125 @@
         <span class="page-total">/ {{ (state.document$ | async)?.pageCount || 1 }}</span>
       </div>
 
-      <button class="tool-btn" (click)="nextPage()" [disabled]="state.currentPageNumber >= ((state.document$ | async)?.pageCount || 1)" [title]="'editor.nextPageTitle' | translate">
-        <app-icon name="chevron-forward-outline"></app-icon>
+      <button
+        class="tool-btn"
+        (click)="nextPage()"
+        [disabled]="state.currentPageNumber >= ((state.document$ | async)?.pageCount || 1)"
+        [title]="'editor.nextPageTitle' | translate"
+        >
+        <app-icon name="arrow-forward"></app-icon>
       </button>
     </div>
 
-    <!-- Right: Zoom & Fullscreen -->
+    <!-- Right Section: Zoom & Fullscreen -->
     <div class="toolbar-section zoom-controls">
       <button class="tool-btn" (click)="zoomOut()" [title]="'editor.zoomOutTitle' | translate">
-        <app-icon name="remove-outline"></app-icon>
+        <app-icon name="minus"></app-icon>
       </button>
       <span class="zoom-label">{{ ((state.zoom$ | async) || 1.0) * 100 | number:'1.0-0' }}%</span>
       <button class="tool-btn" (click)="zoomIn()" [title]="'editor.zoomInTitle' | translate">
-        <app-icon name="add-outline"></app-icon>
+        <app-icon name="plus"></app-icon>
       </button>
-      <button class="tool-btn" (click)="fitWidth()" [title]="'editor.fitWidthTitle' | translate">
-        <app-icon name="scan-outline"></app-icon>
+      <button class="tool-btn hide-on-xs" (click)="fitWidth()" [title]="'editor.fitWidthTitle' | translate">
+        <app-icon name="square"></app-icon>
       </button>
-      <button class="tool-btn" (click)="fitPage()" [title]="'editor.fitPageTitle' | translate">
-        <app-icon name="expand-outline"></app-icon>
+      <button class="tool-btn hide-on-xs" (click)="fitPage()" [title]="'editor.fitPageTitle' | translate">
+        <app-icon name="maximize"></app-icon>
       </button>
       <button class="tool-btn" (click)="toggleFullscreen()" [title]="'editor.fullscreenTitle' | translate">
-        <app-icon [name]="isFullscreen ? 'contract-outline' : 'fullscreen-outline'"></app-icon>
+        <app-icon [name]="isFullscreen ? 'minimize' : 'maximize'"></app-icon>
       </button>
     </div>
   </div>
 
-  <!-- SEARCH BAR (COLLAPSIBLE) -->
+  <!-- READING MODES DROPDOWN (L2) -->
+  @if (showReadingModesMenu) {
+    <div class="reading-modes-menu">
+      <div class="menu-header">
+        <span>{{ 'editor.readingModes' | translate }}</span>
+        <button class="menu-close-btn" (click)="showReadingModesMenu = false">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+
+      <!-- Theme Selectors -->
+      <div class="mode-group">
+        <span class="group-label">Theme</span>
+        <div class="mode-options">
+          <button
+            class="mode-chip"
+            [class.active]="preferences.theme === 'normal'"
+            (click)="setTheme('normal')"
+            >
+            {{ 'editor.themeNormal' | translate }}
+          </button>
+          <button
+            class="mode-chip"
+            [class.active]="preferences.theme === 'night'"
+            (click)="setTheme('night')"
+            >
+            <app-icon name="moon"></app-icon>
+            {{ 'editor.themeNight' | translate }}
+          </button>
+          <button
+            class="mode-chip"
+            [class.active]="preferences.theme === 'sepia'"
+            (click)="setTheme('sepia')"
+            >
+            {{ 'editor.themeSepia' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Spread Selectors -->
+      <div class="mode-group">
+        <span class="group-label">Page Spread</span>
+        <div class="mode-options">
+          <button
+            class="mode-chip"
+            [class.active]="preferences.pageSpread === 'single'"
+            (click)="setPageSpread('single')"
+            >
+            {{ 'editor.spreadSingle' | translate }}
+          </button>
+          <button
+            class="mode-chip"
+            [class.active]="preferences.pageSpread === 'two-page'"
+            (click)="setPageSpread('two-page')"
+            >
+            {{ 'editor.spreadTwoPage' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Scroll Mode Selectors -->
+      <div class="mode-group">
+        <span class="group-label">Scroll</span>
+        <div class="mode-options">
+          <button
+            class="mode-chip"
+            [class.active]="preferences.scrollMode === 'paged'"
+            (click)="setScrollMode('paged')"
+            >
+            {{ 'editor.scrollPaged' | translate }}
+          </button>
+          <button
+            class="mode-chip"
+            [class.active]="preferences.scrollMode === 'continuous'"
+            (click)="setScrollMode('continuous')"
+            >
+            {{ 'editor.scrollContinuous' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- SEARCH OVERLAY WITH SNIPPETS LIST (L1) -->
   @if (showSearch) {
     <div class="search-overlay">
       <div class="search-box">
-        <app-icon name="search-outline" class="search-icon"></app-icon>
+        <app-icon name="search" class="search-icon"></app-icon>
         <input
           type="text"
           [placeholder]="'editor.searchPlaceholder' | translate"
@@ -66,73 +213,345 @@
           (keyup.enter)="performSearch()"
           autofocus
           />
-        @if (searchResults.length > 0) {
+        @if (searchResult && searchResult.matches.length > 0) {
           <div class="search-meta">
-            {{ 'editor.searchMatches' | translate: { current: currentMatchIndex + 1, total: searchResults.length } }}
+            {{ 'editor.searchMatches' | translate: { current: currentMatchIndex + 1, total: searchResult.matches.length } }}
           </div>
         }
-        @if (searchResults.length === 0 && searchQuery && !isSearching) {
+        @if (searchResult && searchResult.matches.length === 0 && searchQuery && !isSearching) {
           <div class="search-meta no-match">
             {{ 'editor.noMatches' | translate }}
           </div>
         }
-        <button class="tool-btn" (click)="prevMatch()" [disabled]="searchResults.length === 0" [title]="'editor.prevMatchTitle' | translate">
-          <app-icon name="chevron-up-outline"></app-icon>
+        <button
+          class="tool-btn"
+          (click)="prevMatch()"
+          [disabled]="!searchResult || searchResult.matches.length === 0"
+          [title]="'editor.prevMatchTitle' | translate"
+          >
+          <app-icon name="chevron-up"></app-icon>
         </button>
-        <button class="tool-btn" (click)="nextMatch()" [disabled]="searchResults.length === 0" [title]="'editor.nextMatchTitle' | translate">
-          <app-icon name="chevron-down-outline"></app-icon>
+        <button
+          class="tool-btn"
+          (click)="nextMatch()"
+          [disabled]="!searchResult || searchResult.matches.length === 0"
+          [title]="'editor.nextMatchTitle' | translate"
+          >
+          <app-icon name="chevron-down"></app-icon>
         </button>
-        <button class="tool-btn close-btn" (click)="closeSearch()" [title]="'editor.closeSearchTitle' | translate">
-          <app-icon name="close-outline"></app-icon>
+        <button
+          class="tool-btn close-btn"
+          (click)="closeSearch()"
+          [title]="'editor.closeSearchTitle' | translate"
+          >
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+
+      <!-- Search Results Snippet List -->
+      @if (searchResult && searchResult.matches.length > 0) {
+        <div class="search-snippets-drawer">
+          @for (m of searchResult.matches; track m.id; let idx = $index) {
+            <div
+              class="snippet-item"
+              [class.active]="idx === currentMatchIndex"
+              (click)="jumpToMatch(idx)"
+              >
+              <span class="snippet-page">P.{{ m.pageNumber }}</span>
+              <span class="snippet-text">
+                <span class="snippet-prefix">{{ m.snippetPrefix }}</span>
+                <mark class="snippet-match">{{ m.snippetMatch }}</mark>
+                <span class="snippet-suffix">{{ m.snippetSuffix }}</span>
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- LAST-READ RESTORE BANNER (L4) -->
+  @if (lastReadPrompt) {
+    <div class="last-read-banner">
+      <div class="banner-content">
+        <app-icon name="bookmark"></app-icon>
+        <span>{{ 'editor.resumePrompt' | translate: { page: lastReadPrompt.pageNumber } }}</span>
+      </div>
+      <div class="banner-actions">
+        <button class="resume-btn" (click)="resumeLastRead()">
+          {{ 'editor.resumeBtn' | translate }}
+        </button>
+        <button class="start-btn" (click)="startFromBeginning()">
+          {{ 'editor.startBeginningBtn' | translate }}
+        </button>
+        <button class="dismiss-btn" (click)="dismissLastReadPrompt()">
+          <app-icon name="close"></app-icon>
         </button>
       </div>
     </div>
   }
 
-  <!-- MAIN VIEW AREA WITH THUMBNAIL DRAWER -->
+  <!-- MAIN READER BODY -->
   <div class="reader-body">
-    <!-- Collapsible Sidebar Thumbnails -->
+    <!-- Collapsible Sidebar: Thumbnails & Bookmarks Outline (L4) -->
     @if (showThumbnails) {
-      <aside class="thumbnails-sidebar">
-        <div class="sidebar-header">
-          <span>{{ 'editor.pagesCount' | translate: { count: (state.document$ | async)?.pageCount || 0 } }}</span>
+      <div class="sidebar-backdrop" (click)="toggleThumbnailsEvent.emit()"></div>
+      <aside class="sidebar-drawer">
+        <!-- Sidebar Segmented Header -->
+        <div class="sidebar-tabs">
+          <button
+            class="tab-btn"
+            [class.active]="activeSidebarTab === 'thumbnails'"
+            (click)="setSidebarTab('thumbnails')"
+            >
+            <app-icon name="grid"></app-icon>
+            {{ 'editor.thumbnailsTab' | translate }}
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeSidebarTab === 'outline'"
+            (click)="setSidebarTab('outline')"
+            >
+            <app-icon name="bookmark"></app-icon>
+            {{ 'editor.bookmarksTab' | translate }}
+          </button>
+          <button
+            class="tab-close-btn"
+            (click)="toggleThumbnailsEvent.emit()"
+            [title]="'common.close' | translate"
+            >
+            <app-icon name="close"></app-icon>
+          </button>
         </div>
-        <div class="thumbnails-list">
-          @for (page of (state.document$ | async)?.pages; track page) {
-            <div
-              class="thumbnail-item"
-              [class.active]="page.pageNumber === state.currentPageNumber"
-              (click)="selectPage(page.pageNumber)"
-              >
-              <div class="thumb-preview">
-                @if (thumbnailUrls.get(page.pageNumber)) {
-                  <img
-                    [src]="thumbnailUrls.get(page.pageNumber)"
-                    [alt]="'editor.pageAlt' | translate: { page: page.pageNumber }"
-                    />
-                }
-                @if (!thumbnailUrls.get(page.pageNumber)) {
-                  <div class="thumb-placeholder">
-                    <app-icon name="document-text-outline"></app-icon>
+
+        <!-- 1. THUMBNAILS TAB -->
+        @if (activeSidebarTab === 'thumbnails') {
+          <div class="thumbnails-list">
+            @for (page of (state.document$ | async)?.pages; track page) {
+              <div
+                class="thumbnail-item"
+                [class.active]="page.pageNumber === state.currentPageNumber"
+                (click)="selectPage(page.pageNumber)"
+                >
+                <div class="thumb-preview">
+                  @if (thumbnailUrls.get(page.pageNumber)) {
+                    <img
+                      [src]="thumbnailUrls.get(page.pageNumber)"
+                      [alt]="'editor.pageAlt' | translate: { page: page.pageNumber }"
+                      />
+                  }
+                  @if (!thumbnailUrls.get(page.pageNumber)) {
+                    <div class="thumb-placeholder">
+                      <app-icon name="document-text"></app-icon>
+                    </div>
+                  }
+                  @if (page.cropBox) {
+                    <span class="crop-badge">{{ 'editor.croppedBadge' | translate }}</span>
+                  }
+                  @if (page.redactions.length > 0) {
+                    <span class="redact-badge">{{ 'editor.redactedBadge' | translate }}</span>
+                  }
+                </div>
+                <span class="thumb-number">{{ page.pageNumber }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- 2. BOOKMARKS OUTLINE TAB (L4) -->
+        @if (activeSidebarTab === 'outline') {
+          <div class="outline-tree">
+            @if (outline.length === 0) {
+              <div class="outline-empty">
+                <app-icon name="bookmark" class="empty-icon"></app-icon>
+                <p>{{ 'editor.noBookmarksFound' | translate }}</p>
+                <button class="fallback-btn" (click)="setSidebarTab('thumbnails')">
+                  {{ 'editor.thumbnailsTab' | translate }}
+                </button>
+              </div>
+            }
+            @if (outline.length > 0) {
+              <div class="tree-container">
+                @for (item of outline; track item.title) {
+                  <div class="outline-node">
+                    <div
+                      class="node-label"
+                      [class.active]="item.pageNumber === state.currentPageNumber"
+                      (click)="jumpToOutline(item)"
+                      >
+                      @if (item.items && item.items.length > 0) {
+                        <button class="expand-btn" (click)="toggleOutlineItem(item, $event)">
+                          <app-icon [name]="item.expanded ? 'chevron-down' : 'chevron-forward'"></app-icon>
+                        </button>
+                      }
+                      @if (!item.items || item.items.length === 0) {
+                        <span class="node-spacer"></span>
+                      }
+                      <span class="node-title">{{ item.title }}</span>
+                      <span class="node-page">P.{{ item.pageNumber }}</span>
+                    </div>
+
+                    <!-- Child Outline Items -->
+                    @if (item.expanded && item.items && item.items.length > 0) {
+                      <div class="node-children">
+                        @for (child of item.items; track child.title) {
+                          <div
+                            class="child-label"
+                            [class.active]="child.pageNumber === state.currentPageNumber"
+                            (click)="jumpToOutline(child)"
+                            >
+                            <span class="node-title">{{ child.title }}</span>
+                            <span class="node-page">P.{{ child.pageNumber }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
                   </div>
                 }
-                @if (page.cropBox) {
-                  <span class="crop-badge">{{ 'editor.croppedBadge' | translate }}</span>
-                }
-                @if (page.redactions.length > 0) {
-                  <span class="redact-badge">{{ 'editor.redactedBadge' | translate }}</span>
-                }
               </div>
-              <span class="thumb-number">{{ page.pageNumber }}</span>
-            </div>
-          }
-        </div>
+            }
+          </div>
+        }
       </aside>
     }
 
-    <!-- Project-in content (The Canvas viewport) -->
-    <main class="canvas-viewport">
-      <ng-content></ng-content>
+    <!-- CANVAS VIEWPORT / REFLOW VIEWPORT -->
+    <main #canvasViewport class="canvas-viewport" [class.reflow-active]="preferences.reflowMode">
+      <!-- NORMAL RENDERING (L1 Search Highlights Layer Overlay) -->
+      @if (!preferences.reflowMode) {
+        <div class="normal-view-wrapper">
+          <ng-content></ng-content>
+
+          <!-- Search Match Highlight Boxes on Canvas (L1) -->
+          @if (currentMatchesOnActivePage.length > 0) {
+            <div class="search-highlights-layer">
+              @for (m of currentMatchesOnActivePage; track m.id) {
+                @if (getScaledBounds(m.bounds); as b) {
+                  <div
+                    class="search-highlight-box"
+                    [class.active-highlight]="searchResult?.matches?.[currentMatchIndex]?.id === m.id"
+                    [style.left.px]="b.x"
+                    [style.top.px]="b.y"
+                    [style.width.px]="b.width"
+                    [style.height.px]="b.height"
+                    ></div>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TEXT REFLOW VIEWPORT (L3) -->
+      @if (preferences.reflowMode) {
+        <div class="reflow-container" [style.font-size.px]="preferences.fontSize || 16">
+          <!-- Reflow Reading Banner -->
+          <div class="reflow-banner">
+            <div class="banner-info">
+              <app-icon name="text"></app-icon>
+              <span>{{ 'editor.reflowBanner' | translate }}</span>
+            </div>
+            <div class="banner-controls">
+              <!-- Font Size Adjustment -->
+              <div class="font-size-adjust">
+                <button
+                  class="font-btn"
+                  (click)="changeFontSize(-2)"
+                  [title]="'editor.fontSizeDecrease' | translate"
+                  >
+                  A-
+                </button>
+                <span class="font-val">{{ preferences.fontSize || 16 }}px</span>
+                <button
+                  class="font-btn"
+                  (click)="changeFontSize(2)"
+                  [title]="'editor.fontSizeIncrease' | translate"
+                  >
+                  A+
+                </button>
+              </div>
+              <!-- One Tap Return To True Rendering -->
+              <button class="return-btn" (click)="toggleReflow()">
+                {{ 'editor.originalLayout' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Reflow Content Stream -->
+          <div class="reflow-content">
+            @if (isLoadingReflow) {
+              <div class="reflow-loading">
+                <span class="app-inline-spinner" role="status"></span>
+              </div>
+            }
+            @if (!isLoadingReflow && reflowBlocks.length === 0) {
+              <div class="reflow-empty">
+                <p>No readable text extracted for page {{ state.currentPageNumber }}.</p>
+                <button class="return-btn" (click)="toggleReflow()">
+                  {{ 'editor.originalLayout' | translate }}
+                </button>
+              </div>
+            }
+            @for (block of reflowBlocks; track block.id) {
+              @if (block.type === 'heading') {
+                <h2 class="reflow-heading">{{ block.text }}</h2>
+              }
+              @if (block.type === 'paragraph') {
+                <p class="reflow-paragraph">{{ block.text }}</p>
+              }
+            }
+          </div>
+        </div>
+      }
     </main>
+  </div>
+
+  <!-- READ-ALOUD FLOATING PLAYER BAR (L5) -->
+  @if (readAloudState.isPlaying || readAloudState.isPaused) {
+    <div class="read-aloud-player">
+      <div class="player-icon">
+        <app-icon name="volume-high"></app-icon>
+      </div>
+      <div class="player-text">
+        <span class="sentence-text">{{ readAloudState.currentSentence || ('editor.readAloud' | translate) }}</span>
+      </div>
+      <div class="player-controls">
+        <button class="player-btn" (click)="toggleReadAloud()">
+          <app-icon [name]="readAloudState.isPlaying ? 'pause' : 'play'"></app-icon>
+        </button>
+        <button
+          class="player-speed-btn"
+          (click)="changeTtsRate(readAloudState.rate >= 2 ? 0.75 : readAloudState.rate + 0.25)"
+          >
+          {{ readAloudState.rate }}x
+        </button>
+        <button class="player-btn close-player" (click)="stopReadAloud()">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- BOTTOM THUMBNAIL SCRUBBER (L6) -->
+  <div class="thumbnail-scrubber">
+    @if (isScrubbing) {
+      <div class="scrub-preview-chip">
+        <span>{{ 'editor.pageAlt' | translate: { page: scrubPageNumber } }}</span>
+      </div>
+    }
+    <div class="scrubber-track-container">
+      <span class="scrub-label">1</span>
+      <input
+        type="range"
+        class="scrubber-range"
+        min="1"
+        [max]="(state.document$ | async)?.pageCount || 1"
+        [value]="state.currentPageNumber"
+        (input)="onScrubberInput($event)"
+        (change)="onScrubberChange($event)"
+        [title]="'editor.scrubberTitle' | translate"
+        />
+      <span class="scrub-label">{{ (state.document$ | async)?.pageCount || 1 }}</span>
+    </div>
   </div>
 </div>

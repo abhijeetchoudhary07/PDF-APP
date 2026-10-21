@@ -171,6 +171,12 @@
   line-height: 1;
   color: var(--color-text-muted);
   cursor: pointer;
+  min-width: var(--min-touch-target, 44px);
+  min-height: var(--min-touch-target, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
   &:hover {
     color: var(--color-error);
   }
@@ -212,7 +218,7 @@
 }
 
 .field-select {
-  height: 40px;
+  min-height: var(--min-touch-target, 44px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm, 6px);
   padding: 0 10px;
@@ -249,6 +255,13 @@
   font-size: var(--font-small, 13px);
   font-weight: var(--font-weight-medium, 500);
   cursor: pointer;
+  min-height: var(--min-touch-target, 44px);
+  min-width: var(--min-touch-target, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  touch-action: manipulation;
 }
 
 .pages-chips-grid {
@@ -258,13 +271,18 @@
 }
 
 .page-chip {
-  padding: 6px 12px;
+  padding: 8px 14px;
+  min-height: var(--min-touch-target, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-full, 9999px);
   border: 1px solid var(--color-border);
   background-color: var(--color-background-subtle);
   color: var(--color-text-secondary);
   font-size: var(--font-caption, 12px);
   cursor: pointer;
+  touch-action: manipulation;
 
   &.active {
     background-color: var(--color-convert);
@@ -499,6 +517,83 @@
   }
 }
 
+.fidelity-report-card {
+  margin: var(--space-4, 16px) 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 10px);
+  background-color: var(--color-background-subtle);
+  overflow: hidden;
+}
+
+.fidelity-report-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--color-text);
+  min-height: var(--min-touch-target, 44px);
+
+  .fidelity-title-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--font-small, 13px);
+    color: var(--color-text);
+    svg {
+      color: var(--color-primary);
+    }
+  }
+
+  .fidelity-toggle-arrow {
+    font-size: 18px;
+    transition: transform var(--transition-fast, 150ms);
+    &.rotated {
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.fidelity-report-body {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-small, 13px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fidelity-stat-row {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-secondary);
+  strong {
+    color: var(--color-text);
+  }
+}
+
+.fidelity-detail-group {
+  margin-top: 4px;
+  .detail-label {
+    font-size: 11px;
+    font-weight: var(--font-weight-bold, 700);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    display: block;
+    margin-bottom: 2px;
+  }
+  .detail-item {
+    padding: 2px 0;
+    font-size: 12px;
+  }
+}
+
 .result-actions-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -518,6 +613,12 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   text-decoration: underline;
+  min-height: var(--min-touch-target, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  touch-action: manipulation;
 
   &:hover {
     color: var(--color-primary);
@@ -532,3 +633,52 @@
     transform: rotate(360deg);
   }
 }
+
+// Mobile Viewport Optimizations (Phone Screens)
+@media (max-width: 600px) {
+  .dropzone-card {
+    padding: var(--space-6, 24px) var(--space-3, 12px);
+
+    h3 {
+      font-size: 16px;
+    }
+
+    p {
+      font-size: 12px;
+      margin-bottom: var(--space-3, 12px);
+    }
+  }
+
+  .options-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3, 12px);
+  }
+
+  .field-select {
+    min-height: var(--min-touch-target, 44px);
+    font-size: 15px;
+  }
+
+  .result-actions-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3, 12px);
+  }
+
+  .page-chip {
+    min-height: var(--min-touch-target, 44px);
+    padding: 8px 14px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .custom-check-box {
+    width: 22px;
+    height: 22px;
+  }
+
+  .checkbox-row {
+    min-height: var(--min-touch-target, 44px);
+    align-items: center;
+  }
+}
+

@@ -1,0 +1,197 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+
+      <!-- PAGE HEADER -->
+      <app-page-header
+        [title]="'photoBlur.title' | translate"
+        [subtitle]="'photoBlur.subtitle' | translate"
+        [breadcrumbs]="[
+          { label: ('tools.photo_tools.title' | translate), url: '/features/photo' },
+          { label: ('photoBlur.title' | translate) }
+        ]"
+        backUrl="/features/photo"
+        badge="PRIVACY"
+        badgeVariant="photo">
+      </app-page-header>
+
+      <!-- 1. EMPTY / UPLOAD STATE -->
+      @if (workflowState === 'EMPTY') {
+        <div class="workspace-panel">
+          <app-file-dropzone
+            icon="eye-off"
+            [title]="'photoBlur.dropzoneTitle' | translate"
+            [description]="'photoBlur.dropzoneDesc' | translate"
+            accept="image/jpeg,image/png,image/webp"
+            [errorMessage]="errorMessage"
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+      }
+
+      <!-- 2. CONFIGURING STATE -->
+      @if (workflowState === 'CONFIGURING' && originalFile) {
+        <div class="workspace-panel">
+
+          <!-- PRIVACY WARNING BANNER -->
+          <div class="irreversible-warning-banner">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <div>
+              <strong>{{ 'photoBlur.irreversibleTitle' | translate }}</strong>
+              <p>{{ 'photoBlur.irreversibleNotice' | translate }}</p>
+            </div>
+          </div>
+
+          <!-- DRAWING CANVAS CONTAINER -->
+          <div class="canvas-stage-card">
+            <div class="canvas-stage-header">
+              <span class="instruction-text">{{ 'photoBlur.drawInstruction' | translate }}</span>
+              <button
+                type="button"
+                class="mobile-touch-btn secondary-btn auto-face-btn"
+                (click)="autoDetectFaces()"
+                [disabled]="isDetectingFaces">
+                <span class="btn-content">
+                  @if (isDetectingFaces) {
+                    <span class="spinner-dot"></span>
+                    <span>{{ 'photoBlur.detecting' | translate }}</span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                      <circle cx="12" cy="7" r="4"></circle>
+                      <path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2"></path>
+                    </svg>
+                    <span>{{ 'photoBlur.autoDetectFaces' | translate }}</span>
+                  }
+                </span>
+              </button>
+            </div>
+
+            <div class="canvas-viewport">
+              <canvas
+                #redactCanvas
+                class="interactive-canvas"
+                (pointerdown)="onPointerDown($event)"
+                (pointermove)="onPointerMove($event)"
+                (pointerup)="onPointerUp()"
+                (pointercancel)="onPointerUp()">
+              </canvas>
+            </div>
+          </div>
+
+          <!-- REDACTION MODE & INTENSITY CONTROLS -->
+          <div class="controls-card">
+            <div class="control-row">
+              <label class="control-label">{{ 'photoBlur.redactionMode' | translate }}</label>
+              <div class="segmented-control">
+                <button
+                  type="button"
+                  class="seg-btn"
+                  [class.active]="selectedType === 'blur'"
+                  (click)="selectedType = 'blur'">
+                  {{ 'photoBlur.modeBlur' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="seg-btn"
+                  [class.active]="selectedType === 'pixelate'"
+                  (click)="selectedType = 'pixelate'">
+                  {{ 'photoBlur.modePixelate' | translate }}
+                </button>
+              </div>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-title">{{ 'photoBlur.intensity' | translate }}</span>
+                <span class="slider-value">{{ intensity }}/10</span>
+              </div>
+              <input
+                type="range"
+                class="mobile-range-slider"
+                min="1"
+                max="10"
+                step="1"
+                [(ngModel)]="intensity"
+                (ngModelChange)="redrawCanvas()" />
+            </div>
+
+            <!-- REGIONS SUMMARY -->
+            @if (regions.length > 0) {
+              <div class="regions-header">
+                <span class="regions-count">{{ regions.length }} {{ 'photoBlur.regionsMarked' | translate }}</span>
+                <button type="button" class="clear-btn" (click)="clearAllRegions()">
+                  {{ 'photoBlur.clearAll' | translate }}
+                </button>
+              </div>
+
+              <div class="regions-chips-list">
+                @for (region of regions; track region.id; let idx = $index) {
+                  <div class="region-chip">
+                    <span class="badge-type" [class.pixelate]="region.type === 'pixelate'">
+                      {{ region.type }}
+                    </span>
+                    <span class="region-title">{{ region.label || ('photoBlur.region' | translate) + ' ' + (idx + 1) }}</span>
+                    <button type="button" class="remove-chip-btn" (click)="removeRegion(idx)">
+                      ×
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- STICKY MOBILE BOTTOM ACTION BAR -->
+          <div class="mobile-sticky-bottom-bar">
+            <button
+              type="button"
+              class="mobile-touch-btn primary-btn large-cta"
+              (click)="exportRedacted()"
+              [disabled]="isProcessing || regions.length === 0">
+              <span class="btn-content">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span>{{ 'photoBlur.exportRedactedBtn' | translate }}</span>
+              </span>
+            </button>
+          </div>
+
+        </div>
+      }
+
+      <!-- 3. PROCESSING ANIMATION -->
+      @if (isProcessing) {
+        <app-conversion-animation
+          [progress]="processingProgress"
+          [stageText]="stageText">
+        </app-conversion-animation>
+      }
+
+      <!-- 4. SUCCESS / RESULT STATE -->
+      @if (workflowState === 'SUCCESS' && processedFile && processedPreviewUrl) {
+        <div class="workspace-panel">
+          <app-result-preview
+            [file]="processedFile"
+            [beforeData]="beforePreviewData"
+            [afterData]="afterPreviewData"
+            [beforeUrl]="originalPreviewUrl"
+            [afterUrl]="processedPreviewUrl"
+            (saved)="saveOutput()"
+            (shared)="shareOutput()"
+            (resetRequested)="reset()">
+          </app-result-preview>
+        </div>
+      }
+
+      <!-- RELATED TOOLS -->
+      <app-related-tools currentToolId="image_blur"></app-related-tools>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

@@ -1,0 +1,11 @@
+app:
+  name: Indian Form Helper
+  version: 1.0.0
+  offline: true
+  converters:
+    - id: pdf-to-markdown
+      category: pdf-to-format
+    - id: json-to-pdf
+      category: format-to-pdf
+    - id: eml-to-pdf
+      category: format-to-pdf

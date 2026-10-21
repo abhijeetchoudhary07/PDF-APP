@@ -1,0 +1,225 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        [title]="'tools.photo_metadata.title' | translate"
+        [subtitle]="'tools.photo_metadata.description' | translate"
+        [breadcrumbs]="[{ label: 'tools.photo_metadata.title' | translate }]"
+        badge="EXIF"
+        badgeVariant="photo"
+        backUrl="/features/photo">
+        @if (files.length > 0) {
+          <div actions class="header-actions">
+            <app-button variant="ghost" size="sm" (clicked)="reset()">
+              <app-icon name="refresh" class="btn-icon"></app-icon>
+              {{ 'common.reset' | translate }}
+            </app-button>
+          </div>
+        }
+      </app-page-header>
+
+      @if (workflowState === 'EMPTY') {
+        <div class="empty-state-card">
+          <app-file-dropzone
+            [accept]="'image/*'"
+            [multiple]="true"
+            [title]="'photoMetadata.selectPrompt' | translate"
+            [description]="'photoMetadata.selectSubtitle' | translate"
+            (fileSelected)="handleFileSelected($event)"
+            (filesSelected)="handleFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+      }
+
+      @if (workflowState === 'CONFIGURING') {
+        <!-- BATCH FILE TABS -->
+        @if (files.length > 1) {
+          <div class="file-tabs-scroll">
+            @for (f of files; track $index) {
+              <button
+                type="button"
+                class="file-tab-item"
+                [class.active]="selectedIndex === $index"
+                (click)="selectFileIndex($index)">
+                <app-icon name="image" class="tab-icon"></app-icon>
+                <span class="tab-name">{{ f.name }}</span>
+              </button>
+            }
+          </div>
+        }
+
+        @if (currentMeta) {
+          <div class="metadata-grid">
+            <!-- CAMERA CARD -->
+            <div class="meta-card">
+              <div class="card-header">
+                <app-icon name="camera" class="header-icon"></app-icon>
+                <h3>{{ 'photoMetadata.cameraSpecs' | translate }}</h3>
+              </div>
+              <div class="spec-grid">
+                <div class="spec-item">
+                  <span class="spec-label">{{ 'photoMetadata.makeModel' | translate }}</span>
+                  <span class="spec-val">{{ currentMeta.camera.make || '—' }} {{ currentMeta.camera.model || '' }}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">{{ 'photoMetadata.lens' | translate }}</span>
+                  <span class="spec-val">{{ currentMeta.camera.lensModel || '—' }}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">{{ 'photoMetadata.focalLength' | translate }}</span>
+                  <span class="spec-val">{{ currentMeta.camera.focalLengthMm ? currentMeta.camera.focalLengthMm + ' mm' : '—' }}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">{{ 'photoMetadata.aperture' | translate }}</span>
+                  <span class="spec-val">{{ currentMeta.camera.fNumber ? 'f/' + currentMeta.camera.fNumber : '—' }}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">{{ 'photoMetadata.iso' | translate }}</span>
+                  <span class="spec-val">{{ currentMeta.camera.iso || '—' }}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">{{ 'photoMetadata.exposure' | translate }}</span>
+                  <span class="spec-val">{{ currentMeta.camera.exposureTimeSec ? currentMeta.camera.exposureTimeSec + ' s' : '—' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- GPS LOCATION CARD -->
+            <div class="meta-card">
+              <div class="card-header">
+                <app-icon name="pin" class="header-icon"></app-icon>
+                <h3>{{ 'photoMetadata.gpsLocation' | translate }}</h3>
+              </div>
+              @if (currentMeta.gps) {
+                <div class="gps-details">
+                  <div class="spec-grid">
+                    <div class="spec-item">
+                      <span class="spec-label">{{ 'photoMetadata.latitude' | translate }}</span>
+                      <span class="spec-val">{{ currentMeta.gps.latitude.toFixed(6) }}°</span>
+                    </div>
+                    <div class="spec-item">
+                      <span class="spec-label">{{ 'photoMetadata.longitude' | translate }}</span>
+                      <span class="spec-val">{{ currentMeta.gps.longitude.toFixed(6) }}°</span>
+                    </div>
+                  </div>
+                  @if (currentMeta.gps.mapsUrl) {
+                    <a
+                      [href]="currentMeta.gps.mapsUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="maps-btn">
+                      <app-icon name="map" class="btn-icon"></app-icon>
+                      {{ 'photoMetadata.viewOnMap' | translate }}
+                    </a>
+                  }
+                </div>
+              } @else {
+                <div class="empty-notice">
+                  <p>{{ 'photoMetadata.noGpsFound' | translate }}</p>
+                </div>
+              }
+            </div>
+
+            <!-- CAPTURE DATES & REPAIR CARD -->
+            <div class="meta-card date-card">
+              <div class="card-header">
+                <app-icon name="time" class="header-icon"></app-icon>
+                <h3>{{ 'photoMetadata.timestampsAndRepair' | translate }}</h3>
+              </div>
+
+              <div class="date-display-row">
+                <div class="spec-item">
+                  <span class="spec-label">{{ 'photoMetadata.originalDate' | translate }}</span>
+                  <span class="spec-val highlight-val">
+                    {{ currentMeta.dates.dateTimeOriginal ? (currentMeta.dates.dateTimeOriginal | date:'medium') : ('photoMetadata.noDate' | translate) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- DATE SHIFT CONTROLS -->
+              <div class="shift-controls-section">
+                <h4>{{ 'photoMetadata.shiftClockDrift' | translate }}</h4>
+                <div class="shift-inputs-row">
+                  <div class="shift-input-group">
+                    <label class="shift-label">{{ 'photoMetadata.days' | translate }}</label>
+                    <input type="number" [(ngModel)]="dateShiftOffset.days" class="shift-num-input" />
+                  </div>
+                  <div class="shift-input-group">
+                    <label class="shift-label">{{ 'photoMetadata.hours' | translate }}</label>
+                    <input type="number" [(ngModel)]="dateShiftOffset.hours" class="shift-num-input" />
+                  </div>
+                  <div class="shift-input-group">
+                    <label class="shift-label">{{ 'photoMetadata.minutes' | translate }}</label>
+                    <input type="number" [(ngModel)]="dateShiftOffset.minutes" class="shift-num-input" />
+                  </div>
+                </div>
+
+                <div class="action-btn-row">
+                  <app-button
+                    variant="primary"
+                    size="md"
+                    [block]="true"
+                    (clicked)="applyDateShift()"
+                    [disabled]="isProcessing">
+                    <app-icon name="checkmark-circle" class="btn-icon"></app-icon>
+                    {{ 'photoMetadata.applyDateShift' | translate }}
+                  </app-button>
+                </div>
+
+                @if (repairResults.length > 0) {
+                  <div class="results-list">
+                    @for (res of repairResults; track res.fileName) {
+                      <div class="repair-item-row" [class.success]="res.success">
+                        <span class="file-badge">{{ res.fileName }}</span>
+                        <span class="shift-result-date">{{ res.repairedDate | date:'short' }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- PRIVACY ACTIONS CARD -->
+        <div class="privacy-actions-card">
+          <div class="privacy-info">
+            <app-icon name="shield-checkmark" class="privacy-icon"></app-icon>
+            <div>
+              <h4>{{ 'photoMetadata.stripTitle' | translate }}</h4>
+              <p>{{ 'photoMetadata.stripDesc' | translate }}</p>
+            </div>
+          </div>
+          <app-button
+            variant="warning"
+            size="md"
+            [block]="true"
+            (clicked)="stripMetadataCurrent()"
+            [disabled]="isProcessing">
+            <app-icon name="eye-off" class="btn-icon"></app-icon>
+            {{ 'photoMetadata.stripButton' | translate }}
+          </app-button>
+        </div>
+
+        @if (cleanedBlob) {
+          <div class="cleaned-export-bar">
+            <div class="export-actions-row">
+              <app-button variant="success" size="lg" [block]="true" (clicked)="saveCleanedFile()">
+                <app-icon name="download" class="btn-icon"></app-icon>
+                {{ 'common.save' | translate }}
+              </app-button>
+              <app-button variant="secondary" size="lg" [block]="true" (clicked)="shareCleanedFile()">
+                <app-icon name="share-social" class="btn-icon"></app-icon>
+                {{ 'common.share' | translate }}
+              </app-button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

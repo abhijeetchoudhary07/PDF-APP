@@ -83,6 +83,10 @@ export class PdfRenderService {
     return await this.activePdfDoc.getPage(pageNumber);
   }
 
+  getActivePdfDoc(): any {
+    return this.activePdfDoc;
+  }
+
   /**
    * Renders a specific page onto an HTMLCanvasElement with device pixel ratio scaling.
    */

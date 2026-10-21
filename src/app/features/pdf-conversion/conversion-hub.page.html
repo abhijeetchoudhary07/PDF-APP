@@ -10,7 +10,7 @@
         subtitle="100% offline, zero-upload file conversion between PDF and Office, image, and text formats."
         backUrl="/home"
         [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Converter' }]"
-        badge="15+ FORMATS"
+        [badge]="totalCount + '+ FORMATS'"
         badgeVariant="convert">
       </app-page-header>
 
@@ -24,7 +24,7 @@
           <input
             type="text"
             [(ngModel)]="searchTerm"
-            placeholder="Search conversions (e.g. Word, Excel, PNG, JPG, Text)..."
+            placeholder="Search 24+ formats (Word, PDF, Markdown)..."
             class="search-input" />
           @if (searchTerm) {
             <button type="button" class="clear-btn" (click)="searchTerm = ''">&times;</button>
@@ -33,8 +33,9 @@
 
         <div class="tabs-wrap">
           <app-tabs
+            [autoScroll]="false"
             [tabs]="[
-              { id: 'all', label: 'All Formats (15)' },
+              { id: 'all', label: 'All Formats (' + totalCount + ')' },
               { id: 'pdf-to-format', label: 'PDF to Other Formats' },
               { id: 'format-to-pdf', label: 'Documents to PDF' }
             ]"

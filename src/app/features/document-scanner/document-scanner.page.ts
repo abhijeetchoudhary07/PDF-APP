@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { DocumentScannerService } from '../../core/services/document-scanner.service';
 import { PdfService, PdfCreationConfig } from '../../core/services/pdf.service';
 import { FileService } from '../../core/services/file.service';
@@ -17,6 +18,7 @@ import {
   Point,
   DocumentCorners,
   ScannedPage,
+  ScanMode,
   EnhancementPreset,
   EnhancementOptions
 } from '../../core/models/scanner.models';
@@ -27,7 +29,6 @@ import {
   AppButtonComponent,
   AppBadgeComponent,
   AppRelatedToolsComponent,
-  AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -49,11 +50,10 @@ export type ScannerView = 'empty' | 'cropping' | 'enhancing' | 'pages_list' | 'p
     AppButtonComponent,
     AppBadgeComponent,
     AppRelatedToolsComponent,
-    AutoScrollDirective,
     TranslatePipe
   ]
 })
-export class DocumentScannerPage implements OnDestroy {
+export class DocumentScannerPage implements OnInit, OnDestroy {
   private scannerService = inject(DocumentScannerService);
   private pdfService = inject(PdfService);
   private fileService = inject(FileService);
@@ -68,7 +68,46 @@ export class DocumentScannerPage implements OnDestroy {
 
   @ViewChild('cropCanvas', { static: false }) cropCanvasRef?: ElementRef<HTMLCanvasElement>;
 
-  currentView: ScannerView = 'empty';
+  private _currentView: ScannerView = 'empty';
+  get currentView(): ScannerView {
+    return this._currentView;
+  }
+  set currentView(view: ScannerView) {
+    this._currentView = view;
+    if (typeof window !== 'undefined') {
+      try {
+        window.scrollTo(0, 0);
+      } catch {}
+    }
+  }
+
+  // --- H1 & H2: CAPTURE MODES ---
+  scanMode: ScanMode = 'document';
+  readonly scanModes: Array<{ id: ScanMode; labelKey: string; icon: string }> = [
+    { id: 'document', labelKey: 'scanner.modeDocument', icon: '📄' },
+    { id: 'book', labelKey: 'scanner.modeBook', icon: '📖' },
+    { id: 'id_card', labelKey: 'scanner.modeIdCard', icon: '🪪' },
+    { id: 'whiteboard', labelKey: 'scanner.modeWhiteboard', icon: '📋' },
+    { id: 'photo', labelKey: 'scanner.modePhoto', icon: '🖼️' },
+    { id: 'table', labelKey: 'scanner.modeTable', icon: '📊' }
+  ];
+
+  // H1: ID Card multi-step state
+  idCardStep: 'front' | 'back' | 'none' = 'none';
+  private idCardFrontBlob?: Blob;
+
+  // --- H3: AUTO-CAPTURE & BATCH SCANNING ---
+  batchMode = false;
+  shutterMode: 'manual' | 'auto' = 'manual';
+
+  // --- H4: BLUR GATE ---
+  showBlurAlert = false;
+  lastBlurScore = 0;
+  pendingBlurPageId?: string;
+
+  // --- H8: AUTO-NAMING ---
+  documentFileName = '';
+  isEditingFileName = false;
 
   // Multi-page state
   pages: ScannedPage[] = [];
@@ -106,11 +145,12 @@ export class DocumentScannerPage implements OnDestroy {
   // Canvas interaction
   private activeDraggingPoint: keyof DocumentCorners | null = null;
   private canvasScale = 1;
-  private canvasOffsetX = 0;
-  private canvasOffsetY = 0;
+
+  ngOnInit(): void {
+    this.scanMode = this.scannerService.getScanMode();
+  }
 
   ngOnDestroy(): void {
-    // Revoke all object URLs
     for (const p of this.pages) {
       this.fileService.revokeObjectUrl(p.originalImageUrl);
       this.fileService.revokeObjectUrl(p.processedImageUrl);
@@ -120,6 +160,28 @@ export class DocumentScannerPage implements OnDestroy {
   get activePage(): ScannedPage | undefined {
     return this.pages[this.activePageIndex];
   }
+
+  private async triggerHaptic(style: ImpactStyle = ImpactStyle.Light): Promise<void> {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Haptics.impact({ style });
+      } catch {}
+    }
+  }
+
+  changeScanMode(mode: ScanMode): void {
+    this.scanMode = mode;
+    this.scannerService.setScanMode(mode);
+    this.triggerHaptic(ImpactStyle.Light);
+    if (mode === 'id_card') {
+      this.idCardStep = 'front';
+    } else {
+      this.idCardStep = 'none';
+      this.idCardFrontBlob = undefined;
+    }
+    this.cdr.detectChanges();
+  }
+
 
   // --- CAMERA & CAPTURE ---
 
@@ -161,7 +223,57 @@ export class DocumentScannerPage implements OnDestroy {
     }
   }
 
-  private async processNewCapture(blobOrFile: Blob | File): Promise<void> {
+  async processNewCapture(blobOrFile: Blob | File): Promise<void> {
+    this.triggerHaptic(ImpactStyle.Medium);
+
+    // H1: ID Card flow
+    if (this.scanMode === 'id_card') {
+      if (this.idCardStep === 'front' || !this.idCardFrontBlob) {
+        this.idCardFrontBlob = blobOrFile;
+        this.idCardStep = 'back';
+        this.toastService.show('info', this.translationService.translate('scanner.idCardStep2'));
+        this.cdr.detectChanges();
+        return;
+      } else if (this.idCardStep === 'back' && this.idCardFrontBlob) {
+        try {
+          const composite = await this.scannerService.layoutIdCard(this.idCardFrontBlob, blobOrFile);
+          const combinedBlob = await this.scannerService.canvasToBlob(composite);
+          this.idCardStep = 'front';
+          this.idCardFrontBlob = undefined;
+          await this.addSingleScannedPage(combinedBlob, 'id_card');
+          this.toastService.show('success', this.translationService.translate('scanner.idCardCaptured'));
+          return;
+        } catch (e: any) {
+          this.toastService.show('error', 'Failed to combine ID card: ' + e?.message);
+        }
+      }
+    }
+
+    // H1: Book Spread flow
+    if (this.scanMode === 'book') {
+      try {
+        const canvas = await this.scannerService.toCanvas(blobOrFile);
+        const gutter = this.scannerService.detectGutter(canvas);
+        const [leftCanvas, rightCanvas] = await this.scannerService.splitBookSpread(canvas, gutter.gutterX);
+        const leftBlob = await this.scannerService.canvasToBlob(leftCanvas);
+        const rightBlob = await this.scannerService.canvasToBlob(rightCanvas);
+
+        await this.addSingleScannedPage(leftBlob, 'book');
+        await this.addSingleScannedPage(rightBlob, 'book');
+        this.toastService.show('success', this.translationService.translate('scanner.bookSpreadGutterDetected'));
+        this.currentView = 'pages_list';
+        this.cdr.detectChanges();
+        return;
+      } catch (e: any) {
+        this.toastService.show('error', 'Book split error: ' + e?.message);
+      }
+    }
+
+    // Standard document, whiteboard, photo, or table capture
+    await this.addSingleScannedPage(blobOrFile, this.scanMode);
+  }
+
+  private async addSingleScannedPage(blobOrFile: Blob | File, mode: ScanMode = 'document'): Promise<void> {
     const originalUrl = this.fileService.createObjectUrl(blobOrFile);
     const canvas = await this.scannerService.toCanvas(blobOrFile);
 
@@ -173,11 +285,32 @@ export class DocumentScannerPage implements OnDestroy {
     this.isLowConfidence = detection.lowConfidence;
     this.cropMode = detection.lowConfidence ? 'manual' : 'auto';
 
-    // Perspective warp & default enhancement
+    // Preset selection based on mode
+    let targetPreset: EnhancementPreset = 'document';
+    if (mode === 'whiteboard') targetPreset = 'whiteboard';
+    else if (mode === 'photo') targetPreset = 'photo';
+
+    const enhancementConfig: EnhancementOptions = {
+      preset: targetPreset,
+      brightness: 0,
+      contrast: 0,
+      sharpen: targetPreset === 'photo' ? 0 : 20
+    };
+
+    // Perspective warp & enhancement
     const warpedCanvas = await this.scannerService.perspectiveWarp(canvas, this.activeCropCorners);
-    const enhancedCanvas = await this.scannerService.enhanceImage(warpedCanvas, this.activeEnhancement);
+    const enhancedCanvas = await this.scannerService.enhanceImage(warpedCanvas, enhancementConfig);
     const processedBlob = await this.scannerService.canvasToBlob(enhancedCanvas);
     const processedUrl = this.fileService.createObjectUrl(processedBlob);
+
+    // H4: Blur gate sharpness score
+    const blurRes = await this.scannerService.calculateBlurScore(enhancedCanvas);
+
+    // H6: Finger detection check
+    const fingerRes = await this.scannerService.detectFingerIntrusions(enhancedCanvas);
+
+    // H7: Curvature detection check
+    const dewarpRes = await this.scannerService.dewarpCurvature(enhancedCanvas);
 
     const newPage: ScannedPage = {
       id: `page_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -190,18 +323,38 @@ export class DocumentScannerPage implements OnDestroy {
       detectionConfidence: detection.confidence,
       lowConfidence: detection.lowConfidence,
       rotation: 0,
-      enhancement: { ...this.activeEnhancement },
+      enhancement: { ...enhancementConfig },
       processedImageBlob: processedBlob,
       processedImageUrl: processedUrl,
       processedWidth: enhancedCanvas.width,
-      processedHeight: enhancedCanvas.height
+      processedHeight: enhancedCanvas.height,
+      scanMode: mode,
+      blurScore: blurRes.score,
+      isBlurry: blurRes.isBlurry,
+      fingerDetected: fingerRes.detected,
+      shadowRemovalApplied: false,
+      fingerRemoved: false,
+      dewarpApplied: false
     };
 
     this.pages.push(newPage);
     this.activePageIndex = this.pages.length - 1;
 
-    // If edge detection confidence was low, show manual crop view immediately
-    if (detection.lowConfidence) {
+    // H8: Auto-naming proposal from first page
+    if (this.pages.length === 1 || !this.documentFileName) {
+      const titleRes = await this.scannerService.suggestDocumentTitle(enhancedCanvas);
+      this.documentFileName = titleRes.sanitizedFileName;
+    }
+
+    // H4: Blur prompt if blurry
+    if (blurRes.isBlurry) {
+      this.lastBlurScore = blurRes.score;
+      this.pendingBlurPageId = newPage.id;
+      this.showBlurAlert = true;
+    }
+
+    // View navigation: if low confidence and not in batch mode, open crop editor
+    if (detection.lowConfidence && !this.batchMode) {
       this.currentView = 'cropping';
       setTimeout(() => this.drawCropCanvas(), 50);
     } else {
@@ -210,6 +363,80 @@ export class DocumentScannerPage implements OnDestroy {
 
     this.cdr.detectChanges();
   }
+
+  // --- H4: BLUR RETAKE ACTIONS ---
+
+  retakeBlurPage(): void {
+    this.showBlurAlert = false;
+    if (this.pendingBlurPageId) {
+      const idx = this.pages.findIndex(p => p.id === this.pendingBlurPageId);
+      if (idx !== -1) {
+        this.deletePage(idx);
+      }
+    }
+    this.pendingBlurPageId = undefined;
+    this.captureFromCamera();
+  }
+
+  keepBlurPage(): void {
+    this.showBlurAlert = false;
+    this.pendingBlurPageId = undefined;
+  }
+
+  retakeSpecificPage(index: number): void {
+    this.deletePage(index);
+    this.captureFromCamera();
+  }
+
+  // --- H5: SHADOW REMOVAL TOGGLE ---
+
+  async toggleShadowRemoval(page?: ScannedPage): Promise<void> {
+    const p = page || this.activePage;
+    if (!p) return;
+    this.triggerHaptic(ImpactStyle.Light);
+    p.shadowRemovalApplied = !p.shadowRemovalApplied;
+    await this.reprocessPage(p);
+  }
+
+  // --- H6: FINGER REMOVAL TOGGLE ---
+
+  async toggleFingerRemoval(page?: ScannedPage): Promise<void> {
+    const p = page || this.activePage;
+    if (!p) return;
+    this.triggerHaptic(ImpactStyle.Light);
+    p.fingerRemoved = !p.fingerRemoved;
+    await this.reprocessPage(p);
+  }
+
+  // --- H7: DEWARP CURVATURE TOGGLE ---
+
+  async toggleDewarp(page?: ScannedPage): Promise<void> {
+    const p = page || this.activePage;
+    if (!p) return;
+    this.triggerHaptic(ImpactStyle.Light);
+    p.dewarpApplied = !p.dewarpApplied;
+    await this.reprocessPage(p);
+  }
+
+  private async reprocessPage(page: ScannedPage): Promise<void> {
+    const warpedCanvas = await this.scannerService.perspectiveWarp(page.originalImageBlob, page.corners);
+    const enhancedCanvas = await this.scannerService.enhanceImage(warpedCanvas, {
+      ...page.enhancement,
+      removeShadows: page.shadowRemovalApplied,
+      removeFinger: page.fingerRemoved,
+      dewarpCurvature: page.dewarpApplied
+    });
+    const newBlob = await this.scannerService.canvasToBlob(enhancedCanvas);
+
+    this.fileService.revokeObjectUrl(page.processedImageUrl);
+    page.processedImageBlob = newBlob;
+    page.processedImageUrl = this.fileService.createObjectUrl(newBlob);
+    page.processedWidth = enhancedCanvas.width;
+    page.processedHeight = enhancedCanvas.height;
+
+    this.cdr.detectChanges();
+  }
+
 
   // --- CROP & CORNER ADJUSTMENT ---
 
@@ -378,6 +605,28 @@ export class DocumentScannerPage implements OnDestroy {
 
   // --- PDF GENERATION & OCR HANDOFF ---
 
+  cancelIdCardScan(): void {
+    this.idCardStep = 'front';
+    this.idCardFrontBlob = undefined;
+    this.cdr.detectChanges();
+  }
+
+  toggleBatchMode(): void {
+    this.batchMode = !this.batchMode;
+    this.triggerHaptic(ImpactStyle.Light);
+    this.cdr.detectChanges();
+  }
+
+  toggleShutterMode(): void {
+    this.shutterMode = this.shutterMode === 'manual' ? 'auto' : 'manual';
+    this.triggerHaptic(ImpactStyle.Light);
+    this.cdr.detectChanges();
+  }
+
+  updateDocumentFileName(name: string): void {
+    this.documentFileName = this.scannerService.sanitizeFileName(name);
+  }
+
   async generatePdf(): Promise<void> {
     if (this.pages.length === 0) return;
 
@@ -396,14 +645,20 @@ export class DocumentScannerPage implements OnDestroy {
 
       const result = await this.pdfService.imagesToPdf(files, this.pdfConfig);
       if (result.success && result.file) {
-        this.generatedPdfFile = result.file;
+        let finalFile = result.file;
+        if (this.documentFileName && this.documentFileName.trim()) {
+          const sanitized = this.scannerService.sanitizeFileName(this.documentFileName.trim());
+          const fullName = sanitized.toLowerCase().endsWith('.pdf') ? sanitized : `${sanitized}.pdf`;
+          finalFile = new File([result.file], fullName, { type: 'application/pdf' });
+        }
+        this.generatedPdfFile = finalFile;
         this.currentView = 'pdf_ready';
         await this.historyService.addHistoryItem({
           operation: 'scanner',
           originalFileName: `Scanned Document (${this.pages.length} pages)`,
-          outputFileName: result.file.name,
-          originalSizeBytes: result.file.size,
-          outputSizeBytes: result.file.size,
+          outputFileName: finalFile.name,
+          originalSizeBytes: finalFile.size,
+          outputSizeBytes: finalFile.size,
           outputDimensions: `${this.pages.length} pages`
         });
         this.toastService.show('success', 'Scanned PDF created successfully!');
@@ -480,7 +735,10 @@ export class DocumentScannerPage implements OnDestroy {
     img.onload = () => {
       // Fit image inside container dimensions
       const maxW = canvas.parentElement?.clientWidth || 400;
-      const maxH = 500;
+      const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640;
+      const maxH = isMobile
+        ? Math.min(window.innerHeight * 0.42, 340)
+        : 480;
       const scale = Math.min(maxW / img.width, maxH / img.height, 1);
 
       canvas.width = Math.round(img.width * scale);

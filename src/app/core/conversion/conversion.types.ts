@@ -38,6 +38,7 @@ export interface ConversionResult {
   downloadName?: string;
   warnings?: string[];
   error?: string;
+  report?: import('../models/conversion-features.types').ConversionReport;
 }
 
 export interface ConversionJob {

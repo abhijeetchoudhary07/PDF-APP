@@ -1,0 +1,181 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+
+      <!-- PAGE HEADER -->
+      <app-page-header
+        [title]="'photoEnhance.title' | translate"
+        [subtitle]="'photoEnhance.subtitle' | translate"
+        [breadcrumbs]="[
+          { label: ('tools.photo_tools.title' | translate), url: '/features/photo' },
+          { label: ('photoEnhance.title' | translate) }
+        ]"
+        backUrl="/features/photo"
+        badge="ENHANCE"
+        badgeVariant="photo">
+      </app-page-header>
+
+      <!-- 1. EMPTY / UPLOAD STATE -->
+      @if (workflowState === 'EMPTY') {
+        <div class="workspace-panel">
+          <app-file-dropzone
+            icon="sparkles"
+            [title]="'photoEnhance.dropzoneTitle' | translate"
+            [description]="'photoEnhance.dropzoneDesc' | translate"
+            accept="image/jpeg,image/png,image/webp"
+            [errorMessage]="errorMessage"
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+      }
+
+      <!-- 2. CONFIGURING STATE -->
+      @if (workflowState === 'CONFIGURING' && originalFile) {
+        <div class="workspace-panel">
+
+          <!-- HONEST DISCLOSURE NOTICE (Plain explanation required by spec) -->
+          <div class="disclosure-card">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <div class="disclosure-body">
+              <strong>{{ 'photoEnhance.disclosureTitle' | translate }}</strong>
+              <p>{{ 'photoEnhance.disclosureNotice' | translate }}</p>
+            </div>
+          </div>
+
+          <!-- SIDE-BY-SIDE 100% PREVIEW -->
+          <div class="side-by-side-card">
+            <div class="stage-label">{{ 'photoEnhance.zoomComparisonLabel' | translate }}</div>
+            <div class="comparison-row">
+              <div class="sample-column">
+                <span class="sample-badge">{{ 'photoEnhance.originalLabel' | translate }}</span>
+                <div class="canvas-box">
+                  <canvas #origCanvas class="sample-canvas"></canvas>
+                </div>
+              </div>
+              <div class="sample-column">
+                <span class="sample-badge enhanced">{{ 'photoEnhance.enhancedLabel' | translate }} ({{ scale }}x)</span>
+                <div class="canvas-box">
+                  <canvas #enhancedCanvas class="sample-canvas"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ENHANCEMENT CONTROLS -->
+          <div class="controls-card">
+            <!-- SCALE MULTIPLIER -->
+            <div class="control-row">
+              <label class="control-label">{{ 'photoEnhance.scaleMultiplier' | translate }}</label>
+              <div class="segmented-control">
+                <button
+                  type="button"
+                  class="seg-btn"
+                  [class.active]="scale === 2"
+                  (click)="scale = 2; onParamChange()">
+                  2 × {{ 'photoEnhance.upscale' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="seg-btn"
+                  [class.active]="scale === 4"
+                  (click)="scale = 4; onParamChange()">
+                  4 × {{ 'photoEnhance.upscale' | translate }}
+                </button>
+              </div>
+              <span class="helper-text">
+                {{ imgWidth }} × {{ imgHeight }} px → {{ imgWidth * scale }} × {{ imgHeight * scale }} px
+              </span>
+            </div>
+
+            <!-- UNSHARP MASK AMOUNT -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-title">{{ 'photoEnhance.sharpnessAmount' | translate }}</span>
+                <span class="slider-value">{{ unsharpAmount }}x</span>
+              </div>
+              <input
+                type="range"
+                class="mobile-range-slider"
+                min="0.5"
+                max="2.5"
+                step="0.1"
+                [(ngModel)]="unsharpAmount"
+                (ngModelChange)="onParamChange()" />
+              <span class="slider-hint">{{ 'photoEnhance.sharpnessHint' | translate }}</span>
+            </div>
+
+            <!-- NOISE THRESHOLD -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-title">{{ 'photoEnhance.noiseThreshold' | translate }}</span>
+                <span class="slider-value">{{ unsharpThreshold }}</span>
+              </div>
+              <input
+                type="range"
+                class="mobile-range-slider"
+                min="0"
+                max="10"
+                step="1"
+                [(ngModel)]="unsharpThreshold"
+                (ngModelChange)="onParamChange()" />
+              <span class="slider-hint">{{ 'photoEnhance.noiseHint' | translate }}</span>
+            </div>
+          </div>
+
+          <!-- STICKY MOBILE BOTTOM ACTION BAR -->
+          <div class="mobile-sticky-bottom-bar">
+            <button
+              type="button"
+              class="mobile-touch-btn primary-btn large-cta"
+              (click)="exportEnhanced()"
+              [disabled]="isProcessing">
+              <span class="btn-content">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"></path>
+                </svg>
+                <span>{{ 'photoEnhance.exportEnhancedBtn' | translate }}</span>
+              </span>
+            </button>
+          </div>
+
+        </div>
+      }
+
+      <!-- 3. PROCESSING ANIMATION -->
+      @if (isProcessing) {
+        <app-conversion-animation
+          [progress]="processingProgress"
+          [stageText]="stageText">
+        </app-conversion-animation>
+      }
+
+      <!-- 4. SUCCESS / RESULT STATE -->
+      @if (workflowState === 'SUCCESS' && processedFile && processedPreviewUrl) {
+        <div class="workspace-panel">
+          <app-result-preview
+            [file]="processedFile"
+            [beforeData]="beforePreviewData"
+            [afterData]="afterPreviewData"
+            [beforeUrl]="originalPreviewUrl"
+            [afterUrl]="processedPreviewUrl"
+            (saved)="saveOutput()"
+            (shared)="shareOutput()"
+            (resetRequested)="reset()">
+          </app-result-preview>
+        </div>
+      }
+
+      <!-- RELATED TOOLS -->
+      <app-related-tools currentToolId="photo_enhance"></app-related-tools>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

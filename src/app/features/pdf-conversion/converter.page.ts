@@ -72,6 +72,14 @@ export class ConverterPage implements OnInit, OnDestroy {
     hasHeaderRow: boolean;
     delimiter: string;
     preserveHeadings: boolean;
+    imageMode: 'inline' | 'sidecar' | 'none';
+    htmlMode: 'reflowable' | 'layout-preserving';
+    indentGuides: boolean;
+    syntaxHighlight: boolean;
+    includeAttachments: boolean;
+    embedSourceImage?: boolean;
+    compression?: string;
+    compact?: boolean;
   } = {
     dpi: 150,
     format: 'A4',
@@ -84,8 +92,18 @@ export class ConverterPage implements OnInit, OnDestroy {
     convertAllSheets: true,
     hasHeaderRow: true,
     delimiter: '',
-    preserveHeadings: true
+    preserveHeadings: true,
+    imageMode: 'inline',
+    htmlMode: 'reflowable',
+    indentGuides: true,
+    syntaxHighlight: true,
+    includeAttachments: true,
+    embedSourceImage: false,
+    compression: 'none',
+    compact: false
   };
+
+  showFidelityReport: boolean = false;
 
   // PDF to PNG page selection
   pdfPageCount: number = 0;
@@ -215,6 +233,26 @@ export class ConverterPage implements OnInit, OnDestroy {
     if (this.textInput && this.converter.metadata.supportsTextInput) {
       if (this.converterId === 'text-to-pdf') finalOptions.rawText = this.textInput;
       if (this.converterId === 'html-to-pdf') finalOptions.rawHtml = this.textInput;
+      if (['markdown-to-pdf', 'json-to-pdf', 'xml-to-pdf', 'yaml-to-pdf'].includes(this.converterId)) {
+        finalOptions.rawText = this.textInput;
+      }
+    }
+
+    if (this.converterId === 'pdf-to-markdown') {
+      finalOptions.imageMode = this.options.imageMode;
+    }
+
+    if (this.converterId === 'pdf-to-html') {
+      finalOptions.mode = this.options.htmlMode;
+    }
+
+    if (['json-to-pdf', 'xml-to-pdf', 'yaml-to-pdf'].includes(this.converterId)) {
+      finalOptions.indentGuides = this.options.indentGuides;
+      finalOptions.syntaxHighlight = this.options.syntaxHighlight;
+    }
+
+    if (['eml-to-pdf', 'msg-to-pdf'].includes(this.converterId)) {
+      finalOptions.includeAttachments = this.options.includeAttachments;
     }
 
     this.progress = { percent: 56, stage: 'Converting format...' };

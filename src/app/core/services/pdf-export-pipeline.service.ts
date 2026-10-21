@@ -23,6 +23,8 @@ import {
   PdfRedaction,
   FontStyleName
 } from '../models/pdf-editor.types';
+import { PdfLinkEditorService } from './pdf-link-editor.service';
+import { PdfCommentReviewService } from './pdf-comment-review.service';
 
 export interface ExportResult {
   file: File;
@@ -48,7 +50,10 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   providedIn: 'root'
 })
 export class PdfExportPipelineService {
-  constructor() {}
+  constructor(
+    private linkEditor: PdfLinkEditorService = new PdfLinkEditorService(),
+    private commentReview: PdfCommentReviewService = new PdfCommentReviewService()
+  ) {}
 
   async exportDocument(
     doc: PdfEditorDocument,
@@ -134,6 +139,74 @@ export class PdfExportPipelineService {
       // Draw Overlay Elements (Text, Images, Shapes, Drawings, Annotations)
       await this.drawPageElements(destPdf, destPage, pageModel.elements, fonts, boldFonts);
 
+      // Draw Whiteouts (K4)
+      if (pageModel.whiteouts && pageModel.whiteouts.length > 0) {
+        const pageSize = destPage.getSize();
+        for (const w of pageModel.whiteouts) {
+          const pdfY = pageSize.height - w.rect.y - w.rect.height;
+          const bgRgb = hexToRgb(w.fillColor || '#FFFFFF');
+          destPage.drawRectangle({
+            x: w.rect.x,
+            y: pdfY,
+            width: w.rect.width,
+            height: w.rect.height,
+            color: rgb(bgRgb.r, bgRgb.g, bgRgb.b),
+            borderWidth: 0
+          });
+        }
+      }
+
+      // Draw In-Place Text Edits (K6)
+      if (pageModel.textEdits && pageModel.textEdits.length > 0) {
+        const pageSize = destPage.getSize();
+        for (const edit of pageModel.textEdits) {
+          const pdfY = pageSize.height - edit.bounds.y - edit.bounds.height;
+          destPage.drawRectangle({
+            x: edit.bounds.x,
+            y: pdfY,
+            width: edit.bounds.width + 4,
+            height: edit.bounds.height + 2,
+            color: rgb(1, 1, 1),
+            borderWidth: 0
+          });
+          const font = (fonts as any)[edit.fontFamily] || fonts.Helvetica;
+          destPage.drawText(edit.newText, {
+            x: edit.bounds.x,
+            y: pdfY + 2,
+            size: edit.fontSize,
+            font,
+            color: rgb(0, 0, 0)
+          });
+        }
+      }
+
+      // Draw Measurements (K5)
+      if (pageModel.measurements && pageModel.measurements.length > 0) {
+        const pageSize = destPage.getSize();
+        for (const m of pageModel.measurements) {
+          if (m.points && m.points.length >= 2) {
+            for (let pIdx = 0; pIdx < m.points.length - 1; pIdx++) {
+              const p1 = m.points[pIdx];
+              const p2 = m.points[pIdx + 1];
+              destPage.drawLine({
+                start: { x: p1.x, y: pageSize.height - p1.y },
+                end: { x: p2.x, y: pageSize.height - p2.y },
+                thickness: 2,
+                color: rgb(0.1, 0.5, 0.9)
+              });
+            }
+            const firstPt = m.points[0];
+            destPage.drawText(m.formattedString, {
+              x: firstPt.x,
+              y: pageSize.height - firstPt.y + 4,
+              size: 10,
+              font: fonts.Helvetica,
+              color: rgb(0.1, 0.4, 0.8)
+            });
+          }
+        }
+      }
+
       // Draw Global / Page Watermark if applicable
       if (doc.watermark) {
         const shouldWatermark =
@@ -164,6 +237,18 @@ export class PdfExportPipelineService {
 
       const progressPercent = Math.round(15 + ((i + 1) / totalPages) * 75);
       onProgress?.(progressPercent);
+    }
+
+    // Attach Hyperlinks (K2)
+    const allLinks = doc.pages.flatMap(p => p.links || []);
+    if (allLinks.length > 0) {
+      await this.linkEditor.applyLinksToPdf(destPdf, allLinks);
+    }
+
+    // Attach Comments & Reviews (K3)
+    const allComments = doc.pages.flatMap(p => p.comments || []);
+    if (allComments.length > 0) {
+      await this.commentReview.applyCommentsToPdf(destPdf, allComments);
     }
 
     onProgress?.(95);

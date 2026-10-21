@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application id="pdf-helper" platform="mobile">
+  <meta>
+    <title>Indian Form Helper</title>
+    <version>1.0.0</version>
+    <offline>true</offline>
+  </meta>
+  <features>
+    <feature name="Markdown" status="active" />
+    <feature name="HTML" status="active" />
+    <feature name="EPUB" status="active" />
+  </features>
+</application>

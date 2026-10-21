@@ -34,6 +34,13 @@ import { PdfCropModalComponent } from './components/pdf-crop-modal/pdf-crop-moda
 import { PdfWatermarkModalComponent } from './components/pdf-watermark-modal/pdf-watermark-modal.component';
 import { PdfPageNumberModalComponent } from './components/pdf-page-number-modal/pdf-page-number-modal.component';
 import { PdfRedactionModalComponent } from './components/pdf-redaction-modal/pdf-redaction-modal.component';
+import { PdfFindReplaceModalComponent } from './components/pdf-find-replace-modal/pdf-find-replace-modal.component';
+import { PdfLinkModalComponent } from './components/pdf-link-modal/pdf-link-modal.component';
+import { PdfCommentReviewModalComponent } from './components/pdf-comment-review-modal/pdf-comment-review-modal.component';
+import { PdfShapeMeasurementModalComponent } from './components/pdf-shape-measurement-modal/pdf-shape-measurement-modal.component';
+import { PdfTextEditModalComponent } from './components/pdf-text-edit-modal/pdf-text-edit-modal.component';
+import { PdfFlattenOverlayModalComponent } from './components/pdf-flatten-overlay-modal/pdf-flatten-overlay-modal.component';
+import { WHITEOUT_DISCLAIMER_TEXT } from '../../core/services/pdf-image-tools.service';
 import {
   AppButtonComponent,
   AppIconComponent,
@@ -147,7 +154,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
       this.exportProgress = 40;
 
       // Initialize PdfRenderService
-      const docId = `doc_${Date.now()}`;
+      const docId = `doc_${file.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_${file.size}`;
       await this.renderService.loadPdf(arrayBuffer, docId);
 
       this.exportProgress = 70;
@@ -286,6 +293,79 @@ export class PdfEditorPage implements OnInit, OnDestroy {
     await modal.present();
   }
 
+  async openFindReplaceModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfFindReplaceModalComponent
+    });
+    await modal.present();
+  }
+
+  async openLinkModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfLinkModalComponent
+    });
+    await modal.present();
+  }
+
+  async openCommentModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfCommentReviewModalComponent
+    });
+    await modal.present();
+  }
+
+  async openShapeMeasurementModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfShapeMeasurementModalComponent
+    });
+    await modal.present();
+  }
+
+  async openTextEditModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfTextEditModalComponent
+    });
+    await modal.present();
+  }
+
+  async openFlattenOverlayModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfFlattenOverlayModalComponent
+    });
+    await modal.present();
+  }
+
+  async activateWhiteout() {
+    const alert = await this.alertCtrl.create({
+      header: 'Whiteout Tool Notice',
+      subHeader: 'Visual Coverage vs. Permanent Redaction',
+      message: WHITEOUT_DISCLAIMER_TEXT,
+      buttons: [
+        {
+          text: 'Use True Redaction',
+          role: 'cancel',
+          handler: () => {
+            this.setTool('redact');
+          }
+        },
+        {
+          text: 'Apply Whiteout',
+          handler: () => {
+            const pageNum = this.state.currentPageNumber;
+            this.state.addWhiteout({
+              pageNumber: pageNum,
+              rect: { x: 50, y: 150, width: 140, height: 30 },
+              fillColor: '#FFFFFF',
+              disclaimerAcknowledged: true
+            });
+            this.showToast('Whiteout region placed. It visually covers content without modifying underlying streams.', 'warning');
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
   // --- Export & Share ---
 
   async exportPdf() {
@@ -353,8 +433,8 @@ export class PdfEditorPage implements OnInit, OnDestroy {
   private async showToast(message: string, color: 'success' | 'warning' | 'danger' | 'medium' = 'medium') {
     const toast = await this.toastCtrl.create({
       message,
-      duration: 3000,
-      position: 'bottom',
+      duration: 2500,
+      position: 'top',
       color
     });
     await toast.present();

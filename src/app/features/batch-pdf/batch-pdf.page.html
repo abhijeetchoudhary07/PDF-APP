@@ -5,8 +5,8 @@
     <div class="tool-page-container">
       <app-page-header
         [title]="'batchPdfPage.title' | translate"
-        subtitle="Compress multiple PDF documents consecutively to prevent device memory exhaustion."
-        [breadcrumbs]="[{ label: 'Batch Compress PDFs' }]"
+        subtitle="Process multiple PDF documents consecutively on-device to prevent memory exhaustion."
+        [breadcrumbs]="[{ label: 'Batch Processing' }]"
         badge="BATCH"
         badgeVariant="batch"
         backUrl="/home">
@@ -18,7 +18,7 @@
               size="sm"
               (clicked)="clearAll()"
               [disabled]="isProcessing">
-              <app-icon name="trash-outline" class="btn-icon"></app-icon>
+              <app-icon name="trash" class="btn-icon"></app-icon>
               Clear Queue
             </app-button>
           </div>
@@ -27,40 +27,189 @@
 
       <div class="batch-content-container">
         <!-- CONFIGURATION CARD -->
-        @if (items.length > 0) {
-          <div class="batch-config-card">
-            <div class="config-header">
-              <div>
-                <h4>PDF Batch Settings</h4>
-                <span class="file-counter">Total Files: {{ items.length }} / {{ MAX_BATCH_SIZE }}</span>
-              </div>
+        <div class="batch-config-card">
+          <div class="config-header">
+            <div>
+              <h4>Batch Operation</h4>
+              <span class="file-counter">Queue: {{ items.length }} / {{ MAX_BATCH_SIZE }}</span>
             </div>
-            <div class="config-fields-grid single-col">
+          </div>
+
+          <!-- OPERATION SELECTOR CHIPS (MOBILE TOUCH SCROLL) -->
+          <div class="operations-grid" role="radiogroup" aria-label="Select Batch Operation">
+            @for (op of operations; track op.id) {
+              <button
+                type="button"
+                class="op-chip"
+                [class.selected]="operation === op.id"
+                [disabled]="isProcessing"
+                (click)="setOperation(op.id)">
+                <div class="chip-icon">
+                  <app-icon [name]="op.icon"></app-icon>
+                </div>
+                <div class="chip-details">
+                  <span class="chip-label">{{ op.label }}</span>
+                  <span class="chip-desc">{{ op.description }}</span>
+                </div>
+              </button>
+            }
+          </div>
+
+          <!-- CONTEXTUAL SETTINGS -->
+          <div class="operation-settings-panel">
+            @if (operation === 'compress') {
               <div class="form-group">
-                <label class="form-label">Target Size (KB)</label>
-                <input
-                  type="number"
-                  [(ngModel)]="targetKB"
-                  [disabled]="isProcessing"
-                  class="custom-input" />
-              </div>
-            </div>
-            <p class="batch-notice">
-              <app-icon name="information-circle-outline"></app-icon>
-              Note: PDFs are processed one by one to prevent memory issues on your device.
-            </p>
-            <!-- PROGRESS BAR -->
-            @if (isProcessing || completedCount > 0 || errorCount > 0) {
-              <div class="progress-section">
-                <app-progress
-                  [value]="progressPercent"
-                  [label]="(completedCount + errorCount) + ' / ' + items.length + ' Processed'"
-                  [variant]="errorCount > 0 ? 'warning' : 'primary'">
-                </app-progress>
+                <label class="form-label" for="targetKbInput">Target File Size (KB)</label>
+                <div class="input-with-affix">
+                  <input
+                    id="targetKbInput"
+                    type="number"
+                    [(ngModel)]="targetKB"
+                    [disabled]="isProcessing"
+                    min="50"
+                    step="50"
+                    placeholder="200"
+                    class="custom-input" />
+                  <span class="input-affix">KB</span>
+                </div>
+                <span class="form-hint">Each PDF will be compressed to meet or fit under this ceiling.</span>
               </div>
             }
-            <!-- MAIN ACTIONS -->
-            <div class="actions-group">
+
+            @if (operation === 'ocr') {
+              <div class="form-group">
+                <label class="form-label" for="ocrLangSelect">Recognition Language</label>
+                <select
+                  id="ocrLangSelect"
+                  [(ngModel)]="ocrLanguage"
+                  [disabled]="isProcessing"
+                  class="custom-select">
+                  <option value="eng">English (eng)</option>
+                  <option value="spa">Spanish (spa)</option>
+                  <option value="fra">French (fra)</option>
+                  <option value="deu">German (deu)</option>
+                  <option value="ita">Italian (ita)</option>
+                  <option value="por">Portuguese (por)</option>
+                  <option value="hin">Hindi (hin)</option>
+                </select>
+                <span class="form-hint">Generates searchable PDFs with invisible selectable text layers.</span>
+              </div>
+            }
+
+            @if (operation === 'convert-to-word') {
+              <div class="info-alert-panel">
+                <app-icon name="document-text" class="alert-icon"></app-icon>
+                <div class="alert-text">
+                  <strong>PDF to Word DOCX</strong>
+                  <span>Extracts textual content, headings, and paragraph flow into editable Microsoft Word (.docx) files.</span>
+                </div>
+              </div>
+            }
+
+            @if (operation === 'protect') {
+              <div class="form-group">
+                <label class="form-label" for="protectPasswordInput">Document Password</label>
+                <div class="input-with-button">
+                  <input
+                    id="protectPasswordInput"
+                    [type]="showPassword ? 'text' : 'password'"
+                    [(ngModel)]="password"
+                    [disabled]="isProcessing"
+                    placeholder="Enter password to encrypt"
+                    class="custom-input" />
+                  <button
+                    type="button"
+                    class="affix-btn"
+                    (click)="toggleShowPassword()"
+                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                    <app-icon [name]="showPassword ? 'eye-off' : 'eye'"></app-icon>
+                  </button>
+                </div>
+                <span class="form-hint">All queued documents will be encrypted with standard 128-bit protection.</span>
+              </div>
+            }
+
+            @if (operation === 'unprotect') {
+              <div class="form-group">
+                <label class="form-label" for="unprotectPasswordInput">Password to Unlock</label>
+                <div class="input-with-button">
+                  <input
+                    id="unprotectPasswordInput"
+                    [type]="showPassword ? 'text' : 'password'"
+                    [(ngModel)]="password"
+                    [disabled]="isProcessing"
+                    placeholder="Enter current password"
+                    class="custom-input" />
+                  <button
+                    type="button"
+                    class="affix-btn"
+                    (click)="toggleShowPassword()"
+                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                    <app-icon [name]="showPassword ? 'eye-off' : 'eye'"></app-icon>
+                  </button>
+                </div>
+                <span class="form-hint">Removes password protection and usage restrictions from all queued PDFs.</span>
+              </div>
+            }
+
+            @if (operation === 'metadata-strip') {
+              <div class="info-alert-panel">
+                <app-icon name="shield-checkmark" class="alert-icon"></app-icon>
+                <div class="alert-text">
+                  <strong>Metadata Privacy Sanitizer</strong>
+                  <span>Sanitizes author names, editing software tags, creation timestamps, and extended XMP metadata streams.</span>
+                </div>
+              </div>
+            }
+
+            @if (operation === 'rename-from-content') {
+              <div class="info-alert-panel">
+                <app-icon name="text" class="alert-icon"></app-icon>
+                <div class="alert-text">
+                  <strong>Rename from Content</strong>
+                  <span>Extracts the first page heading or title and renames each document automatically for clean organization.</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- PRE-RUN QUOTA COST BANNER -->
+          <div class="quota-preview-banner" [class.exceeds]="willExceedQuota">
+            <div class="quota-banner-icon">
+              <app-icon [name]="willExceedQuota ? 'alert-circle' : 'shield-checkmark'"></app-icon>
+            </div>
+            <div class="quota-banner-body">
+              @if (isUnlimited) {
+                <div class="quota-banner-title">Unlimited Operations (Premium)</div>
+                <div class="quota-banner-desc">Unlimited daily saves and batch runs enabled.</div>
+              } @else {
+                <div class="quota-banner-title">
+                  Free Allowance: {{ remainingQuota ?? 5 }} operations left today
+                </div>
+                <div class="quota-banner-desc">
+                  This batch requires {{ items.length }} operation{{ items.length === 1 ? '' : 's' }}.
+                  @if (willExceedQuota) {
+                    <span class="quota-warning-badge">Exceeds remaining quota: execution will stop cleanly when limit is reached.</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- PROGRESS BAR -->
+          @if (isProcessing || completedCount > 0 || errorCount > 0) {
+            <div class="progress-section">
+              <app-progress
+                [value]="progressPercent"
+                [label]="(completedCount + errorCount) + ' / ' + items.length + ' Processed'"
+                [variant]="errorCount > 0 ? 'warning' : 'primary'">
+              </app-progress>
+            </div>
+          }
+
+          <!-- ACTIONS -->
+          <div class="actions-group">
+            @if (items.length > 0) {
               <app-button
                 variant="primary"
                 size="lg"
@@ -68,52 +217,72 @@
                 (clicked)="processBatch()"
                 [disabled]="isProcessing">
                 <app-icon name="play" class="btn-icon"></app-icon>
-                {{ isProcessing ? 'Processing PDFs...' : 'Start Batch' }}
+                {{ isProcessing ? 'Processing Batch...' : 'Start Batch (' + items.length + ' Files)' }}
               </app-button>
-              @if (completedCount > 0 || errorCount > 0) {
-                <div class="sub-actions-row">
-                  @if (errorCount > 0) {
-                    <app-button
-                      variant="warning"
-                      size="md"
-                      [block]="true"
-                      (clicked)="processBatch(true)"
-                      [disabled]="isProcessing">
-                      Retry Failed ({{ errorCount }})
-                    </app-button>
-                  }
-                  @if (completedCount > 0) {
-                    <app-button
-                      variant="success"
-                      size="md"
-                      [block]="true"
-                      (clicked)="saveAll()"
-                      [disabled]="isProcessing">
-                      Save All ({{ completedCount }})
-                    </app-button>
-                  }
-                </div>
-              }
-            </div>
+            } @else {
+              <app-button
+                variant="primary"
+                size="lg"
+                [block]="true"
+                (clicked)="selectPdfs()">
+                <app-icon name="folder-open" class="btn-icon"></app-icon>
+                Select Files to Begin
+              </app-button>
+            }
+
+            @if (completedCount > 0 || errorCount > 0) {
+              <div class="sub-actions-row">
+                @if (errorCount > 0) {
+                  <app-button
+                    variant="warning"
+                    size="md"
+                    [block]="true"
+                    (clicked)="processBatch(true)"
+                    [disabled]="isProcessing">
+                    <app-icon name="arrow-redo" class="btn-icon"></app-icon>
+                    Retry Failed ({{ errorCount }})
+                  </app-button>
+                }
+                @if (completedCount > 0) {
+                  <app-button
+                    variant="secondary"
+                    size="md"
+                    [block]="true"
+                    (clicked)="saveAll()"
+                    [disabled]="isProcessing">
+                    <app-icon name="download" class="btn-icon"></app-icon>
+                    Save All ({{ completedCount }})
+                  </app-button>
+                }
+                <app-button
+                  variant="outline"
+                  size="md"
+                  [block]="true"
+                  (clicked)="downloadCsvLog()">
+                  <app-icon name="document-text" class="btn-icon"></app-icon>
+                  Export CSV Log
+                </app-button>
+              </div>
+            }
           </div>
-        }
+        </div>
 
         <!-- EMPTY STATE -->
         @if (items.length === 0) {
           <div class="empty-batch-container">
             <div class="empty-icon-badge">
-              <app-icon name="document-text-outline"></app-icon>
+              <app-icon name="documents"></app-icon>
             </div>
-            <h3>No PDFs Selected</h3>
-            <p>Compress up to {{ MAX_BATCH_SIZE }} PDFs at once safely with memory management.</p>
+            <h3>No Files Selected</h3>
+            <p>Queue up to {{ MAX_BATCH_SIZE }} documents for batch processing with automatic on-device memory management.</p>
             <app-button variant="primary" size="lg" (clicked)="selectPdfs()" style="margin-top: 16px;">
-              <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
-              Select PDFs
+              <app-icon name="folder-open" class="btn-icon"></app-icon>
+              Select PDFs or Images
             </app-button>
           </div>
         }
 
-        <!-- FILE LIST -->
+        <!-- FILE QUEUE CARD -->
         @if (items.length > 0) {
           <div class="batch-queue-card">
             <div class="queue-header">
@@ -124,49 +293,57 @@
                   variant="outline"
                   (clicked)="selectPdfs()"
                   [disabled]="isProcessing">
-                  <app-icon name="add-outline" class="btn-icon"></app-icon>
+                  <app-icon name="add" class="btn-icon"></app-icon>
                   + Add More
                 </app-button>
               }
             </div>
+
             <div class="queue-items-list">
-              @for (item of items; track item) {
-                <div class="queue-item">
+              @for (item of items; track item.id) {
+                <div class="queue-item" [class.done]="item.status === 'done'" [class.error]="item.status === 'failed'">
                   <div class="item-left">
-                    <app-icon name="document-outline" class="item-icon"></app-icon>
+                    <app-icon name="document" class="item-icon"></app-icon>
                     <div class="item-info">
-                      <h5>{{ item.file.name }}</h5>
-                      <p class="meta-orig">Original: {{ (item.file.size / 1024 / 1024) | number:'1.0-2' }} MB</p>
-                      @if (item.status === 'done' && item.result?.metadata) {
-                        <p class="meta-done">
-                          New: {{ (item.result!.metadata!.sizeBytes / 1024) | number:'1.0-1' }} KB
-                          @if (item.result!.targetMissed) {
-                            <span class="target-missed">(Impossible Target)</span>
+                      <h5 [title]="item.file.name">{{ item.file.name }}</h5>
+                      <span class="meta-orig">Original: {{ (item.file.size / 1024) | number:'1.0-1' }} KB</span>
+                      @if (item.status === 'done') {
+                        <span class="meta-done">
+                          ✓ {{ item.outputFile?.name || 'Processed' }}
+                          @if (item.processedSizeBytes) {
+                            ({{ (item.processedSizeBytes / 1024) | number:'1.0-1' }} KB)
                           }
-                        </p>
+                        </span>
                       }
-                      @if (item.status === 'error') {
-                        <p class="meta-err">
-                          Failed: {{ item.result?.error || 'Unknown Error' }}
-                        </p>
+                      @if (item.status === 'failed') {
+                        <span class="meta-err">
+                          ✗ {{ item.failureReason || 'Failed' }}
+                        </span>
                       }
                     </div>
                   </div>
+
                   <div class="item-status">
-                    @if (item.status === 'processing') {
-                      <div class="custom-spinner-small"></div>
+                    @if (item.status === 'running') {
+                      <div class="custom-spinner-small" aria-label="Processing file"></div>
                     }
                     @if (item.status === 'done') {
-                      <app-icon name="checkmark-circle" class="status-done"></app-icon>
+                      <span class="status-badge success">Done</span>
                     }
-                    @if (item.status === 'error') {
-                      <app-icon name="close-circle" class="status-error"></app-icon>
+                    @if (item.status === 'failed') {
+                      <span class="status-badge failed">Failed</span>
                     }
-                    @if (item.status === 'pending') {
-                      <app-icon name="time-outline" class="status-pending"></app-icon>
+                    @if (item.status === 'queued') {
+                      <span class="status-badge queued">Queued</span>
                     }
-                    <button class="remove-btn" (click)="removeFile(item.id)" [disabled]="isProcessing">
-                      <app-icon name="trash-outline"></app-icon>
+
+                    <button
+                      type="button"
+                      class="remove-btn"
+                      (click)="removeFile(item.id)"
+                      [disabled]="isProcessing"
+                      aria-label="Remove document from queue">
+                      <app-icon name="trash"></app-icon>
                     </button>
                   </div>
                 </div>

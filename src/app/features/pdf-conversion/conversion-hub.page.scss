@@ -32,7 +32,7 @@
 
 .search-input {
   flex: 1;
-  height: 42px;
+  min-height: var(--min-touch-target, 44px);
   border: none;
   background: transparent;
   outline: none;
@@ -51,6 +51,12 @@
   font-size: 20px;
   color: var(--color-text-muted);
   cursor: pointer;
+  min-width: var(--min-touch-target, 44px);
+  min-height: var(--min-touch-target, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
 }
 
 .tabs-wrap {
@@ -163,3 +169,21 @@
 .no-results-wrap {
   padding: var(--space-8, 32px) 0;
 }
+
+@media (max-width: 600px) {
+  .search-input {
+    height: var(--min-touch-target, 44px);
+    font-size: 16px;
+  }
+
+  .converter-cards-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3, 12px);
+  }
+
+  .converter-card {
+    min-height: var(--min-touch-target, 44px);
+    padding: var(--space-3, 12px);
+  }
+}
+

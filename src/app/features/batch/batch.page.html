@@ -37,7 +37,7 @@
             </div>
             <div class="config-fields-grid">
               <div class="form-group">
-                <label class="form-label">Target Size (KB)</label>
+                <label class="form-label">Batch Target Size (KB)</label>
                 <input
                   type="number"
                   [(ngModel)]="targetKB"
@@ -53,6 +53,45 @@
                 </select>
               </div>
             </div>
+
+            <!-- I10: RENAME TEMPLATE -->
+            <div class="rename-section">
+              <label class="form-label">Rename Pattern (Optional)</label>
+              <input
+                type="text"
+                [(ngModel)]="renameTemplate"
+                [disabled]="isProcessing"
+                placeholder="e.g. IMG_{yyyy}_{mm}_{dd}_{n}"
+                class="custom-input" />
+              <div class="token-chips-row">
+                <button type="button" class="token-chip" (click)="insertRenameToken('{yyyy}')">{{ '{yyyy}' }}</button>
+                <button type="button" class="token-chip" (click)="insertRenameToken('{mm}')">{{ '{mm}' }}</button>
+                <button type="button" class="token-chip" (click)="insertRenameToken('{dd}')">{{ '{dd}' }}</button>
+                <button type="button" class="token-chip" (click)="insertRenameToken('{n}')">{{ '{n}' }}</button>
+                <button type="button" class="token-chip" (click)="insertRenameToken('{name}')">{{ '{name}' }}</button>
+              </div>
+            </div>
+
+            <!-- I10: TOGGLES FOR AUTO-ROTATE, SKIP-UNDER-TARGET, AND PDF EXPORT -->
+            <div class="toggles-grid">
+              <label class="toggle-card-label">
+                <input type="checkbox" [(ngModel)]="autoRotateExif" [disabled]="isProcessing" />
+                <span>Auto-Rotate (EXIF)</span>
+              </label>
+              <label class="toggle-card-label">
+                <input type="checkbox" [(ngModel)]="skipIfUnderTarget" [disabled]="isProcessing" />
+                <span>Skip if under target</span>
+              </label>
+              <label class="toggle-card-label">
+                <input
+                  type="checkbox"
+                  [checked]="pdfExportMode === 'combined-pdf'"
+                  (change)="pdfExportMode = pdfExportMode === 'combined-pdf' ? 'individual' : 'combined-pdf'"
+                  [disabled]="isProcessing" />
+                <span>Export as Combined PDF</span>
+              </label>
+            </div>
+
             <!-- PROGRESS BAR -->
             @if (isProcessing || completedCount > 0 || errorCount > 0) {
               <div class="progress-section">
@@ -63,6 +102,7 @@
                 </app-progress>
               </div>
             }
+
             <!-- MAIN ACTIONS -->
             <div class="actions-group">
               <app-button
@@ -93,7 +133,7 @@
                       [block]="true"
                       (clicked)="saveAll()"
                       [disabled]="isProcessing">
-                      Save All ({{ completedCount }})
+                      {{ pdfExportMode === 'combined-pdf' ? 'Export Combined PDF' : ('Save All (' + completedCount + ')') }}
                     </app-button>
                   }
                 </div>
@@ -134,13 +174,28 @@
               }
             </div>
             <div class="queue-items-list">
-              @for (item of items; track item) {
+              @for (item of items; track item.id) {
                 <div class="queue-item">
                   <div class="item-left">
                     <app-icon name="image-outline" class="item-icon"></app-icon>
                     <div class="item-info">
                       <h5>{{ item.file.name }}</h5>
                       <p class="meta-orig">Original: {{ (item.file.size / 1024) | number:'1.0-1' }} KB</p>
+
+                      <!-- I10: Per-file KB target input -->
+                      <div class="per-file-target-row">
+                        <label class="per-file-label">Target:</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="item.targetKB"
+                          [placeholder]="targetKB + ' KB'"
+                          [disabled]="isProcessing || item.status === 'done' || item.status === 'skipped'"
+                          class="per-file-input" />
+                      </div>
+
+                      @if (item.status === 'skipped') {
+                        <p class="meta-skipped">Already under target (Preserved)</p>
+                      }
                       @if (item.status === 'done' && item.result?.metadata) {
                         <p class="meta-done">
                           New: {{ (item.result!.metadata!.sizeBytes / 1024) | number:'1.0-1' }} KB
@@ -159,6 +214,9 @@
                     }
                     @if (item.status === 'done') {
                       <app-icon name="checkmark-circle" class="status-done"></app-icon>
+                    }
+                    @if (item.status === 'skipped') {
+                      <app-icon name="checkmark" class="status-skipped"></app-icon>
                     }
                     @if (item.status === 'error') {
                       <app-icon name="close-circle" class="status-error"></app-icon>

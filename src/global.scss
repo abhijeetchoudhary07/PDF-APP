@@ -382,10 +382,16 @@ body.modal-open {
 
 /* --- RESPONSIVE IONIC MODALS --- */
 ion-modal {
+  --background: var(--color-surface, #ffffff);
+  background: var(--color-surface, #ffffff);
   --border-radius: var(--radius-lg, 14px);
   --box-shadow: var(--shadow-modal);
 
-  @media (max-width: 640px) {
+  &::part(content) {
+    background: var(--color-surface, #ffffff);
+  }
+
+  @media (max-width: 768px) {
     --width: 100%;
     --max-width: 100%;
     --height: auto;
@@ -394,13 +400,15 @@ ion-modal {
     align-items: flex-end;
 
     &::part(content) {
+      background: var(--color-surface, #ffffff);
       border-radius: 16px 16px 0 0;
       max-height: 94dvh;
       width: 100%;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
     }
   }
 
-  @media (min-width: 641px) {
+  @media (min-width: 769px) {
     --width: 540px;
     --max-width: 90vw;
     --height: auto;

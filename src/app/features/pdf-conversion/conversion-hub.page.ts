@@ -52,6 +52,10 @@ export class ConversionHubPage implements OnInit {
       .map(c => c.metadata);
   }
 
+  get totalCount(): number {
+    return this.pdfToFormatConverters.length + this.formatToPdfConverters.length;
+  }
+
   get filteredPdfToFormat(): ConverterMetadata[] {
     return this.filterList(this.pdfToFormatConverters);
   }

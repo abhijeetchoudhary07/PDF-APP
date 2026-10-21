@@ -73,17 +73,17 @@ describe('Conversion Architecture — Phase 1', () => {
   });
 
   describe('ConversionRegistryService', () => {
-    it('should register all 15 converters', () => {
+    it('should register all converters including Phase 1 and J1-J10', () => {
       const all = registry.getAllConverters();
-      expect(all.length).toBe(15);
+      expect(all.length).toBe(31);
     });
 
     it('should categorize converters correctly', () => {
       const pdfToFormat = registry.getConvertersByCategory('pdf-to-format');
       const formatToPdf = registry.getConvertersByCategory('format-to-pdf');
 
-      expect(pdfToFormat.length).toBe(4); // PDF to PNG, Word, Excel, PPT
-      expect(formatToPdf.length).toBe(11); // Word, Excel, PPT, TXT, RTF, HTML, CSV, EPUB, ZIP, OpenDoc, Pages
+      expect(pdfToFormat.length).toBe(10); // PNG, Word, Excel, PPT, Markdown, HTML, EPUB, TIFF, SVG, JSON
+      expect(formatToPdf.length).toBe(21); // 21 format-to-pdf converters
     });
 
     it('should retrieve converters by ID', () => {
@@ -102,6 +102,16 @@ describe('Conversion Architecture — Phase 1', () => {
       expect(registry.getConverter('zip-to-pdf')).toBeDefined();
       expect(registry.getConverter('opendocument-to-pdf')).toBeDefined();
       expect(registry.getConverter('pages-to-pdf')).toBeDefined();
+      // J1 - J5
+      expect(registry.getConverter('pdf-to-markdown')).toBeDefined();
+      expect(registry.getConverter('pdf-to-html')).toBeDefined();
+      expect(registry.getConverter('pdf-to-epub')).toBeDefined();
+      expect(registry.getConverter('markdown-to-pdf')).toBeDefined();
+      expect(registry.getConverter('json-to-pdf')).toBeDefined();
+      expect(registry.getConverter('xml-to-pdf')).toBeDefined();
+      expect(registry.getConverter('yaml-to-pdf')).toBeDefined();
+      expect(registry.getConverter('eml-to-pdf')).toBeDefined();
+      expect(registry.getConverter('msg-to-pdf')).toBeDefined();
     });
   });
 

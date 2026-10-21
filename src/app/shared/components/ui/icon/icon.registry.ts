@@ -48,6 +48,10 @@ export const ICON_PATHS: Record<string, string> = {
   'share-social': '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',
   'search': '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
   'play': '<polygon points="5 3 19 12 5 21 5 3"/>',
+  'pause': '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
+  'volume-high': '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>',
+  'moon': '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  'sunny': '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
   'cut': '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>',
   'link': '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
 
@@ -60,6 +64,9 @@ export const ICON_PATHS: Record<string, string> = {
   'folder-open': '<path d="M3 7a2 2 0 0 1 2-2h4l2 3h6a2 2 0 0 1 2 2v1"/><path d="M3 9h17l-2.4 9.2a2 2 0 0 1-1.94 1.5H5.34a2 2 0 0 1-1.94-1.5z"/>',
   'grid': '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
   'list-number': '<line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',
+  'book': '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  'mail': '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/>',
+  'logo-markdown': '<rect x="3" y="5" width="18" height="14" rx="2" ry="2"/><polyline points="7 15 7 9 9.5 12 12 9 12 15"/><polyline points="15 12 17 14 19 12"/><line x1="17" y1="9" x2="17" y2="14"/>',
 
   // --- Mirror / flip & page geometry ---
   /*
@@ -133,7 +140,16 @@ export const ICON_PATHS: Record<string, string> = {
   'fingerprint': '<path d="M12 2a10 10 0 0 0-6.88 2.77"/><path d="M8.56 5.5A8 8 0 0 1 12 4a8 8 0 0 1 8 8v2"/><path d="M4 12a8 8 0 0 0 2.2 5.5"/><path d="M12 8a4 4 0 0 1 4 4v7"/><path d="M8 14v5"/><path d="M12 12a1 1 0 0 1 1 1v7"/><path d="M16 16v4"/><path d="M20 16v3"/>',
   'pulse': '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
   'code': '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+  'code-slash': '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/>',
   'ribbon': '<circle cx="12" cy="8" r="6"/><path d="M15.48 13.92 18 22l-6-3-6 3 2.52-8.08"/>',
+
+  // --- Photo Tools (I1-I10) ---
+  'person': '<circle cx="12" cy="7" r="4"/><path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2"/>',
+  'eye-off': '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>',
+  'sparkles': '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>',
+  'pin': '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  'map': '<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>',
+  'ruler': '<path d="M21.3 8.7 8.7 21.3c-1 1-2.6 1-3.5 0l-2.5-2.5c-1-1-1-2.6 0-3.5L15.3 2.7c1-1 2.6-1 3.5 0l2.5 2.5c1 1 1 2.6 0 3.5z"/><line x1="13.5" y1="4.5" x2="15.5" y2="6.5"/><line x1="10.5" y1="7.5" x2="13.5" y2="10.5"/><line x1="7.5" y1="10.5" x2="9.5" y2="12.5"/><line x1="4.5" y1="13.5" x2="7.5" y2="16.5"/>',
 };
 
 /** ionicon names map onto the base glyphs above; `-outline` is the same path. */
