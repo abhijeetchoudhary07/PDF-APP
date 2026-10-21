@@ -103,7 +103,7 @@
                 <button
                   type="button"
                   class="icon-action-btn"
-                  (click)="clearOutline()"
+                  (click)="confirmClearOutline()"
                   [attr.aria-label]="'navigation.clearOutline' | translate"
                 >
                   <app-icon name="trash" [size]="16"></app-icon>
@@ -180,7 +180,7 @@
                     <div class="row-content" (click)="openEditBookmarkModal(row.node)">
                       <span class="node-title">{{ row.node.title }}</span>
                       <span class="node-page-badge">
-                        {{ 'common.pages' | translate }} {{ row.node.pageIndex + 1 }}
+                        {{ 'navigation.pageBadge' | translate: { page: row.node.pageIndex + 1 } }}
                       </span>
                     </div>
 
@@ -245,7 +245,7 @@
                       <button
                         type="button"
                         class="row-btn danger"
-                        (click)="deleteNode(row.node.id)"
+                        (click)="confirmDeleteNode(row.node.id)"
                         [attr.aria-label]="'navigation.deleteBookmark' | translate"
                       >
                         <app-icon name="trash" [size]="14"></app-icon>
@@ -309,6 +309,7 @@
                       <div class="range-card-title">
                         <span class="range-num-badge">#{{ idx + 1 }}</span>
                         <span class="range-name">{{ 'navigation.rangeTitle' | translate: { number: idx + 1 } }}</span>
+                        <span class="range-span">{{ rangeSpanLabel(range) }}</span>
                       </div>
                       @if (labelRanges.length > 1 && idx > 0) {
                         <button

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { AlertController } from '@ionic/angular';
 import { PDFDocument } from 'pdf-lib';
 import { PdfNavigationPage } from './pdf-navigation.page';
 import { PdfOutlineService } from '../../core/services/pdf-outline.service';
@@ -11,6 +12,7 @@ import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
 import { ToastService } from '../../core/services/toast.service';
+import { TranslationService } from '../../core/services/translation.service';
 import { OutlineNode, PageLabelRange } from '../../core/models/pdf-navigation.types';
 
 async function makeTestPdf(pageCount = 3): Promise<Uint8Array> {
@@ -33,10 +35,20 @@ describe('PdfNavigationPage', () => {
   let toastService: Partial<ToastService>;
   let routeSnapshotData: Record<string, any>;
   let routeSnapshotUrl: any[];
+  let alertCtrl: { create: ReturnType<typeof vi.fn> };
+  /** What the next confirm dialog answers; 'destructive' means the user agreed. */
+  let alertRole: string;
 
   beforeEach(() => {
     routeSnapshotData = {};
     routeSnapshotUrl = [];
+    alertRole = 'destructive';
+    alertCtrl = {
+      create: vi.fn(async () => ({
+        present: vi.fn(async () => {}),
+        onDidDismiss: vi.fn(async () => ({ role: alertRole }))
+      }))
+    };
 
     outlineService = {
       readOutline: vi.fn(async () => ({ nodes: [], notices: [] })),
@@ -118,6 +130,13 @@ describe('PdfNavigationPage', () => {
         { provide: ShareService, useValue: shareService },
         { provide: HistoryService, useValue: historyService },
         { provide: ToastService, useValue: toastService },
+        { provide: AlertController, useValue: alertCtrl },
+        {
+          // The real service reads the active language; the key itself is
+          // enough to assert which question was asked.
+          provide: TranslationService,
+          useValue: { translate: (key: string) => key }
+        },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -264,6 +283,56 @@ describe('PdfNavigationPage', () => {
       expect(page.outlineNodes[0].id).toBe('n2');
     });
 
+    it('asks before deleting a bookmark, and deletes when the user agrees', async () => {
+      page.outlineNodes = [
+        { id: 'n1', title: 'Chapter 1', pageIndex: 0, children: [] },
+        { id: 'n2', title: 'Chapter 2', pageIndex: 1, children: [] }
+      ];
+      alertRole = 'destructive';
+      await page.confirmDeleteNode('n1');
+      expect(alertCtrl.create).toHaveBeenCalled();
+      expect(page.outlineNodes.length).toBe(1);
+      expect(page.outlineNodes[0].id).toBe('n2');
+    });
+
+    it('keeps the bookmark when the user cancels the delete', async () => {
+      page.outlineNodes = [
+        { id: 'n1', title: 'Chapter 1', pageIndex: 0, children: [] }
+      ];
+      alertRole = 'cancel';
+      await page.confirmDeleteNode('n1');
+      expect(page.outlineNodes.length).toBe(1);
+    });
+
+    it('warns that the children go too when the bookmark has any', async () => {
+      page.outlineNodes = [
+        {
+          id: 'p1',
+          title: 'Parent',
+          pageIndex: 0,
+          children: [{ id: 'c1', title: 'Child', pageIndex: 1, children: [] }]
+        }
+      ];
+      alertRole = 'cancel';
+      await page.confirmDeleteNode('p1');
+      expect(alertCtrl.create.mock.calls[0][0].message).toBe('navigation.deleteConfirm');
+    });
+
+    it('asks before clearing the whole outline, and does nothing when empty', async () => {
+      page.outlineNodes = [];
+      await page.confirmClearOutline();
+      expect(alertCtrl.create).not.toHaveBeenCalled();
+
+      page.outlineNodes = [{ id: 'n1', title: 'Ch 1', pageIndex: 0, children: [] }];
+      alertRole = 'cancel';
+      await page.confirmClearOutline();
+      expect(page.outlineNodes.length).toBe(1);
+
+      alertRole = 'destructive';
+      await page.confirmClearOutline();
+      expect(page.outlineNodes.length).toBe(0);
+    });
+
     it('reorders bookmarks via moveNodeUp and moveNodeDown', () => {
       page.outlineNodes = [
         { id: 'n1', title: 'First', pageIndex: 0, children: [] },
@@ -358,6 +427,18 @@ describe('PdfNavigationPage', () => {
       const pdfBytes = await makeTestPdf(5);
       const file = new File([pdfBytes], 'sample.pdf', { type: 'application/pdf' });
       await page.onFileSelected(file);
+    });
+
+    it('labels each range with the pages it actually covers', () => {
+      page.pageCount = 12;
+      page.labelRanges = [
+        { id: 'r1', startPage: 1, style: 'roman-lower', prefix: '', startValue: 1 },
+        { id: 'r2', startPage: 4, style: 'decimal', prefix: '', startValue: 1 }
+      ] as PageLabelRange[];
+
+      // The first range stops where the second begins; the last runs to the end.
+      expect(page.rangeSpanLabel(page.labelRanges[0])).toBe('navigation.rangePages');
+      expect(page.rangeSpanLabel(page.labelRanges[1])).toBe('navigation.rangePagesEnd');
     });
 
     it('adds a new page label range', () => {

@@ -272,6 +272,14 @@ export class PdfOptimizePage implements OnInit {
   async runCurrentOptimization(): Promise<void> {
     if (!this.pdfBuffer || !this.selectedFile) return;
 
+    /*
+     * Only the fit chain produces one of these, and it was cleared only by a
+     * full reset — so running Fit Limit and then DPI Ceiling left the previous
+     * chain's step ledger and "split the document" suggestion sitting under an
+     * unrelated result.
+     */
+    this.fitResult = undefined;
+
     this.isProcessing = true;
     this.progressPercent = 0;
     this.progressPhase = 'Preparing...';
@@ -442,6 +450,20 @@ export class PdfOptimizePage implements OnInit {
       this.isRenderingProof = false;
       this.cdr.markForCheck();
     }
+  }
+
+  /**
+   * The percentage without its sign — the word beside it ("smaller"/"larger")
+   * carries the direction, so showing "-4753% smaller" would say it twice and
+   * get it wrong both times.
+   */
+  get absSavedPercent(): number {
+    return Math.abs(this.outputResult?.savedPercent ?? 0);
+  }
+
+  /** Same reasoning as absSavedPercent, for the proof view's own summary. */
+  get absProofPercent(): number {
+    return Math.abs(this.proofSummary?.savedPercent ?? 0);
   }
 
   setProofPage(page: number): void {

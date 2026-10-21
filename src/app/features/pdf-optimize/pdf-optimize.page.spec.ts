@@ -68,7 +68,11 @@ describe('PdfOptimizePage', () => {
     };
 
     toastService = {
-      show: vi.fn()
+      show: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+      warning: vi.fn(),
+      info: vi.fn()
     };
 
     bridgeService = {
@@ -164,5 +168,62 @@ describe('PdfOptimizePage', () => {
     expect(page.proofViewMode).toBe('before');
     page.setProofViewMode('after');
     expect(page.proofViewMode).toBe('after');
+  });
+
+  describe('reporting a pass that made the file bigger', () => {
+    /*
+     * A rasterising path can multiply a text document's size. The screen
+     * shows the sign-free number beside a word that carries the direction,
+     * so the percentage itself must never arrive negative.
+     */
+    it('reports the magnitude without its sign when the file grew', () => {
+      const page = createComponent();
+      page.outputResult = { savedBytes: -229077, savedPercent: -4753 } as any;
+      expect(page.absSavedPercent).toBe(4753);
+    });
+
+    it('still reports a real saving unchanged', () => {
+      const page = createComponent();
+      page.outputResult = { savedBytes: 6874, savedPercent: 28 } as any;
+      expect(page.absSavedPercent).toBe(28);
+    });
+
+    it('reports zero when nothing has run yet', () => {
+      const page = createComponent();
+      expect(page.absSavedPercent).toBe(0);
+      expect(page.absProofPercent).toBe(0);
+    });
+
+    it('takes the proof percentage from the proof summary, not the output', () => {
+      const page = createComponent();
+      page.proofSummary = { savedBytes: -500, savedPercent: -120 } as any;
+      expect(page.absProofPercent).toBe(120);
+    });
+  });
+
+  it('clears a previous fit chain before running another mode', async () => {
+    const page = createComponent();
+    page.selectedFile = new File(['x'], 'a.pdf', { type: 'application/pdf' });
+    page.pdfBuffer = new ArrayBuffer(8);
+    page.fitResult = { steps: [{ kind: 'dedupe' }], suggestSplit: true } as any;
+
+    // The images path is what runs; the stale fit ledger must not survive it.
+    (optimizerService.exportDownsampled as any) = vi.fn().mockResolvedValue({
+      name: 'a_resampled.pdf',
+      file: new File(['y'], 'a_resampled.pdf'),
+      blob: { arrayBuffer: async () => new ArrayBuffer(4) },
+      sizeBytes: 4,
+      pageCount: 1,
+      notices: [],
+      originalSizeBytes: 8,
+      savedBytes: 4,
+      savedPercent: 50,
+      rasterized: false
+    });
+
+    page.activeMode = 'images';
+    await page.runCurrentOptimization();
+
+    expect(page.fitResult).toBeUndefined();
   });
 });

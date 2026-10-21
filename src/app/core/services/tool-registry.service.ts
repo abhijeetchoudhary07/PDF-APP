@@ -423,7 +423,10 @@ const TOOL_CATALOGUE: ToolItem[] = [
       keywords: [
         'optimize', 'optimizer', 'dpi', 'downsample', 'resolution', 'dedupe',
         'duplicate images', 'grayscale', 'mono', 'black and white', '1-bit',
-        'proof', 'structure', 'fast web view', 'upload limit', 'fit size'
+        // Not "fast web view": pdf-lib has no linearizing writer, so the
+        // structure pass must not be searchable under a guarantee it cannot
+        // keep. It is an object-level cleanup and is labelled as one.
+        'proof', 'structure', 'upload limit', 'fit size', 'shrink', 'reduce size'
       ],
       relatedIds: ['pdf_compress', 'pdf_organize', 'pdf_layout', 'pdf_repair']
     },

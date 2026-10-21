@@ -214,10 +214,14 @@
       cursor: pointer;
       flex-shrink: 0;
 
+      /*
+       * Narrow screens get tighter padding and smaller type, but NOT a smaller
+       * target: this block used to drop the height to 38px, which shrank the
+       * tap area on exactly the devices that need it most.
+       */
       @media (max-width: 480px) {
         padding: 0.375rem 0.625rem;
         font-size: 0.75rem;
-        min-height: 38px;
       }
 
       &:hover {
@@ -283,12 +287,18 @@
         }
       }
 
+      /*
+       * The track stays 6px; the control itself gets a full touch target of
+       * height around it, so dragging quality or bias does not depend on
+       * landing a thumb inside six pixels.
+       */
       .range-slider {
         width: 100%;
         accent-color: var(--color-primary, #4f46e5);
-        height: 6px;
+        height: var(--min-touch-target, 44px);
         border-radius: 3px;
         cursor: pointer;
+        background: transparent;
       }
 
       .hint-text {
@@ -373,7 +383,7 @@
 
       .pill-btn {
         padding: 0.375rem 0.75rem;
-        min-height: 36px;
+        min-height: var(--min-touch-target, 44px);
         border: 1px solid var(--color-border, #e2e8f0);
         border-radius: 9999px;
         background: var(--color-surface, #ffffff);
@@ -545,6 +555,57 @@
       padding: 0.5rem;
       background: var(--color-background-subtle, #f1f5f9);
       border-radius: var(--radius-md, 8px);
+
+      &.warn {
+        color: var(--color-warning, #f59e0b);
+        background: var(--color-warning-soft, rgba(245, 158, 11, 0.1));
+      }
+    }
+
+    /* The proof view's own numbers: what the comparison below actually cost. */
+    .proof-summary-bar {
+      display: flex;
+      align-items: stretch;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+
+      .proof-summary-col {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        padding: 0.5rem;
+        background: var(--color-background-subtle, #f1f5f9);
+        border-radius: var(--radius-md, 8px);
+        text-align: center;
+      }
+
+      .proof-summary-lbl {
+        font-size: 0.625rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-text-muted, #94a3b8);
+      }
+
+      .proof-summary-val {
+        font-size: 0.8125rem;
+        font-weight: 700;
+        color: var(--color-text, #0f172a);
+
+        &.grew {
+          color: var(--color-warning, #f59e0b);
+        }
+      }
+
+      /* Three columns of numbers do not fit across a small phone. */
+      @media (max-width: 380px) {
+        flex-wrap: wrap;
+
+        .proof-summary-col {
+          flex: 1 1 calc(50% - 0.25rem);
+        }
+      }
     }
 
     /* Reports & Tables */
@@ -727,8 +788,8 @@
         gap: 0.5rem;
 
         .stepper-btn {
-          width: 36px;
-          height: 36px;
+          width: var(--min-touch-target, 44px);
+          height: var(--min-touch-target, 44px);
           border-radius: 8px;
           border: 1px solid var(--color-border, #e2e8f0);
           background: var(--color-surface, #ffffff);
@@ -758,6 +819,8 @@
 
         .view-mode-btn {
           padding: 0.375rem 0.625rem;
+          /* Split / Before / After is the control you tap most on this screen. */
+          min-height: var(--min-touch-target, 44px);
           border: none;
           background: transparent;
           border-radius: 6px;
@@ -767,7 +830,8 @@
           cursor: pointer;
 
           &.active {
-            background: #ffffff;
+            /* Was hardcoded #ffffff, which stayed white in dark mode. */
+            background: var(--color-surface, #ffffff);
             color: var(--color-primary, #4f46e5);
             font-weight: 600;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -997,6 +1061,11 @@
             &.new-val {
               color: var(--color-success, #10b981);
               font-weight: 700;
+
+              /* Green is a claim. When the pass grew the file, don't make it. */
+              &.grew {
+                color: var(--color-warning, #f59e0b);
+              }
             }
           }
         }
@@ -1047,6 +1116,68 @@
 
           app-icon {
             color: var(--color-primary, #4f46e5);
+          }
+        }
+      }
+
+      /* The fit chain's account of itself: one row per step, in the order run. */
+      .fit-steps-ledger {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        h4 {
+          margin: 0 0 0.25rem;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          color: var(--color-text-secondary, #475569);
+        }
+
+        .fit-step-row {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          font-size: 0.75rem;
+          padding: 0.375rem 0.5rem;
+          border-radius: 4px;
+          background: var(--color-background-subtle, #f1f5f9);
+          color: var(--color-text-muted, #94a3b8);
+
+          app-icon {
+            flex-shrink: 0;
+            color: var(--color-text-muted, #94a3b8);
+          }
+
+          /* A step that ran is the one carrying information; the rest recede. */
+          &.did-run {
+            color: var(--color-text, #0f172a);
+
+            app-icon {
+              color: var(--color-success, #10b981);
+            }
+          }
+
+          .fit-step-name {
+            flex: 1;
+            min-width: 0;
+          }
+
+          .fit-step-saved {
+            font-weight: 600;
+            color: var(--color-success, #10b981);
+            white-space: nowrap;
+          }
+
+          .fit-step-cost {
+            margin-left: 0.375rem;
+            font-weight: 500;
+            color: var(--color-warning, #f59e0b);
+          }
+
+          .fit-step-skip {
+            font-style: italic;
+            white-space: nowrap;
           }
         }
       }

@@ -492,3 +492,43 @@ html, body {
 [data-src-color="5"] { --src-hue: 88; }
 [data-src-color="6"] { --src-hue: 268; }
 [data-src-color="7"] { --src-hue: 8; }
+
+/*
+ * Ionic alert dialogs, themed.
+ * ----------------------------------------------------------------------------
+ * `AlertController` is what every destructive confirmation in this app uses
+ * (delete a preset, clear an outline, remove a bookmark and its children).
+ * Ionic ships the alert light-only, so in dark mode the question arrived as a
+ * white card over a dark app -- which reads less like the app asking and more
+ * like something else grabbing the screen, exactly the impression the native
+ * `confirm()` was avoided for.
+ *
+ * `!important` is deliberate and is the only thing that works here: Ionic sets
+ * these on its own generated host class (`.sc-ion-alert-md-h`), which outranks
+ * any plain `ion-alert` selector, and that class name is an implementation
+ * detail not worth hard-coding. The tokens are the app's own, so the dialog
+ * follows the in-app theme rather than the system one.
+ */
+ion-alert {
+  --background: var(--color-surface, #ffffff) !important;
+
+  .alert-title {
+    color: var(--color-text, #0f172a) !important;
+  }
+
+  .alert-message,
+  .alert-sub-title {
+    color: var(--color-text-secondary, #475569) !important;
+  }
+
+  .alert-button {
+    color: var(--color-primary, #4f46e5) !important;
+    /* Ionic's own buttons sit below the touch minimum on a phone. */
+    min-height: var(--min-touch-target, 44px);
+  }
+
+  .alert-button.alert-button-role-destructive {
+    color: var(--color-error, #ef4444) !important;
+    font-weight: 600;
+  }
+}
