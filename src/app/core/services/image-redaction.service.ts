@@ -161,48 +161,67 @@ export class ImageRedactionService {
 
     const temp = new Uint8ClampedArray(rw * rh * 4);
 
+    /*
+     * Each pass is a prefix-sum (sliding window) box blur, so the cost is one
+     * add and one subtract per pixel no matter how wide the radius is. The
+     * straightforward kernel loop was O(pixels x radius): a 1600x1200 region at
+     * maximum intensity took over three seconds on a desktop, which on a phone
+     * is a frozen UI long enough for Android to offer to kill the app. The
+     * window still averages only the samples that exist, so edge pixels behave
+     * exactly as they did before.
+     */
+    const prefixLength = (Math.max(rw, rh) + 1) * 4;
+    const prefix = new Float64Array(prefixLength);
+
     for (let p = 0; p < passes; p++) {
       // Horizontal blur pass
       for (let y = 0; y < rh; y++) {
+        const rowStart = y * rw * 4;
+        prefix[0] = 0; prefix[1] = 0; prefix[2] = 0; prefix[3] = 0;
         for (let x = 0; x < rw; x++) {
-          let r = 0, g = 0, b = 0, a = 0, count = 0;
+          const src = rowStart + x * 4;
+          const pi = (x + 1) * 4;
+          prefix[pi] = prefix[pi - 4] + sub[src];
+          prefix[pi + 1] = prefix[pi - 3] + sub[src + 1];
+          prefix[pi + 2] = prefix[pi - 2] + sub[src + 2];
+          prefix[pi + 3] = prefix[pi - 1] + sub[src + 3];
+        }
+        for (let x = 0; x < rw; x++) {
           const minK = Math.max(0, x - radius);
           const maxK = Math.min(rw - 1, x + radius);
-          for (let k = minK; k <= maxK; k++) {
-            const idx = (y * rw + k) * 4;
-            r += sub[idx];
-            g += sub[idx + 1];
-            b += sub[idx + 2];
-            a += sub[idx + 3];
-            count++;
-          }
-          const dst = (y * rw + x) * 4;
-          temp[dst] = Math.round(r / count);
-          temp[dst + 1] = Math.round(g / count);
-          temp[dst + 2] = Math.round(b / count);
-          temp[dst + 3] = Math.round(a / count);
+          const count = maxK - minK + 1;
+          const hi = (maxK + 1) * 4;
+          const lo = minK * 4;
+          const dst = rowStart + x * 4;
+          temp[dst] = Math.round((prefix[hi] - prefix[lo]) / count);
+          temp[dst + 1] = Math.round((prefix[hi + 1] - prefix[lo + 1]) / count);
+          temp[dst + 2] = Math.round((prefix[hi + 2] - prefix[lo + 2]) / count);
+          temp[dst + 3] = Math.round((prefix[hi + 3] - prefix[lo + 3]) / count);
         }
       }
 
       // Vertical blur pass
-      for (let y = 0; y < rh; y++) {
-        for (let x = 0; x < rw; x++) {
-          let r = 0, g = 0, b = 0, a = 0, count = 0;
+      for (let x = 0; x < rw; x++) {
+        prefix[0] = 0; prefix[1] = 0; prefix[2] = 0; prefix[3] = 0;
+        for (let y = 0; y < rh; y++) {
+          const src = (y * rw + x) * 4;
+          const pi = (y + 1) * 4;
+          prefix[pi] = prefix[pi - 4] + temp[src];
+          prefix[pi + 1] = prefix[pi - 3] + temp[src + 1];
+          prefix[pi + 2] = prefix[pi - 2] + temp[src + 2];
+          prefix[pi + 3] = prefix[pi - 1] + temp[src + 3];
+        }
+        for (let y = 0; y < rh; y++) {
           const minK = Math.max(0, y - radius);
           const maxK = Math.min(rh - 1, y + radius);
-          for (let k = minK; k <= maxK; k++) {
-            const idx = (k * rw + x) * 4;
-            r += temp[idx];
-            g += temp[idx + 1];
-            b += temp[idx + 2];
-            a += temp[idx + 3];
-            count++;
-          }
+          const count = maxK - minK + 1;
+          const hi = (maxK + 1) * 4;
+          const lo = minK * 4;
           const dst = (y * rw + x) * 4;
-          sub[dst] = Math.round(r / count);
-          sub[dst + 1] = Math.round(g / count);
-          sub[dst + 2] = Math.round(b / count);
-          sub[dst + 3] = Math.round(a / count);
+          sub[dst] = Math.round((prefix[hi] - prefix[lo]) / count);
+          sub[dst + 1] = Math.round((prefix[hi + 1] - prefix[lo + 1]) / count);
+          sub[dst + 2] = Math.round((prefix[hi + 2] - prefix[lo + 2]) / count);
+          sub[dst + 3] = Math.round((prefix[hi + 3] - prefix[lo + 3]) / count);
         }
       }
     }

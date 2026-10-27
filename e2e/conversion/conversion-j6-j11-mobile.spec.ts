@@ -94,10 +94,11 @@ test.describe('Part J (J6 to J11): Advanced Converters & Batch Suite — Mobile 
 
     await expect(page.locator('.config-card')).toBeVisible();
 
-    // Verify DPI select
+    // Verify DPI select. The options bind numbers with [ngValue], so their
+    // values are Angular's own ids; pick it the way a person does, by label.
     const dpiSelect = page.locator('select.field-select').first();
     await expect(dpiSelect).toBeVisible();
-    await dpiSelect.selectOption('150');
+    await dpiSelect.selectOption({ label: 'High Quality (150 DPI)' });
 
     // Verify Compression select (G4 bilevel, LZW, none)
     const compSelect = page.locator('select.field-select').nth(1);

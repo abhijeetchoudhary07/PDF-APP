@@ -1,0 +1,190 @@
+<div class="k-sheet">
+  <div class="k-sheet__header">
+    <div class="k-sheet__title">
+      <app-icon name="search"></app-icon>
+      <h2>{{ 'editor.findReplace' | translate }}</h2>
+    </div>
+    <button
+      type="button"
+      class="k-sheet__close"
+      (click)="dismiss()"
+      [attr.aria-label]="'editor.kClose' | translate">
+      <app-icon name="close"></app-icon>
+    </button>
+  </div>
+
+  <div class="k-sheet__body">
+    <div class="k-card">
+      <div class="k-field">
+        <label class="k-label" for="fr-query">{{ 'editor.frFindLabel' | translate }}</label>
+        <input
+          id="fr-query"
+          type="search"
+          class="k-input"
+          [(ngModel)]="searchQuery"
+          [placeholder]="'editor.frFindPlaceholder' | translate"
+          (keyup.enter)="runSearch()" />
+      </div>
+
+      <div class="k-field">
+        <label class="k-label" for="fr-replacement">{{ 'editor.frReplaceLabel' | translate }}</label>
+        <input
+          id="fr-replacement"
+          type="text"
+          class="k-input"
+          [(ngModel)]="replacement"
+          [placeholder]="'editor.frReplacePlaceholder' | translate" />
+      </div>
+
+      <div class="k-toggles">
+        <label class="k-toggle">
+          <input type="checkbox" [(ngModel)]="options.caseSensitive" (change)="optionsChanged()" />
+          <span>{{ 'editor.frMatchCase' | translate }}</span>
+        </label>
+        <label class="k-toggle">
+          <input type="checkbox" [(ngModel)]="options.wholeWord" (change)="optionsChanged()" />
+          <span>{{ 'editor.frWholeWord' | translate }}</span>
+        </label>
+        <label class="k-toggle">
+          <input type="checkbox" [(ngModel)]="options.includeFormFields" (change)="optionsChanged()" />
+          <span>{{ 'editor.frFormFields' | translate }}</span>
+        </label>
+        <label class="k-toggle">
+          <input type="checkbox" [(ngModel)]="options.replaceExistingPageText" />
+          <span>{{ 'editor.frPageText' | translate }}</span>
+        </label>
+      </div>
+
+      <div class="k-notice k-notice--info">
+        <app-icon name="information-circle-outline"></app-icon>
+        <span>{{ 'editor.frPageTextHint' | translate }}</span>
+      </div>
+
+      <div class="k-actions">
+        <button
+          type="button"
+          class="k-btn k-btn--primary"
+          (click)="runSearch()"
+          [disabled]="!searchQuery.trim() || isSearching || isReplacing">
+          <app-icon name="search"></app-icon>
+          <span>{{ (isSearching ? 'editor.frSearching' : 'editor.frSearch') | translate }}</span>
+        </button>
+        <button
+          type="button"
+          class="k-btn k-btn--accent"
+          (click)="replaceAll()"
+          [disabled]="matches.length === 0 || isReplacing || isSearching">
+          <app-icon name="refresh"></app-icon>
+          <span>{{ 'editor.frReplaceAll' | translate }}</span>
+        </button>
+      </div>
+
+      @if (isReplacing) {
+        <div class="k-progress">
+          <span class="k-spinner"></span>
+          <span>{{ 'editor.kWorking' | translate }}</span>
+        </div>
+      }
+    </div>
+
+    <!--
+    What happened, in the app's own words. Each line is only shown when it
+    applies, and the "still reachable by a search" line is deliberately the
+    loudest: a replacement that left the old wording in the text layer is
+    the one outcome someone has to know about.
+    -->
+    @if (report) {
+      <div class="k-card">
+        <div class="k-notice k-notice--ok">
+          <app-icon name="checkmark-circle-outline"></app-icon>
+          <span>
+            {{
+              'editor.frReplacedSummary'
+                | translate: { replaced: report.matchesReplaced, found: report.matchesFound }
+            }}
+          </span>
+        </div>
+
+        @if (report.runsRewrittenByWhiteout > 0) {
+          <p class="k-hint">
+            {{ 'editor.frRewrittenSummary' | translate: { count: report.runsRewrittenByWhiteout } }}
+          </p>
+        }
+
+        @if (report.unsupportedExistingTextSkipped > 0) {
+          <div class="k-notice k-notice--warn">
+            <app-icon name="alert-circle-outline"></app-icon>
+            <span>
+              {{
+                'editor.frSkippedSummary'
+                  | translate: { count: report.unsupportedExistingTextSkipped }
+              }}
+            </span>
+          </div>
+        }
+
+        @if (report.runsStillInTextLayer > 0) {
+          <div class="k-notice k-notice--danger">
+            <app-icon name="shield-outline"></app-icon>
+            <span>
+              {{ 'editor.frStillSearchable' | translate: { count: report.runsStillInTextLayer } }}
+            </span>
+          </div>
+        }
+
+        @if (report.droppedCharacters > 0) {
+          <div class="k-notice k-notice--warn">
+            <app-icon name="alert-circle-outline"></app-icon>
+            <span>
+              {{
+                'editor.frDroppedChars'
+                  | translate: { count: report.droppedCharacters, sample: report.droppedSample }
+              }}
+            </span>
+          </div>
+        }
+      </div>
+    }
+
+    <div>
+      <div class="k-section-head">
+        <h3>{{ 'editor.frMatchCount' | translate: { count: matches.length } }}</h3>
+      </div>
+
+      @if (matches.length === 0 && searchPerformed && !isSearching) {
+        <div class="k-empty">{{ 'editor.frNoMatches' | translate }}</div>
+      }
+
+      @if (matches.length > 0) {
+        <div class="k-list">
+          @for (match of matches; track match.id) {
+            <div class="k-row" [class.is-active]="match.id === activeMatchId">
+              <button type="button" class="k-row__main" (click)="jumpTo(match)">
+                <span class="k-row__title">
+                  <span>{{ beforeHit(match) }}</span><span class="match-hit">{{ match.matchedText }}</span><span>{{ afterHit(match) }}</span>
+                </span>
+                <span class="k-row__meta">
+                  <span class="k-badge is-primary">
+                    {{ 'editor.kPageBadge' | translate: { page: match.pageNumber } }}
+                  </span>
+                  <span class="k-badge">{{ sourceLabel(match) | translate }}</span>
+                  @if (match.fieldName) {
+                    <span class="k-badge">{{ match.fieldName }}</span>
+                  }
+                </span>
+              </button>
+              <button
+                type="button"
+                class="k-icon-btn"
+                (click)="replaceOne(match)"
+                [disabled]="isReplacing || isSearching"
+                [attr.aria-label]="'editor.frReplaceThis' | translate">
+                <app-icon name="refresh"></app-icon>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -115,11 +115,11 @@ export interface TabItem {
 
     .tab-btn:hover:not(.active):not(:disabled) {
       color: var(--color-text);
-      background-color: rgba(255, 255, 255, 0.6);
+      background-color: var(--color-surface-hover);
     }
 
     .tab-btn.active {
-      color: var(--color-primary);
+      color: var(--color-primary-text);
       background-color: var(--color-surface);
       box-shadow: var(--shadow-sm);
       font-weight: var(--font-weight-semibold, 600);
@@ -137,7 +137,7 @@ export interface TabItem {
       font-weight: var(--font-weight-bold, 700);
       border-radius: var(--radius-full, 9999px);
       background-color: var(--color-primary-soft);
-      color: var(--color-primary);
+      color: var(--color-primary-text);
     }
 
     /* Pills variant */

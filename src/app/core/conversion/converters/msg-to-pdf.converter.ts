@@ -72,6 +72,25 @@ export class MsgToPdfConverter implements IConverter {
       const baseFontSize = options.fontSize ?? 11;
       const printableWidth = width - margin * 2;
 
+      /*
+       * The standard fonts are WinAnsi-encoded and throw on anything outside
+       * that codepage, so a Hindi subject line or an emoji in the body would
+       * fail the whole conversion. Everything drawn goes through here, and
+       * the count is reported back to the person afterwards.
+       */
+      let droppedCount = 0;
+      const droppedChars: string[] = [];
+      const safe = (value: string): string => {
+        const result = PdfLayoutHelper.toDrawableText(value);
+        if (result.dropped > 0) {
+          droppedCount += result.dropped;
+          for (const ch of result.sample) {
+            if (droppedChars.length < 6 && !droppedChars.includes(ch)) droppedChars.push(ch);
+          }
+        }
+        return result.text;
+      };
+
       let currentPage = pdfDoc.addPage([width, height]);
       let currentY = height - margin;
 
@@ -90,7 +109,28 @@ export class MsgToPdfConverter implements IConverter {
       if (parsedData.headers.date) headerFields.push({ label: 'Date:', value: parsedData.headers.date });
       if (parsedData.headers.subject) headerFields.push({ label: 'Subject:', value: parsedData.headers.subject });
 
-      const headerHeight = Math.max(70, headerFields.length * (baseFontSize * 1.5) + 20);
+      /*
+       * Wrap each header value first, then size the block to what it actually
+       * takes. Drawing only the first wrapped line silently dropped the rest
+       * of a long To: list or a wrapped subject -- the kind of omission the
+       * reader has no way to notice.
+       */
+      const headerLineHeight = baseFontSize * 1.5;
+      const wrappedHeaderFields = headerFields.map(f => {
+        const labelWidth = boldFont.widthOfTextAtSize(f.label, baseFontSize);
+        const maxValWidth = printableWidth - labelWidth - 30;
+        return {
+          label: f.label,
+          labelWidth,
+          lines: PdfLayoutHelper.wrapText(safe(f.value), font, baseFontSize, maxValWidth)
+        };
+      });
+
+      const headerLineCount = wrappedHeaderFields.reduce(
+        (total, f) => total + Math.max(1, f.lines.length),
+        0
+      );
+      const headerHeight = Math.max(70, headerLineCount * headerLineHeight + 20);
 
       currentPage.drawRectangle({
         x: margin,
@@ -103,7 +143,7 @@ export class MsgToPdfConverter implements IConverter {
       });
 
       let hY = currentY - 5;
-      for (const f of headerFields) {
+      for (const f of wrappedHeaderFields) {
         currentPage.drawText(f.label, {
           x: margin + 12,
           y: hY,
@@ -112,19 +152,17 @@ export class MsgToPdfConverter implements IConverter {
           color: rgb(0.2, 0.25, 0.35)
         });
 
-        const labelWidth = boldFont.widthOfTextAtSize(f.label, baseFontSize);
-        const maxValWidth = printableWidth - labelWidth - 30;
-        const wrappedVal = PdfLayoutHelper.wrapText(f.value, font, baseFontSize, maxValWidth);
-
-        currentPage.drawText(wrappedVal[0] || '', {
-          x: margin + 18 + labelWidth,
-          y: hY,
-          size: baseFontSize,
-          font,
-          color: rgb(0.15, 0.15, 0.15)
-        });
-
-        hY -= baseFontSize * 1.5;
+        const valueLines = f.lines.length > 0 ? f.lines : [''];
+        for (let lineIdx = 0; lineIdx < valueLines.length; lineIdx++) {
+          currentPage.drawText(valueLines[lineIdx], {
+            x: margin + 18 + f.labelWidth,
+            y: hY,
+            size: baseFontSize,
+            font,
+            color: rgb(0.15, 0.15, 0.15)
+          });
+          hY -= headerLineHeight;
+        }
       }
 
       currentY -= headerHeight + 15;
@@ -138,7 +176,7 @@ export class MsgToPdfConverter implements IConverter {
       }
 
       if (bodyText) {
-        const bodyLines = PdfLayoutHelper.wrapText(bodyText, font, baseFontSize, printableWidth);
+        const bodyLines = PdfLayoutHelper.wrapText(safe(bodyText), font, baseFontSize, printableWidth);
         const pLineHeight = baseFontSize * 1.45;
 
         for (const line of bodyLines) {
@@ -154,8 +192,15 @@ export class MsgToPdfConverter implements IConverter {
         }
       }
 
+      /*
+       * "Process Attachments" is a real switch here too: off means the message
+       * body alone, with nothing merged or listed from the attached parts.
+       */
+      const includeAttachments = options.includeAttachments ?? true;
+      const usableAttachments = includeAttachments ? parsedData.attachments : [];
+
       // Attachments summary
-      const nonPdfAtts = parsedData.attachments.filter(
+      const nonPdfAtts = usableAttachments.filter(
         a => !a.name.toLowerCase().endsWith('.pdf') && a.mimeType !== 'application/pdf'
       );
 
@@ -173,7 +218,7 @@ export class MsgToPdfConverter implements IConverter {
 
         for (const att of nonPdfAtts) {
           const sizeKb = (att.sizeBytes / 1024).toFixed(1);
-          currentPage.drawText(`• ${att.name} (${sizeKb} KB)`, {
+          currentPage.drawText(safe(`• ${att.name} (${sizeKb} KB)`), {
             x: margin + 10,
             y: currentY,
             size: baseFontSize - 1,
@@ -185,7 +230,7 @@ export class MsgToPdfConverter implements IConverter {
       }
 
       // Merge PDF attachments
-      const pdfAtts = parsedData.attachments.filter(
+      const pdfAtts = usableAttachments.filter(
         a => a.name.toLowerCase().endsWith('.pdf') || a.mimeType === 'application/pdf'
       );
 
@@ -212,17 +257,28 @@ export class MsgToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(droppedCount, droppedChars.join(' '));
+      const allWarnings = [...parsedData.warnings, ...(encodingWarning ? [encodingWarning] : [])];
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
-        warnings: parsedData.warnings.length > 0 ? parsedData.warnings : undefined,
+        warnings: allWarnings.length > 0 ? allWarnings : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: {
           pageCount: pdfDoc.getPageCount(),
           subject: parsedData.headers.subject,
           from: parsedData.headers.from,
-          attachmentCount: parsedData.attachments.length
+          attachmentCount: usableAttachments.length
         },
         metadata: {
           name: finalPdf.name,

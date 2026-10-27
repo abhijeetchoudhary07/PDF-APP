@@ -72,7 +72,7 @@ export type BadgeVariant =
     }
     .badge-secondary {
       background-color: var(--color-secondary-soft);
-      color: var(--color-secondary);
+      color: var(--color-secondary-text);
     }
     .badge-success {
       background-color: var(--color-success-soft);
@@ -90,43 +90,43 @@ export type BadgeVariant =
     /* Categories */
     .badge-photo {
       background-color: var(--color-photo-soft);
-      color: var(--color-photo);
+      color: var(--color-photo-text);
     }
     .badge-signature {
       background-color: var(--color-signature-soft);
-      color: var(--color-signature);
+      color: var(--color-signature-text);
     }
     .badge-pdf {
       background-color: var(--color-pdf-soft);
-      color: var(--color-pdf);
+      color: var(--color-pdf-text);
     }
     .badge-convert {
       background-color: var(--color-convert-soft);
-      color: var(--color-convert);
+      color: var(--color-convert-text);
     }
     .badge-organize {
       background-color: var(--color-organize-soft);
-      color: var(--color-organize);
+      color: var(--color-organize-text);
     }
     .badge-edit {
       background-color: var(--color-edit-soft);
-      color: var(--color-edit);
+      color: var(--color-edit-text);
     }
     .badge-sign {
       background-color: var(--color-sign-soft);
-      color: var(--color-sign);
+      color: var(--color-sign-text);
     }
     .badge-security {
       background-color: var(--color-security-soft);
-      color: var(--color-security);
+      color: var(--color-security-text);
     }
     .badge-batch {
       background-color: var(--color-batch-soft);
-      color: var(--color-batch);
+      color: var(--color-batch-text);
     }
     .badge-presets {
       background-color: var(--color-presets-soft);
-      color: var(--color-presets);
+      color: var(--color-presets-text);
     }
   `]
 })

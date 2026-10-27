@@ -150,6 +150,28 @@ export const ICON_PATHS: Record<string, string> = {
   'pin': '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
   'map': '<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>',
   'ruler': '<path d="M21.3 8.7 8.7 21.3c-1 1-2.6 1-3.5 0l-2.5-2.5c-1-1-1-2.6 0-3.5L15.3 2.7c1-1 2.6-1 3.5 0l2.5 2.5c1 1 1 2.6 0 3.5z"/><line x1="13.5" y1="4.5" x2="15.5" y2="6.5"/><line x1="10.5" y1="7.5" x2="13.5" y2="10.5"/><line x1="7.5" y1="10.5" x2="9.5" y2="12.5"/><line x1="4.5" y1="13.5" x2="7.5" y2="16.5"/>',
+  /* "Put this on the page": the Part K sheets that hand a placement to the
+   * canvas. Crosshairs, because what follows is a tap or a drag on the page. */
+  'locate': '<circle cx="12" cy="12" r="7"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/><circle cx="12" cy="12" r="2"/>',
+  // --- Reader (L1-L6) ---
+  /* The reader toolbar asked for `plus`, `minus`, `maximize` and `minimize`
+   * and got nothing: unregistered names resolve to '' and the button paints
+   * an empty box. They are aliases of glyphs already here, but
+   * resolveIconName only strips `-outline`, so each needs its own entry. */
+  'plus': '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  'minus': '<line x1="5" y1="12" x2="19" y2="12"/>',
+  'maximize': '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>',
+  'minimize': '<polyline points="4 10 4 4 10 4"/><polyline points="20 14 20 20 14 20"/><line x1="4" y1="4" x2="10" y2="10"/><line x1="20" y1="20" x2="14" y2="14"/>',
+  /* L2 — the page-spread and scroll-mode choices. Two panes side by side for
+   * the spread; a tall page with a flow arrow for continuous scrolling. */
+  'columns': '<rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/>',
+  'scroll-continuous': '<rect x="6" y="2" width="12" height="9" rx="1"/><rect x="6" y="14" width="12" height="9" rx="1"/><polyline points="10 11.5 12 13.5 14 11.5"/>',
+  /* L5 — the voice picker next to read-aloud. */
+  'mic': '<path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/>',
+  /* L6 — the thumbnail strip you drag along. */
+  'film-strip': '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="8" y1="5" x2="8" y2="19"/><line x1="16" y1="5" x2="16" y2="19"/>',
+  /* The overflow affordance on the phone toolbar. */
+  'ellipsis-horizontal': '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
 };
 
 /** ionicon names map onto the base glyphs above; `-outline` is the same path. */

@@ -22,8 +22,8 @@ export class PdfToTiffConverter implements IConverter {
     badge: 'Multi-Page TIFF',
     acceptMimeTypes: 'application/pdf',
     limitations: [
-      'Compiles all rendered pages into an authentic multi-page TIFF archive (Tag 256-338 IFDs).',
-      'CCITT G4 bilevel compression automatically converts pages into 1-bit monochrome for legal & government portals.'
+      'Compiles every rendered page into one multi-page TIFF, with the chosen DPI written into the file as its resolution.',
+      'CCITT G4 compression converts pages to 1-bit monochrome, which is what legal and government upload portals ask for; LZW keeps full colour.'
     ],
     disclaimer: '100% on-device rasterization. All pages are rendered locally using hardware-accelerated canvas.'
   };
@@ -54,19 +54,24 @@ export class PdfToTiffConverter implements IConverter {
       indicOrRtlWarnings: []
     };
 
+    let loadingTask: ReturnType<typeof pdfjsLib.getDocument> | undefined;
+
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
+      loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
       const pdf = await loadingTask.promise;
       const numPages = pdf.numPages;
 
       if (numPages === 0) {
-        return { success: false, error: 'The PDF file contains no pages.' };
+        return { success: false, error: 'The PDF file contains no pages.', report };
       }
 
-      const dpi = options.dpi || 150;
+      // The select sends its value as a string, and `'300' / 72` is NaN-free
+      // but `Number('300')` is what the scale actually needs.
+      const dpi = Math.max(36, Math.min(600, Number(options.dpi) || 150));
       const scale = dpi / 72;
       const frames: { width: number; height: number; data: Uint8ClampedArray }[] = [];
+      const blankPages: number[] = [];
 
       for (let pageNum = 1; pageNum <= numPages; pageNum++) {
         onProgress?.({
@@ -97,16 +102,24 @@ export class PdfToTiffConverter implements IConverter {
               ctx.fillRect(0, 0, width, height);
               await (page.render({ canvasContext: ctx, viewport } as any).promise);
               const imgData = ctx.getImageData(0, 0, width, height);
-              pixelData = imgData ? imgData.data : new Uint8ClampedArray(width * height * 4).fill(255);
+              if (imgData) {
+                pixelData = imgData.data;
+              } else {
+                pixelData = new Uint8ClampedArray(width * height * 4).fill(255);
+                blankPages.push(pageNum);
+              }
             } catch {
               pixelData = new Uint8ClampedArray(width * height * 4).fill(255);
+              blankPages.push(pageNum);
             }
           } else {
             pixelData = new Uint8ClampedArray(width * height * 4).fill(255);
+            blankPages.push(pageNum);
           }
         } else {
           // Headless fallback
           pixelData = new Uint8ClampedArray(width * height * 4).fill(255);
+          blankPages.push(pageNum);
         }
 
         frames.push({ width, height, data: pixelData });
@@ -115,10 +128,23 @@ export class PdfToTiffConverter implements IConverter {
 
       onProgress?.({ percent: 85, stage: 'Encoding multi-page TIFF file...' });
 
+      const compression = (options.compression || 'none') as 'none' | 'lzw' | 'g4';
       const tiffBlob = this.imageFormatService.encodeMultiPageTiff(frames, {
-        compression: options.compression || 'none',
+        compression,
         dpi
       });
+
+      if (compression === 'g4') {
+        report.approximations.push(
+          'Pages reduced to 1-bit black and white for CCITT G4; greys and colours were thresholded'
+        );
+      }
+      if (blankPages.length > 0) {
+        const list = blankPages.slice(0, 5).join(', ');
+        report.droppedElements.push(
+          `Could not rasterize page${blankPages.length > 1 ? 's' : ''} ${list}${blankPages.length > 5 ? '…' : ''}; included blank`
+        );
+      }
 
       const outName = file.name.replace(/\.[^/.]+$/, '') + '.tiff';
       const outFile = new File([tiffBlob], outName, { type: 'image/tiff' });
@@ -129,6 +155,9 @@ export class PdfToTiffConverter implements IConverter {
         success: true,
         file: outFile,
         downloadName: outName,
+        warnings: blankPages.length
+          ? [`${blankPages.length} page(s) could not be rendered and are blank in the TIFF.`]
+          : undefined,
         report
       };
     } catch (err: any) {
@@ -137,6 +166,14 @@ export class PdfToTiffConverter implements IConverter {
         error: `PDF to TIFF conversion failed: ${err.message || err}`,
         report
       };
+    } finally {
+      // destroy() lives on the loading task, not on the document proxy; a
+      // converter that skips it leaks the worker's copy of every page.
+      try {
+        await loadingTask?.destroy();
+      } catch {
+        /* a document that never opened has nothing to release */
+      }
     }
   }
 }

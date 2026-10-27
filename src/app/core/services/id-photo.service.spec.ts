@@ -144,6 +144,61 @@ describe('IdPhotoService (I1 & I2)', () => {
       }
     });
 
+    /**
+     * Regression: one tick was drawn with the wrong end point and ran right
+     * across the bottom of every copy. Trim guides belong in the margin — a
+     * line printed over the photo is a ruined photo.
+     */
+    it('keeps every cut mark strictly outside the photo it belongs to', () => {
+      const pos = { x: 148, y: 623, width: 200, height: 260 };
+      const marks = service.calculateCutMarks(pos);
+
+      // Four corners, a horizontal and a vertical tick each.
+      expect(marks).toHaveLength(8);
+
+      const left = pos.x;
+      const right = pos.x + pos.width;
+      const top = pos.y;
+      const bottom = pos.y + pos.height;
+
+      for (const m of marks) {
+        // A segment may touch an edge line, but no part of it may lie within
+        // the photo's interior on both axes at once.
+        const crossesInteriorX = Math.min(m.x1, m.x2) > left && Math.max(m.x1, m.x2) < right;
+        const crossesInteriorY = Math.min(m.y1, m.y2) > top && Math.max(m.y1, m.y2) < bottom;
+        expect(crossesInteriorX && crossesInteriorY).toBe(false);
+
+        // Each tick is a short axis-aligned stub, never a long run along an edge.
+        const length = Math.hypot(m.x2 - m.x1, m.y2 - m.y1);
+        expect(length).toBeLessThanOrEqual(pos.width / 4);
+        expect(m.x1 === m.x2 || m.y1 === m.y2).toBe(true);
+      }
+    });
+
+    it('anchors each cut mark to a corner and points it away from the photo', () => {
+      const pos = { x: 100, y: 200, width: 60, height: 80 };
+      const marks = service.calculateCutMarks(pos, 8, 2);
+
+      const left = pos.x;
+      const right = pos.x + pos.width;
+      const top = pos.y;
+      const bottom = pos.y + pos.height;
+
+      for (const m of marks) {
+        if (m.y1 === m.y2) {
+          // Horizontal tick: sits on a corner's row, running outward.
+          expect([top, bottom]).toContain(m.y1);
+          const outer = Math.abs(m.x1 - left) < Math.abs(m.x1 - right) ? left : right;
+          expect(Math.abs(m.x2 - outer)).toBeGreaterThan(Math.abs(m.x1 - outer));
+        } else {
+          // Vertical tick: sits on a corner's column, running outward.
+          expect([left, right]).toContain(m.x1);
+          const outer = Math.abs(m.y1 - top) < Math.abs(m.y1 - bottom) ? top : bottom;
+          expect(Math.abs(m.y2 - outer)).toBeGreaterThan(Math.abs(m.y1 - outer));
+        }
+      }
+    });
+
     it('generates a canvas sheet with requested photo copies', () => {
       const photoCanvas = createSafeCanvas(100, 120);
       const pctx = getSafeContext(photoCanvas);

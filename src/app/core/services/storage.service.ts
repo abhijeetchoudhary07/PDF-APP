@@ -29,11 +29,20 @@ export class StorageService {
    * person who started it — pass the same id for every file in the group and it
    * is counted once. Left out, it is derived from the file, so saving a result
    * and then sharing that same result also counts once rather than twice.
+   *
+   * `options.preserveName` keeps the name the caller gave the file instead of
+   * the generated `prefix_sizekb_timestamp` one. Some outputs ARE their name —
+   * a batch rename derives it from the document's own title, and renaming it
+   * back on the way out makes the whole operation do nothing — and a batch of
+   * similar files is otherwise distinguished only by a whole-second timestamp,
+   * so two outputs of the same rounded size can land on the same path and one
+   * silently replaces the other.
    */
   async saveFile(
     file: File,
     prefix: string = 'file',
     operationId?: string,
+    options?: { preserveName?: boolean },
   ): Promise<string | undefined> {
     if (!(await this.quota.canStart())) {
       await this.reportQuotaExhausted();
@@ -53,13 +62,19 @@ export class StorageService {
       const ext = (dot > 0 ? file.name.slice(dot + 1) : '') || 'jpg';
       const sizeKB = Math.round(file.size / 1024);
       // Example: photo_50kb_1638210.jpg to prevent overwrites
-      const safeName = `${prefix}_${sizeKB}kb_${Math.floor(Date.now() / 1000)}.${ext}`;
+      const generatedName = `${prefix}_${sizeKB}kb_${Math.floor(Date.now() / 1000)}.${ext}`;
+      const safeName = options?.preserveName
+        ? this.sanitizeOutputName(file.name, ext)
+        : generatedName;
 
       let uri: string;
       if (Capacitor.isNativePlatform()) {
         const base64Data = await this.fileService.blobToBase64(file);
+        const targetPath = options?.preserveName
+          ? await this.findFreeName(safeName)
+          : safeName;
         const result = await Filesystem.writeFile({
-          path: safeName,
+          path: targetPath,
           data: base64Data,
           directory: Directory.Documents,
           /*
@@ -101,6 +116,97 @@ export class StorageService {
       console.error('Error saving file', e);
       return undefined;
     }
+  }
+
+  /**
+   * Writes a diagnostic log next to the person's documents, unmetered.
+   *
+   * The free-tier counter meters the files a tool produces. A batch's result
+   * log is not one of those: it is the record of what the run did, and it is
+   * needed most in the case where the quota has just run out, so charging for
+   * it would withhold the explanation at exactly the wrong moment. Text only,
+   * and not a path for tool output — that still goes through saveFile.
+   */
+  async saveReportFile(file: File): Promise<string | undefined> {
+    try {
+      if (!file) throw new Error('File is missing');
+      if (!/^text\//.test(file.type) && !/\.(csv|txt|log|json)$/i.test(file.name)) {
+        throw new Error('saveReportFile only writes text logs');
+      }
+
+      const dot = file.name.lastIndexOf('.');
+      const ext = (dot > 0 ? file.name.slice(dot + 1) : '') || 'txt';
+      const safeName = this.sanitizeOutputName(file.name, ext);
+
+      if (Capacitor.isNativePlatform()) {
+        const base64Data = await this.fileService.blobToBase64(file);
+        const result = await Filesystem.writeFile({
+          path: await this.findFreeName(safeName),
+          data: base64Data,
+          directory: Directory.Documents,
+          recursive: true
+        });
+        return result.uri;
+      }
+
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = safeName;
+      a.click();
+      URL.revokeObjectURL(url);
+      return 'web-download';
+    } catch (e: any) {
+      this.toast.error(
+        e?.message ? `Could not save the log: ${e.message}` : 'Could not save the log.'
+      );
+      return undefined;
+    }
+  }
+
+  /**
+   * A caller-supplied name reduced to something a filesystem will take.
+   *
+   * Path separators and the characters Android's media store rejects are
+   * removed rather than escaped, and the name is capped so a title lifted from
+   * a document cannot produce a path the OS refuses.
+   */
+  private sanitizeOutputName(name: string, fallbackExt: string): string {
+    const base = name.replace(/^.*[\\/]/, '');
+    const dot = base.lastIndexOf('.');
+    const stem = (dot > 0 ? base.slice(0, dot) : base)
+      .replace(/[\u0000-\u001f<>:"/\\|?*]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 80);
+    const ext = (dot > 0 ? base.slice(dot + 1) : '').replace(/[^A-Za-z0-9]/g, '') || fallbackExt;
+    return `${stem || 'document'}.${ext}`;
+  }
+
+  /**
+   * The first name in Documents that is not taken, as `name (2).pdf` and so on.
+   *
+   * Filesystem.writeFile overwrites without asking, so keeping a caller's name
+   * without this check would let the second file of a batch destroy the first.
+   */
+  private async findFreeName(name: string): Promise<string> {
+    const dot = name.lastIndexOf('.');
+    const stem = dot > 0 ? name.slice(0, dot) : name;
+    const ext = dot > 0 ? name.slice(dot) : '';
+
+    for (let attempt = 1; attempt <= 50; attempt++) {
+      const candidate = attempt === 1 ? name : `${stem} (${attempt})${ext}`;
+      try {
+        await Filesystem.stat({ path: candidate, directory: Directory.Documents });
+        // It exists, so try the next one.
+      } catch {
+        // stat throws when there is nothing there, which is what we want.
+        return candidate;
+      }
+    }
+
+    // Fifty files of the same name is not a case worth failing over.
+    return `${stem} (${Date.now()})${ext}`;
   }
 
   /**

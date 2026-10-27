@@ -105,9 +105,13 @@ export interface PdfToJsonOptions {
 }
 
 export interface StructuredPdfJson {
-  schemaVersion: string; // e.g. '1.0.0'
+  schemaVersion: string; // e.g. '1.1.0'
   generator: string;
   totalPages: number;
+  /** Where coordinates are measured from, so a consumer need not guess. */
+  coordinateSpace?: 'pdf-points-top-left';
+  /** Which extraction mode produced this document. */
+  mode?: 'layout-preserving' | 'reflowable';
   metadata: {
     title?: string;
     author?: string;

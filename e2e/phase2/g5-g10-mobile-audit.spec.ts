@@ -40,27 +40,43 @@ async function settled(page: Page): Promise<void> {
   await expect(page.locator('.ion-page-invisible')).toHaveCount(0, { timeout: 15000 });
 }
 
+/**
+ * Polls until the painted backgrounds stop moving. Cards carry
+ * `transition: all 250ms`, so anything measured while a fade is in flight
+ * reads a colour that belongs to neither theme.
+ *
+ * The probe must cover whatever the route actually renders: listing card
+ * classes meant a screen without them sampled an empty set, compared '' to ''
+ * and returned before the fade had started.
+ */
+async function waitForPaintToSettle(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const probes = () => Array.from(
+      document.querySelectorAll('body, main, section, div, header, button')
+    ).filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.width > 8 && r.height > 8;
+    }).slice(0, 60).map(el => getComputedStyle(el).backgroundColor).join('|');
+
+    let last = '';
+    let stable = 0;
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => requestAnimationFrame(() => setTimeout(r, 50)));
+      const now = probes();
+      stable = now === last ? stable + 1 : 0;
+      last = now;
+      if (stable >= 2 && i >= 6) return;
+    }
+  });
+}
+
 async function applyTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
-  await page.evaluate(async t => {
+  await page.evaluate(t => {
     document.documentElement.setAttribute('data-theme', t);
     document.body.classList.toggle('theme-dark', t === 'dark');
     document.body.classList.toggle('theme-light', t === 'light');
-    // Several cards carry `transition: all 250ms`, so switching the theme
-    // cross-fades their background. Sampling mid-fade reads a colour that is
-    // neither theme's and reports contrast failures that do not exist, so wait
-    // until the painted colours stop moving.
-    const probes = () => Array.from(
-      document.querySelectorAll('.dropzone-box, .card, .related-card, [class*=card]')
-    ).slice(0, 25).map(el => getComputedStyle(el).backgroundColor).join('|');
-
-    let last = '';
-    for (let i = 0; i < 40; i++) {
-      await new Promise(r => requestAnimationFrame(() => setTimeout(r, 50)));
-      const now = probes();
-      if (now === last) return;
-      last = now;
-    }
   }, theme);
+  await waitForPaintToSettle(page);
 }
 
 /** sRGB relative luminance, per WCAG 2.1. */
@@ -198,7 +214,9 @@ async function smallTouchTargets(page: Page): Promise<Array<Record<string, unkno
       // A control wrapped in a label large enough to hit is fine.
       const label = el.closest('label');
       const hit = label ? label.getBoundingClientRect() : r;
-      if (hit.height < 44 || hit.width < 24) {
+      // Sub-pixel layout puts a nominally 44px control at 43.99.
+      const EPS = 0.5;
+      if (hit.height < 44 - EPS || hit.width < 24 - EPS) {
         out.push({
           tag: el.tagName.toLowerCase(),
           cls: (el.className || '').toString().slice(0, 40),
@@ -226,6 +244,10 @@ test.describe('G5-G10 mobile audit — 360px layout and dark mode', () => {
       await dismissOnboarding(page);
       await expect(page.locator('app-file-dropzone, .dropzone-card').first()).toBeVisible({ timeout: 20000 });
       await settled(page);
+      // Line height -- and so the height of a text control sized by its
+      // content -- changes when the webfont swaps in, so a 44px breadcrumb
+      // link measures short until it lands.
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
 
       expect(await horizontalOverflow(page), `${p.name} overflows horizontally at 360px`).toBeLessThanOrEqual(0);
 
@@ -257,6 +279,9 @@ test.describe('G5-G10 mobile audit — 360px layout and dark mode', () => {
     await page.locator('[data-testid="start-recovery"]').click();
     await expect(page.locator('.recovery-report-section')).toBeVisible({ timeout: 30000 });
     await expect(page.locator('.page-detail-card').first()).toBeVisible();
+    // These cards appeared after the theme was applied and fade in on their
+    // own, so the earlier settle says nothing about them.
+    await waitForPaintToSettle(page);
 
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
     const bad = await lowContrastText(page);

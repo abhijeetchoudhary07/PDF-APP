@@ -502,6 +502,39 @@ export class OcrService {
   }
 
   /**
+   * Recognises a small image region and returns its words with bounding boxes.
+   *
+   * Used by the scanner's H8 auto-naming to read the heading strip off page 1.
+   * It runs on its own worker and deliberately does not touch `activeWorker` or
+   * `isCancelled`: those belong to a full document job, and a title read must
+   * not be able to cancel one or be cancelled by one.
+   */
+  async recognizeRegionWords(
+    blob: Blob,
+    language: string = 'eng'
+  ): Promise<{ text: string; words: OcrWord[] }> {
+    const worker = await createWorker(language, 1);
+    const url = URL.createObjectURL(blob);
+    try {
+      const res = await worker.recognize(url);
+      const words: OcrWord[] = ((res.data as any).words || []).map((w: any) => ({
+        text: w.text,
+        confidence: w.confidence,
+        bbox: {
+          x0: w.bbox.x0,
+          y0: w.bbox.y0,
+          x1: w.bbox.x1,
+          y1: w.bbox.y1
+        }
+      }));
+      return { text: (res.data.text || '').trim(), words };
+    } finally {
+      URL.revokeObjectURL(url);
+      await worker.terminate();
+    }
+  }
+
+  /**
    * Cancels any active OCR job.
    */
   cancelJob(): void {

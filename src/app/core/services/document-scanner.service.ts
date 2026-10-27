@@ -16,6 +16,12 @@ import {
   AutoNamingResult
 } from '../models/scanner.models';
 
+/** The shape `rankTitleLines` needs from an OCR word -- a subset of Tesseract's. */
+export interface TitleWord {
+  text: string;
+  bbox: { x0: number; y0: number; x1: number; y1: number };
+}
+
 class HeadlessScannerContext2D {
   width: number;
   height: number;
@@ -523,10 +529,32 @@ export class DocumentScannerService {
     destTri: [Point, Point, Point]
   ): void {
     ctx.save();
+
+    /*
+     * Clip to the triangle grown by a hair about its centroid.
+     *
+     * The page is drawn as two triangles meeting along a diagonal. Clipped to
+     * their exact edges, each side is anti-aliased against nothing, so neither
+     * covers the boundary pixels fully and a pale diagonal hairline runs across
+     * every warped scan. Overlapping the two by well under a pixel makes the
+     * second pass paint over the first's soft edge; the affine map is unchanged,
+     * so the sliver samples the neighbouring source pixels, which is what
+     * belongs there anyway.
+     */
+    const seamOverlap = 0.75;
+    const cxTri = (destTri[0].x + destTri[1].x + destTri[2].x) / 3;
+    const cyTri = (destTri[0].y + destTri[1].y + destTri[2].y) / 3;
+    const grown = destTri.map(p => {
+      const dx = p.x - cxTri;
+      const dy = p.y - cyTri;
+      const len = Math.hypot(dx, dy) || 1;
+      return { x: p.x + (dx / len) * seamOverlap, y: p.y + (dy / len) * seamOverlap };
+    });
+
     ctx.beginPath();
-    ctx.moveTo(destTri[0].x, destTri[0].y);
-    ctx.lineTo(destTri[1].x, destTri[1].y);
-    ctx.lineTo(destTri[2].x, destTri[2].y);
+    ctx.moveTo(grown[0].x, grown[0].y);
+    ctx.lineTo(grown[1].x, grown[1].y);
+    ctx.lineTo(grown[2].x, grown[2].y);
     ctx.closePath();
     ctx.clip();
 
@@ -842,6 +870,19 @@ export class DocumentScannerService {
   }
 
   /**
+   * The quad covering a whole image, for sources that are already square-on
+   * and must not be re-cropped (a composed ID-card sheet, for one).
+   */
+  fullPageCorners(width: number, height: number): DocumentCorners {
+    return {
+      topLeft: { x: 0, y: 0 },
+      topRight: { x: width, y: 0 },
+      bottomRight: { x: width, y: height },
+      bottomLeft: { x: 0, y: height }
+    };
+  }
+
+  /**
    * Splits a book spread into two individual page canvases at the detected gutter.
    */
   async splitBookSpread(
@@ -1109,9 +1150,26 @@ export class DocumentScannerService {
     const score = this.computeLaplacianVariance(canvas);
     return {
       score,
+      scorePercent: this.sharpnessPercent(score),
       isBlurry: score < threshold,
       threshold
     };
+  }
+
+  /**
+   * Maps the unbounded Laplacian variance onto 0-100 for display.
+   *
+   * A crisp page of text scores around 27000 and a flat one scores 0, so the
+   * raw figure cannot carry a % sign. The curve is logarithmic because the
+   * variance spans orders of magnitude; it is monotonic, so ordering by the
+   * percentage matches ordering by the raw score, and the default threshold of
+   * 80 lands at 44%.
+   */
+  sharpnessPercent(variance: number): number {
+    if (!(variance > 0)) return 0;
+    const CEILING = 20000;
+    const pct = (Math.log10(1 + variance) / Math.log10(1 + CEILING)) * 100;
+    return Math.max(0, Math.min(100, Math.round(pct)));
   }
 
   computeLaplacianVariance(canvas: HTMLCanvasElement): number {
@@ -1467,6 +1525,247 @@ export class DocumentScannerService {
   // --- H7: BOOK CURVATURE DEWARPING ---
 
   /**
+   * Measures baseline curvature without resampling anything.
+   *
+   * Capture used to call `dewarpCurvature` just to find out whether a page was
+   * curved, which built and painted a second full-size canvas on every single
+   * page and then threw it away. The answer is the cheap half; split it out so
+   * the capture path pays only for the measurement and the UI can offer the
+   * straighten toggle on exactly the pages that need it.
+   */
+  async detectCurvature(
+    canvasOrBlob: HTMLCanvasElement | Blob
+  ): Promise<{ curvatureDetected: boolean; curvatureMagnitude: number; curvatureA: number }> {
+    const canvas = await this.toCanvas(canvasOrBlob);
+    return this.measureCurvature(canvas);
+  }
+
+  /**
+   * Measures how far the text drifts vertically from one side of the page to
+   * the other, by aligning vertical slices of the page against each other.
+   *
+   * Two earlier versions measured the mean height of the ink in a column. That
+   * is not where the baselines are: lines of text end at different places, so
+   * the right-hand slices average a different set of lines than the left-hand
+   * ones and the mean jumps around by more than any real book curve. The first
+   * version also substituted `h / 2` for a column with no ink, which invented a
+   * baseline in the middle of the image and made every page with margins look
+   * curved.
+   *
+   * Sliding each slice's ink profile against a reference slice asks the right
+   * question instead -- "how far down has this same block of lines moved?" --
+   * and a ragged right edge only weakens the match rather than shifting it. The
+   * offsets are fitted to a parabola, and the arc has to beat its own residual
+   * before the page is called curved.
+   */
+  private measureCurvature(
+    canvas: HTMLCanvasElement
+  ): { curvatureDetected: boolean; curvatureMagnitude: number; curvatureA: number } {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    const none = { curvatureDetected: false, curvatureMagnitude: 0, curvatureA: 0 };
+    const ctx = this.getContext(canvas);
+    if (!ctx || w < 40 || h < 40) return none;
+
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+
+    // Work inside the sheet, away from its edges. A warped capture carries a
+    // dark rim of whatever the page was lying on, and a rim runs the full
+    // height of the image: it would pass for text in every column and anchor
+    // every correlation at zero shift, which reads as a perfectly flat page.
+    const inset = Math.round(Math.min(w, h) * 0.04);
+    const ax0 = inset;
+    const ax1 = w - inset;
+    const ay0 = inset;
+    const ay1 = h - inset;
+    if (ax1 - ax0 < 20 || ay1 - ay0 < 20) return none;
+
+    const yStep = Math.max(1, Math.floor(h / 300));
+    const rows = Math.floor((ay1 - ay0) / yStep);
+    if (rows < 20) return none;
+
+    // Sample across the text, not across the sheet. A page with a wide right
+    // margin would otherwise spend half its bands on blank paper, and the
+    // coverage check below would throw the page out for being mostly empty.
+    const probeStep = Math.max(1, Math.floor((ax1 - ax0) / 256));
+    const columnInk: number[] = [];
+    let maxColumnInk = 0;
+    for (let x = ax0; x < ax1; x += probeStep) {
+      let count = 0;
+      for (let y = ay0; y < ay1; y += yStep) {
+        const idx = (y * w + x) * 4;
+        const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+        if (lum < 110) count++;
+      }
+      columnInk.push(count);
+      if (count > maxColumnInk) maxColumnInk = count;
+    }
+    if (maxColumnInk < 2) return none;
+
+    const inkThreshold = Math.max(1, maxColumnInk * 0.1);
+    const firstInk = columnInk.findIndex(c => c >= inkThreshold);
+    let lastInk = -1;
+    for (let i = columnInk.length - 1; i >= 0; i--) {
+      if (columnInk[i] >= inkThreshold) {
+        lastInk = i;
+        break;
+      }
+    }
+    if (firstInk < 0 || lastInk <= firstInk) return none;
+
+    const textLeft = ax0 + firstInk * probeStep;
+    const textRight = Math.min(ax1, ax0 + lastInk * probeStep + probeStep);
+    const textWidth = textRight - textLeft;
+    // Too little text across the page to say anything about its shape.
+    if (textWidth < (ax1 - ax0) * 0.3) return none;
+
+    const numBands = 16;
+    const bandWidth = Math.max(1, Math.floor(textWidth / numBands));
+    const xStep = Math.max(1, Math.floor(bandWidth / 10));
+
+    const profiles: Float32Array[] = [];
+    const inkTotals: number[] = [];
+    const us: number[] = [];
+
+    for (let b = 0; b < numBands; b++) {
+      const x0 = textLeft + b * bandWidth;
+      const x1 = b === numBands - 1 ? textRight : Math.min(textRight, x0 + bandWidth);
+
+      const prof = new Float32Array(rows);
+      let total = 0;
+      for (let ri = 0; ri < rows; ri++) {
+        const y = ay0 + ri * yStep;
+        let count = 0;
+        for (let x = x0; x < x1; x += xStep) {
+          const idx = (y * w + x) * 4;
+          const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+          if (lum < 110) count++;
+        }
+        prof[ri] = count;
+        total += count;
+      }
+
+      profiles.push(prof);
+      inkTotals.push(total);
+      us.push((x0 + x1) / 2 / w - 0.5);
+    }
+
+    const inked = inkTotals.filter(t => t > 0).sort((a, b) => a - b);
+    if (inked.length < 8) return none;
+    const medianInk = inked[Math.floor(inked.length / 2)];
+    const minInk = Math.max(4, medianInk * 0.3);
+
+    const usable: number[] = [];
+    for (let b = 0; b < numBands; b++) {
+      if (inkTotals[b] >= minInk) usable.push(b);
+    }
+    if (usable.length < 8) return none;
+    if (us[usable[usable.length - 1]] - us[usable[0]] < (textWidth / w) * 0.6) return none;
+
+    // Anchor on the usable band nearest the page centre, then walk outwards one
+    // band at a time, accumulating the drift.
+    //
+    // Matching every band straight against the centre looks simpler but breaks
+    // on exactly the pages this is for: once the drift approaches the gap
+    // between two lines of text, the best match is the NEXT line up, and a
+    // strong curve either aliases onto the wrong line or falls outside any
+    // sane search window. Neighbouring bands are only ever a few pixels apart,
+    // so each step is unambiguous and the total comes out of the sum.
+    const centreBand = usable.reduce(
+      (best, b) => (Math.abs(us[b]) < Math.abs(us[best]) ? b : best),
+      usable[0]
+    );
+    const maxStep = Math.max(3, Math.round(rows * 0.08));
+
+    const bestShift = (prof: Float32Array, ref: Float32Array): number | null => {
+      let bestScore = -1;
+      let shift = 0;
+      for (let s = -maxStep; s <= maxStep; s++) {
+        let score = 0;
+        for (let ri = Math.max(0, -s); ri < Math.min(rows, rows - s); ri++) {
+          score += prof[ri + s] * ref[ri];
+        }
+        if (score > bestScore) {
+          bestScore = score;
+          shift = s;
+        }
+      }
+      let refEnergy = 0;
+      for (let ri = 0; ri < rows; ri++) refEnergy += ref[ri] * ref[ri];
+      // A slice with no recognisable structure in common says nothing.
+      if (refEnergy <= 0 || bestScore < refEnergy * 0.05) return null;
+      return shift;
+    };
+
+    const shifts = new Map<number, number>();
+    shifts.set(centreBand, 0);
+
+    const walk = (bands: number[]) => {
+      let prev = centreBand;
+      for (const b of bands) {
+        const step = bestShift(profiles[b], profiles[prev]);
+        if (step === null) break;
+        shifts.set(b, (shifts.get(prev) as number) + step);
+        prev = b;
+      }
+    };
+
+    walk(usable.filter(b => b > centreBand));
+    walk(usable.filter(b => b < centreBand).reverse());
+
+    const pts: Array<{ u: number; shiftPx: number }> = [];
+    for (const b of usable) {
+      const shift = shifts.get(b);
+      if (shift !== undefined) pts.push({ u: us[b], shiftPx: shift * yStep });
+    }
+    pts.sort((a, b) => a.u - b.u);
+
+    if (pts.length < 8) return none;
+    if (pts[pts.length - 1].u - pts[0].u < (textWidth / w) * 0.6) return none;
+
+    // Least squares on shift = A * u^2 + B.
+    const xs = pts.map(p => p.u * p.u);
+    const meanX = xs.reduce((a, b) => a + b, 0) / xs.length;
+    const meanY = pts.reduce((a, p) => a + p.shiftPx, 0) / pts.length;
+
+    let sxx = 0;
+    let sxy = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const dx = xs[i] - meanX;
+      sxx += dx * dx;
+      sxy += dx * (pts[i].shiftPx - meanY);
+    }
+    if (sxx <= 0) return none;
+
+    const curvatureA = sxy / sxx;
+    const intercept = meanY - curvatureA * meanX;
+
+    // How far the baseline actually drifts across the text that was measured.
+    // Extrapolating the fit out to the sheet's edges would invent a sag for
+    // margins no text was ever read from.
+    const uMin = pts[0].u;
+    const uMax = pts[pts.length - 1].u;
+    const spansCentre = uMin < 0 && uMax > 0;
+    const maxU2 = Math.max(uMin * uMin, uMax * uMax);
+    const minU2 = spansCentre ? 0 : Math.min(uMin * uMin, uMax * uMax);
+    const maxSag = Math.abs(curvatureA) * (maxU2 - minU2);
+
+    let residualSq = 0;
+    for (let i = 0; i < pts.length; i++) {
+      residualSq += (pts[i].shiftPx - (curvatureA * xs[i] + intercept)) ** 2;
+    }
+    const residualRms = Math.sqrt(residualSq / pts.length);
+
+    return {
+      curvatureDetected: maxSag >= 2.5 && maxSag >= residualRms * 1.2,
+      curvatureMagnitude: Math.round(maxSag * 10) / 10,
+      curvatureA
+    };
+  }
+
+  /**
    * Straightens curved text baselines on bound-book captures.
    * Runs only when curvature is detected; flat pages are skipped.
    */
@@ -1475,92 +1774,103 @@ export class DocumentScannerService {
     const w = canvas.width;
     const h = canvas.height;
 
-    const ctx = this.getContext(canvas);
-    if (!ctx || w < 20 || h < 20) {
-      return { canvas, curvatureDetected: false, curvatureMagnitude: 0 };
+    const { curvatureDetected, curvatureMagnitude, curvatureA } = this.measureCurvature(canvas);
+    if (!curvatureDetected) {
+      return { canvas, curvatureDetected: false, curvatureMagnitude };
     }
-
-    const imgData = ctx.getImageData(0, 0, w, h);
-    const data = imgData.data;
-
-    const numCols = 10;
-    const colStep = Math.floor(w / numCols);
-    const baselines: number[] = [];
-
-    for (let c = 0; c < numCols; c++) {
-      const cx = Math.min(w - 1, c * colStep + Math.floor(colStep / 2));
-      let darkYSum = 0;
-      let darkCount = 0;
-
-      for (let y = 5; y < h - 5; y++) {
-        const idx = (y * w + cx) * 4;
-        const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-        if (lum < 110) {
-          darkYSum += y;
-          darkCount++;
-        }
-      }
-
-      if (darkCount >= 2) {
-        baselines.push(darkYSum / darkCount);
-      } else {
-        baselines.push(h / 2);
-      }
-    }
-
-    // Parabolic baseline curvature fitting: y(c) = a * (c - x_mid)^2 + b
-    const xMid = (numCols - 1) / 2;
-    const X = new Float64Array(numCols);
-    for (let c = 0; c < numCols; c++) {
-      X[c] = (c - xMid) ** 2;
-    }
-    const meanX = X.reduce((a, b) => a + b, 0) / numCols;
-    const meanY = baselines.reduce((a, b) => a + b, 0) / numCols;
-
-    let sxx = 0;
-    let sxy = 0;
-    for (let c = 0; c < numCols; c++) {
-      const dx = X[c] - meanX;
-      const dy = baselines[c] - meanY;
-      sxx += dx * dx;
-      sxy += dx * dy;
-    }
-
-    const curvatureA = sxx > 0 ? sxy / sxx : 0;
-    const maxSag = Math.abs(curvatureA * (X[0] - X[Math.floor(xMid)]));
-
-    // If curvature is minimal (< 2.5 px), detect as flat and skip
-    if (maxSag < 2.5) {
-      return {
-        canvas,
-        curvatureDetected: false,
-        curvatureMagnitude: Math.round(maxSag * 10) / 10
-      };
-    }
-
 
     // Vertical column resampling to cancel baseline arc
     const out = this.createCanvas(w, h);
     const outCtx = this.getContext(out);
     if (!outCtx) {
-      return { canvas, curvatureDetected: true, curvatureMagnitude: maxSag };
+      return { canvas, curvatureDetected: true, curvatureMagnitude };
     }
 
-
+    // Shift each column back by the arc the fit found at that position, so the
+    // baselines come out level. `u` matches `measureCurvature` exactly.
     for (let x = 0; x < w; x++) {
-      const colNorm = (x / w) * (numCols - 1) - xMid;
-      const offset = Math.round(curvatureA * (colNorm ** 2));
+      const u = x / w - 0.5;
+      const offset = Math.round(curvatureA * (u * u));
       outCtx.drawImage(canvas, x, 0, 1, h, x, -offset, 1, h);
     }
 
     return {
       canvas: out,
       curvatureDetected: true,
-      curvatureMagnitude: Math.round(maxSag * 10) / 10
+      curvatureMagnitude
     };
   }
 
   // --- H8: AUTO-NAMING FROM CONTENT ---
+
+  /**
+   * Orders OCR words into title candidates, best first.
+   *
+   * The spec asks for "the most title-like line (largest text, shortest line,
+   * nearest the top)", which plain recognised text cannot answer -- it carries
+   * no glyph sizes. Tesseract hands back a bounding box per word, so group the
+   * words into lines by vertical overlap and score each line on cap height,
+   * how near the top it sits and how short it is. The result feeds
+   * `suggestDocumentTitle` as newline-separated text, best candidate first.
+   */
+  rankTitleLines(words: TitleWord[], imageHeight = 0): string[] {
+    const usable = (words || []).filter(
+      w => w && w.text && w.text.trim().length > 0 && w.bbox && w.bbox.y1 > w.bbox.y0
+    );
+    if (usable.length === 0) return [];
+
+    const sorted = [...usable].sort((a, b) => a.bbox.y0 - b.bbox.y0 || a.bbox.x0 - b.bbox.x0);
+
+    interface Line {
+      words: TitleWord[];
+      top: number;
+      bottom: number;
+    }
+    const lines: Line[] = [];
+
+    for (const word of sorted) {
+      const height = word.bbox.y1 - word.bbox.y0;
+      const line = lines.find(l => {
+        const overlap = Math.min(l.bottom, word.bbox.y1) - Math.max(l.top, word.bbox.y0);
+        return overlap > height * 0.4;
+      });
+      if (line) {
+        line.words.push(word);
+        line.top = Math.min(line.top, word.bbox.y0);
+        line.bottom = Math.max(line.bottom, word.bbox.y1);
+      } else {
+        lines.push({ words: [word], top: word.bbox.y0, bottom: word.bbox.y1 });
+      }
+    }
+
+    const pageHeight = imageHeight > 0 ? imageHeight : Math.max(...lines.map(l => l.bottom), 1);
+    const tallest = Math.max(...lines.map(l => l.bottom - l.top), 1);
+
+    const scored = lines.map(line => {
+      const text = line.words
+        .slice()
+        .sort((a, b) => a.bbox.x0 - b.bbox.x0)
+        .map(w => w.text.trim())
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const height = line.bottom - line.top;
+      const sizeScore = height / tallest;                              // largest text
+      const topScore = 1 - Math.min(1, line.top / pageHeight);         // nearest the top
+      const brevityScore = 1 - Math.min(1, text.length / 60);          // shortest line
+
+      return {
+        text,
+        score: sizeScore * 0.5 + topScore * 0.3 + brevityScore * 0.2
+      };
+    });
+
+    return scored
+      .filter(l => l.text.length > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(l => l.text);
+  }
 
   /**
    * Suggests a document title and clean sanitized filename from OCR or heading heuristics.

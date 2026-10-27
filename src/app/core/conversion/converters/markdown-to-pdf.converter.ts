@@ -98,6 +98,26 @@ export class MarkdownToPdfConverter implements IConverter {
         }
       };
 
+      /*
+       * Every string handed to drawText goes through here first. The standard
+       * fonts throw on anything outside WinAnsi, so a single Devanagari letter
+       * in a note would otherwise abort the whole conversion; the structural
+       * parsing above still runs on the original text, so list markers and
+       * table pipes are matched before anything is substituted.
+       */
+      let droppedCount = 0;
+      const droppedChars: string[] = [];
+      const safe = (value: string): string => {
+        const result = PdfLayoutHelper.toDrawableText(value);
+        if (result.dropped > 0) {
+          droppedCount += result.dropped;
+          for (const ch of result.sample) {
+            if (droppedChars.length < 6 && !droppedChars.includes(ch)) droppedChars.push(ch);
+          }
+        }
+        return result.text;
+      };
+
       const rawLines = mdText.split(/\r?\n/);
       let inCodeBlock = false;
       let codeLines: string[] = [];
@@ -109,28 +129,40 @@ export class MarkdownToPdfConverter implements IConverter {
         // 1. Code Blocks
         if (trimmed.startsWith('```')) {
           if (inCodeBlock) {
-            // Render collected code lines
+            // Render collected code lines. A line wider than the page wraps
+            // onto the next row rather than being cut at the margin -- a long
+            // command or string literal is the part worth keeping.
             for (const cLine of codeLines) {
               const codeLineHeight = (baseFontSize - 1) * 1.35;
-              checkNewPage(codeLineHeight + 4);
+              const codeSize = baseFontSize - 1;
+              const wrappedCode = PdfLayoutHelper.wrapText(
+                safe(cLine),
+                codeFont,
+                codeSize,
+                printableWidth - 8
+              );
 
-              // Background highlight box
-              currentPage.drawRectangle({
-                x: margin - 2,
-                y: currentY - 2,
-                width: printableWidth + 4,
-                height: codeLineHeight + 2,
-                color: rgb(0.96, 0.97, 0.98)
-              });
+              for (const codeRow of wrappedCode.length > 0 ? wrappedCode : ['']) {
+                checkNewPage(codeLineHeight + 4);
 
-              currentPage.drawText(cLine.slice(0, 85), {
-                x: margin + 4,
-                y: currentY,
-                size: baseFontSize - 1,
-                font: codeFont,
-                color: rgb(0.15, 0.2, 0.25)
-              });
-              currentY -= codeLineHeight;
+                // Background highlight box
+                currentPage.drawRectangle({
+                  x: margin - 2,
+                  y: currentY - 2,
+                  width: printableWidth + 4,
+                  height: codeLineHeight + 2,
+                  color: rgb(0.96, 0.97, 0.98)
+                });
+
+                currentPage.drawText(codeRow, {
+                  x: margin + 4,
+                  y: currentY,
+                  size: codeSize,
+                  font: codeFont,
+                  color: rgb(0.15, 0.2, 0.25)
+                });
+                currentY -= codeLineHeight;
+              }
             }
             currentY -= 6;
             inCodeBlock = false;
@@ -165,7 +197,7 @@ export class MarkdownToPdfConverter implements IConverter {
           checkNewPage(hLineHeight + 12);
           currentY -= 8;
 
-          currentPage.drawText(hText, {
+          currentPage.drawText(safe(hText), {
             x: margin,
             y: currentY,
             size: hSize,
@@ -223,7 +255,7 @@ export class MarkdownToPdfConverter implements IConverter {
             });
 
             const maxChars = Math.max(1, Math.floor(colWidth / (baseFontSize * 0.55)));
-            currentPage.drawText(cellText.slice(0, maxChars), {
+            currentPage.drawText(safe(cellText).slice(0, maxChars), {
               x: cellX + 4,
               y: currentY + 2,
               size: baseFontSize - 1,
@@ -245,12 +277,12 @@ export class MarkdownToPdfConverter implements IConverter {
           const marker = bulletMatch ? '•' : numberMatch![1];
           const lineHeight = baseFontSize * 1.4;
 
-          const wrapped = PdfLayoutHelper.wrapText(itemText, font, baseFontSize, printableWidth - 20);
+          const wrapped = PdfLayoutHelper.wrapText(safe(itemText), font, baseFontSize, printableWidth - 20);
 
           for (let lineIdx = 0; lineIdx < wrapped.length; lineIdx++) {
             checkNewPage(lineHeight);
             if (lineIdx === 0) {
-              currentPage.drawText(marker, {
+              currentPage.drawText(safe(marker), {
                 x: margin + 4,
                 y: currentY,
                 size: baseFontSize,
@@ -276,7 +308,7 @@ export class MarkdownToPdfConverter implements IConverter {
           .replace(/\*([^*]+)\*/g, '$1')
           .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 
-        const wrapped = PdfLayoutHelper.wrapText(cleanLine, font, baseFontSize, printableWidth);
+        const wrapped = PdfLayoutHelper.wrapText(safe(cleanLine), font, baseFontSize, printableWidth);
         const pLineHeight = baseFontSize * 1.4;
 
         for (const wLine of wrapped) {
@@ -303,11 +335,22 @@ export class MarkdownToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(droppedCount, droppedChars.join(' '));
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
+        warnings: encodingWarning ? [encodingWarning] : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: {
           pageCount: pdfDoc.getPageCount(),
           characterCount: mdText.length

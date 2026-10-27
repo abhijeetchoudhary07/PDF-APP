@@ -4,6 +4,13 @@ import { IConverter } from '../converter.interface';
 import { ConverterMetadata, ConversionProgress, ConversionResult } from '../conversion.types';
 import { ImageFormatService } from '../../services/image-format.service';
 import { TiffToPdfOptions, ConversionReport } from '../../models/conversion-features.types';
+import { encodeRgbaPng } from '../../utilities/png-encode.util';
+
+/** Page sizes in PDF points. */
+const PAGE_SIZES: Record<string, [number, number]> = {
+  A4: [595.28, 841.89],
+  Letter: [612, 792]
+};
 
 @Injectable({
   providedIn: 'root'
@@ -22,8 +29,8 @@ export class TiffToPdfConverter implements IConverter {
     badge: 'Multi-Page to PDF',
     acceptMimeTypes: 'image/tiff',
     limitations: [
-      'Each TIFF page/frame is mapped to an independent PDF page preserving exact aspect ratio and dimensions.',
-      'Supports uncompressed, LZW, and bilevel monochrome TIFF structures.'
+      'Each TIFF page becomes one PDF page. "Original" sizing uses the resolution stored in the file, so a 300 DPI scan becomes a correctly sized page rather than an oversized one.',
+      'Reads uncompressed, LZW, PackBits, Deflate and CCITT G3/G4 pages, with or without multiple strips.'
     ],
     disclaimer: '100% on-device decoding. Multi-page TIFFs are parsed and merged into PDF locally.'
   };
@@ -43,7 +50,7 @@ export class TiffToPdfConverter implements IConverter {
 
   async convert(
     file: File,
-    _options: TiffToPdfOptions = {},
+    options: TiffToPdfOptions = {},
     onProgress?: (p: ConversionProgress) => void
   ): Promise<ConversionResult> {
     const report: ConversionReport = {
@@ -54,6 +61,7 @@ export class TiffToPdfConverter implements IConverter {
       pagesRasterized: 0,
       indicOrRtlWarnings: []
     };
+    const warnings: string[] = [];
 
     try {
       onProgress?.({ percent: 10, stage: 'Parsing multi-page TIFF headers...' });
@@ -62,12 +70,14 @@ export class TiffToPdfConverter implements IConverter {
       const frames = this.imageFormatService.decodeTiffPages(buffer);
 
       if (!frames || frames.length === 0) {
-        return { success: false, error: 'No readable image frames found in TIFF file.' };
+        return { success: false, error: 'No readable image frames found in TIFF file.', report };
       }
 
       onProgress?.({ percent: 30, stage: `Found ${frames.length} page(s). Initializing PDF...` });
 
       const pdfDoc = await PDFDocument.create();
+      const sizeMode = options.format || 'Original';
+      const orientationMode = options.orientation || 'Auto';
 
       for (let i = 0; i < frames.length; i++) {
         const frame = frames[i];
@@ -76,51 +86,63 @@ export class TiffToPdfConverter implements IConverter {
           stage: `Converting TIFF page ${i + 1} of ${frames.length} to PDF...`
         });
 
-        // Convert ImageData to PNG bytes via canvas or direct PNG data
-        let pngBytes: Uint8Array;
-
-        if (typeof document !== 'undefined' && document.createElement) {
-          const canvas = document.createElement('canvas');
-          canvas.width = frame.width;
-          canvas.height = frame.height;
-          let ctx: any = null;
-          try {
-            ctx = canvas.getContext('2d');
-          } catch {
-            ctx = null;
-          }
-          if (ctx) {
-            try {
-              ctx.putImageData(frame.data, 0, 0);
-              const dataUrl = canvas.toDataURL('image/png');
-              const base64 = dataUrl.split(',')[1];
-              if (base64) {
-                const binaryStr = atob(base64);
-                pngBytes = new Uint8Array(binaryStr.length);
-                for (let b = 0; b < binaryStr.length; b++) {
-                  pngBytes[b] = binaryStr.charCodeAt(b);
-                }
-              } else {
-                pngBytes = this.createFallback1x1Png();
-              }
-            } catch {
-              pngBytes = this.createFallback1x1Png();
-            }
-          } else {
-            pngBytes = this.createFallback1x1Png();
-          }
-        } else {
-          pngBytes = this.createFallback1x1Png();
+        if (frame.unsupported) {
+          report.droppedElements.push(
+            `Page ${i + 1} uses TIFF compression ${frame.compression ?? 'unknown'}, which could not be decoded; the page is blank`
+          );
+          warnings.push(`Page ${i + 1} could not be decoded and was added blank.`);
         }
 
+        const pngBytes = encodeRgbaPng(frame.data.data, frame.width, frame.height);
         const embeddedImage = await pdfDoc.embedPng(pngBytes);
-        const page = pdfDoc.addPage([frame.width, frame.height]);
-        page.drawImage(embeddedImage, {
-          x: 0,
-          y: 0,
-          width: frame.width,
-          height: frame.height
-        });
+
+        // "Original" means the size the scan claims to be: pixels divided by
+        // the file's own resolution. Without a resolution tag a pixel is a
+        // point, which is what the old behaviour did for every file.
+        const dpi = frame.dpi && frame.dpi > 0 ? frame.dpi : 72;
+        const naturalWidth = (frame.width / dpi) * 72;
+        const naturalHeight = (frame.height / dpi) * 72;
+
+        if (sizeMode === 'Original') {
+          const landscape = this.wantsLandscape(orientationMode, naturalWidth, naturalHeight);
+          const [pageWidth, pageHeight] = landscape && naturalHeight > naturalWidth
+            ? [naturalHeight, naturalWidth]
+            : [naturalWidth, naturalHeight];
+          const page = pdfDoc.addPage([pageWidth, pageHeight]);
+          const scale = Math.min(pageWidth / naturalWidth, pageHeight / naturalHeight);
+          const drawWidth = naturalWidth * scale;
+          const drawHeight = naturalHeight * scale;
+          page.drawImage(embeddedImage, {
+            x: (pageWidth - drawWidth) / 2,
+            y: (pageHeight - drawHeight) / 2,
+            width: drawWidth,
+            height: drawHeight
+          });
+        } else {
+          const base = PAGE_SIZES[sizeMode] || PAGE_SIZES['A4'];
+          const landscape = this.wantsLandscape(orientationMode, naturalWidth, naturalHeight);
+          const pageWidth = landscape ? base[1] : base[0];
+          const pageHeight = landscape ? base[0] : base[1];
+          const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+          // Fit inside the sheet, centred, without distorting the scan.
+          const scale = Math.min(pageWidth / naturalWidth, pageHeight / naturalHeight);
+          const drawWidth = naturalWidth * scale;
+          const drawHeight = naturalHeight * scale;
+          page.drawImage(embeddedImage, {
+            x: (pageWidth - drawWidth) / 2,
+            y: (pageHeight - drawHeight) / 2,
+            width: drawWidth,
+            height: drawHeight
+          });
+          if (scale < 0.999) {
+            report.approximations.push(
+              `Page ${i + 1} scaled to ${Math.round(scale * 100)}% to fit ${sizeMode}`
+            );
+          }
+        }
+
+        report.pagesRasterized++;
       }
 
       onProgress?.({ percent: 95, stage: 'Finalizing PDF bytes...' });
@@ -134,6 +156,7 @@ export class TiffToPdfConverter implements IConverter {
         success: true,
         file: outFile,
         downloadName: outName,
+        warnings: warnings.length ? warnings : undefined,
         report
       };
     } catch (err: any) {
@@ -145,12 +168,9 @@ export class TiffToPdfConverter implements IConverter {
     }
   }
 
-  private createFallback1x1Png(): Uint8Array {
-    // 1x1 white PNG base64
-    const b64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg==';
-    const bin = atob(b64);
-    const u8 = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    return u8;
+  private wantsLandscape(mode: string, width: number, height: number): boolean {
+    if (mode === 'Landscape') return true;
+    if (mode === 'Portrait') return false;
+    return width > height;
   }
 }

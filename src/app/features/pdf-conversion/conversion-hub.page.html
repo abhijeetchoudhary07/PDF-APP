@@ -24,7 +24,7 @@
           <input
             type="text"
             [(ngModel)]="searchTerm"
-            placeholder="Search 24+ formats (Word, PDF, Markdown)..."
+            [placeholder]="'Search ' + totalCount + ' formats (Word, PDF, Markdown)...'"
             class="search-input" />
           @if (searchTerm) {
             <button type="button" class="clear-btn" (click)="searchTerm = ''">&times;</button>
@@ -37,7 +37,7 @@
             [tabs]="[
               { id: 'all', label: 'All Formats (' + totalCount + ')' },
               { id: 'pdf-to-format', label: 'PDF to Other Formats' },
-              { id: 'format-to-pdf', label: 'Documents to PDF' }
+              { id: 'format-to-pdf', label: 'Files to PDF & Office' }
             ]"
             [selectedTab]="selectedCategory"
             (tabChange)="selectedCategory = $any($event)">
@@ -84,9 +84,9 @@
           <div class="group-title-row">
             <div class="group-title">
               <span class="group-dot dot-primary"></span>
-              <h3>Convert Documents to PDF</h3>
+              <h3>Convert Files to PDF &amp; Office</h3>
             </div>
-            <span class="group-desc">Compile Word documents, Excel tables, CSV, HTML, and ZIP archives to PDF</span>
+            <span class="group-desc">Compile Word documents, Excel tables, CSV, HTML and ZIP archives — and turn photographed text into Word or Excel</span>
           </div>
           <div class="converter-cards-grid">
             @for (item of filteredFormatToPdf; track item) {
@@ -95,9 +95,14 @@
                 class="converter-card">
                 <div class="card-top">
                   <span class="format-badge-pair">
-                    <span class="badge-src">{{ item.sourceFormats.join(', ') }}</span>
+                    <span class="badge-src">{{ sourceLabel(item) }}</span>
                     <span class="badge-arrow">&rarr;</span>
-                    <span class="badge-dest">PDF</span>
+                    <!--
+                      The target the tool actually produces. Hardcoding "PDF"
+                      here labelled Images to Word as making a PDF, which is
+                      exactly the kind of claim a store review rejects.
+                    -->
+                    <span class="badge-dest">{{ item.targetFormat | uppercase }}</span>
                   </span>
                   @if (item.badge) {
                     <app-badge variant="convert" size="sm">{{ item.badge }}</app-badge>

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, inject, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ChangeDetectorRef, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ImageRedactionService } from '../../../core/services/image-redaction.service';
@@ -40,7 +40,7 @@ import {
     TranslatePipe
   ]
 })
-export class PhotoBlurPage implements AfterViewInit {
+export class PhotoBlurPage implements AfterViewInit, OnDestroy {
   private redactionService = inject(ImageRedactionService);
   private storageService = inject(StorageService);
   private shareService = inject(ShareService);
@@ -87,6 +87,28 @@ export class PhotoBlurPage implements AfterViewInit {
     this.redrawCanvas();
   }
 
+  /**
+   * The canvas is sized from the viewport, so a rotation or a soft-keyboard
+   * resize has to re-lay it out — otherwise it keeps the old size and the
+   * drawn regions no longer line up with what is on screen.
+   */
+  @HostListener('window:resize')
+  @HostListener('window:orientationchange')
+  onViewportChange() {
+    this.redrawCanvas();
+  }
+
+  ngOnDestroy() {
+    this.releasePreviewUrls();
+  }
+
+  private releasePreviewUrls() {
+    if (this.originalPreviewUrl) URL.revokeObjectURL(this.originalPreviewUrl);
+    if (this.processedPreviewUrl) URL.revokeObjectURL(this.processedPreviewUrl);
+    this.originalPreviewUrl = undefined;
+    this.processedPreviewUrl = undefined;
+  }
+
   get beforePreviewData(): PreviewData | undefined {
     if (!this.originalFile) return undefined;
     return {
@@ -110,6 +132,7 @@ export class PhotoBlurPage implements AfterViewInit {
   }
 
   async onFileSelected(file: File) {
+    this.releasePreviewUrls();
     this.originalFile = file;
     this.errorMessage = undefined;
     this.workflowState = 'CONFIGURING';
@@ -154,52 +177,121 @@ export class PhotoBlurPage implements AfterViewInit {
     }
   }
 
+  /**
+   * Maps a pointer position to source-image pixels.
+   *
+   * The canvas backing store and its on-screen box are not the same size — the
+   * viewport card caps it with `max-width: 100%` — so the conversion has to go
+   * through the live bounding rect. Scaling by `displayScale` alone put every
+   * drawn region short of where it was drawn, leaving part of the face or plate
+   * the user meant to hide still visible.
+   */
+  private toImageCoords(e: PointerEvent): { x: number; y: number } {
+    const canvas = this.redactCanvasRef!.nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    const img = this.sourceImage!;
+    const scaleX = rect.width > 0 ? img.width / rect.width : 1;
+    const scaleY = rect.height > 0 ? img.height / rect.height : 1;
+    return {
+      x: this.clamp((e.clientX - rect.left) * scaleX, 0, img.width),
+      y: this.clamp((e.clientY - rect.top) * scaleY, 0, img.height)
+    };
+  }
+
+  private clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
+  }
+
   // Pointer / Touch drawing handlers for mobile
   onPointerDown(e: PointerEvent) {
     if (!this.sourceImage || !this.redactCanvasRef?.nativeElement) return;
-    const canvas = this.redactCanvasRef.nativeElement;
-    const rect = canvas.getBoundingClientRect();
+    e.preventDefault();
+    // Capture so a drag that leaves the canvas still ends on this element.
+    try {
+      this.redactCanvasRef.nativeElement.setPointerCapture(e.pointerId);
+    } catch {
+      // Pointer capture is unavailable on some older WebViews; drawing still works.
+    }
+    const p = this.toImageCoords(e);
     this.isDrawing = true;
-    this.startX = (e.clientX - rect.left) / this.displayScale;
-    this.startY = (e.clientY - rect.top) / this.displayScale;
-    this.currentX = this.startX;
-    this.currentY = this.startY;
+    this.startX = p.x;
+    this.startY = p.y;
+    this.currentX = p.x;
+    this.currentY = p.y;
   }
 
   onPointerMove(e: PointerEvent) {
     if (!this.isDrawing || !this.sourceImage || !this.redactCanvasRef?.nativeElement) return;
-    const canvas = this.redactCanvasRef.nativeElement;
-    const rect = canvas.getBoundingClientRect();
-    this.currentX = (e.clientX - rect.left) / this.displayScale;
-    this.currentY = (e.clientY - rect.top) / this.displayScale;
+    e.preventDefault();
+    const p = this.toImageCoords(e);
+    this.currentX = p.x;
+    this.currentY = p.y;
     this.redrawCanvas();
   }
 
-  onPointerUp() {
+  onPointerUp(e?: PointerEvent) {
     if (!this.isDrawing || !this.sourceImage) return;
     this.isDrawing = false;
 
-    const x = Math.min(this.startX, this.currentX);
-    const y = Math.min(this.startY, this.currentY);
-    const width = Math.abs(this.currentX - this.startX);
-    const height = Math.abs(this.currentY - this.startY);
-
-    // Only add if region has minimal size (e.g. > 10px)
-    if (width > 10 && height > 10) {
-      this.regions.push({
-        id: 'region_' + (this.regions.length + 1),
-        x: Math.round(x),
-        y: Math.round(y),
-        width: Math.round(width),
-        height: Math.round(height),
-        type: this.selectedType,
-        intensity: this.intensity,
-        label: `Region ${this.regions.length + 1}`
-      });
+    if (e && this.redactCanvasRef?.nativeElement) {
+      try {
+        this.redactCanvasRef.nativeElement.releasePointerCapture(e.pointerId);
+      } catch {
+        // Nothing to release.
+      }
     }
+
+    let x = Math.min(this.startX, this.currentX);
+    let y = Math.min(this.startY, this.currentY);
+    let width = Math.abs(this.currentX - this.startX);
+    let height = Math.abs(this.currentY - this.startY);
+
+    // A tap is a region too: the on-screen instruction offers it, and on a
+    // phone it is far easier than a precise drag. Drop a box around the tap,
+    // sized relative to the photo so it is useful at any resolution.
+    const minDragPx = Math.max(10, this.sourceImage.width * 0.02);
+    if (width < minDragPx && height < minDragPx) {
+      const tapSize = Math.round(Math.min(this.sourceImage.width, this.sourceImage.height) * 0.18);
+      width = tapSize;
+      height = tapSize;
+      x = this.startX - tapSize / 2;
+      y = this.startY - tapSize / 2;
+    }
+
+    x = this.clamp(x, 0, this.sourceImage.width - 1);
+    y = this.clamp(y, 0, this.sourceImage.height - 1);
+    width = this.clamp(width, 1, this.sourceImage.width - x);
+    height = this.clamp(height, 1, this.sourceImage.height - y);
+
+    this.regions.push({
+      id: 'region_' + Date.now() + '_' + this.regions.length,
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(width),
+      height: Math.round(height),
+      type: this.selectedType,
+      intensity: this.intensity,
+      label: `Region ${this.regions.length + 1}`
+    });
 
     this.redrawCanvas();
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Mode and intensity are page-level controls, so they apply to every marked
+   * region — otherwise moving the slider silently changes nothing the user can
+   * see, because the overlay only tints the region.
+   */
+  setRedactionType(type: 'blur' | 'pixelate') {
+    this.selectedType = type;
+    this.regions = this.regions.map(r => ({ ...r, type }));
+    this.redrawCanvas();
+  }
+
+  onIntensityChange() {
+    this.regions = this.regions.map(r => ({ ...r, intensity: this.intensity }));
+    this.redrawCanvas();
   }
 
   removeRegion(index: number) {
@@ -212,13 +304,26 @@ export class PhotoBlurPage implements AfterViewInit {
     this.redrawCanvas();
   }
 
+  /**
+   * The viewport card is padded, so `clientWidth` overstates what the canvas
+   * can occupy; the surplus was handed straight back by `max-width: 100%` as a
+   * CSS downscale, which is what knocked the drawn regions out of alignment.
+   */
+  private availableCanvasWidth(canvas: HTMLCanvasElement): number {
+    const parent = canvas.parentElement;
+    if (!parent) return Math.max(160, window.innerWidth - 32);
+    const cs = getComputedStyle(parent);
+    const padding = parseFloat(cs.paddingLeft || '0') + parseFloat(cs.paddingRight || '0');
+    return Math.max(160, parent.clientWidth - padding);
+  }
+
   redrawCanvas() {
     if (!this.sourceImage || !this.redactCanvasRef?.nativeElement) return;
     const canvas = this.redactCanvasRef.nativeElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const maxDisplayW = Math.min(canvas.parentElement?.clientWidth || (window.innerWidth - 32), 540);
+    const maxDisplayW = Math.min(this.availableCanvasWidth(canvas), 540);
     const maxDisplayH = Math.min(window.innerHeight * 0.45, 420);
     this.displayScale = Math.min(maxDisplayW / this.sourceImage.width, maxDisplayH / this.sourceImage.height, 1);
     canvas.width = Math.round(this.sourceImage.width * this.displayScale);
@@ -316,14 +421,14 @@ export class PhotoBlurPage implements AfterViewInit {
   }
 
   reset() {
+    this.releasePreviewUrls();
     this.workflowState = 'EMPTY';
     this.originalFile = undefined;
-    this.originalPreviewUrl = undefined;
     this.sourceImage = undefined;
     this.regions = [];
     this.processedFile = undefined;
-    this.processedPreviewUrl = undefined;
     this.errorMessage = undefined;
+    this.isDrawing = false;
   }
 
   async saveOutput() {

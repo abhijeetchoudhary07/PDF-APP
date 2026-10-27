@@ -10,9 +10,16 @@ export class ImageService {
   async getImageDimensions(file: File): Promise<ImageDimensions> {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.onload = () => resolve({ width: img.width, height: img.height });
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+      };
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+      img.src = url;
     });
   }
 
@@ -20,13 +27,17 @@ export class ImageService {
   async resizeToCanvasBlob(file: File, targetWidth: number, targetHeight: number, outputFormat: string, quality: number = 0.9): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      const url = URL.createObjectURL(file);
+      const safeWidth = Math.max(1, Math.round(Number(targetWidth) || 1));
+      const safeHeight = Math.max(1, Math.round(Number(targetHeight) || 1));
       img.onload = () => {
+        URL.revokeObjectURL(url);
         const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
+        canvas.width = safeWidth;
+        canvas.height = safeHeight;
         
         const ctx = canvas.getContext('2d');
-        if (!ctx) return reject('No canvas context');
+        if (!ctx) return reject(new Error('No canvas context'));
 
         // Fill white background for JPEGs to prevent transparency issues
         if (outputFormat === 'image/jpeg') {
@@ -34,25 +45,30 @@ export class ImageService {
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+        ctx.drawImage(img, 0, 0, safeWidth, safeHeight);
         
         canvas.toBlob((blob) => {
           if (blob) {
             resolve(blob);
           } else {
-            reject('Failed to convert canvas to blob');
+            reject(new Error('Failed to convert canvas to blob'));
           }
         }, outputFormat, quality);
       };
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+      img.src = url;
     });
   }
 
   async autoCropSignature(file: File, padding: number = 10, threshold: number = 240): Promise<File> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      const url = URL.createObjectURL(file);
       img.onload = () => {
+        URL.revokeObjectURL(url);
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
@@ -120,8 +136,11 @@ export class ImageService {
            }
         }, file.type || 'image/jpeg', 1.0);
       };
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+      img.src = url;
     });
   }
 }

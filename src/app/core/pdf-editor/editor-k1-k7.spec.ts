@@ -1,5 +1,6 @@
 import '../utilities/pdf-iterator-polyfill';
 import { describe, it, expect, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { PDFDocument, StandardFonts, rgb, PDFTextField } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -103,7 +104,13 @@ describe('Features K1–K7: PDF Editor Advanced Capabilities', () => {
     let service: PdfFindReplaceService;
 
     beforeEach(() => {
-      service = new PdfFindReplaceService();
+      /*
+       * Through TestBed rather than `new`: page-text replacement goes
+       * through K6's writer, which this service now takes from `inject()`.
+       * That throws outside an injection context.
+       */
+      TestBed.configureTestingModule({});
+      service = TestBed.inject(PdfFindReplaceService);
     });
 
     it('should find matches across document text, editor elements, and form fields', async () => {
@@ -150,23 +157,29 @@ describe('Features K1–K7: PDF Editor Advanced Capabilities', () => {
       const editorDoc = createEditorDocModel(arrayBuffer);
 
       const result = await service.replaceAll(
-        arrayBuffer,
+        editorDoc,
         'billing@acme.com',
         'support@globex.org',
-        { caseSensitive: false, wholeWord: false, includeFormFields: true },
-        editorDoc
+        { caseSensitive: false, wholeWord: false, includeFormFields: true }
       );
 
       expect(result.matchesFound).toBeGreaterThanOrEqual(1);
       expect(result.matchesReplaced).toBeGreaterThanOrEqual(1);
 
-      // Verify replaced state
-      const recheck = await service.findAcrossDocument(
-        result.updatedPdfBytes!,
-        'billing@acme.com',
-        { includeFormFields: true },
-        editorDoc
-      );
+      /*
+       * The rewritten bytes have to go back into the document before the
+       * recheck. A form field value lives in the file, not in the overlay
+       * model, so re-reading the original buffer would find the old value
+       * and say nothing had happened.
+       */
+      editorDoc.arrayBuffer = result.updatedPdfBytes!.buffer.slice(
+        result.updatedPdfBytes!.byteOffset,
+        result.updatedPdfBytes!.byteOffset + result.updatedPdfBytes!.byteLength
+      ) as ArrayBuffer;
+
+      const recheck = await service.findMatches(editorDoc, 'billing@acme.com', {
+        includeFormFields: true
+      });
       expect(recheck.length).toBe(0);
     });
   });
@@ -341,8 +354,12 @@ describe('Features K1–K7: PDF Editor Advanced Capabilities', () => {
       expect(csv).toContain('Resolved');
       expect(csv).toContain('Approved clause');
 
-      const lines = csv.trim().split('\n');
+      const lines = csv.trim().split('\r\n');
       expect(lines.length).toBe(3); // 1 header + 2 threads
+
+      /* Every data field is quoted, so a comment carrying a comma or a line
+       * break cannot split its own row. */
+      expect(service.generateCsvSummary([threads[0]])).toContain('"Needs clarification"');
     });
 
     it('should generate a standalone PDF comment summary document', async () => {
@@ -380,7 +397,14 @@ describe('Features K1–K7: PDF Editor Advanced Capabilities', () => {
     });
 
     it('should verify whiteout disclaimer states visual coverage rather than permanent removal', () => {
-      expect(WHITEOUT_DISCLAIMER_TEXT).toContain('visually covers content rather than permanently removing');
+      /*
+       * The wording changed; what it has to say did not. The notice must
+       * tell the reader that content is painted over rather than removed,
+       * that what is underneath stays in the file, and where to go for a
+       * removal that cannot be undone.
+       */
+      expect(WHITEOUT_DISCLAIMER_TEXT.toLowerCase()).toContain('paints over');
+      expect(WHITEOUT_DISCLAIMER_TEXT.toLowerCase()).toContain('stay in the file');
       expect(WHITEOUT_DISCLAIMER_TEXT.toLowerCase()).toContain('redact');
     });
 
@@ -597,8 +621,18 @@ describe('Features K1–K7: PDF Editor Advanced Capabilities', () => {
 
       const result = await service.applyTextEdit(bytes, command);
       expect(result.usedFallbackWhiteout).toBe(true);
-      expect(result.command.fallbackNotice).toContain('The embedded subset font lacks required glyphs');
       expect(result.outputSelectable).toBe(true);
+
+      /*
+       * The notice names what actually happened rather than asserting a
+       * single cause. For this input the standard fonts cannot encode
+       * Devanagari at all, so the honest report is the dropped characters —
+       * the old message blamed a subset font that is not involved here.
+       */
+      expect(result.command.fallbackNotice).toBeTruthy();
+      expect(result.droppedCharacters).toBeGreaterThan(0);
+      expect(result.message).toMatch(/covered and redrawn/i);
+      expect(result.message).toMatch(/Devanagari/i);
     });
   });
 

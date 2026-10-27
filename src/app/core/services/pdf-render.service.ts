@@ -44,6 +44,30 @@ export class PdfRenderService {
   private renderQueue: Promise<unknown> = Promise.resolve();
   private renderGeneration = 0;
 
+  /*
+   * L2 — the reader's own surfaces (two-page spread, continuous scroll) paint
+   * several canvases that are all current at once, so they cannot share the
+   * single-canvas machinery above. Routed through `renderPageToCanvas` each
+   * page would retire the one before it and every canvas but the last would
+   * stay blank.
+   *
+   * Keyed by canvas rather than serialised: one in-flight task per canvas,
+   * cancelled only when that same canvas is asked for something else (a
+   * recycled slot in the continuous list, or a zoom change). Different pages
+   * on different canvases are independent, which is the whole point.
+   */
+  private surfaceTasks = new Map<HTMLCanvasElement, any>();
+
+  /**
+   * Page images keyed by document, page AND scale.
+   *
+   * `thumbnailCache` keys on document and page only, so the first scale a
+   * page is asked for is the only one it ever returns. That is fine for the
+   * one fixed-size strip it was built for, but L6 wants a small strip thumb
+   * and a larger scrub preview of the same page.
+   */
+  private pageImageCache = new Map<string, string>();
+
   constructor() {}
 
   async loadPdf(arrayBuffer: ArrayBuffer, docId: string): Promise<any> {
@@ -290,6 +314,121 @@ export class PdfRenderService {
     return matches;
   }
 
+  /**
+   * L2 — paints `pageNumber` onto a canvas the caller owns and keeps.
+   *
+   * Deliberately not `renderPageToCanvas`: see `surfaceTasks`. Concurrent
+   * calls on *different* canvases all run; a second call on the *same* canvas
+   * cancels the first, because that canvas can only show one page.
+   *
+   * A cancelled paint resolves with the geometry rather than throwing, so a
+   * fast scroll through a continuous list does not spray rejections.
+   */
+  async renderPageToSurface(
+    pageNumber: number,
+    canvas: HTMLCanvasElement,
+    scale: number,
+    rotation: number = 0
+  ): Promise<RenderPageResult> {
+    this.cancelSurface(canvas);
+
+    const page = await this.getPage(pageNumber);
+    const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+    const viewport = page.getViewport({ scale: scale * dpr, rotation });
+    const cssViewport = page.getViewport({ scale, rotation });
+
+    const geometry: RenderPageResult = {
+      width: cssViewport.width,
+      height: cssViewport.height,
+      scale,
+      viewport: cssViewport
+    };
+
+    canvas.width = Math.max(1, Math.floor(viewport.width));
+    canvas.height = Math.max(1, Math.floor(viewport.height));
+    canvas.style.width = `${Math.max(1, Math.floor(cssViewport.width))}px`;
+    canvas.style.height = `${Math.max(1, Math.floor(cssViewport.height))}px`;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Canvas 2D context not available.');
+    }
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const task = page.render({ canvasContext: ctx, viewport } as any);
+    this.surfaceTasks.set(canvas, task);
+
+    try {
+      await task.promise;
+    } catch (e: any) {
+      if (e?.name !== 'RenderingCancelledException') {
+        throw e;
+      }
+    } finally {
+      if (this.surfaceTasks.get(canvas) === task) {
+        this.surfaceTasks.delete(canvas);
+      }
+    }
+
+    return geometry;
+  }
+
+  /** L2 — stops whatever is painting onto `canvas`, for a slot being recycled. */
+  cancelSurface(canvas: HTMLCanvasElement): void {
+    const task = this.surfaceTasks.get(canvas);
+    if (!task) return;
+    try {
+      task.cancel();
+    } catch {
+      // Already settled.
+    }
+    this.surfaceTasks.delete(canvas);
+  }
+
+  /** L2 — stops every surface paint, for a reader leaving the screen. */
+  cancelAllSurfaces(): void {
+    for (const canvas of Array.from(this.surfaceTasks.keys())) {
+      this.cancelSurface(canvas);
+    }
+  }
+
+  /**
+   * L6 — a page as a JPEG data URL at a given scale, cached per scale.
+   *
+   * `getPageThumbnail` is left exactly as it is; this is the path for callers
+   * that need the same page at more than one size.
+   */
+  async renderPageImage(
+    pageNumber: number,
+    docId: string,
+    scale: number
+  ): Promise<string> {
+    const key = `${docId}_p${pageNumber}_s${scale}`;
+    const cached = this.pageImageCache.get(key);
+    if (cached) return cached;
+
+    const page = await this.getPage(pageNumber);
+    const viewport = page.getViewport({ scale });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.floor(viewport.width));
+    canvas.height = Math.max(1, Math.floor(viewport.height));
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas context not available');
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    await (page.render({ canvasContext: ctx, viewport } as any)).promise;
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+    this.pageImageCache.set(key, dataUrl);
+    return dataUrl;
+  }
+
   clear() {
     // Retire anything queued: the document it would render from is going away.
     this.renderGeneration++;
@@ -307,5 +446,7 @@ export class PdfRenderService {
     }
     this.currentDocId = null;
     this.thumbnailCache.clear();
+    this.cancelAllSurfaces();
+    this.pageImageCache.clear();
   }
 }

@@ -1,430 +1,186 @@
-import { Component, OnInit, ChangeDetectionStrategy, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
-import { AppIconComponent } from '../../../../shared/components/ui';
+import { AppIconComponent, TranslatePipe } from '../../../../shared/components/ui';
 import { PdfEditorStateService } from '../../../../core/services/pdf-editor-state.service';
 import { PdfFindReplaceService } from '../../../../core/services/pdf-find-replace.service';
-import { FindMatch, FindReplaceOptions } from '../../../../core/models/editor-features.types';
+import {
+  FindMatch,
+  FindReplaceOptions,
+  FindReplaceResult
+} from '../../../../core/models/editor-features.types';
 
+/** How much of the surrounding run is shown either side of a hit. */
+const CONTEXT_CHARS = 28;
+
+/**
+ * K1 — the find & replace sheet.
+ *
+ * The thing this screen has to get right is telling the truth about what a
+ * replacement did. Three kinds of text live in a PDF and only two of them
+ * can be edited cleanly; the third is covered over and redrawn. So the
+ * result panel reports four separate numbers — replaced, left alone,
+ * redrawn, and still reachable by a search — rather than one cheerful
+ * "done". The version this replaces counted every hit as replaced and
+ * changed nothing in the file at all.
+ */
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-pdf-find-replace-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, AppIconComponent],
-  template: `
-    <div class="modal-wrapper">
-      <div class="modal-header">
-        <div class="header-title">
-          <app-icon name="search"></app-icon>
-          <h3>Find & Replace</h3>
-        </div>
-        <button class="close-btn" (click)="dismiss()" aria-label="Close">
-          <app-icon name="close"></app-icon>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <!-- SEARCH & REPLACE INPUTS -->
-        <div class="input-card">
-          <label class="field-label">Find text</label>
-          <div class="input-row">
-            <input
-              type="text"
-              [(ngModel)]="searchQuery"
-              placeholder="Search in PDF & form fields..."
-              class="text-input"
-              (keyup.enter)="executeSearch()"
-            />
-          </div>
-
-          <label class="field-label">Replace with</label>
-          <div class="input-row">
-            <input
-              type="text"
-              [(ngModel)]="replaceQuery"
-              placeholder="Replacement text..."
-              class="text-input"
-            />
-          </div>
-
-          <!-- NOTICE ABOUT REPLACEMENT SCOPE -->
-          <div class="scope-notice">
-            <app-icon name="alert-circle-outline"></app-icon>
-            <span>In-document replacement updates form field values and editor-added text runs cleanly.</span>
-          </div>
-
-          <!-- OPTIONS -->
-          <div class="options-grid">
-            <label class="checkbox-label">
-              <input type="checkbox" [(ngModel)]="options.caseSensitive" />
-              <span>Match Case</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" [(ngModel)]="options.wholeWord" />
-              <span>Whole Word</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" [(ngModel)]="options.includeFormFields" />
-              <span>Form Fields</span>
-            </label>
-          </div>
-
-          <div class="btn-row">
-            <button class="action-btn primary-btn" (click)="executeSearch()" [disabled]="!searchQuery || isSearching">
-              <app-icon name="search"></app-icon>
-              <span>{{ isSearching ? 'Searching...' : 'Find Matches' }}</span>
-            </button>
-            <button
-              class="action-btn replace-btn"
-              (click)="replaceAll()"
-              [disabled]="matches.length === 0 || !replaceQuery || isReplacing"
-            >
-              <app-icon name="refresh"></app-icon>
-              <span>Replace All ({{ matches.length }})</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- MATCHES LIST -->
-        <div class="results-section">
-          <div class="results-header">
-            <h4>Matches Found: {{ matches.length }}</h4>
-            @if (searchPerformed && matches.length === 0) {
-              <span class="no-matches-tag">No matches</span>
-            }
-          </div>
-
-          <div class="matches-list">
-            @for (match of matches; track match.id; let idx = $index) {
-              <div class="match-item" [class.active]="selectedMatchIndex === idx">
-                <div class="match-info" (click)="jumpToMatch(match, idx)">
-                  <span class="page-badge">Page {{ match.pageNumber }}</span>
-                  <span class="source-badge">{{ match.source }}</span>
-                  <div class="match-text">"{{ match.text }}"</div>
-                </div>
-                <button
-                  class="replace-one-btn"
-                  (click)="replaceSingle(match)"
-                  [disabled]="!replaceQuery"
-                  aria-label="Replace this match"
-                >
-                  Replace
-                </button>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    :host {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      width: 100%;
-      background: #ffffff;
-    }
-    .modal-wrapper {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #ffffff;
-      color: var(--text-primary, #1e293b);
-      font-family: inherit;
-    }
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      background: #ffffff;
-      border-bottom: 1px solid var(--border-color, #e2e8f0);
-    }
-    .header-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      h3 { margin: 0; font-size: 1.15rem; font-weight: 700; }
-      app-icon { font-size: 1.25rem; color: var(--color-primary, #3b82f6); }
-    }
-    .close-btn {
-      background: transparent;
-      border: none;
-      padding: 8px;
-      cursor: pointer;
-      font-size: 1.25rem;
-      min-width: 44px;
-      min-height: 44px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-    }
-    .modal-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px 16px max(32px, env(safe-area-inset-bottom, 32px)) 16px;
-      -webkit-overflow-scrolling: touch;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .input-card {
-      background: var(--bg-subtle, #f8fafc);
-      border: 1px solid var(--border-color, #e2e8f0);
-      border-radius: 12px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .field-label {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-secondary, #64748b);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .text-input {
-      width: 100%;
-      min-height: 44px;
-      padding: 8px 12px;
-      font-size: 0.95rem;
-      border: 1px solid var(--border-color, #cbd5e1);
-      border-radius: 8px;
-      background: var(--bg-surface, #ffffff);
-      color: inherit;
-      box-sizing: border-box;
-    }
-    .scope-notice {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      color: #1e40af;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 0.8rem;
-    }
-    .options-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.88rem;
-      cursor: pointer;
-      min-height: 44px;
-      input { width: 18px; height: 18px; }
-    }
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-    .action-btn {
-      flex: 1;
-      min-height: 44px;
-      min-width: 130px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .primary-btn {
-      background: var(--color-primary, #3b82f6);
-      color: #ffffff;
-    }
-    .replace-btn {
-      background: #059669;
-      color: #ffffff;
-    }
-    .action-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .results-section {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .results-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      h4 { margin: 0; font-size: 0.95rem; }
-    }
-    .no-matches-tag {
-      font-size: 0.8rem;
-      color: #ef4444;
-      font-weight: 600;
-    }
-    .matches-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 240px;
-      overflow-y: auto;
-    }
-    .match-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border: 1px solid var(--border-color, #e2e8f0);
-      background: var(--bg-surface, #ffffff);
-      border-radius: 8px;
-    }
-    .match-item.active {
-      border-color: #3b82f6;
-      background: #eff6ff;
-    }
-    .match-info {
-      flex: 1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .page-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      background: #e2e8f0;
-      color: #334155;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    .source-badge {
-      font-size: 0.72rem;
-      background: #dbeafe;
-      color: #1e40af;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    .match-text {
-      font-size: 0.88rem;
-      color: var(--text-primary, #1e293b);
-      word-break: break-all;
-    }
-    .replace-one-btn {
-      min-height: 44px;
-      padding: 6px 12px;
-      border: 1px solid #10b981;
-      background: #ecfdf5;
-      color: #065f46;
-      border-radius: 6px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .replace-one-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-  `]
+  imports: [CommonModule, FormsModule, AppIconComponent, TranslatePipe],
+  templateUrl: './pdf-find-replace-modal.component.html',
+  styleUrls: ['./pdf-find-replace-modal.component.scss']
 })
-export class PdfFindReplaceModalComponent implements OnInit {
+export class PdfFindReplaceModalComponent {
   state = inject(PdfEditorStateService);
-  private findReplaceService = inject(PdfFindReplaceService);
+  private findReplace = inject(PdfFindReplaceService);
   private modalCtrl = inject(ModalController);
 
   searchQuery = '';
-  replaceQuery = '';
+  replacement = '';
+
   options: FindReplaceOptions = {
     caseSensitive: false,
     wholeWord: false,
-    includeFormFields: true
+    includeFormFields: true,
+    replaceExistingPageText: false
   };
 
   matches: FindMatch[] = [];
-  selectedMatchIndex: number | null = null;
+  activeMatchId: string | null = null;
   isSearching = false;
   isReplacing = false;
   searchPerformed = false;
+  report: FindReplaceResult | null = null;
 
-  ngOnInit() {}
+  // ── Searching ──────────────────────────────────────────────────────
 
-  async executeSearch() {
-    if (!this.searchQuery.trim() || !this.state.document) return;
+  async runSearch(): Promise<void> {
+    const doc = this.state.document;
+    if (!doc || !this.searchQuery.trim()) return;
 
     this.isSearching = true;
     this.searchPerformed = true;
     this.matches = [];
 
     try {
-      this.matches = await this.findReplaceService.findAcrossDocument(
-        this.state.document.arrayBuffer,
-        this.searchQuery,
-        this.options,
-        this.state.document
-      );
-      if (this.matches.length > 0) {
-        this.selectedMatchIndex = 0;
-        this.jumpToMatch(this.matches[0], 0);
-      }
-    } catch (e) {
-      console.error('Search error', e);
+      this.matches = await this.findReplace.findMatches(doc, this.searchQuery, this.options);
+      if (this.matches.length > 0) this.jumpTo(this.matches[0]);
+    } catch (error) {
+      console.error('Find failed', error);
     } finally {
       this.isSearching = false;
     }
   }
 
-  jumpToMatch(match: FindMatch, index: number) {
-    this.selectedMatchIndex = index;
+  /**
+   * A changed option invalidates the hits on screen.
+   *
+   * Turning on "match case" with the old list still showing would leave
+   * someone replacing matches the current options would not have found.
+   */
+  optionsChanged(): void {
+    if (!this.searchPerformed) return;
+    this.matches = [];
+    this.activeMatchId = null;
+    this.report = null;
+    this.searchPerformed = false;
+  }
+
+  jumpTo(match: FindMatch): void {
+    this.activeMatchId = match.id;
     this.state.setCurrentPage(match.pageNumber);
   }
 
-  replaceSingle(match: FindMatch) {
-    if (!this.replaceQuery || !this.state.document) return;
+  // ── Replacing ──────────────────────────────────────────────────────
 
-    if (match.source === 'editor-element' && match.elementId) {
-      this.state.updateElement(match.elementId, { text: this.replaceQuery } as any);
-    }
-
-    // Remove from matches list
-    this.matches = this.matches.filter(m => m.id !== match.id);
+  async replaceAll(): Promise<void> {
+    await this.applyReplacement(this.matches);
   }
 
-  async replaceAll() {
-    if (!this.replaceQuery || !this.state.document || this.matches.length === 0) return;
+  async replaceOne(match: FindMatch): Promise<void> {
+    await this.applyReplacement([match]);
+  }
+
+  /**
+   * Runs the replacement and puts the rewritten file back into the editor.
+   *
+   * Putting the bytes back is the step that was missing: form field values
+   * and page text live in the file, not in the overlay model, so a result
+   * whose `updatedPdfBytes` is dropped on the floor is a replacement that
+   * never happened.
+   */
+  private async applyReplacement(targets: FindMatch[]): Promise<void> {
+    const doc = this.state.document;
+    if (!doc || targets.length === 0) return;
 
     this.isReplacing = true;
 
     try {
-      const res = await this.findReplaceService.replaceAll(
-        this.state.document.arrayBuffer,
-        this.searchQuery,
-        this.replaceQuery,
-        this.options,
-        this.state.document
+      const result = await this.findReplace.replaceAll(
+        doc,
+        targets,
+        this.replacement,
+        this.options
       );
 
-      // Re-run search to verify clear
-      await this.executeSearch();
-    } catch (e) {
-      console.error('Replace all error', e);
+      this.report = result;
+
+      if (result.updatedPdfBytes && result.matchesReplaced > 0) {
+        await this.state.replaceSourceBytes(
+          result.updatedPdfBytes,
+          `Replace ${result.matchesReplaced} match${result.matchesReplaced === 1 ? '' : 'es'}`
+        );
+      }
+
+      /* Re-run the search against the new bytes, so the list on screen is
+       * what the document now contains rather than what it used to. */
+      if (this.searchQuery.trim()) {
+        this.matches = await this.findReplace.findMatches(
+          this.state.document ?? doc,
+          this.searchQuery,
+          this.options
+        );
+        this.activeMatchId = null;
+      }
+    } catch (error) {
+      console.error('Replace failed', error);
     } finally {
       this.isReplacing = false;
     }
   }
 
-  dismiss() {
+  // ── Match list presentation ────────────────────────────────────────
+
+  sourceLabel(match: FindMatch): string {
+    switch (match.source) {
+      case 'form-field':
+        return 'editor.frSourceField';
+      case 'editor-element':
+        return 'editor.frSourceOverlay';
+      default:
+        return 'editor.frSourcePageText';
+    }
+  }
+
+  /** The run's text just before the hit, trimmed to a readable length. */
+  beforeHit(match: FindMatch): string {
+    const start = Math.max(0, match.offset - CONTEXT_CHARS);
+    const prefix = start > 0 ? '…' : '';
+    return prefix + match.text.slice(start, match.offset);
+  }
+
+  /** The run's text just after the hit. */
+  afterHit(match: FindMatch): string {
+    const end = match.offset + match.matchedText.length;
+    const stop = Math.min(match.text.length, end + CONTEXT_CHARS);
+    const suffix = stop < match.text.length ? '…' : '';
+    return match.text.slice(end, stop) + suffix;
+  }
+
+  dismiss(): void {
     this.modalCtrl.dismiss();
   }
 }

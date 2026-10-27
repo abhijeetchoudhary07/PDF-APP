@@ -84,13 +84,9 @@
                   [(ngModel)]="ocrLanguage"
                   [disabled]="isProcessing"
                   class="custom-select">
-                  <option value="eng">English (eng)</option>
-                  <option value="spa">Spanish (spa)</option>
-                  <option value="fra">French (fra)</option>
-                  <option value="deu">German (deu)</option>
-                  <option value="ita">Italian (ita)</option>
-                  <option value="por">Portuguese (por)</option>
-                  <option value="hin">Hindi (hin)</option>
+                  @for (lang of ocrLanguages; track lang.code) {
+                    <option [value]="lang.code">{{ lang.nativeName }} ({{ lang.name }})</option>
+                  }
                 </select>
                 <span class="form-hint">Generates searchable PDFs with invisible selectable text layers.</span>
               </div>
@@ -204,6 +200,46 @@
                 [label]="(completedCount + errorCount) + ' / ' + items.length + ' Processed'"
                 [variant]="errorCount > 0 ? 'warning' : 'primary'">
               </app-progress>
+            </div>
+          }
+
+          <!-- RUN SUMMARY: what was processed and what was not -->
+          @if (executionSummary && !isProcessing) {
+            <div class="run-summary-panel" [class.blocked]="executionSummary.quotaBlocked">
+              <div class="summary-head">
+                <app-icon [name]="executionSummary.quotaBlocked ? 'alert-circle' : (executionSummary.failedCount > 0 ? 'alert-circle' : 'shield-checkmark')"></app-icon>
+                <strong>
+                  @if (executionSummary.quotaBlocked) {
+                    Stopped at the daily limit
+                  } @else if (executionSummary.failedCount > 0) {
+                    Finished with errors
+                  } @else {
+                    Batch complete
+                  }
+                </strong>
+              </div>
+              <div class="summary-stats">
+                <div class="summary-stat">
+                  <span class="stat-value">{{ executionSummary.processedCount }}</span>
+                  <span class="stat-label">Processed</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="stat-value">{{ executionSummary.failedCount }}</span>
+                  <span class="stat-label">Not processed</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="stat-value">{{ executionSummary.totalFiles }}</span>
+                  <span class="stat-label">In queue</span>
+                </div>
+              </div>
+              @if (executionSummary.quotaBlocked) {
+                <p class="summary-note">
+                  The remaining files were left untouched. They stay in the queue, so the run can be
+                  finished tomorrow or on Premium.
+                </p>
+              } @else if (executionSummary.failedCount > 0) {
+                <p class="summary-note">Each failure and its reason is listed in the queue below and in the CSV log.</p>
+              }
             </div>
           }
 

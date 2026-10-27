@@ -69,7 +69,7 @@ export class CsvToPdfConverter implements IConverter {
 
       const pdfDoc = await PDFDocument.create();
 
-      await PdfLayoutHelper.renderTableDocument(
+      const dropped = await PdfLayoutHelper.renderTableDocument(
         pdfDoc,
         parsed.headers,
         parsed.rows,
@@ -93,11 +93,22 @@ export class CsvToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(dropped.dropped, dropped.sample);
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
+        warnings: encodingWarning ? [encodingWarning] : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: {
           headers: parsed.headers,
           rows: parsed.rows.slice(0, 15),

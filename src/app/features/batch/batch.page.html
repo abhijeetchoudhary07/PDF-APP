@@ -5,8 +5,8 @@
     <div class="tool-page-container">
       <app-page-header
         [title]="'batchPage.title' | translate"
-        subtitle="Compress multiple photos simultaneously to an exact target file size."
-        [breadcrumbs]="[{ label: 'Batch Compress Photos' }]"
+        [subtitle]="'batchPage.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('batchPage.title' | translate) }]"
         badge="BATCH"
         badgeVariant="batch"
         backUrl="/home">
@@ -31,13 +31,13 @@
           <div class="batch-config-card">
             <div class="config-header">
               <div>
-                <h4>Batch Settings</h4>
+                <h4>{{ 'batchPage.settingsTitle' | translate }}</h4>
                 <span class="file-counter">Total Files: {{ items.length }} / {{ MAX_BATCH_SIZE }}</span>
               </div>
             </div>
             <div class="config-fields-grid">
               <div class="form-group">
-                <label class="form-label">Batch Target Size (KB)</label>
+                <label class="form-label">{{ 'batchPage.targetSizeLabel' | translate }}</label>
                 <input
                   type="number"
                   [(ngModel)]="targetKB"
@@ -45,7 +45,7 @@
                   class="custom-input" />
               </div>
               <div class="form-group">
-                <label class="form-label">Format</label>
+                <label class="form-label">{{ 'batchPage.formatLabel' | translate }}</label>
                 <select [(ngModel)]="targetFormat" [disabled]="isProcessing" class="custom-select">
                   <option value="image/jpeg">JPEG</option>
                   <option value="image/png">PNG</option>
@@ -56,7 +56,7 @@
 
             <!-- I10: RENAME TEMPLATE -->
             <div class="rename-section">
-              <label class="form-label">Rename Pattern (Optional)</label>
+              <label class="form-label">{{ 'batchPage.renamePatternLabel' | translate }}</label>
               <input
                 type="text"
                 [(ngModel)]="renameTemplate"
@@ -76,11 +76,11 @@
             <div class="toggles-grid">
               <label class="toggle-card-label">
                 <input type="checkbox" [(ngModel)]="autoRotateExif" [disabled]="isProcessing" />
-                <span>Auto-Rotate (EXIF)</span>
+                <span>{{ 'batchPage.autoRotateLabel' | translate }}</span>
               </label>
               <label class="toggle-card-label">
                 <input type="checkbox" [(ngModel)]="skipIfUnderTarget" [disabled]="isProcessing" />
-                <span>Skip if under target</span>
+                <span>{{ 'batchPage.skipUnderLabel' | translate }}</span>
               </label>
               <label class="toggle-card-label">
                 <input
@@ -88,7 +88,7 @@
                   [checked]="pdfExportMode === 'combined-pdf'"
                   (change)="pdfExportMode = pdfExportMode === 'combined-pdf' ? 'individual' : 'combined-pdf'"
                   [disabled]="isProcessing" />
-                <span>Export as Combined PDF</span>
+                <span>{{ 'batchPage.combinedPdfLabel' | translate }}</span>
               </label>
             </div>
 
@@ -148,7 +148,7 @@
             <div class="empty-icon-badge">
               <app-icon name="images-outline"></app-icon>
             </div>
-            <h3>No Files Selected</h3>
+            <h3>{{ 'batchPage.noFilesTitle' | translate }}</h3>
             <p>Compress up to {{ MAX_BATCH_SIZE }} photos at once with zero quality loss.</p>
             <app-button variant="primary" size="lg" (clicked)="selectFiles()" style="margin-top: 16px;">
               <app-icon name="folder-open-outline" class="btn-icon"></app-icon>
@@ -194,7 +194,7 @@
                       </div>
 
                       @if (item.status === 'skipped') {
-                        <p class="meta-skipped">Already under target (Preserved)</p>
+                        <p class="meta-skipped">{{ 'batchPage.skippedBadge' | translate }}</p>
                       }
                       @if (item.status === 'done' && item.result?.metadata) {
                         <p class="meta-done">

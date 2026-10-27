@@ -82,7 +82,7 @@ export class WordToPdfConverter implements IConverter {
       const structuredText = HtmlSanitizerHelper.extractStructuredText(rawHtml);
 
       const pdfDoc = await PDFDocument.create();
-      await PdfLayoutHelper.renderTextDocument(pdfDoc, structuredText, {
+      const dropped = await PdfLayoutHelper.renderTextDocument(pdfDoc, structuredText, {
         format: options.format || 'A4',
         orientation: options.orientation || 'Portrait',
         margin: options.margin || 40,
@@ -94,12 +94,26 @@ export class WordToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(dropped.dropped, dropped.sample);
+      const allWarnings = [
+        ...warnings.slice(0, 3),
+        ...(encodingWarning ? [encodingWarning] : [])
+      ];
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
-        warnings: warnings.length > 0 ? warnings.slice(0, 3) : undefined,
+        warnings: allWarnings.length > 0 ? allWarnings : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: {
           pageCount: pdfDoc.getPageCount(),
           charCount: structuredText.length

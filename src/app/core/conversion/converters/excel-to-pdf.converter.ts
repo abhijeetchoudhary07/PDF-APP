@@ -67,6 +67,13 @@ export class ExcelToPdfConverter implements IConverter {
 
       let firstSheetPreview: { headers: string[]; rows: string[][] } | undefined;
 
+      // Accumulated across every sheet/entry, so one notice covers the file.
+      const dropped = { dropped: 0, sample: '' };
+      const track = (result: { dropped: number; sample: string }) => {
+        dropped.dropped += result.dropped;
+        if (!dropped.sample) dropped.sample = result.sample;
+      };
+
       for (let s = 0; s < sheetNamesToProcess.length; s++) {
         const sheetName = sheetNamesToProcess[s];
         const percent = Math.round(30 + ((s + 1) / sheetNamesToProcess.length) * 55);
@@ -96,7 +103,7 @@ export class ExcelToPdfConverter implements IConverter {
           };
         }
 
-        await PdfLayoutHelper.renderTableDocument(
+        track(await PdfLayoutHelper.renderTableDocument(
           pdfDoc,
           headers,
           rows,
@@ -107,7 +114,7 @@ export class ExcelToPdfConverter implements IConverter {
             fontSize: options.fontSize || 8
           },
           sheetNamesToProcess.length > 1 ? sheetName : undefined
-        );
+        ));
       }
 
       if (pdfDoc.getPageCount() === 0) {
@@ -125,11 +132,22 @@ export class ExcelToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(dropped.dropped, dropped.sample);
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
+        warnings: encodingWarning ? [encodingWarning] : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: firstSheetPreview,
         metadata: {
           name: finalPdf.name,

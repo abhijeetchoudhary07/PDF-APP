@@ -48,6 +48,70 @@
   height: auto;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  /* The guide is dragged directly on the canvas, so the browser must not
+     claim the gesture for scrolling or text selection. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.guide-help-text {
+  margin: 0;
+  padding: 10px 16px 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  // Body copy, so the secondary token: --color-text-muted is a decorative
+  // slate-400 that only reaches 2.6:1 on the light surface.
+  color: var(--color-text-secondary, #475569);
+  text-align: center;
+}
+
+.custom-size-chip {
+  margin-top: 8px;
+}
+
+.custom-size-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.custom-size-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  span {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-secondary, #475569);
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1.5px solid var(--color-border, #e2e8f0);
+    border-radius: 10px;
+    background: var(--color-background-subtle, #f1f5f9);
+    color: var(--color-text, #0f172a);
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary, #4f46e5);
+    }
+  }
 }
 
 .detection-action-bar {
@@ -137,7 +201,7 @@
   &.active {
     background: var(--color-primary-soft, rgba(79, 70, 229, 0.1));
     border-color: var(--color-primary, #4f46e5);
-    color: var(--color-primary, #4f46e5);
+    color: var(--color-primary-text, #4f46e5);
   }
 }
 
@@ -163,7 +227,7 @@
 .slider-value {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--color-primary, #4f46e5);
+  color: var(--color-primary-text, #4f46e5);
 }
 
 .slider-hint {
@@ -172,14 +236,64 @@
 }
 
 .mobile-range-slider {
+  /*
+   * The element itself is a 44px thumb target; the visible 8px track is drawn
+   * by the track pseudo-elements so the control still reads as a thin slider.
+   * `pan-y` keeps vertical page scrolling while horizontal drags adjust it.
+   */
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--color-border, #e2e8f0);
+  height: 44px;
+  min-height: 44px;
+  background: transparent;
   outline: none;
-  accent-color: var(--color-primary, #4f46e5);
   cursor: pointer;
-  margin: 6px 0;
+  margin: 0;
+  touch-action: pan-y;
+
+  &::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--color-border, #e2e8f0);
+  }
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    margin-top: -9px;
+    border-radius: 50%;
+    border: 2px solid var(--color-surface, #ffffff);
+    background: var(--color-primary, #4f46e5);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  &::-moz-range-track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--color-border, #e2e8f0);
+  }
+
+  &::-moz-range-progress {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--color-primary, #4f46e5);
+  }
+
+  &::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--color-surface, #ffffff);
+    border-radius: 50%;
+    background: var(--color-primary, #4f46e5);
+  }
+
+  &:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--color-primary, #4f46e5);
+    outline-offset: 2px;
+  }
 }
 
 /* TOGGLES & SWITCHES */
@@ -209,10 +323,15 @@
 
 .mobile-switch {
   position: relative;
-  display: inline-block;
+  // The pill stays 50x28, but the control itself has to be 44px tall to be
+  // hittable with a thumb, so the track is centred inside that tap area.
+  display: inline-flex;
+  align-items: center;
   width: 50px;
-  height: 28px;
+  height: 44px;
+  min-height: 44px;
   flex-shrink: 0;
+  touch-action: manipulation;
 
   input {
     opacity: 0;
@@ -223,10 +342,11 @@
   .slider {
     position: absolute;
     cursor: pointer;
-    top: 0;
+    top: 50%;
+    transform: translateY(-50%);
     left: 0;
     right: 0;
-    bottom: 0;
+    height: 28px;
     background-color: var(--color-border, #cbd5e1);
     transition: 0.3s;
     border-radius: 28px;
@@ -237,7 +357,7 @@
       height: 22px;
       width: 22px;
       left: 3px;
-      bottom: 3px;
+      top: 3px;
       background-color: white;
       transition: 0.3s;
       border-radius: 50%;
@@ -347,7 +467,9 @@
 
 .seg-btn {
   flex: 1;
-  min-height: 40px;
+  // 44px is the Play Store mobile touch target; `flex: 1` already gives the
+  // width, so only the height needs stating (never min-width a flex button).
+  min-height: 44px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -383,7 +505,7 @@
   &.active {
     background: var(--color-primary-soft, rgba(79, 70, 229, 0.1));
     border-color: var(--color-primary, #4f46e5);
-    color: var(--color-primary, #4f46e5);
+    color: var(--color-primary-text, #4f46e5);
   }
 }
 
@@ -399,8 +521,12 @@
   touch-action: manipulation;
 
   input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
+    // The label is already 44px tall; the padding extends the box's own hit
+    // area to match so a tap just left of the tick still registers.
+    margin: 10px 0;
+    flex-shrink: 0;
     accent-color: var(--color-primary, #4f46e5);
   }
 }
@@ -455,18 +581,22 @@
 
 /* STICKY BOTTOM ACTION BAR (Mobile view excellence) */
 .mobile-sticky-bottom-bar {
-  position: fixed;
+  /*
+   * Sticky, not fixed. `.app-main-content` runs the global `pageIn` transform
+   * animation, which makes it the containing block for fixed descendants, so a
+   * fixed bar lands at the foot of the page instead of the viewport and the
+   * primary action ends up off-screen. This matches `.sticky-mobile-bottom-bar`
+   * in global.scss.
+   */
+  position: sticky;
   bottom: 0;
-  left: 0;
-  right: 0;
+  z-index: 100;
   background: var(--color-surface, #ffffff);
   border-top: 1px solid var(--color-border, #e2e8f0);
   padding: 12px 16px;
   padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
-  z-index: 100;
+  margin: 4px -16px 0;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
-  max-width: 680px;
-  margin: 0 auto;
 }
 
 .spinner-dot {

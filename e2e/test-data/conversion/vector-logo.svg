@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200">
+  <rect x="0" y="0" width="320" height="200" fill="#ffffff"/>
+  <g transform="translate(40 30)">
+    <rect x="0" y="0" width="90" height="50" rx="8" fill="rgb(37, 99, 235)"/>
+    <circle cx="160" cy="25" r="22" fill="tomato"/>
+    <ellipse cx="240" cy="25" rx="30" ry="16" fill="hsl(140, 60%, 45%)"/>
+  </g>
+  <polyline points="20,150 80,110 140,160 200,120 280,150" fill="none" stroke="#111111" stroke-width="3"/>
+  <path d="M 20 185 L 120 185 A 10 10 0 0 1 130 195 L 20 195 Z" fill="#6b7280"/>
+  <text x="150" y="190" font-size="14" font-family="Georgia, serif" fill="#1f2937">Vector sample</text>
+</svg>

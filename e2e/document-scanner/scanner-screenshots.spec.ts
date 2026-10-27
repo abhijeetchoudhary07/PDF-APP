@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { setupCapacitorMocks, getTestDataPath } from '../fixtures/mocks';
-import { importScannedPage, pageAction } from './scanner-helpers';
+import { importScannedPage, pageAction, dismissBlurGate } from './scanner-helpers';
 import * as path from 'path';
 
 const SCREENSHOT_DIR = '/Users/abhijeetchoudhary/.gemini/antigravity/brain/6c277237-b8c8-4ed9-8dc0-900715274678/screenshots';
@@ -44,15 +44,17 @@ test.describe('Document Scanner — Mobile Experience & Play Store Screenshots',
     await page.locator('app-button[data-testid="import-gallery"] button').click();
     await (await chooser).setFiles(getTestDataPath('scanner/clean-document.jpg'));
 
-    // If blur alert appears, capture it and then keep anyway
-    const blurAlert = page.locator('.blur-alert-card');
-    if (await blurAlert.isVisible({ timeout: 4000 }).catch(() => false)) {
-      await page.screenshot({ path: path.join(SCREENSHOT_DIR, '03b-mobile-blur-warning.png'), fullPage: false });
-      const keepBtn = blurAlert.locator('app-button').filter({ hasText: /Keep/i });
-      if (await keepBtn.isVisible()) {
-        await keepBtn.click();
-      }
-    }
+    // The H4 gate opens over the crop step for this low-detail fixture.
+    // Capture it for the store listing, then keep the page and move on.
+    //
+    // This used to look for `.blur-alert-card` and call `isVisible()` with a
+    // timeout. The gate renders through the shared modal now, so that class is
+    // gone -- and `isVisible()` never waited anyway, so the branch was skipped
+    // and the backdrop then swallowed the clicks behind it.
+    await expect(page.locator('app-button[data-testid="blur-keep"] button'))
+      .toBeVisible({ timeout: 20000 });
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '03b-mobile-blur-warning.png'), fullPage: false });
+    await dismissBlurGate(page);
 
     await expect(page.locator('.crop-card canvas.interactive-crop-canvas')).toBeVisible({ timeout: 15000 });
     await page.locator('.crop-card').scrollIntoViewIfNeeded();

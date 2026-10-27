@@ -335,6 +335,16 @@
   border-color: var(--color-primary);
 }
 
+/*
+ * The real input is zero-sized, so keyboard and switch-access focus had
+ * nothing to show for itself. The ring goes on the box that is actually
+ * visible.
+ */
+.native-check:focus-visible + .custom-check-box {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
 .zip-checklist {
   margin-top: var(--space-4, 16px);
 }
@@ -433,6 +443,42 @@
       color: var(--color-text);
       font-size: var(--font-small, 13px);
       margin: 2px 0 0;
+    }
+  }
+}
+
+/* CONVERSION NOTICES (non-fatal: blocked remote images, undrawable glyphs) */
+.warning-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3, 12px);
+  background-color: var(--color-warning-soft);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--radius-md, 10px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  margin-top: var(--space-4, 16px);
+
+  .warning-icon {
+    color: var(--color-warning);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .warning-text {
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      color: var(--color-warning);
+      font-size: var(--font-small, 13px);
+    }
+
+    p {
+      color: var(--color-text-secondary);
+      font-size: var(--font-caption, 12px);
+      line-height: 1.5;
+      margin: 4px 0 0;
+      overflow-wrap: anywhere;
     }
   }
 }

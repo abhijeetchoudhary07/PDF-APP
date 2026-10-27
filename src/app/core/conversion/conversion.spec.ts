@@ -300,6 +300,187 @@ describe('Conversion Architecture — Phase 1', () => {
     });
   });
 
+  /*
+   * pdf-lib's standard fonts are WinAnsi-encoded and *throw* on a character
+   * they cannot encode, so before this was handled every one of these
+   * converters failed outright on Hindi, Bengali, Marathi or Punjabi input --
+   * the four languages this app ships alongside English. The contract now is:
+   * the conversion succeeds, Latin text is untouched, and the person is told
+   * what could not be drawn.
+   */
+  describe('Text the built-in PDF fonts cannot draw', () => {
+    const HINDI = 'आवेदन निर्देश';
+    const BENGALI = 'আবেদন';
+    const PUNJABI = 'ਅਰਜ਼ੀ';
+
+    function makeXlsx(text: string): File {
+      const sheet = XLSX.utils.aoa_to_sheet([
+        ['Name', 'City'],
+        [text, 'Mumbai']
+      ]);
+      const book = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(book, sheet, 'Sheet1');
+      const out = XLSX.write(book, { bookType: 'xlsx', type: 'array' });
+      return new File([out], 'book.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+    }
+
+    async function makeEpub(text: string): Promise<File> {
+      const zip = new JSZip();
+      zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+      zip.file(
+        'META-INF/container.xml',
+        `<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`
+      );
+      zip.file(
+        'OEBPS/content.opf',
+        `<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Test</dc:title><dc:identifier id="id">x</dc:identifier><dc:language>en</dc:language></metadata><manifest><item id="c1" href="ch1.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="c1"/></spine></package>`
+      );
+      zip.file(
+        'OEBPS/ch1.xhtml',
+        `<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml"><body><h1>${text}</h1><p>English body text.</p></body></html>`
+      );
+      const blob = await zip.generateAsync({ type: 'blob' });
+      return new File([blob], 'book.epub', { type: 'application/epub+zip' });
+    }
+
+    async function makeOpenDocument(
+      ext: 'odt' | 'ods' | 'odp',
+      text: string
+    ): Promise<File> {
+      if (ext === 'ods') {
+        // The spreadsheet branch reads through SheetJS, which will not accept
+        // a hand-rolled content.xml -- so write a genuine .ods.
+        const sheet = XLSX.utils.aoa_to_sheet([['Name', 'City'], [text, 'Pune']]);
+        const book = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(book, sheet, 'Sheet1');
+        const out = XLSX.write(book, { bookType: 'ods', type: 'array' });
+        return new File([out], 'document.ods', {
+          type: 'application/vnd.oasis.opendocument.spreadsheet'
+        });
+      }
+
+      const bodyByType = {
+        odt: `<office:text><text:p>${text}</text:p><text:p>English paragraph.</text:p></office:text>`,
+        ods: `<office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value-type="string"><text:p>Name</text:p></table:table-cell></table:table-row><table:table-row><table:table-cell office:value-type="string"><text:p>${text}</text:p></table:table-cell></table:table-row></table:table></office:spreadsheet>`,
+        odp: `<office:presentation><draw:page draw:name="page1"><draw:frame><draw:text-box><text:p>${text}</text:p><text:p>English bullet.</text:p></draw:text-box></draw:frame></draw:page></office:presentation>`
+      };
+
+      const zip = new JSZip();
+      zip.file(
+        'content.xml',
+        `<?xml version="1.0" encoding="UTF-8"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"><office:body>${bodyByType[ext]}</office:body></office:document-content>`
+      );
+      const blob = await zip.generateAsync({ type: 'blob' });
+      return new File([blob], `document.${ext}`, { type: 'application/vnd.oasis.opendocument.text' });
+    }
+
+    it('converts plain text carrying Devanagari and reports what was left out', async () => {
+      const file = new File([''], 'notes.txt', { type: 'text/plain' });
+      const result = await textToPdf.convert(file, {
+        rawText: `${HINDI}\nThis English line is untouched.`
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.[0]).toMatch(/Devanagari/);
+      expect(result.report?.indicOrRtlWarnings.length).toBe(1);
+    });
+
+    it('converts CSV with Bengali and Punjabi cells', async () => {
+      const csv = `Name,City\n${BENGALI},Kolkata\n${PUNJABI},Amritsar`;
+      const result = await csvToPdf.convert(new File([csv], 'people.csv', { type: 'text/csv' }));
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.[0]).toMatch(/Bengali|Gurmukhi/);
+    });
+
+    it('converts HTML whose body is in Hindi', async () => {
+      const html = `<html><body><h1>${HINDI}</h1><p>English paragraph.</p></body></html>`;
+      const result = await htmlToPdf.convert(new File([html], 'page.html', { type: 'text/html' }));
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.[0]).toMatch(/Devanagari/);
+    });
+
+    it('converts RTF whose text is in Hindi', async () => {
+      const rtf = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Helvetica;}}\\f0\\fs24 ${HINDI}\\par English line.}`;
+      const result = await rtfToPdf.convert(new File([rtf], 'notice.rtf', { type: 'application/rtf' }));
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.[0]).toMatch(/Devanagari/);
+    });
+
+    /*
+     * Word is covered in the browser suite instead: mammoth's Node build has
+     * no arrayBuffer input, so convertToHtml({ arrayBuffer }) -- what the
+     * shipped browser build takes -- cannot run under vitest.
+     * See e2e/conversion/j1-j5-verification.spec.ts.
+     */
+
+    it('converts a spreadsheet with Hindi cells', async () => {
+      const result = await excelToPdf.convert(makeXlsx(HINDI));
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.[0]).toMatch(/Devanagari/);
+    });
+
+    it('converts an EPUB written in Hindi', async () => {
+      const result = await epubToPdf.convert(await makeEpub(HINDI));
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.some(w => /Devanagari/.test(w))).toBe(true);
+    });
+
+    it('compiles a ZIP whose text and CSV entries are in Hindi', async () => {
+      const zip = new JSZip();
+      zip.file('notes.txt', `${HINDI}\nEnglish line.`);
+      zip.file('data.csv', `Name,City\n${HINDI},Pune`);
+      const blob = await zip.generateAsync({ type: 'blob' });
+
+      const result = await zipToPdf.convert(new File([blob], 'bundle.zip', { type: 'application/zip' }));
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.[0]).toMatch(/Devanagari/);
+    });
+
+    for (const ext of ['odt', 'ods', 'odp'] as const) {
+      it(`converts an OpenDocument .${ext} written in Hindi`, async () => {
+        const result = await openDocToPdf.convert(await makeOpenDocument(ext, HINDI));
+        expect(result.success).toBe(true);
+        expect(result.warnings?.some(w => /Devanagari/.test(w))).toBe(true);
+      });
+    }
+
+    it('converts a PowerPoint deck with a Hindi slide title', async () => {
+      const zip = new JSZip();
+      zip.file(
+        'ppt/slides/slide1.xml',
+        `<?xml version="1.0"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>${HINDI}</a:t></a:r></a:p><a:p><a:r><a:t>English bullet point.</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>`
+      );
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const result = await pptToPdf.convert(
+        new File([blob], 'deck.pptx', {
+          type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        })
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.warnings?.some(w => /Devanagari/.test(w))).toBe(true);
+    });
+
+    it('leaves a purely Latin document with no notice at all', async () => {
+      const result = await textToPdf.convert(new File([''], 'plain.txt', { type: 'text/plain' }), {
+        rawText: 'A plain English document — with an em dash and a "quote".'
+      });
+
+      expect(result.success).toBe(true);
+      // Typographic punctuation has Latin-1 stand-ins, so nothing is dropped.
+      expect(result.warnings).toBeUndefined();
+      expect(result.report?.indicOrRtlWarnings).toEqual([]);
+    });
+  });
+
   describe('Validation handling across converters', () => {
     it('should reject empty files', async () => {
       const emptyFile = new File([], 'empty.pdf', { type: 'application/pdf' });

@@ -388,6 +388,51 @@ export class IdPhotoService {
   }
 
   /**
+   * Corner trim ticks for one photo, as line segments.
+   *
+   * Every tick runs outward from a corner and starts clear of the edge, so no
+   * segment can cross the print. A mis-typed end point used to draw one of
+   * them straight across the bottom of each copy, which on paper is a grey
+   * line through the photo rather than a guide for the scissors.
+   */
+  calculateCutMarks(
+    pos: { x: number; y: number; width: number; height: number },
+    markLength = 8,
+    gap = 2
+  ): Array<{ x1: number; y1: number; x2: number; y2: number }> {
+    const left = pos.x;
+    const right = pos.x + pos.width;
+    const top = pos.y;
+    const bottom = pos.y + pos.height;
+
+    const corners: Array<[number, number, number, number]> = [
+      [left, top, -1, -1],
+      [right, top, 1, -1],
+      [left, bottom, -1, 1],
+      [right, bottom, 1, 1]
+    ];
+
+    const marks: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
+    for (const [cx, cy, dirX, dirY] of corners) {
+      // Horizontal tick, running away from the photo edge
+      marks.push({
+        x1: cx + dirX * gap,
+        y1: cy,
+        x2: cx + dirX * (gap + markLength),
+        y2: cy
+      });
+      // Vertical tick, running away from the photo edge
+      marks.push({
+        x1: cx,
+        y1: cy + dirY * gap,
+        x2: cx,
+        y2: cy + dirY * (gap + markLength)
+      });
+    }
+    return marks;
+  }
+
+  /**
    * Generates a printable sheet with tiled copies and cut marks.
    */
   generatePrintSheet(photoCanvas: HTMLCanvasElement, options: PrintSheetOptions): HTMLCanvasElement {
@@ -409,28 +454,11 @@ export class IdPhotoService {
       if (options.includeCutMarks) {
         ctx.strokeStyle = '#94a3b8';
         ctx.lineWidth = 1;
-        const markLen = 8;
-
-        // Top-left corner tick marks
         ctx.beginPath();
-        ctx.moveTo(pos.x - 2, pos.y);
-        ctx.lineTo(pos.x - 2 - markLen, pos.y);
-        ctx.moveTo(pos.x, pos.y - 2);
-        ctx.lineTo(pos.x, pos.y - 2 - markLen);
-
-        // Top-right corner tick marks
-        ctx.moveTo(pos.x + pos.width + 2, pos.y);
-        ctx.lineTo(pos.x + pos.width + 2 + markLen, pos.y);
-        ctx.moveTo(pos.x + pos.width, pos.y - 2);
-        ctx.lineTo(pos.x + pos.width, pos.y - 2 - markLen);
-
-        // Bottom-left corner tick marks
-        ctx.moveTo(pos.x - 2, pos.y + pos.height);
-        ctx.lineTo(pos.x - 2 - markLen, pos.y + pos.height);
-        ctx.moveTo(pos.x, pos.y + pos.height + 2);
-        ctx.lineTo(pos.x + pos.width + 2 + markLen, pos.y + pos.height);
-        ctx.moveTo(pos.x + pos.width, pos.y + pos.height + 2);
-        ctx.lineTo(pos.x + pos.width, pos.y + pos.height + 2 + markLen);
+        for (const mark of this.calculateCutMarks(pos)) {
+          ctx.moveTo(mark.x1, mark.y1);
+          ctx.lineTo(mark.x2, mark.y2);
+        }
         ctx.stroke();
       }
     }

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { getTestDataPath, setupCapacitorMocks } from '../fixtures/mocks';
+import { dismissBlurGate } from './scanner-helpers';
 
 test.describe('Document Scanner — Camera & Gallery Capture @scanner @smoke', () => {
   test.beforeEach(async ({ page }) => {
@@ -40,6 +41,9 @@ test.describe('Document Scanner — Camera & Gallery Capture @scanner @smoke', (
     const chooser = page.waitForEvent('filechooser');
     await page.locator('app-button[data-testid="import-gallery"] button').click();
     await (await chooser).setFiles(getTestDataPath('scanner/clean-document.jpg'));
+    // This fixture is a low-detail gradient, so the H4 gate opens over the
+    // crop step and blocks it until answered.
+    await dismissBlurGate(page);
 
     // The crop step, with the canvas whose corners can be dragged.
     await expect(page.locator('.crop-card')).toBeVisible({ timeout: 15000 });
@@ -60,6 +64,7 @@ test.describe('Document Scanner — Camera & Gallery Capture @scanner @smoke', (
     // The gallery accepts more than one page in a single go.
     expect((await chooser).isMultiple()).toBe(true);
     await (await chooser).setFiles(getTestDataPath('scanner/clean-document.jpg'));
+    await dismissBlurGate(page);
 
     await expect(page.locator('.crop-card canvas.interactive-crop-canvas')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('app-button[data-testid="apply-crop"] button')).toBeVisible();

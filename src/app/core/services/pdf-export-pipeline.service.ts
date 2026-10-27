@@ -25,6 +25,8 @@ import {
 } from '../models/pdf-editor.types';
 import { PdfLinkEditorService } from './pdf-link-editor.service';
 import { PdfCommentReviewService } from './pdf-comment-review.service';
+import { PdfLayoutHelper } from '../conversion/utils/pdf-layout.helper';
+import { coverRectForRun } from '../utilities/pdf-text-run.util';
 
 export interface ExportResult {
   file: File;
@@ -156,27 +158,55 @@ export class PdfExportPipelineService {
         }
       }
 
-      // Draw In-Place Text Edits (K6)
+      /*
+       * In-place text edits (K6).
+       *
+       * These are edits recorded on the page model rather than already
+       * written into the source bytes, which is what the editor's own sheet
+       * does now. Two things here are not optional:
+       *
+       *   • The baseline. A cover whose top is the box top and whose text
+       *     sits two points above it lands the replacement high and leaves
+       *     descenders showing underneath.
+       *   • The encoding guard. The standard fonts THROW on a character they
+       *     cannot encode, so one Devanagari edit would take the whole
+       *     export down rather than producing a document with a gap in it.
+       */
       if (pageModel.textEdits && pageModel.textEdits.length > 0) {
         const pageSize = destPage.getSize();
+
         for (const edit of pageModel.textEdits) {
-          const pdfY = pageSize.height - edit.bounds.y - edit.bounds.height;
-          destPage.drawRectangle({
+          const baselineY = edit.baselineY ?? edit.bounds.y + edit.bounds.height;
+          const font = (fonts as any)[edit.fontFamily] || fonts.Helvetica;
+          const drawable = PdfLayoutHelper.toDrawableText(edit.newText);
+          const cover = coverRectForRun({
             x: edit.bounds.x,
-            y: pdfY,
-            width: edit.bounds.width + 4,
-            height: edit.bounds.height + 2,
+            baselineY,
+            width: Math.max(
+              edit.bounds.width,
+              font.widthOfTextAtSize(drawable.text, edit.fontSize)
+            ),
+            fontSize: edit.fontSize
+          });
+
+          destPage.drawRectangle({
+            x: cover.x,
+            y: pageSize.height - cover.y - cover.height,
+            width: cover.width,
+            height: cover.height,
             color: rgb(1, 1, 1),
             borderWidth: 0
           });
-          const font = (fonts as any)[edit.fontFamily] || fonts.Helvetica;
-          destPage.drawText(edit.newText, {
-            x: edit.bounds.x,
-            y: pdfY + 2,
-            size: edit.fontSize,
-            font,
-            color: rgb(0, 0, 0)
-          });
+
+          if (drawable.text.length > 0) {
+            destPage.drawText(drawable.text, {
+              x: edit.bounds.x,
+              y: pageSize.height - baselineY,
+              size: edit.fontSize,
+              font,
+              color: rgb(0, 0, 0)
+            });
+          }
         }
       }
 
@@ -196,7 +226,10 @@ export class PdfExportPipelineService {
               });
             }
             const firstPt = m.points[0];
-            destPage.drawText(m.formattedString, {
+            /* Through the guard as well: the unit comes from a list of ASCII
+             * names today, but a reading drawn from user input must not be
+             * able to throw during an export. */
+            destPage.drawText(PdfLayoutHelper.toDrawableText(m.formattedString).text, {
               x: firstPt.x,
               y: pageSize.height - firstPt.y + 4,
               size: 10,

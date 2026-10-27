@@ -42,7 +42,7 @@ describe('PhotoSheetPage', () => {
         { provide: ShareService, useValue: { shareFile: vi.fn() } },
         { provide: ToastService, useValue: mockToastService },
         { provide: HistoryService, useValue: { addHistoryItem: vi.fn() } },
-        { provide: ChangeDetectorRef, useValue: { markForCheck: vi.fn() } }
+        { provide: ChangeDetectorRef, useValue: { markForCheck: vi.fn(), detectChanges: vi.fn() } }
       ]
     });
 
@@ -64,6 +64,47 @@ describe('PhotoSheetPage', () => {
     expect(page.workflowState).toBe('CONFIGURING');
     expect(page.files.length).toBe(1);
     expect(mockSheetService.renderSheetCanvas).toHaveBeenCalled();
+  });
+
+  /**
+   * Regression: the first paint ran one statement after `workflowState` became
+   * CONFIGURING, before Angular had rendered that block, so the ViewChild was
+   * undefined, the paint was skipped and nothing retried. The user uploaded
+   * photos and sat looking at an empty box.
+   */
+  describe('preview paints on the first render', () => {
+    function attachCanvasOnDemand() {
+      const canvas = createSafeCanvas(1, 1);
+      let attached = false;
+      // The ViewChild only exists once change detection has run, which is
+      // exactly the ordering that used to lose the first paint.
+      Object.defineProperty(page, 'sheetCanvasRef', {
+        configurable: true,
+        get: () => (attached ? { nativeElement: canvas } : undefined)
+      });
+      (page as any).cdr = { markForCheck: vi.fn(), detectChanges: vi.fn(() => { attached = true; }) };
+      return canvas;
+    }
+
+    it('paints the sheet even though the canvas appears only after change detection', async () => {
+      const canvas = attachCanvasOnDemand();
+      page.loadedImageCanvases = [createSafeCanvas(400, 500)];
+
+      page.updateSheetPreview();
+
+      expect(canvas.width).toBe(600);
+      expect(canvas.height).toBe(800);
+    });
+
+    it('still paints when the canvas is already present', () => {
+      const canvas = createSafeCanvas(1, 1);
+      (page as any).sheetCanvasRef = { nativeElement: canvas };
+      page.loadedImageCanvases = [createSafeCanvas(400, 500)];
+
+      page.updateSheetPreview();
+
+      expect(canvas.width).toBe(600);
+    });
   });
 
   it('applies grid preset and recalculates layout', () => {

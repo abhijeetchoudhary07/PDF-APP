@@ -35,8 +35,8 @@
     .page-pill {
       font-size: 0.85rem;
       font-weight: 600;
-      color: var(--color-primary, #3b82f6);
-      background: rgba(59, 130, 246, 0.08);
+      color: var(--color-primary-text, #4f46e5);
+      background: var(--color-primary-soft);
       padding: 4px 12px;
       border-radius: var(--radius-full, 9999px);
     }
@@ -109,7 +109,7 @@
       align-items: center;
       gap: 8px;
       padding: 6px 14px;
-      min-height: 40px;
+      min-height: var(--min-touch-target, 44px);
       border-radius: 9999px;
       background: var(--color-surface, #ffffff);
       border: 1.5px solid var(--color-border, #cbd5e1);
@@ -135,8 +135,8 @@
 
       &.active {
         border-color: var(--color-primary, #3b82f6);
-        background: rgba(59, 130, 246, 0.08);
-        color: var(--color-primary, #3b82f6);
+        background: var(--color-primary-soft);
+        color: var(--color-primary-text, #4f46e5);
       }
     }
   }
@@ -152,9 +152,9 @@
     line-height: 1.4;
 
     &.id-card-guide {
-      background: rgba(59, 130, 246, 0.08);
+      background: var(--chip-info-bg);
       border: 1px solid rgba(59, 130, 246, 0.25);
-      color: #1e40af;
+      color: var(--chip-info-fg);
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -197,74 +197,100 @@
     }
 
     &.book-guide {
-      background: rgba(16, 185, 129, 0.08);
+      background: var(--chip-success-bg);
       border: 1px solid rgba(16, 185, 129, 0.25);
-      color: #065f46;
+      color: var(--chip-success-fg);
     }
 
     &.whiteboard-guide {
-      background: rgba(245, 158, 11, 0.08);
+      background: var(--chip-warning-bg);
       border: 1px solid rgba(245, 158, 11, 0.25);
-      color: #92400e;
+      color: var(--chip-warning-fg);
     }
 
     &.photo-guide {
-      background: rgba(139, 92, 246, 0.08);
+      background: var(--chip-info-bg);
       border: 1px solid rgba(139, 92, 246, 0.25);
-      color: #5b21b6;
+      color: var(--chip-info-fg);
     }
   }
 }
 
-// H4: Blur Alert Dialog
-.blur-alert-overlay {
-  margin: 0;
-  padding: 0;
-  width: 100%;
+// Capture processing overlay
+.processing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--scrim, rgba(2, 6, 23, 0.6));
 
-  .blur-alert-card {
-    background: #fffbeb;
-    border: 2px solid #f59e0b;
+  .processing-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 22px;
     border-radius: var(--radius-lg, 12px);
-    padding: 16px 20px;
-    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.3));
+    max-width: 320px;
+  }
+
+  .processing-spinner {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    animation: scanner-spin 0.8s linear infinite;
+  }
+
+  .processing-copy {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 2px;
+    font-size: 0.9rem;
+    color: var(--color-text);
 
-    .blur-alert-header {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-
-      .blur-alert-icon {
-        font-size: 1.8rem;
-        line-height: 1;
-      }
-
-      .blur-alert-copy {
-        h3 {
-          margin: 0 0 4px;
-          font-size: 1rem;
-          font-weight: 700;
-          color: #92400e;
-        }
-
-        p {
-          margin: 0;
-          font-size: 0.85rem;
-          color: #78350f;
-          line-height: 1.4;
-        }
-      }
+    .processing-count {
+      font-size: 0.8rem;
+      color: var(--color-text-secondary);
+      font-variant-numeric: tabular-nums;
     }
+  }
+}
 
-    .blur-alert-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-    }
+@keyframes scanner-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .processing-overlay .processing-spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+// H4: Blur gate body, inside the shared modal
+.blur-alert-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  .blur-alert-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .blur-alert-hint {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--color-text-secondary);
   }
 }
 
@@ -351,7 +377,7 @@
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    background: rgba(245, 158, 11, 0.1);
+    background: var(--chip-warning-bg);
     border: 1px solid rgba(245, 158, 11, 0.3);
     border-radius: var(--radius-md, 8px);
 
@@ -361,7 +387,7 @@
 
     .alert-text {
       font-size: 0.85rem;
-      color: #92400e;
+      color: var(--chip-warning-fg);
       line-height: 1.4;
     }
   }
@@ -370,7 +396,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #0f172a;
+    background: var(--color-surface-sunken, #f1f5f9);
+    border: 1px solid var(--color-border, #e2e8f0);
     border-radius: var(--radius-md, 8px);
     padding: 16px;
     overflow: hidden;
@@ -420,7 +447,10 @@
 
   .enhance-preview-container {
     position: relative;
-    background: #0f172a;
+    // Themed letterbox, as on the page thumbnails: a white scan inside a
+    // near-black box looked like a bug on a light card.
+    background: var(--color-surface-sunken, #f1f5f9);
+    border: 1px solid var(--color-border, #e2e8f0);
     border-radius: var(--radius-md, 8px);
     padding: 12px;
     display: flex;
@@ -439,7 +469,12 @@
     .compare-pill-btn {
       position: absolute;
       bottom: 20px;
-      padding: 6px 14px;
+      // Press-and-hold target: it has to be thumb-sized, not label-sized.
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--min-touch-target, 44px);
+      padding: 6px 16px;
       background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -477,7 +512,7 @@
 
       .preset-btn {
         padding: 8px 10px;
-        min-height: 42px;
+        min-height: var(--min-touch-target, 44px);
         border: 1.5px solid var(--color-border, #e2e8f0);
         background: var(--color-surface-container, #f8fafc);
         border-radius: var(--radius-md, 8px);
@@ -494,8 +529,8 @@
 
         &.active {
           border-color: var(--color-primary, #3b82f6);
-          background: rgba(59, 130, 246, 0.08);
-          color: var(--color-primary, #3b82f6);
+          background: var(--color-primary-soft);
+          color: var(--color-primary-text, #4f46e5);
         }
       }
     }
@@ -513,7 +548,7 @@
 
       input[type='range'] {
         flex: 1;
-        min-height: 36px;
+        min-height: var(--min-touch-target, 44px);
       }
 
       .slider-val {
@@ -533,7 +568,7 @@
 
       .chip-toggle-btn {
         padding: 6px 12px;
-        min-height: 40px;
+        min-height: var(--min-touch-target, 44px);
         border: 1.5px solid var(--color-border, #cbd5e1);
         background: var(--color-surface, #ffffff);
         border-radius: var(--radius-md, 8px);
@@ -554,6 +589,13 @@
           color: #ffffff;
         }
       }
+    }
+
+    .smart-processing-hint {
+      margin: 6px 0 0;
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: var(--color-on-surface-variant, #64748b);
     }
 
     .enhance-actions {
@@ -636,7 +678,12 @@
       }
 
       .page-thumb-wrapper {
-        background: #0f172a;
+        // Letterbox, themed. This was a hardcoded `#0f172a`, which put a white
+        // scan inside a near-black box on a light card; `-sunken` is the slate
+        // the app already uses behind content in dark mode and a pale grey in
+        // light, so the page reads as paper either way.
+        background: var(--color-surface-sunken, #f1f5f9);
+        border: 1px solid var(--color-border, #e2e8f0);
         border-radius: 4px;
         overflow: hidden;
         height: 180px;
@@ -658,8 +705,13 @@
         flex-wrap: wrap;
 
         .feature-chip {
-          padding: 4px 6px;
-          min-height: 28px;
+          // 44px is the floor the rest of the app's chrome holds to; these sat
+          // at 28px, which is a miss on a phone even though the label fits.
+          padding: 6px 10px;
+          min-height: var(--min-touch-target, 44px);
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
           border: 1px solid var(--color-border, #cbd5e1);
           background: var(--color-surface, #ffffff);
           border-radius: 6px;
@@ -705,7 +757,7 @@
         .action-icon-btn {
           flex: 1 1 0;
           min-width: 0;
-          height: 36px;
+          height: var(--min-touch-target, 44px);
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -777,6 +829,45 @@
           box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
       }
+    }
+
+    .name-from-text-btn {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: var(--min-touch-target, 44px);
+      padding: 8px 14px;
+      border: 1px solid var(--color-primary, #3b82f6);
+      border-radius: var(--radius-md, 8px);
+      background: transparent;
+      color: var(--color-primary, #3b82f6);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+
+      &:disabled {
+        opacity: 0.55;
+        cursor: progress;
+      }
+
+      .name-btn-spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: scanner-spin 0.8s linear infinite;
+      }
+    }
+
+    .naming-hint {
+      margin: 0;
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: var(--color-on-surface-variant, #64748b);
     }
   }
 
@@ -960,40 +1051,15 @@
     gap: 10px;
   }
 
-  .blur-alert-overlay {
-    .blur-alert-card {
-      padding: 10px 14px;
-      gap: 10px;
+  .blur-alert-body {
+    gap: 10px;
 
-      .blur-alert-header {
-        gap: 10px;
+    .blur-alert-icon {
+      font-size: 1.5rem;
+    }
 
-        .blur-alert-icon {
-          font-size: 1.5rem;
-        }
-
-        .blur-alert-copy {
-          h3 {
-            font-size: 0.95rem;
-            margin: 0 0 2px;
-          }
-          p {
-            font-size: 0.8rem;
-          }
-        }
-      }
-
-      .blur-alert-actions {
-        display: flex;
-        flex-direction: row;
-        width: 100%;
-        gap: 8px;
-
-        app-button {
-          flex: 1;
-          display: block;
-        }
-      }
+    .blur-alert-hint {
+      font-size: 0.85rem;
     }
   }
 
@@ -1031,8 +1097,13 @@
 
   .enhance-card {
     .enhance-preview-container {
+      // The pill comes out of the image on a phone. Floating, a 44px control
+      // covered the bottom third of a preview that is only ~220px tall, which
+      // is the part of the scan a before/after is meant to show.
+      flex-direction: column;
+      gap: 8px;
       min-height: 180px;
-      max-height: 28vh;
+      max-height: none;
       padding: 8px;
 
       .enhance-preview-img {
@@ -1040,8 +1111,10 @@
       }
 
       .compare-pill-btn {
-        bottom: 10px;
-        padding: 4px 12px;
+        position: static;
+        width: 100%;
+        min-height: var(--min-touch-target, 44px);
+        padding: 4px 14px;
         font-size: 0.75rem;
       }
     }
@@ -1093,6 +1166,13 @@
   }
 
   .pages-dashboard-card {
+    .doc-naming-section {
+      .name-from-text-btn {
+        align-self: stretch;
+        width: 100%;
+      }
+    }
+
     .header-actions {
       width: 100%;
       flex-wrap: wrap;

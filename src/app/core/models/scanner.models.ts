@@ -47,7 +47,12 @@ export interface IdCardLayoutOptions {
 }
 
 export interface BlurScoreResult {
+  /** Raw variance-of-Laplacian. Unbounded (roughly 0 to ~30000) -- threshold
+   *  decisions use this, never the percentage. */
   score: number;
+  /** `score` mapped onto 0-100 for display. The raw variance spans orders of
+   *  magnitude, so showing it with a % sign read as "Sharp 27225%". */
+  scorePercent: number;
   isBlurry: boolean;
   threshold: number;
 }
@@ -104,10 +109,15 @@ export interface ScannedPage {
   processedHeight: number;
   scanMode?: ScanMode;
   blurScore?: number;
+  blurPercent?: number;
   isBlurry?: boolean;
   shadowRemovalApplied?: boolean;
   fingerDetected?: boolean;
   fingerRemoved?: boolean;
+  /** H7: measured at capture, so the straighten toggle is offered only on pages
+   *  that are actually curved -- a flat page would be resampled for nothing. */
+  curvatureDetected?: boolean;
+  curvatureMagnitude?: number;
   dewarpApplied?: boolean;
   preEnhancementBlob?: Blob;
   preEnhancementUrl?: string;

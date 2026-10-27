@@ -1,0 +1,66 @@
+<div class="k-sheet">
+  <div class="k-sheet__header">
+    <div class="k-sheet__title">
+      <app-icon name="layers-outline"></app-icon>
+      <h2>{{ 'editor.flattenOverlay' | translate }}</h2>
+    </div>
+    <button
+      type="button"
+      class="k-sheet__close"
+      (click)="dismiss()"
+      [attr.aria-label]="'editor.kClose' | translate">
+      <app-icon name="close"></app-icon>
+    </button>
+  </div>
+
+  <div class="k-sheet__body">
+    <div class="k-card">
+      <div class="k-section-head">
+        <h3>{{ 'editor.foFlattenTitle' | translate }}</h3>
+      </div>
+      <p class="k-hint">{{ 'editor.foFlattenDesc' | translate }}</p>
+      <button
+        type="button"
+        class="k-btn k-btn--primary"
+        (click)="flatten()"
+        [disabled]="isBusy || !hasDocument">
+        <app-icon name="layers-outline"></app-icon>
+        <span>{{ 'editor.foFlattenAction' | translate }}</span>
+      </button>
+    </div>
+
+    <div class="k-card">
+      <div class="k-section-head">
+        <h3>{{ 'editor.foOverlayTitle' | translate }}</h3>
+      </div>
+      <p class="k-hint">{{ 'editor.foOverlayDesc' | translate }}</p>
+      <button
+        type="button"
+        class="k-btn k-btn--secondary"
+        (click)="exportOverlay()"
+        [disabled]="isBusy || !hasDocument">
+        <app-icon name="download-outline"></app-icon>
+        <span>{{ 'editor.foOverlayAction' | translate }}</span>
+      </button>
+    </div>
+
+    @if (isBusy) {
+      <div class="k-progress">
+        <span class="k-spinner"></span>
+        <span>{{ 'editor.kWorking' | translate }}</span>
+      </div>
+    }
+
+    @if (notices.length > 0) {
+      <div class="k-card">
+        @for (notice of notices; track notice.key) {
+          <div [class]="'k-notice k-notice--' + notice.variant">
+            <app-icon
+              [name]="notice.variant === 'ok' ? 'checkmark-circle-outline' : 'alert-circle-outline'"></app-icon>
+            <span>{{ notice.key | translate: notice.params }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

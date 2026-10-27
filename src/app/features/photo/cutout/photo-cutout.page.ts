@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, inject, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ChangeDetectorRef, inject, ElementRef, ViewChild, AfterViewInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DocumentCutoutService } from '../../../core/services/document-cutout.service';
@@ -40,7 +40,7 @@ import {
     TranslatePipe
   ]
 })
-export class PhotoCutoutPage implements AfterViewInit {
+export class PhotoCutoutPage implements AfterViewInit, OnDestroy {
   private cutoutService = inject(DocumentCutoutService);
   private storageService = inject(StorageService);
   private shareService = inject(ShareService);
@@ -63,6 +63,8 @@ export class PhotoCutoutPage implements AfterViewInit {
   suitability?: DocumentCutoutSuitability;
   tolerance = 30;
   feather = 2;
+  /** Set once the user accepts that an unsuitable image will cut out badly. */
+  overrideUnsuitable = false;
 
   isProcessing = false;
   processingProgress = 0;
@@ -74,6 +76,49 @@ export class PhotoCutoutPage implements AfterViewInit {
 
   ngAfterViewInit() {
     this.updatePreview();
+  }
+
+  /** Re-lay the preview out after a rotation so it uses the new width. */
+  @HostListener('window:resize')
+  @HostListener('window:orientationchange')
+  onViewportChange() {
+    this.updatePreview();
+  }
+
+  ngOnDestroy() {
+    this.releasePreviewUrls();
+  }
+
+  private releasePreviewUrls() {
+    if (this.originalPreviewUrl) URL.revokeObjectURL(this.originalPreviewUrl);
+    if (this.processedPreviewUrl) URL.revokeObjectURL(this.processedPreviewUrl);
+    this.originalPreviewUrl = undefined;
+    this.processedPreviewUrl = undefined;
+  }
+
+  /**
+   * A cluttered photo cannot be cut out cleanly, so exporting one is a
+   * deliberate choice rather than the default.
+   */
+  get canExport(): boolean {
+    return !!this.suitability && (this.suitability.suitable || this.overrideUnsuitable);
+  }
+
+  acknowledgeUnsuitable() {
+    this.overrideUnsuitable = true;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * The viewport card is padded, so `clientWidth` overstates the room the
+   * canvas has and the surplus returns as a CSS downscale.
+   */
+  private availableCanvasWidth(canvas: HTMLCanvasElement): number {
+    const parent = canvas.parentElement;
+    if (!parent) return Math.max(160, window.innerWidth - 32);
+    const cs = getComputedStyle(parent);
+    const padding = parseFloat(cs.paddingLeft || '0') + parseFloat(cs.paddingRight || '0');
+    return Math.max(160, parent.clientWidth - padding);
   }
 
   get beforePreviewData(): PreviewData | undefined {
@@ -99,6 +144,8 @@ export class PhotoCutoutPage implements AfterViewInit {
   }
 
   async onFileSelected(file: File) {
+    this.releasePreviewUrls();
+    this.overrideUnsuitable = false;
     this.originalFile = file;
     this.errorMessage = undefined;
     this.workflowState = 'CONFIGURING';
@@ -130,7 +177,7 @@ export class PhotoCutoutPage implements AfterViewInit {
     if (!this.sourceImage || !this.previewCanvasRef?.nativeElement) return;
     const canvas = this.previewCanvasRef.nativeElement;
 
-    const maxDisplayW = Math.min(canvas.parentElement?.clientWidth || (window.innerWidth - 32), 520);
+    const maxDisplayW = Math.min(this.availableCanvasWidth(canvas), 520);
     const maxDisplayH = Math.min(window.innerHeight * 0.42, 380);
     const scale = Math.min(maxDisplayW / this.sourceImage.width, maxDisplayH / this.sourceImage.height, 1);
     canvas.width = Math.round(this.sourceImage.width * scale);
@@ -160,6 +207,13 @@ export class PhotoCutoutPage implements AfterViewInit {
 
   async exportCutout() {
     if (!this.originalFile || !this.sourceImage) return;
+    if (!this.canExport) {
+      this.toast.info(
+        this.suitability?.reason ||
+          'This image is not suitable for a clean cutout.'
+      );
+      return;
+    }
 
     this.isProcessing = true;
     this.processingProgress = 30;
@@ -189,13 +243,14 @@ export class PhotoCutoutPage implements AfterViewInit {
   }
 
   reset() {
+    this.releasePreviewUrls();
     this.workflowState = 'EMPTY';
     this.originalFile = undefined;
-    this.originalPreviewUrl = undefined;
     this.sourceImage = undefined;
     this.processedFile = undefined;
-    this.processedPreviewUrl = undefined;
     this.errorMessage = undefined;
+    this.suitability = undefined;
+    this.overrideUnsuitable = false;
   }
 
   async saveOutput() {

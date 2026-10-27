@@ -21,7 +21,8 @@ export class PdfToJsonConverter implements IConverter {
     badge: 'LLM & Dev Schema',
     acceptMimeTypes: 'application/pdf',
     limitations: [
-      'Outputs standardized v1.0.0 JSON schema with per-page geometry, coordinates, and detected tables.',
+      'Outputs a stable, versioned JSON schema with per-page geometry, coordinates and detected tables. Coordinates are in PDF points from the top-left of each page.',
+      'Layout-preserving mode keeps every text item as the PDF stores it; reflowable mode joins items into reading-order lines.',
       'Designed for offline LLM RAG ingestion, OCR post-processing, and document analysis pipelines.'
     ],
     disclaimer: '100% on-device data extraction. Extracted document structure is processed locally without external API calls.'
@@ -52,36 +53,49 @@ export class PdfToJsonConverter implements IConverter {
       indicOrRtlWarnings: []
     };
 
+    let loadingTask: ReturnType<typeof pdfjsLib.getDocument> | undefined;
+
     try {
       onProgress?.({ percent: 10, stage: 'Reading PDF document structure...' });
 
       const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
+      loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
       const pdf = await loadingTask.promise;
       const numPages = pdf.numPages;
 
       if (numPages === 0) {
-        return { success: false, error: 'The PDF file has no pages.' };
+        return { success: false, error: 'The PDF file has no pages.', report };
       }
 
+      const includeMetadata = options.includeMetadata !== false;
+      const includeAnnotations = options.includeAnnotations !== false;
+      const includeTables = options.includeTables !== false;
+      const mode = options.mode || 'reflowable';
+
       onProgress?.({ percent: 20, stage: 'Reading document metadata...' });
-      const meta = await pdf.getMetadata().catch(() => ({ info: {} }));
+      const meta = includeMetadata
+        ? await pdf.getMetadata().catch(() => ({ info: {} }))
+        : { info: {} };
       const info: any = (meta as any).info || {};
 
       const structuredOutput: StructuredPdfJson = {
-        schemaVersion: '1.0.0',
+        schemaVersion: '1.1.0',
         generator: 'Indian Form Helper PDF-to-JSON Engine',
         totalPages: numPages,
-        metadata: {
-          title: info.Title || file.name.replace(/\.[^/.]+$/, ''),
-          author: info.Author || undefined,
-          subject: info.Subject || undefined,
-          creator: info.Creator || undefined,
-          producer: info.Producer || undefined,
-          creationDate: info.CreationDate ? String(info.CreationDate) : undefined,
-          modificationDate: info.ModDate ? String(info.ModDate) : undefined,
-          pageCount: numPages
-        },
+        coordinateSpace: 'pdf-points-top-left',
+        mode,
+        metadata: includeMetadata
+          ? {
+              title: info.Title || file.name.replace(/\.[^/.]+$/, ''),
+              author: info.Author || undefined,
+              subject: info.Subject || undefined,
+              creator: info.Creator || undefined,
+              producer: info.Producer || undefined,
+              creationDate: info.CreationDate ? String(info.CreationDate) : undefined,
+              modificationDate: info.ModDate ? String(info.ModDate) : undefined,
+              pageCount: numPages
+            }
+          : { pageCount: numPages },
         pages: []
       };
 
@@ -96,6 +110,8 @@ export class PdfToJsonConverter implements IConverter {
         const page = await pdf.getPage(pageNum);
         const viewport = page.getViewport({ scale: 1.0 });
         const textContent = await page.getTextContent();
+        // Links are structure, not markup, so they are kept even when
+        // annotations are switched off.
         const annotations = await page.getAnnotations().catch(() => []);
 
         const pageTextItems: StructuredPdfJson['pages'][0]['textItems'] = [];
@@ -113,7 +129,7 @@ export class PdfToJsonConverter implements IConverter {
               width: Math.round(rect[2] - rect[0]),
               height: Math.round(rect[3] - rect[1])
             });
-          } else {
+          } else if (includeAnnotations) {
             pageAnnotations.push({
               subtype: ann.subtype || 'Unknown',
               rect: rect.map((r: number) => Math.round(r)),
@@ -143,9 +159,16 @@ export class PdfToJsonConverter implements IConverter {
           }
         }
 
+        // Reflowable mode hands back reading-order lines instead of the raw
+        // item stream, which is what a text pipeline actually wants; the
+        // layout-preserving mode keeps every item exactly as stored.
+        const emittedItems = mode === 'reflowable'
+          ? this.mergeItemsIntoLines(pageTextItems)
+          : pageTextItems;
+
         // Table detection heuristic: group items into rows by Y coordinate
         const pageTables: StructuredPdfJson['pages'][0]['tables'] = [];
-        if (options.includeTables !== false) {
+        if (includeTables) {
           const rowsByY = new Map<number, { text: string; x: number }[]>();
           for (const item of pageTextItems) {
             // Cluster rows within 4px Y-tolerance
@@ -188,7 +211,7 @@ export class PdfToJsonConverter implements IConverter {
           width: Math.round(viewport.width),
           height: Math.round(viewport.height),
           rotation: page.rotate || 0,
-          textItems: pageTextItems,
+          textItems: emittedItems,
           tables: pageTables,
           links: pageLinks,
           annotations: pageAnnotations
@@ -220,6 +243,55 @@ export class PdfToJsonConverter implements IConverter {
         error: `PDF to JSON extraction failed: ${err.message || err}`,
         report
       };
+    } finally {
+      try {
+        await loadingTask?.destroy();
+      } catch {
+        /* nothing to release */
+      }
     }
+  }
+
+  /**
+   * Joins the text items that make up one visual line.
+   *
+   * pdfjs emits an item per style run, so a single sentence can arrive as a
+   * dozen fragments. For a reflowable consumer that is noise; the geometry of
+   * the line is kept as the union of its parts.
+   */
+  private mergeItemsIntoLines(
+    items: StructuredPdfJson['pages'][0]['textItems']
+  ): StructuredPdfJson['pages'][0]['textItems'] {
+    if (items.length === 0) return items;
+
+    const sorted = [...items].sort((a, b) => (a.y - b.y) || (a.x - b.x));
+    const merged: StructuredPdfJson['pages'][0]['textItems'] = [];
+
+    for (const item of sorted) {
+      const previous = merged[merged.length - 1];
+      const sameLine =
+        previous &&
+        Math.abs(previous.y - item.y) <= Math.max(2, item.fontSize * 0.3) &&
+        item.x >= previous.x;
+
+      if (!sameLine) {
+        merged.push({ ...item });
+        continue;
+      }
+
+      const gap = item.x - (previous.x + previous.width);
+      // A gap wider than a space means a column, not a continuation.
+      if (gap > item.fontSize * 1.5) {
+        merged.push({ ...item });
+        continue;
+      }
+
+      const needsSpace = gap > item.fontSize * 0.2 && !previous.text.endsWith(' ');
+      previous.text += (needsSpace ? ' ' : '') + item.text;
+      previous.width = Math.max(previous.width, item.x + item.width - previous.x);
+      previous.height = Math.max(previous.height, item.height);
+    }
+
+    return merged;
   }
 }

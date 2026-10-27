@@ -282,6 +282,13 @@ export class PdfToHtmlConverter implements IConverter {
       });
 
       const pageParts: string[] = [];
+      /*
+       * The fixed page keeps its PDF point dimensions, so on a phone it is
+       * wider than the screen. The scroller around it absorbs that: the page
+       * is panned rather than allowed to drag the whole document sideways,
+       * which is what "layout-preserving" means on a small screen.
+       */
+      pageParts.push('<div class="pdf-fixed-scroller">');
       pageParts.push(
         `<div class="pdf-page-fixed" style="width: ${Math.round(viewport.width)}px; height: ${Math.round(viewport.height)}px;">`
       );
@@ -310,6 +317,7 @@ export class PdfToHtmlConverter implements IConverter {
         }
       }
 
+      pageParts.push(`</div>`);
       pageParts.push(`</div>`);
       pageHtmls.push(pageParts.join('\n'));
     }
@@ -351,6 +359,41 @@ export class PdfToHtmlConverter implements IConverter {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * Only emitted for layout-preserving output, so a reflowable file carries no
+   * rules for page boxes it does not contain.
+   */
+  private fixedLayoutStyles(): string {
+    return `    /* Fixed Layout Styles */
+    .pdf-fixed-scroller {
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 16px 0;
+      padding-bottom: 4px;
+    }
+    .pdf-page-fixed {
+      position: relative;
+      background: white;
+      color: black;
+      margin: 0 auto;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      page-break-after: always;
+    }
+    .pdf-text-item {
+      position: absolute;
+      white-space: pre;
+      line-height: 1;
+      transform-origin: top left;
+    }
+    .pdf-fixed-img {
+      max-width: 100%;
+      height: auto;
+    }
+`;
   }
 
   private wrapInHtmlDocument(title: string, bodyContent: string, mode: string): string {
@@ -448,27 +491,7 @@ export class PdfToHtmlConverter implements IConverter {
       opacity: 0.75;
       margin-top: 4px;
     }
-    /* Fixed Layout Styles */
-    .pdf-page-fixed {
-      position: relative;
-      background: white;
-      color: black;
-      margin: 16px auto;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      page-break-after: always;
-    }
-    .pdf-text-item {
-      position: absolute;
-      white-space: pre;
-      line-height: 1;
-      transform-origin: top left;
-    }
-    .pdf-fixed-img {
-      max-width: 100%;
-      height: auto;
-    }
-  </style>
+${mode === 'layout-preserving' ? this.fixedLayoutStyles() : ''}  </style>
 </head>
 <body>
   ${bodyContent}

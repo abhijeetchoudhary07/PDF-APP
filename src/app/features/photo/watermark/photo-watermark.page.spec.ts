@@ -63,7 +63,7 @@ describe('PhotoWatermarkPage', () => {
         { provide: ShareService, useValue: { shareFile: vi.fn() } },
         { provide: ToastService, useValue: mockToastService },
         { provide: HistoryService, useValue: { addHistoryItem: vi.fn() } },
-        { provide: ChangeDetectorRef, useValue: { markForCheck: vi.fn() } }
+        { provide: ChangeDetectorRef, useValue: { markForCheck: vi.fn(), detectChanges: vi.fn() } }
       ]
     });
 
@@ -84,6 +84,30 @@ describe('PhotoWatermarkPage', () => {
     expect(page.workflowState).toBe('CONFIGURING');
     expect(page.files.length).toBe(1);
     expect(mockWatermarkService.applyWatermark).toHaveBeenCalled();
+  });
+
+  /**
+   * Regression: the preview paint ran before Angular had rendered the
+   * CONFIGURING block, so the ViewChild was undefined and the paint was
+   * silently dropped — the preview stayed blank after upload until the user
+   * happened to move a slider.
+   */
+  describe('preview paints on the first render', () => {
+    it('paints even though the canvas appears only after change detection', () => {
+      const canvas = createSafeCanvas(1, 1);
+      let attached = false;
+      Object.defineProperty(page, 'previewCanvasRef', {
+        configurable: true,
+        get: () => (attached ? { nativeElement: canvas } : undefined)
+      });
+      (page as any).cdr = { markForCheck: vi.fn(), detectChanges: vi.fn(() => { attached = true; }) };
+      page.sourceCanvas = createSafeCanvas(200, 200);
+
+      page.updatePreview();
+
+      expect(canvas.width).toBe(200);
+      expect(canvas.height).toBe(200);
+    });
   });
 
   it('applies a preset configuration correctly', () => {

@@ -248,6 +248,14 @@ describe('DocumentScannerService', () => {
       expect(data.length).toBe(1240 * 1754 * 4);
     });
 
+    it('fullPageCorners covers the whole image, so a composed sheet is not re-cropped', () => {
+      const c = service.fullPageCorners(1240, 1754);
+      expect(c.topLeft).toEqual({ x: 0, y: 0 });
+      expect(c.topRight).toEqual({ x: 1240, y: 0 });
+      expect(c.bottomRight).toEqual({ x: 1240, y: 1754 });
+      expect(c.bottomLeft).toEqual({ x: 0, y: 1754 });
+    });
+
     it('document mode output should be byte-identical to base enhancement for a fixture', async () => {
       const canvas = service.createCanvas(60, 60);
       const ctx = service.getContext(canvas)!;
@@ -410,6 +418,43 @@ describe('DocumentScannerService', () => {
       expect(blurScore.isBlurry).toBe(true);
     });
 
+    it('reports a display percentage, because the raw variance is not one', async () => {
+      const sharp = service.createCanvas(200, 200);
+      const sctx = service.getContext(sharp)!;
+      sctx.fillStyle = '#000000';
+      sctx.fillRect(0, 0, 200, 200);
+      sctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 200; i += 8) sctx.fillRect(i, 0, 4, 200);
+
+      const res = await service.calculateBlurScore(sharp);
+
+      // A crisp page of text scores in the tens of thousands, so the badge
+      // used to read "Sharp 27225%".
+      expect(res.score).toBeGreaterThan(100);
+      expect(res.scorePercent).toBeGreaterThanOrEqual(0);
+      expect(res.scorePercent).toBeLessThanOrEqual(100);
+    });
+
+    it('sharpnessPercent is bounded, monotonic and puts the threshold mid-scale', () => {
+      expect(service.sharpnessPercent(0)).toBe(0);
+      expect(service.sharpnessPercent(-5)).toBe(0);
+      expect(service.sharpnessPercent(1e9)).toBe(100);
+
+      // Ordering by the percentage has to match ordering by the raw score,
+      // or the badge would rank pages differently from the blur gate.
+      const samples = [0, 10, 80, 740, 8544, 27225];
+      const mapped = samples.map(v => service.sharpnessPercent(v));
+      for (let i = 1; i < mapped.length; i++) {
+        expect(mapped[i]).toBeGreaterThanOrEqual(mapped[i - 1]);
+      }
+
+      // The default gate sits at 80, which should read as clearly poor
+      // without collapsing to zero.
+      const atThreshold = service.sharpnessPercent(80);
+      expect(atThreshold).toBeGreaterThan(0);
+      expect(atThreshold).toBeLessThan(60);
+    });
+
     it('threshold decision is stable across image sizes', async () => {
       const makePattern = (size: number) => {
         const c = service.createCanvas(size, size);
@@ -542,6 +587,57 @@ describe('DocumentScannerService', () => {
       expect(res.curvatureMagnitude).toBeGreaterThan(0);
       expect(res.canvas).toBeDefined();
     });
+
+    it('detectCurvature agrees with dewarpCurvature without resampling the page', async () => {
+      const flat = service.createCanvas(100, 100);
+      const fctx = service.getContext(flat)!;
+      fctx.fillStyle = '#ffffff';
+      fctx.fillRect(0, 0, 100, 100);
+      fctx.fillStyle = '#000000';
+      // Full-width rules: every sampled column sees the same baselines, so a
+      // flat page is flat rather than an artefact of empty margin columns.
+      fctx.fillRect(0, 30, 100, 4);
+      fctx.fillRect(0, 50, 100, 4);
+      fctx.fillRect(0, 70, 100, 4);
+
+      const curved = service.createCanvas(120, 100);
+      const cctx = service.getContext(curved)!;
+      cctx.fillStyle = '#ffffff';
+      cctx.fillRect(0, 0, 120, 100);
+      cctx.fillStyle = '#000000';
+      for (let x = 0; x < 120; x++) {
+        const offset = Math.round(0.008 * (x - 60) ** 2);
+        cctx.fillRect(x, 25 + offset, 1, 4);
+        cctx.fillRect(x, 50 + offset, 1, 4);
+      }
+
+      const flatProbe = await service.detectCurvature(flat);
+      const curvedProbe = await service.detectCurvature(curved);
+
+      expect(flatProbe.curvatureDetected).toBe(false);
+      expect(curvedProbe.curvatureDetected).toBe(true);
+
+      // The capture path uses the probe in place of the full dewarp, so the two
+      // must never disagree about whether a page is curved.
+      expect(flatProbe.curvatureDetected).toBe((await service.dewarpCurvature(flat)).curvatureDetected);
+      expect(curvedProbe.curvatureDetected).toBe((await service.dewarpCurvature(curved)).curvatureDetected);
+      expect(curvedProbe.curvatureMagnitude).toBe((await service.dewarpCurvature(curved)).curvatureMagnitude);
+    });
+
+    it('a probe on a flat page returns the original canvas untouched', async () => {
+      const flat = service.createCanvas(100, 100);
+      const ctx = service.getContext(flat)!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 100, 100);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 30, 100, 4);
+      ctx.fillRect(0, 50, 100, 4);
+      ctx.fillRect(0, 70, 100, 4);
+
+      const res = await service.dewarpCurvature(flat);
+      expect(res.curvatureDetected).toBe(false);
+      expect(res.canvas).toBe(flat);
+    });
   });
 
   describe('H8 — Auto-Naming from Content', () => {
@@ -565,6 +661,48 @@ describe('DocumentScannerService', () => {
       const result = await service.suggestDocumentTitle(blankCanvas);
       expect(result.source).toBe('fallback');
       expect(result.sanitizedFileName).toMatch(/^Scan_\d{8}_\d{4}$/);
+    });
+
+    it('ranks the largest, highest, shortest line first so it becomes the title', () => {
+      // A heading in 40px type at the top, then body text in 16px below it.
+      const words = [
+        { text: 'Electricity', bbox: { x0: 60, y0: 60, x1: 260, y1: 100 } },
+        { text: 'Bill', bbox: { x0: 270, y0: 60, x1: 340, y1: 100 } },
+        { text: 'Consumer', bbox: { x0: 60, y0: 150, x1: 150, y1: 166 } },
+        { text: 'number', bbox: { x0: 156, y0: 150, x1: 230, y1: 166 } },
+        { text: '2291', bbox: { x0: 236, y0: 150, x1: 290, y1: 166 } },
+        { text: 'Units', bbox: { x0: 60, y0: 190, x1: 110, y1: 206 } },
+        { text: 'consumed', bbox: { x0: 116, y0: 190, x1: 220, y1: 206 } }
+      ];
+
+      const ranked = service.rankTitleLines(words, 350);
+      expect(ranked[0]).toBe('Electricity Bill');
+      expect(ranked).toContain('Consumer number 2291');
+      expect(ranked.length).toBe(3);
+    });
+
+    it('the ranked lines feed suggestDocumentTitle, so the heading becomes the file name', async () => {
+      const canvas = service.createCanvas(100, 100);
+      const ranked = service.rankTitleLines(
+        [
+          { text: 'Salary', bbox: { x0: 40, y0: 40, x1: 160, y1: 84 } },
+          { text: 'Slip', bbox: { x0: 168, y0: 40, x1: 240, y1: 84 } },
+          { text: 'Employee', bbox: { x0: 40, y0: 140, x1: 130, y1: 156 } },
+          { text: 'code', bbox: { x0: 136, y0: 140, x1: 180, y1: 156 } }
+        ],
+        300
+      );
+
+      const result = await service.suggestDocumentTitle(canvas, ranked.join('\n'));
+      expect(result.source).toBe('ocr');
+      expect(result.sanitizedFileName).toBe('Salary_Slip');
+    });
+
+    it('returns nothing to rank when OCR found no usable words', () => {
+      expect(service.rankTitleLines([], 100)).toEqual([]);
+      expect(
+        service.rankTitleLines([{ text: '   ', bbox: { x0: 0, y0: 0, x1: 10, y1: 10 } }], 100)
+      ).toEqual([]);
     });
 
     it('sanitizeFileName removes illegal characters and limits length', () => {

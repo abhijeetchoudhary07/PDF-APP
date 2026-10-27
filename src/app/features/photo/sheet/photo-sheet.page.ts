@@ -4,8 +4,7 @@ import {
   ChangeDetectorRef,
   ElementRef,
   ViewChild,
-  inject
-} from '@angular/core';
+  inject, HostListener } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FileService } from '../../../core/services/file.service';
@@ -165,6 +164,13 @@ export class PhotoSheetPage {
     };
   }
 
+
+  /** Re-render after a rotation so the preview uses the new width. */
+  @HostListener('window:resize')
+  @HostListener('window:orientationchange')
+  onViewportChange() {
+    this.updateSheetPreview();
+  }
   updateSheetPreview() {
     if (this.loadedImageCanvases.length === 0) return;
 
@@ -174,17 +180,43 @@ export class PhotoSheetPage {
       this.repeatSingle || this.loadedImageCanvases.length === 1
     );
 
-    if (this.sheetCanvasRef?.nativeElement && this.renderedSheetCanvas) {
-      const domCanvas = this.sheetCanvasRef.nativeElement;
-      domCanvas.width = this.renderedSheetCanvas.width;
-      domCanvas.height = this.renderedSheetCanvas.height;
-      const ctx = domCanvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(this.renderedSheetCanvas, 0, 0);
-      }
+    this.paintPreviewCanvas();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Paints the rendered sheet onto the on-screen canvas.
+   *
+   * This is separate from the render because the first call arrives from
+   * `handleFileSelected`, one statement after `workflowState` flips to
+   * CONFIGURING and before Angular has rendered that block — so the ViewChild
+   * is still undefined, the paint was skipped, and nothing ever retried. The
+   * user uploaded photos and sat looking at an empty box until they happened
+   * to touch a control. Flushing change detection first gives the canvas a
+   * chance to exist; the retry on the next frame covers the case where it
+   * still does not.
+   */
+  private paintPreviewCanvas(retry = true) {
+    if (!this.renderedSheetCanvas) return;
+
+    if (!this.sheetCanvasRef?.nativeElement) {
+      this.cdr.detectChanges();
     }
 
-    this.cdr.markForCheck();
+    const domCanvas = this.sheetCanvasRef?.nativeElement;
+    if (!domCanvas) {
+      if (retry) {
+        requestAnimationFrame(() => this.paintPreviewCanvas(false));
+      }
+      return;
+    }
+
+    domCanvas.width = this.renderedSheetCanvas.width;
+    domCanvas.height = this.renderedSheetCanvas.height;
+    const ctx = domCanvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(this.renderedSheetCanvas, 0, 0);
+    }
   }
 
   async exportAsImage() {

@@ -27,6 +27,7 @@ import {
   ShapeType,
   AnnotationType
 } from '../../core/models/pdf-editor.types';
+import { PlacementCompleted } from '../../core/services/pdf-editor-state.service';
 
 import { PdfReaderComponent } from './components/pdf-reader/pdf-reader.component';
 import { PdfCanvasComponent } from './components/pdf-canvas/pdf-canvas.component';
@@ -40,7 +41,11 @@ import { PdfCommentReviewModalComponent } from './components/pdf-comment-review-
 import { PdfShapeMeasurementModalComponent } from './components/pdf-shape-measurement-modal/pdf-shape-measurement-modal.component';
 import { PdfTextEditModalComponent } from './components/pdf-text-edit-modal/pdf-text-edit-modal.component';
 import { PdfFlattenOverlayModalComponent } from './components/pdf-flatten-overlay-modal/pdf-flatten-overlay-modal.component';
-import { WHITEOUT_DISCLAIMER_TEXT } from '../../core/services/pdf-image-tools.service';
+import { PdfImageToolsModalComponent } from './components/pdf-image-tools-modal/pdf-image-tools-modal.component';
+import { PdfWhiteoutModalComponent } from './components/pdf-whiteout-modal/pdf-whiteout-modal.component';
+import { TranslationService } from '../../core/services/translation.service';
+import { PdfShapeMeasurementService } from '../../core/services/pdf-shape-measurement.service';
+import { CommentThread } from '../../core/models/editor-features.types';
 import {
   AppButtonComponent,
   AppIconComponent,
@@ -82,6 +87,8 @@ export class PdfEditorPage implements OnInit, OnDestroy {
   private alertCtrl = inject(AlertController);
   private actionSheetCtrl = inject(ActionSheetController);
   private router = inject(Router);
+  private i18n = inject(TranslationService);
+  private shapes = inject(PdfShapeMeasurementService);
 
   showThumbnails = false;
   showSearch = false;
@@ -101,6 +108,71 @@ export class PdfEditorPage implements OnInit, OnDestroy {
     this.subs.add(
       this.state.exportProgress$.subscribe(p => (this.exportProgress = p))
     );
+
+    /*
+     * Placement runs on the canvas, not in the sheet that started it, so
+     * this is where the person finds out it worked. Without it, tapping the
+     * page to put a comment down gives no feedback at all beyond a small
+     * marker that may be under their finger.
+     */
+    this.subs.add(
+      this.state.placementCompleted$.subscribe(event => {
+        void this.announcePlacement(event);
+      })
+    );
+  }
+
+  /** Confirms what landed on the page, and reopens the sheet behind it. */
+  private async announcePlacement(event: PlacementCompleted): Promise<void> {
+    switch (event.tool) {
+      case 'link':
+        await this.showToast(
+          this.i18n.translate('editor.placedLink', { page: event.link.pageNumber }),
+          'success'
+        );
+        await this.openLinkModal();
+        return;
+
+      case 'comment':
+        await this.showToast(
+          this.i18n.translate('editor.placedComment', { page: event.thread.pageNumber }),
+          'success'
+        );
+        await this.openCommentModal();
+        return;
+
+      case 'whiteout':
+        await this.showToast(
+          this.i18n.translate('editor.placedWhiteout', { page: event.region.pageNumber }),
+          'warning'
+        );
+        return;
+
+      case 'measure':
+        if ('calibratedScale' in event) {
+          await this.showToast(
+            this.i18n.translate('editor.calibrationSet', {
+              text: this.shapes.calibrationLabel(event.calibratedScale).text
+            }),
+            'success'
+          );
+        } else {
+          await this.showToast(
+            this.i18n.translate('editor.placedMeasurement', {
+              value: event.measurement.formattedString
+            }),
+            'success'
+          );
+        }
+        await this.openShapeMeasurementModal();
+        return;
+    }
+  }
+
+  /** Opens the review sheet on the thread whose pin was tapped. */
+  async onCommentOpened(thread: CommentThread): Promise<void> {
+    this.state.setCurrentPage(thread.pageNumber);
+    await this.openCommentModal();
   }
 
   ngOnDestroy() {
@@ -127,7 +199,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
       if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
         await this.loadPdfFile(file);
       } else {
-        this.showToast('Please drop a valid PDF file.', 'warning');
+        await this.showToast(this.i18n.translate('editor.dropPdfOnly'), 'warning');
       }
     }
   }
@@ -139,7 +211,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
 
   async loadPdfFile(file: File) {
     this.isExporting = true;
-    this.exportStage = 'Loading PDF document...';
+    this.exportStage = this.i18n.translate('editor.loadingDocument');
     this.exportProgress = 10;
 
     try {
@@ -190,9 +262,15 @@ export class PdfEditorPage implements OnInit, OnDestroy {
 
       this.state.initDocument(docModel);
       this.exportProgress = 100;
-      this.showToast(`Loaded ${file.name} (${numPages} pages)`, 'success');
+      await this.showToast(
+        this.i18n.translate('editor.loadedDocument', { name: file.name, pages: numPages }),
+        'success'
+      );
     } catch (e: any) {
-      this.showToast(`Failed to load PDF: ${e.message}`, 'danger');
+      await this.showToast(
+        this.i18n.translate('editor.kFailed', { reason: e?.message || String(e) }),
+        'danger'
+      );
     } finally {
       this.isExporting = false;
     }
@@ -335,35 +413,26 @@ export class PdfEditorPage implements OnInit, OnDestroy {
     await modal.present();
   }
 
-  async activateWhiteout() {
-    const alert = await this.alertCtrl.create({
-      header: 'Whiteout Tool Notice',
-      subHeader: 'Visual Coverage vs. Permanent Redaction',
-      message: WHITEOUT_DISCLAIMER_TEXT,
-      buttons: [
-        {
-          text: 'Use True Redaction',
-          role: 'cancel',
-          handler: () => {
-            this.setTool('redact');
-          }
-        },
-        {
-          text: 'Apply Whiteout',
-          handler: () => {
-            const pageNum = this.state.currentPageNumber;
-            this.state.addWhiteout({
-              pageNumber: pageNum,
-              rect: { x: 50, y: 150, width: 140, height: 30 },
-              fillColor: '#FFFFFF',
-              disclaimerAcknowledged: true
-            });
-            this.showToast('Whiteout region placed. It visually covers content without modifying underlying streams.', 'warning');
-          }
-        }
-      ]
+  async openImageToolsModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfImageToolsModalComponent
     });
-    await alert.present();
+    await modal.present();
+  }
+
+  /**
+   * The whiteout sheet.
+   *
+   * This replaces an alert that dropped a fixed 140 x 30 rectangle at a
+   * fixed spot on the page and called it placed. Whiteout is an area tool,
+   * so it now opens a sheet that explains what covering does, offers the way
+   * out to real redaction, and hands the area off to be drawn on the page.
+   */
+  async activateWhiteout() {
+    const modal = await this.modalCtrl.create({
+      component: PdfWhiteoutModalComponent
+    });
+    await modal.present();
   }
 
   // --- Export & Share ---
@@ -373,7 +442,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
     if (!doc) return;
 
     this.isExporting = true;
-    this.exportStage = 'Compiling PDF with overlays and security checks...';
+    this.exportStage = this.i18n.translate('editor.exportingStage');
     this.exportProgress = 5;
 
     try {
@@ -396,9 +465,12 @@ export class PdfEditorPage implements OnInit, OnDestroy {
         outputPath: uri || 'web-download'
       });
 
-      this.showToast('Export complete! PDF saved.', 'success');
+      await this.showToast(this.i18n.translate('editor.exportDone'), 'success');
     } catch (e: any) {
-      this.showToast(`Export failed: ${e.message}`, 'danger');
+      await this.showToast(
+        this.i18n.translate('editor.kFailed', { reason: e?.message || String(e) }),
+        'danger'
+      );
     } finally {
       this.isExporting = false;
     }
@@ -409,7 +481,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
     if (!doc) return;
 
     this.isExporting = true;
-    this.exportStage = 'Preparing PDF for sharing...';
+    this.exportStage = this.i18n.translate('editor.sharingStage');
     this.exportProgress = 10;
 
     try {
@@ -422,9 +494,12 @@ export class PdfEditorPage implements OnInit, OnDestroy {
       );
 
       await this.shareService.shareFile(result.file, result.file.name);
-      this.showToast('Share initiated.', 'success');
+      await this.showToast(this.i18n.translate('editor.shareStarted'), 'success');
     } catch (e: any) {
-      this.showToast(`Share failed: ${e.message}`, 'danger');
+      await this.showToast(
+        this.i18n.translate('editor.kFailed', { reason: e?.message || String(e) }),
+        'danger'
+      );
     } finally {
       this.isExporting = false;
     }

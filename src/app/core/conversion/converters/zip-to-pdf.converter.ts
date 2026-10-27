@@ -119,6 +119,13 @@ export class ZipToPdfConverter implements IConverter {
       const mergedPdf = await PDFDocument.create();
       let totalPagesAdded = 0;
 
+      // Accumulated across every sheet/entry, so one notice covers the file.
+      const dropped = { dropped: 0, sample: '' };
+      const track = (result: { dropped: number; sample: string }) => {
+        dropped.dropped += result.dropped;
+        if (!dropped.sample) dropped.sample = result.sample;
+      };
+
       for (let i = 0; i < pathsToCompile.length; i++) {
         const path = pathsToCompile[i];
         const entry = zipContent.files[path];
@@ -155,17 +162,17 @@ export class ZipToPdfConverter implements IConverter {
           totalPagesAdded++;
         } else if (ext === 'txt') {
           const text = await entry.async('string');
-          await PdfLayoutHelper.renderTextDocument(mergedPdf, text, { format: 'A4' });
+          track(await PdfLayoutHelper.renderTextDocument(mergedPdf, text, { format: 'A4' }));
           totalPagesAdded++;
         } else if (ext === 'csv' || ext === 'tsv') {
           const csvText = await entry.async('string');
           const parsed = CsvParserHelper.parse(csvText);
-          await PdfLayoutHelper.renderTableDocument(mergedPdf, parsed.headers, parsed.rows, { format: 'A4' }, fileName);
+          track(await PdfLayoutHelper.renderTableDocument(mergedPdf, parsed.headers, parsed.rows, { format: 'A4' }, fileName));
           totalPagesAdded++;
         } else if (ext === 'html' || ext === 'htm') {
           const htmlText = await entry.async('string');
           const structured = HtmlSanitizerHelper.extractStructuredText(htmlText);
-          await PdfLayoutHelper.renderTextDocument(mergedPdf, structured, { format: 'A4' });
+          track(await PdfLayoutHelper.renderTextDocument(mergedPdf, structured, { format: 'A4' }));
           totalPagesAdded++;
         }
       }
@@ -185,11 +192,22 @@ export class ZipToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}_compiled.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(dropped.dropped, dropped.sample);
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
+        warnings: encodingWarning ? [encodingWarning] : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: {
           compiledFilesCount: pathsToCompile.length,
           pageCount: mergedPdf.getPageCount()

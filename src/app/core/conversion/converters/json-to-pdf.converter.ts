@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { PDFDocument, rgb } from 'pdf-lib';
 import { IConverter } from '../converter.interface';
 import { ConverterMetadata, ConversionProgress, ConversionResult } from '../conversion.types';
+import { PdfLayoutHelper } from '../utils/pdf-layout.helper';
 import { CodeLayoutHelper, HighlightedLine, CodeToken } from '../utils/code-layout.helper';
 import { MarkupToPdfOptions } from '../../models/conversion-features.types';
 
@@ -88,7 +89,7 @@ export class JsonToPdfConverter implements IConverter {
       });
 
       const pdfDoc = await PDFDocument.create();
-      await CodeLayoutHelper.renderHighlightedDocument(pdfDoc, lines, {
+      const renderResult = await CodeLayoutHelper.renderHighlightedDocument(pdfDoc, lines, {
         format: options.format || 'A4',
         orientation: options.orientation || 'Portrait',
         margin: options.margin || 40,
@@ -108,11 +109,25 @@ export class JsonToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(
+        renderResult.droppedCharacters,
+        renderResult.droppedSample
+      );
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
+        warnings: encodingWarning ? [encodingWarning] : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: {
           pageCount: pdfDoc.getPageCount(),
           lineCount: lines.length,

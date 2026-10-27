@@ -32,21 +32,13 @@
           class="toggle-chip"
           [class.active]="batchMode"
           (click)="toggleBatchMode()"
-          [title]="'scanner.batchMode' | translate"
+          [title]="'scanner.batchModeHint' | translate"
+          [attr.aria-pressed]="batchMode"
         >
           <span class="chip-indicator" [class.on]="batchMode"></span>
           <span>⚡ {{ 'scanner.batchMode' | translate }}</span>
         </button>
 
-        <button
-          type="button"
-          class="toggle-chip"
-          [class.active]="shutterMode === 'auto'"
-          (click)="toggleShutterMode()"
-          [title]="(shutterMode === 'auto' ? 'scanner.autoCapture' : 'scanner.manualCapture') | translate"
-        >
-          <span>🎯 {{ shutterMode === 'auto' ? ('scanner.autoCapture' | translate) : ('scanner.manualCapture' | translate) }}</span>
-        </button>
       </div>
     }
 
@@ -87,36 +79,47 @@
     }
   </section>
 
-  <!-- H4: REAL-TIME BLUR WARNING BANNER / MODAL -->
-  @if (showBlurAlert) {
-    <div class="blur-alert-overlay" role="dialog" aria-modal="true" aria-labelledby="blur-alert-title">
-      <div class="blur-alert-card">
-        <div class="blur-alert-header">
-          <div class="blur-alert-icon">⚠️</div>
-          <div class="blur-alert-copy">
-            <h3 id="blur-alert-title">{{ 'scanner.blurDetectedTitle' | translate }}</h3>
-            <p>{{ 'scanner.blurDetectedDesc' | translate:{ score: lastBlurScore } }}</p>
-          </div>
-        </div>
-        <div class="blur-alert-actions">
-          <app-button
-            variant="primary"
-            size="lg"
-            (clicked)="retakeBlurPage()"
-          >
-            🔄 {{ 'scanner.retakePage' | translate }}
-          </app-button>
-          <app-button
-            variant="ghost"
-            size="lg"
-            (clicked)="keepBlurPage()"
-          >
-            ✓ {{ 'scanner.keepAnyway' | translate }}
-          </app-button>
+  <!-- CAPTURE PROCESSING OVERLAY -->
+  @if (isProcessingCapture) {
+    <div class="processing-overlay" role="status" aria-live="polite">
+      <div class="processing-card">
+        <div class="processing-spinner" aria-hidden="true"></div>
+        <div class="processing-copy">
+          <strong>{{ 'scanner.processingCapture' | translate }}</strong>
+          @if (processingTotal > 1) {
+            <span class="processing-count">{{ processingCurrent }} / {{ processingTotal }}</span>
+          }
         </div>
       </div>
     </div>
   }
+
+  <!-- H4: BLUR GATE -->
+  <!-- Uses the shared modal, which reparents its backdrop to <body>. Ionic
+       puts `contain: size layout style` on .ion-page, which makes it the
+       containing block for position:fixed descendants, so an overlay declared
+       inside the page covers only the page box and scrolls with it. -->
+  <app-modal
+    [isOpen]="showBlurAlert"
+    [title]="'scanner.blurDetectedTitle' | translate"
+    [subtitle]="'scanner.blurDetectedDesc' | translate:{ score: lastBlurScore }"
+    [hasFooter]="true"
+    size="sm"
+    [closeOnBackdrop]="false"
+    (closed)="keepBlurPage()">
+    <div class="blur-alert-body">
+      <span class="blur-alert-icon" aria-hidden="true">⚠️</span>
+      <p class="blur-alert-hint">{{ 'scanner.blurRetakeHint' | translate }}</p>
+    </div>
+    <div modal-footer>
+      <app-button variant="ghost" size="md" data-testid="blur-keep" (clicked)="keepBlurPage()">
+        ✓ {{ 'scanner.keepAnyway' | translate }}
+      </app-button>
+      <app-button variant="primary" size="md" data-testid="blur-retake" (clicked)="retakeBlurPage()">
+        🔄 {{ 'scanner.retakePage' | translate }}
+      </app-button>
+    </div>
+  </app-modal>
 
   <!-- VIEW 1: EMPTY / CAPTURE START -->
   @if (currentView === 'empty') {
@@ -350,23 +353,30 @@
               >
                 ☀️ {{ activePage.shadowRemovalApplied ? ('scanner.shadowsRemoved' | translate) : ('scanner.removeShadows' | translate) }}
               </button>
-              <button
-                type="button"
-                class="chip-toggle-btn"
-                [class.active]="activePage.fingerRemoved"
-                (click)="toggleFingerRemoval(activePage)"
-              >
-                👆 {{ 'scanner.removeFinger' | translate }}
-              </button>
-              <button
-                type="button"
-                class="chip-toggle-btn"
-                [class.active]="activePage.dewarpApplied"
-                (click)="toggleDewarp(activePage)"
-              >
-                📖 {{ activePage.dewarpApplied ? ('scanner.dewarpedBadge' | translate) : ('scanner.dewarpCurvature' | translate) }}
-              </button>
+              @if (activePage.fingerDetected || activePage.fingerRemoved) {
+                <button
+                  type="button"
+                  class="chip-toggle-btn"
+                  [class.active]="activePage.fingerRemoved"
+                  (click)="toggleFingerRemoval(activePage)"
+                >
+                  👆 {{ 'scanner.removeFinger' | translate }}
+                </button>
+              }
+              @if (activePage.curvatureDetected || activePage.scanMode === 'book' || activePage.dewarpApplied) {
+                <button
+                  type="button"
+                  class="chip-toggle-btn"
+                  [class.active]="activePage.dewarpApplied"
+                  (click)="toggleDewarp(activePage)"
+                >
+                  📖 {{ activePage.dewarpApplied ? ('scanner.dewarpedBadge' | translate) : ('scanner.dewarpCurvature' | translate) }}
+                </button>
+              }
             </div>
+            @if (!activePage.fingerDetected && !activePage.fingerRemoved && !activePage.curvatureDetected && activePage.scanMode !== 'book' && !activePage.dewarpApplied) {
+              <p class="smart-processing-hint">{{ 'scanner.noIssuesDetected' | translate }}</p>
+            }
           </div>
 
           <div class="enhance-actions">
@@ -416,6 +426,9 @@
           <div
             class="page-card"
             [class.active]="i === activePageIndex"
+            [attr.data-blur-percent]="page.blurPercent"
+            [attr.data-finger-detected]="page.fingerDetected"
+            [attr.data-curvature]="page.curvatureMagnitude"
             (click)="activePageIndex = i"
           >
             <div class="page-card-header">
@@ -426,7 +439,7 @@
                   [class.sharp]="!page.isBlurry"
                   [class.blurry]="page.isBlurry"
                 >
-                  {{ page.isBlurry ? ('scanner.blurryBadge' | translate) : ('scanner.sharpBadge' | translate) }} {{ page.blurScore }}%
+                  {{ page.isBlurry ? ('scanner.blurryBadge' | translate) : ('scanner.sharpBadge' | translate) }} {{ page.blurPercent }}%
                 </span>
               }
             </div>
@@ -459,7 +472,7 @@
                 </button>
               }
 
-              @if (page.scanMode === 'book' || page.dewarpApplied) {
+              @if (page.curvatureDetected || page.scanMode === 'book' || page.dewarpApplied) {
                 <button
                   type="button"
                   class="feature-chip"
@@ -558,12 +571,28 @@
             type="text"
             class="doc-title-input"
             [(ngModel)]="documentFileName"
-            (ngModelChange)="updateDocumentFileName($event)"
+            (ngModelChange)="onDocumentFileNameInput($event)"
+            (blur)="commitDocumentFileName()"
             [placeholder]="'scanner.renamePlaceholder' | translate"
             autocomplete="off"
             spellcheck="false"
           />
         </div>
+        <button
+          type="button"
+          class="name-from-text-btn"
+          data-testid="suggest-name"
+          [disabled]="isSuggestingName || pages.length === 0"
+          (click)="suggestNameFromContent()"
+        >
+          @if (isSuggestingName) {
+            <span class="name-btn-spinner" aria-hidden="true"></span>
+            {{ 'scanner.nameFromTextBusy' | translate }}
+          } @else {
+            ✨ {{ 'scanner.nameFromText' | translate }}
+          }
+        </button>
+        <p class="naming-hint">{{ 'scanner.nameFromTextHint' | translate }}</p>
       </div>
 
       <!-- PDF Settings & Generate Bar -->

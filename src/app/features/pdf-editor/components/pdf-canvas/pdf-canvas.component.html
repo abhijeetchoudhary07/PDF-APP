@@ -259,6 +259,114 @@
       </div>
     }
 
+    <!-- ══════════════════════════════════════════════════════════════
+         PART K OVERLAYS
+
+         Without these, every Part K tool was invisible: a link was added
+         and nothing appeared, a comment was placed and the page looked
+         unchanged. Each layer is `pointer-events: none` except for the
+         handles that need a tap, so they never get in the way of the tool
+         that is actually active.
+         ══════════════════════════════════════════════════════════════ -->
+
+    <!-- K4 — whiteout covers. Drawn first, so they sit under the markers. -->
+    @for (region of state.currentPage?.whiteouts; track region.id) {
+      <div
+        class="k-whiteout-box"
+        [style.left.px]="region.rect.x * renderScale"
+        [style.top.px]="region.rect.y * renderScale"
+        [style.width.px]="region.rect.width * renderScale"
+        [style.height.px]="region.rect.height * renderScale"
+        [style.background]="region.fillColor"
+      ></div>
+    }
+
+    <!-- K2 — link rectangles. -->
+    @for (link of state.currentPage?.links; track link.id) {
+      <div
+        class="k-link-box"
+        [class.is-dangling]="link.isDangling"
+        [style.left.px]="link.rect.x * renderScale"
+        [style.top.px]="link.rect.y * renderScale"
+        [style.width.px]="link.rect.width * renderScale"
+        [style.height.px]="link.rect.height * renderScale"
+        >
+        <span class="k-link-tag">{{ link.label || link.url }}</span>
+      </div>
+    }
+
+    <!-- K5 — measurements, as a line or outline with its reading. -->
+    <svg
+      class="k-measure-layer"
+      [attr.viewBox]="'0 0 ' + pageWidth + ' ' + pageHeight"
+      preserveAspectRatio="none"
+      >
+      @for (measurement of state.currentPage?.measurements; track measurement.id) {
+        <ng-container>
+          @if (measurement.type === 'area') {
+            <polygon
+              [attr.points]="polygonPoints(measurement.points)"
+              class="k-measure-shape"
+              />
+          } @else {
+            <path [attr.d]="getSvgPath(measurement.points)" class="k-measure-line" />
+          }
+        </ng-container>
+      }
+
+      <!-- The measurement being taken right now. -->
+      @if (measurePoints.length > 0) {
+        @if (measureDraft?.mode === 'area') {
+          <polygon [attr.points]="polygonPoints(measurePoints)" class="k-measure-shape is-live" />
+        } @else if (measurePoints.length >= 2) {
+          <path [attr.d]="getSvgPath(measurePoints)" class="k-measure-line is-live" />
+        }
+        @for (point of measurePoints; track $index) {
+          <circle [attr.cx]="point.x" [attr.cy]="point.y" r="3" class="k-measure-dot" />
+        }
+      }
+    </svg>
+
+    @for (measurement of state.currentPage?.measurements; track measurement.id) {
+      <span
+        class="k-measure-label"
+        [style.left.px]="measurement.points[0].x * renderScale"
+        [style.top.px]="measurement.points[0].y * renderScale"
+        >
+        {{ measurement.formattedString }}
+      </span>
+    }
+
+    <!-- K3 — comment pins. Tappable, because that is how a thread is read. -->
+    @for (thread of state.currentPage?.comments; track thread.id) {
+      <button
+        type="button"
+        class="k-comment-pin"
+        [class.is-resolved]="thread.resolved"
+        [style.left.px]="thread.x * renderScale"
+        [style.top.px]="thread.y * renderScale"
+        (click)="openThread($event, thread)"
+        [attr.aria-label]="thread.author + ': ' + thread.text"
+        >
+        {{ thread.initials }}
+      </button>
+    }
+
+    <!-- The live hint while a placement tool is armed. -->
+    @if (placementHintKey) {
+      <div class="k-placement-hint">
+        <span>{{ placementHintKey | translate }}</span>
+        @if (measureDraft?.mode === 'area' && measurePoints.length >= 3) {
+          <button type="button" class="k-placement-hint__action" (click)="finishAreaMeasurement()">
+            {{ 'editor.msFinishShape' | translate }}
+          </button>
+        }
+        <button type="button" class="k-placement-hint__action" (click)="cancelPlacement()">
+          {{ 'editor.kCancel' | translate }}
+        </button>
+      </div>
+    }
+
     <!-- CROP BOX PREVIEW OUTLINE -->
     @if (state.currentPage?.cropBox; as cb) {
       <div

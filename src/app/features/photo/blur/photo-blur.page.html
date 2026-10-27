@@ -76,8 +76,9 @@
                 class="interactive-canvas"
                 (pointerdown)="onPointerDown($event)"
                 (pointermove)="onPointerMove($event)"
-                (pointerup)="onPointerUp()"
-                (pointercancel)="onPointerUp()">
+                (pointerup)="onPointerUp($event)"
+                (pointercancel)="onPointerUp($event)"
+                (lostpointercapture)="onPointerUp($event)">
               </canvas>
             </div>
           </div>
@@ -91,14 +92,14 @@
                   type="button"
                   class="seg-btn"
                   [class.active]="selectedType === 'blur'"
-                  (click)="selectedType = 'blur'">
+                  (click)="setRedactionType('blur')">
                   {{ 'photoBlur.modeBlur' | translate }}
                 </button>
                 <button
                   type="button"
                   class="seg-btn"
                   [class.active]="selectedType === 'pixelate'"
-                  (click)="selectedType = 'pixelate'">
+                  (click)="setRedactionType('pixelate')">
                   {{ 'photoBlur.modePixelate' | translate }}
                 </button>
               </div>
@@ -116,7 +117,8 @@
                 max="10"
                 step="1"
                 [(ngModel)]="intensity"
-                (ngModelChange)="redrawCanvas()" />
+                (ngModelChange)="onIntensityChange()" />
+              <span class="slider-hint">{{ 'photoBlur.intensityHint' | translate }}</span>
             </div>
 
             <!-- REGIONS SUMMARY -->

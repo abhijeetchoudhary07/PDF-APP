@@ -300,8 +300,17 @@ describe('Part J: Converters J6 to J11 Suite', () => {
       const result = await svgToPdf.convert(svgFile);
 
       expect(result.success).toBe(true);
-      expect(result.report?.pagesRasterized).toBe(1);
-      expect(result.report?.droppedElements.some(e => e.includes('rasterized'))).toBe(true);
+      /*
+       * Rasterizing needs a canvas that can draw SVG, which jsdom has not, so
+       * here the converter takes its documented fallback: vectors with the
+       * filter approximated, and a report that says exactly that. Claiming
+       * pagesRasterized = 1 would be the report lying about the file. The
+       * canvas branch is covered in converters-j6-j10-fidelity.spec.ts by
+       * stubbing the rasterizer.
+       */
+      expect(result.report?.pagesRasterized).toBe(0);
+      expect(result.report?.approximations.some(a => /filter/i.test(a))).toBe(true);
+      expect(result.warnings?.join(' ')).toMatch(/approximated/i);
     });
 
     it('converts PDF to standalone SVG or multi-page SVG ZIP', async () => {
@@ -321,7 +330,7 @@ describe('Part J: Converters J6 to J11 Suite', () => {
   });
 
   describe('J9: PDF to Structured JSON Converter (pdf-to-json)', () => {
-    it('extracts stable, schema-versioned JSON adhering to schemaVersion 1.0.0', async () => {
+    it('extracts stable, schema-versioned JSON adhering to schemaVersion 1.1.0', async () => {
       const result = await pdfToJson.convert(testPdfFile, { compact: false });
       expect(result.success).toBe(true);
       expect(result.file).toBeDefined();
@@ -329,7 +338,7 @@ describe('Part J: Converters J6 to J11 Suite', () => {
       const jsonStr = await result.file!.text();
       const parsed = JSON.parse(jsonStr);
 
-      expect(parsed.schemaVersion).toBe('1.0.0');
+      expect(parsed.schemaVersion).toBe('1.1.0');
       expect(parsed.metadata.title).toBe('Annual Financial Summary');
       expect(parsed.totalPages).toBe(2);
       expect(parsed.pages.length).toBe(2);

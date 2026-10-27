@@ -31,9 +31,20 @@ export interface TiffFrame {
   height: number;
   data: ImageData;
   pageNumber: number;
+  /** Resolution from the file's XResolution tag, in DPI, when it declares one. */
+  dpi?: number;
+  /** TIFF Compression tag value the page was stored with. */
+  compression?: number;
+  /** True when the page's compression could not be decoded and is blank. */
+  unsupported?: boolean;
 }
 
 export interface MultiPageTiffExportOptions {
-  compression?: 'none' | 'deflate' | 'lzw' | 'g4';
+  /**
+   * Written as the Compression tag AND applied to the bytes. Deflate is
+   * decodable but not offered for writing, since LZW and G4 are what the
+   * portals asking for TIFF accept.
+   */
+  compression?: 'none' | 'lzw' | 'g4';
   dpi?: number;
 }

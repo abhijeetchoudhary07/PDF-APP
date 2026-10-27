@@ -35,7 +35,7 @@
     &.active {
       background: var(--primary-light, #eff6ff);
       border-color: var(--primary-color, #2563eb);
-      color: var(--primary-color, #2563eb);
+      color: var(--color-primary-text, #4f46e5);
       font-weight: 600;
     }
 
@@ -70,7 +70,7 @@
     .header-icon {
       width: 20px;
       height: 20px;
-      color: var(--primary-color, #2563eb);
+      color: var(--color-primary-text, #4f46e5);
     }
 
     h3 {
@@ -107,7 +107,7 @@
       word-break: break-word;
 
       &.highlight-val {
-        color: var(--primary-color, #2563eb);
+        color: var(--color-primary-text, #4f46e5);
       }
     }
   }

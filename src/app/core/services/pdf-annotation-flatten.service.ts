@@ -1,78 +1,143 @@
 import '../utilities/pdf-iterator-polyfill';
 import { Injectable } from '@angular/core';
+import { PDFDocument, PDFRef } from 'pdf-lib';
 import {
-  PDFDocument,
-  PDFName,
-  PDFDict,
-  PDFArray,
-  PDFRef,
-  rgb
-} from 'pdf-lib';
-import {
+  AnnotationFlattenResult,
   FlattenAnnotationOptions,
   OverlayExportResult
 } from '../models/editor-features.types';
-import { PdfEditorDocument, PdfEditorPage } from '../models/pdf-editor.types';
+import { PdfEditorDocument } from '../models/pdf-editor.types';
+import {
+  annotationSubtype,
+  copyAnnotation,
+  pageAnnotations,
+  paintAnnotationAppearance,
+  setAnnotations
+} from '../utilities/pdf-annotation.util';
 
+/**
+ * K7 — Flattening annotations, and exporting them as an overlay.
+ *
+ * "Flatten" is the word that has to be taken literally here. An earlier
+ * version of this service deleted each annotation's entry from the page's
+ * /Annots array and called the job done, which is not flattening — it is
+ * erasing. Every highlight, stamp and sticky note disappeared from the
+ * output, and the function reported success.
+ *
+ * Flattening is: take the appearance stream the viewer draws the annotation
+ * from, paint it into the page's own content at the annotation's rectangle,
+ * and only then drop the annotation object. The mark stays on the page; what
+ * goes is its interactivity.
+ *
+ * Two things are deliberately left alone:
+ *
+ *   • **Widget annotations** — the /Widget subtype, which is what a form
+ *     field is. That is the whole point of this pass next to G7's full
+ *     flatten: the comments stop being editable, the form stays fillable.
+ *   • **Annotations with no appearance stream.** There is nothing to paint,
+ *     so removing them would lose them. They are counted and left
+ *     interactive, and the UI says how many.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class PdfAnnotationFlattenService {
-  constructor() {}
-
   /**
-   * Flattens or strips non-form annotations from the PDF while strictly preserving
-   * all interactive form fields (AcroForm Widgets).
+   * Paints non-widget annotations into the page content and removes them.
+   *
+   * Returns the counts as well as the bytes, because "flattened 4, left 1
+   * alone" is the only honest summary when a document mixes annotations that
+   * carry an appearance with ones that do not.
    */
+  async flattenAnnotations(
+    pdfBytes: Uint8Array,
+    options: FlattenAnnotationOptions = { keepFormFieldsInteractive: true }
+  ): Promise<AnnotationFlattenResult> {
+    const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+    const pages = pdfDoc.getPages();
+
+    let flattened = 0;
+    let widgetsKept = 0;
+    let skippedWithoutAppearance = 0;
+    let linksRemoved = 0;
+
+    for (const page of pages) {
+      const annots = pageAnnotations(pdfDoc, page);
+      if (annots.length === 0) continue;
+
+      const kept: PDFRef[] = [];
+
+      for (const entry of annots) {
+        const subtype = annotationSubtype(entry.dict);
+
+        if (subtype === '/Widget' && options.keepFormFieldsInteractive) {
+          widgetsKept++;
+          kept.push(entry.ref);
+          continue;
+        }
+
+        /*
+         * A /Popup has no mark of its own — it is the balloon that opens when
+         * its parent note is clicked. Flattening its parent takes the note
+         * with it, so the popup goes too rather than being left pointing at
+         * an annotation that is no longer there.
+         */
+        if (subtype === '/Popup') continue;
+
+        /*
+         * A /Link draws nothing either: it is a hotspot over content that is
+         * already on the page. There is no appearance to paint, and keeping
+         * it would leave the document still clickable after a pass whose
+         * whole job is to make the annotation layer inert. So it goes, and
+         * it is counted separately — losing a working link is worth saying.
+         */
+        if (subtype === '/Link') {
+          linksRemoved++;
+          continue;
+        }
+
+        if (paintAnnotationAppearance(pdfDoc, entry.dict, pdfDoc, page)) {
+          flattened++;
+          continue;
+        }
+
+        skippedWithoutAppearance++;
+        kept.push(entry.ref);
+      }
+
+      setAnnotations(pdfDoc, page, kept);
+    }
+
+    return {
+      pdfBytes: await pdfDoc.save({ useObjectStreams: false }),
+      flattened,
+      widgetsKept,
+      skippedWithoutAppearance,
+      linksRemoved
+    };
+  }
+
+  /** `flattenAnnotations` for callers that only want the bytes. */
   async flattenAnnotationsOnly(
     pdfBytes: Uint8Array,
     options: FlattenAnnotationOptions = { keepFormFieldsInteractive: true }
   ): Promise<Uint8Array> {
-    const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
-    const pages = pdfDoc.getPages();
-
-    for (let i = 0; i < pages.length; i++) {
-      const page = pages[i];
-      const annots = page.node.Annots();
-
-      if (!annots || !(annots instanceof PDFArray)) {
-        continue;
-      }
-
-      const keptAnnots: (PDFRef | PDFDict)[] = [];
-
-      for (let j = 0; j < annots.size(); j++) {
-        const annotRefOrDict = annots.get(j);
-        const annotDict = pdfDoc.context.lookup(annotRefOrDict) as PDFDict;
-
-        if (annotDict instanceof PDFDict) {
-          const subtype = annotDict.get(PDFName.of('Subtype'))?.toString();
-
-          if (options.keepFormFieldsInteractive && subtype === '/Widget') {
-            // Keep interactive form field widget intact
-            keptAnnots.push(annotRefOrDict as any);
-          } else {
-            // Non-widget annotation (e.g. /Highlight, /Text, /Link, /Square, /Stamp, /Ink)
-            // It is flattened away from the interactive annotation list
-          }
-        }
-      }
-
-      // Re-assign filtered annotations to the page
-      if (keptAnnots.length === 0) {
-        page.node.delete(PDFName.of('Annots'));
-      } else {
-        const newAnnotsArray = pdfDoc.context.obj(keptAnnots);
-        page.node.set(PDFName.of('Annots'), newAnnotsArray);
-      }
-    }
-
-    return await pdfDoc.save({ useObjectStreams: false });
+    return (await this.flattenAnnotations(pdfBytes, options)).pdfBytes;
   }
 
   /**
-   * Exports an annotation-only overlay PDF matching the exact geometry and page count
-   * of the source document, with a transparent background for pairing with C6 Overlay.
+   * The annotation layer on its own, as a transparent PDF.
+   *
+   * Same page count and same page geometry as the source, so it drops
+   * straight onto the original through C6's overlay tool. Each annotation is
+   * carried across twice over: painted into the page content, so the file
+   * looks right in any viewer and prints, and copied as a live annotation
+   * where it can be, so a reviewer can still open and read the notes.
+   *
+   * The copy goes through `PDFObjectCopier`, not `PDFDict.clone`. Cloning a
+   * dictionary leaves every reference inside it pointing at objects in the
+   * source document, which do not exist in the new one — the earlier version
+   * of this method produced overlays whose annotations resolved to nothing.
    */
   async exportAnnotationOverlay(
     sourcePdfBytes: Uint8Array,
@@ -82,73 +147,60 @@ export class PdfAnnotationFlattenService {
     const overlayDoc = await PDFDocument.create();
     const sourcePages = sourcePdf.getPages();
 
+    let annotationsDrawn = 0;
+    let annotationsCopied = 0;
+
     for (let i = 0; i < sourcePages.length; i++) {
-      const srcPage = sourcePages[i];
-      const { width, height } = srcPage.getSize();
-      const pageNum = i + 1;
+      const sourcePage = sourcePages[i];
+      const { width, height } = sourcePage.getSize();
 
-      // Add identical dimensions blank transparent page
+      /*
+       * A blank page with no background box: the overlay has to be
+       * transparent, so nothing is painted behind the annotations. The page
+       * also inherits the source's rotation, or the overlay lands sideways
+       * on a rotated page.
+       */
       const overlayPage = overlayDoc.addPage([width, height]);
+      overlayPage.setRotation(sourcePage.getRotation());
 
-      // If editor document model is available, render overlay elements
-      if (editorDoc) {
-        const pageModel = editorDoc.pages.find(p => p.pageNumber === pageNum);
-        if (pageModel && pageModel.elements && pageModel.elements.length > 0) {
-          for (const el of pageModel.elements) {
-            const pdfY = height - el.y - el.height;
-            if (el.type === 'shape') {
-              overlayPage.drawRectangle({
-                x: el.x,
-                y: pdfY,
-                width: el.width,
-                height: el.height,
-                color: rgb(0.2, 0.5, 0.9),
-                opacity: 0.5
-              });
-            } else if (el.type === 'annotation') {
-              overlayPage.drawRectangle({
-                x: el.x,
-                y: pdfY,
-                width: el.width,
-                height: el.height,
-                color: rgb(1, 0.9, 0),
-                opacity: 0.4
-              });
-            }
-          }
+      const copied: PDFRef[] = [];
+
+      for (const entry of pageAnnotations(sourcePdf, sourcePage)) {
+        const subtype = annotationSubtype(entry.dict);
+        /* Form fields belong to the document, not to its comment layer; a
+         * link has no mark to carry across. */
+        if (subtype === '/Widget' || subtype === '/Link') continue;
+
+        if (paintAnnotationAppearance(sourcePdf, entry.dict, overlayDoc, overlayPage)) {
+          annotationsDrawn++;
+        }
+
+        /*
+         * /Popup entries are carried only when their parent came across;
+         * pdf-lib's copier pulls the parent in with them, so copying one on
+         * its own would reintroduce the note it belongs to.
+         */
+        if (subtype === '/Popup') continue;
+
+        const ref = copyAnnotation(sourcePdf, overlayDoc, entry.ref);
+        if (ref) {
+          copied.push(ref);
+          annotationsCopied++;
         }
       }
 
-      // If source page has non-widget annotations, copy them as annotation overlay
-      const srcAnnots = srcPage.node.Annots();
-      if (srcAnnots && srcAnnots instanceof PDFArray) {
-        const overlayAnnots: (PDFRef | PDFDict)[] = [];
-        for (let j = 0; j < srcAnnots.size(); j++) {
-          const item = srcAnnots.get(j);
-          const dict = sourcePdf.context.lookup(item) as PDFDict;
-          if (dict instanceof PDFDict) {
-            const subtype = dict.get(PDFName.of('Subtype'))?.toString();
-            if (subtype !== '/Widget') {
-              // Copy non-widget annotations to overlay
-              const clonedDict = dict.clone(overlayDoc.context);
-              overlayAnnots.push(overlayDoc.context.register(clonedDict));
-            }
-          }
-        }
-        if (overlayAnnots.length > 0) {
-          overlayPage.node.set(PDFName.of('Annots'), overlayDoc.context.obj(overlayAnnots));
-        }
-      }
+      if (copied.length > 0) setAnnotations(overlayDoc, overlayPage, copied);
     }
 
-    const overlayBytes = await overlayDoc.save({ useObjectStreams: false });
-    const blob = new Blob([overlayBytes as any], { type: 'application/pdf' });
+    const pdfBytes = await overlayDoc.save({ useObjectStreams: false });
 
     return {
-      pdfBytes: overlayBytes,
-      blob,
+      pdfBytes,
+      blob: new Blob([pdfBytes as BlobPart], { type: 'application/pdf' }),
       pageCount: sourcePages.length,
-      hasAnnotationsOnly: true
+      hasAnnotationsOnly: true,
+      annotationsDrawn,
+      annotationsCopied
     };
   }
 }

@@ -20,10 +20,15 @@
    * --color-primary-contrast text, which lightening would break. */
   --color-primary-text: var(--color-primary);
 
-  --color-secondary: #0ea5e9;
-  --color-secondary-hover: #0284c7;
+  /* #0ea5e9 left white button text at 2.77:1, under the 4.5 AA floor, on
+   * every secondary CTA in the app. Darkened within the same sky hue to 4.95:1.
+   * Accent TEXT uses --color-secondary-text instead, which lightens for dark
+   * mode -- darkening the base alone would have sunk the secondary badge. */
+  --color-secondary: #0376b3;
+  --color-secondary-hover: #0369a1;
   --color-secondary-soft: rgba(14, 165, 233, 0.08);
   --color-secondary-contrast: #ffffff;
+  --color-secondary-text: #0369a1;
 
   /* Surfaces & Backgrounds */
   --color-background: #f8fafc;
@@ -54,7 +59,10 @@
   --color-warning: #f59e0b;
   --color-warning-hover: #d97706;
   --color-warning-soft: rgba(245, 158, 11, 0.08);
-  --color-warning-contrast: #ffffff;
+  /* Amber is a light fill, so white on it is 2.2:1 — the label on every
+   * warning button was effectively unreadable. A dark amber reads at 7:1 and
+   * keeps the warning character. */
+  --color-warning-contrast: #451a03;
 
   --color-error: #ef4444;
   --color-error-hover: #dc2626;
@@ -276,6 +284,50 @@
   --text-primary: var(--color-text);
   --text-secondary: var(--color-text-secondary);
 
+  /* The Part I photo pages (metadata, watermark, photo sheet) reach for five
+   * more names from the same older vocabulary. Undefined, they took their
+   * light-mode literals while the aliased `--text-primary` above correctly
+   * followed the theme, which painted near-white text onto white cards —
+   * those three screens were unreadable in dark mode.
+   *
+   * `--text-muted` maps to the secondary token rather than
+   * `--color-text-muted`: the muted slate is 2.6:1 on the light surface, which
+   * fails WCAG for the body copy these pages use it for. */
+  --bg-surface: var(--color-surface);
+  --bg-surface-elevated: var(--color-surface-elevated);
+  --text-muted: var(--color-text-secondary);
+  --primary-light: var(--color-primary-soft);
+  --border-light: var(--color-divider);
+
+  /* Material-style names the scanner, OCR, validator, photo and preview
+   * components were written against. They were never declared anywhere, so
+   * every `var(--color-on-surface, #1e293b)` silently fell back to its light
+   * literal -- which in dark mode is the same slate as the surface behind it,
+   * painting the label in the exact colour of its own background. Aliasing
+   * them here fixes all of those call sites at once, and the fallbacks they
+   * still carry become dead text rather than the value in use. */
+  --color-on-surface: var(--color-text);
+  --color-on-surface-variant: var(--color-text-secondary);
+  --color-surface-container: var(--color-background-subtle);
+
+  /* Readable foregrounds for the category tints.
+   * A category badge painted `--color-photo` on `--color-photo-soft` is an
+   * orange on its own 8% wash: 2.5:1, which is unreadable at badge size. These
+   * are the same hues darkened (light) or lightened (dark) until they clear
+   * 4.5:1 on that wash, the way `--color-primary-text` already does for the
+   * primary badge. The base `--color-*` stays untouched for fills and borders,
+   * where it is a background, not text. */
+  --color-photo-text: #b35310;
+  --color-signature-text: #c23b7d;
+  --color-pdf-text: #c93939;
+  --color-convert-text: #0274af;
+  --color-organize-text: #7d53dd;
+  --color-edit-text: #0b7c72;
+  --color-sign-text: #9049d4;
+  --color-security-text: #d32424;
+  --color-batch-text: #047e58;
+  --color-presets-text: #5b5ede;
+
   --color-danger: var(--color-error);
   --color-danger-soft: var(--color-error-soft);
 
@@ -349,8 +401,19 @@
 
     --color-text: #f8fafc;
     --color-text-secondary: #cbd5e1;
-    --color-text-muted: #64748b;
+    --color-text-muted: #8595ab;
     --color-primary-text: #a5b4fc;
+    --color-photo-text: #f97316;
+    --color-signature-text: #ef62a7;
+    --color-pdf-text: #f26969;
+    --color-convert-text: #3a9fd3;
+    --color-organize-text: #a580f8;
+    --color-edit-text: #39a79d;
+    --color-sign-text: #b977f9;
+    --color-security-text: #e76b6b;
+    --color-batch-text: #32a984;
+    --color-presets-text: #888bf4;
+    --color-secondary-text: #7dd3fc;
 
     --header-surface: rgba(15, 23, 42, 0.88);
     --glass-surface: rgba(30, 41, 59, 0.62);
@@ -399,8 +462,19 @@
 
   --color-text: #f8fafc;
   --color-text-secondary: #cbd5e1;
-  --color-text-muted: #64748b;
+  --color-text-muted: #8595ab;
   --color-primary-text: #a5b4fc;
+  --color-photo-text: #f97316;
+  --color-signature-text: #ef62a7;
+  --color-pdf-text: #f26969;
+  --color-convert-text: #3a9fd3;
+  --color-organize-text: #a580f8;
+  --color-edit-text: #39a79d;
+  --color-sign-text: #b977f9;
+  --color-security-text: #e76b6b;
+  --color-batch-text: #32a984;
+  --color-presets-text: #888bf4;
+  --color-secondary-text: #7dd3fc;
 
   --header-surface: rgba(15, 23, 42, 0.88);
   --glass-surface: rgba(30, 41, 59, 0.62);
@@ -450,6 +524,7 @@
   --color-text-secondary: #475569;
   --color-text-muted: #94a3b8;
   --color-primary-text: var(--color-primary);
+  --color-secondary-text: #0369a1;
 
   --header-surface: rgba(255, 255, 255, 0.85);
   --glass-surface: rgba(255, 255, 255, 0.72);

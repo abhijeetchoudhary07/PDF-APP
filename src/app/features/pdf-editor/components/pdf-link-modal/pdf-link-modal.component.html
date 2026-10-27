@@ -1,0 +1,179 @@
+<div class="k-sheet">
+  <div class="k-sheet__header">
+    <div class="k-sheet__title">
+      <app-icon name="link-outline"></app-icon>
+      <h2>{{ 'editor.links' | translate }}</h2>
+    </div>
+    <button
+      type="button"
+      class="k-sheet__close"
+      (click)="dismiss()"
+      [attr.aria-label]="'editor.kClose' | translate">
+      <app-icon name="close"></app-icon>
+    </button>
+  </div>
+
+  <div class="k-sheet__body">
+    <div class="k-card">
+      <div class="k-segmented" role="group">
+        <button
+          type="button"
+          class="k-segmented__option"
+          [class.is-active]="linkType === 'url'"
+          (click)="linkType = 'url'">
+          {{ 'editor.lnTypeUrl' | translate }}
+        </button>
+        <button
+          type="button"
+          class="k-segmented__option"
+          [class.is-active]="linkType === 'page'"
+          (click)="linkType = 'page'">
+          {{ 'editor.lnTypePage' | translate }}
+        </button>
+      </div>
+
+      @if (linkType === 'url') {
+        <div class="k-field">
+          <label class="k-label" for="ln-url">{{ 'editor.lnUrlLabel' | translate }}</label>
+          <input
+            id="ln-url"
+            type="text"
+            inputmode="url"
+            autocapitalize="off"
+            spellcheck="false"
+            class="k-input"
+            [(ngModel)]="url"
+            [placeholder]="'editor.lnUrlPlaceholder' | translate" />
+        </div>
+      } @else {
+        <div class="k-field">
+          <label class="k-label" for="ln-target">{{ 'editor.lnTargetLabel' | translate }}</label>
+          <input
+            id="ln-target"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            [max]="totalPages"
+            class="k-input"
+            [(ngModel)]="targetPage" />
+          <p class="k-hint">{{ 'editor.lnBadTarget' | translate: { total: totalPages } }}</p>
+        </div>
+      }
+
+      <!--
+      Placement. Drawing on the page is the way this is meant to be used on
+      a phone; the number fields are there because an exact rectangle is
+      sometimes what someone wants, and because a drawn box should be
+      adjustable afterwards rather than redrawn from scratch.
+      -->
+      <div class="k-field">
+        <span class="k-label">{{ 'editor.lnAreaLabel' | translate }}</span>
+        <p class="k-hint">{{ 'editor.lnPlaceHint' | translate }}</p>
+        <div class="k-field-row">
+          <input
+            type="number"
+            class="k-input"
+            [(ngModel)]="rect.x"
+            [attr.aria-label]="'editor.lnLeft' | translate" />
+          <input
+            type="number"
+            class="k-input"
+            [(ngModel)]="rect.y"
+            [attr.aria-label]="'editor.lnTop' | translate" />
+          <input
+            type="number"
+            class="k-input"
+            [(ngModel)]="rect.width"
+            [attr.aria-label]="'editor.lnWidth' | translate" />
+          <input
+            type="number"
+            class="k-input"
+            [(ngModel)]="rect.height"
+            [attr.aria-label]="'editor.lnHeight' | translate" />
+        </div>
+      </div>
+
+      @if (errorKey) {
+        <div class="k-notice k-notice--danger">
+          <app-icon name="alert-circle-outline"></app-icon>
+          <span>{{ errorKey | translate: { total: totalPages } }}</span>
+        </div>
+      }
+
+      <div class="k-actions">
+        <button type="button" class="k-btn k-btn--secondary" (click)="startDrawing()">
+          <app-icon name="crop-outline"></app-icon>
+          <span>{{ 'editor.lnPickOnPage' | translate }}</span>
+        </button>
+        <button type="button" class="k-btn k-btn--primary" (click)="addLink()">
+          <app-icon name="add-outline"></app-icon>
+          <span>{{ 'editor.lnAddLink' | translate }}</span>
+        </button>
+      </div>
+    </div>
+
+    @if (report.danglingLinksCount > 0) {
+      <div class="k-notice k-notice--warn">
+        <app-icon name="alert-circle-outline"></app-icon>
+        <span>
+          {{ 'editor.lnDanglingWarning' | translate: { count: report.danglingLinksCount } }}
+        </span>
+      </div>
+    }
+
+    <div>
+      <div class="k-section-head">
+        <h3>{{ 'editor.lnListTitle' | translate: { count: report.totalLinks } }}</h3>
+        <button
+          type="button"
+          class="k-icon-btn"
+          (click)="refresh()"
+          [disabled]="isLoading"
+          [attr.aria-label]="'editor.kRescan' | translate">
+          <app-icon name="refresh"></app-icon>
+        </button>
+      </div>
+
+      @if (isLoading) {
+        <div class="k-progress">
+          <span class="k-spinner"></span>
+          <span>{{ 'editor.kWorking' | translate }}</span>
+        </div>
+      } @else if (report.links.length === 0) {
+        <div class="k-empty">{{ 'editor.lnEmpty' | translate }}</div>
+      } @else {
+        <div class="k-list">
+          @for (link of report.links; track link.id) {
+            <div class="k-row" [class.is-muted]="link.isDangling">
+              <button type="button" class="k-row__main" (click)="jumpTo(link)">
+                <span class="k-row__title">{{ labelFor(link) }}</span>
+                <span class="k-row__meta">
+                  <span class="k-badge is-primary">
+                    {{ 'editor.kPageBadge' | translate: { page: link.pageNumber } }}
+                  </span>
+                  <span class="k-badge">
+                    {{
+                      (link.origin === 'added' ? 'editor.lnOriginAdded' : 'editor.lnOriginExisting')
+                        | translate
+                    }}
+                  </span>
+                  @if (link.isDangling) {
+                    <span class="k-badge is-danger">{{ 'editor.lnDanglingBadge' | translate }}</span>
+                  }
+                </span>
+              </button>
+              <button
+                type="button"
+                class="k-icon-btn is-danger"
+                (click)="deleteLink(link)"
+                [disabled]="isLoading"
+                [attr.aria-label]="'editor.kDelete' | translate">
+                <app-icon name="trash-outline"></app-icon>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

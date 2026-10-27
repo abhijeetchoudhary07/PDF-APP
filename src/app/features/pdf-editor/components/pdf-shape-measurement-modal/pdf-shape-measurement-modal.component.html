@@ -1,0 +1,163 @@
+<div class="k-sheet">
+  <div class="k-sheet__header">
+    <div class="k-sheet__title">
+      <app-icon name="ruler"></app-icon>
+      <h2>{{ 'editor.measure' | translate }}</h2>
+    </div>
+    <button
+      type="button"
+      class="k-sheet__close"
+      (click)="dismiss()"
+      [attr.aria-label]="'editor.kClose' | translate">
+      <app-icon name="close"></app-icon>
+    </button>
+  </div>
+
+  <div class="k-sheet__body">
+    <!-- Pen snapping: opt-in, and the hint says what it will and will not do. -->
+    <div class="k-card">
+      <label class="k-toggle">
+        <input
+          type="checkbox"
+          [ngModel]="state.shapeSnapEnabled"
+          (ngModelChange)="state.setShapeSnapEnabled($event)" />
+        <span>{{ 'editor.msSnapLabel' | translate }}</span>
+      </label>
+      <p class="k-hint">{{ 'editor.msSnapHint' | translate }}</p>
+    </div>
+
+    <!-- The calibration, shown as a sentence and editable in place. -->
+    <div class="k-card">
+      <div class="k-section-head">
+        <h3>{{ 'editor.msCalibration' | translate }}</h3>
+        <span class="k-badge is-primary">
+          {{ 'editor.msCalibrationReads' | translate: { text: calibrationText } }}
+        </span>
+      </div>
+
+      <div class="k-field-row">
+        <div class="k-field">
+          <label class="k-label" for="ms-points">{{ 'editor.msPointsLabel' | translate }}</label>
+          <input
+            id="ms-points"
+            type="number"
+            inputmode="decimal"
+            min="1"
+            class="k-input"
+            [(ngModel)]="scale.screenPoints" />
+        </div>
+        <div class="k-field">
+          <label class="k-label" for="ms-value">{{ 'editor.msValueLabel' | translate }}</label>
+          <input
+            id="ms-value"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="0.01"
+            class="k-input"
+            [(ngModel)]="scale.worldValue" />
+        </div>
+        <div class="k-field">
+          <label class="k-label" for="ms-unit">{{ 'editor.msUnitLabel' | translate }}</label>
+          <select id="ms-unit" class="k-select" [(ngModel)]="scale.worldUnit">
+            @for (unit of units; track unit) {
+              <option [value]="unit">{{ unit }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="k-field">
+        <label class="k-label" for="ms-known">{{ 'editor.msKnownLength' | translate }}</label>
+        <div class="k-field-row">
+          <input
+            id="ms-known"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="0.01"
+            class="k-input"
+            [(ngModel)]="knownLength" />
+          <button
+            type="button"
+            class="k-btn k-btn--secondary"
+            (click)="calibrateByDrawing()"
+            [disabled]="!(knownLength > 0)">
+            <app-icon name="ruler"></app-icon>
+            <span>{{ 'editor.msCalibrateByDrag' | translate }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Taking a measurement. -->
+    <div class="k-card">
+      <div class="k-segmented" role="group">
+        <button
+          type="button"
+          class="k-segmented__option"
+          [class.is-active]="mode === 'distance'"
+          (click)="mode = 'distance'">
+          {{ 'editor.msModeDistance' | translate }}
+        </button>
+        <button
+          type="button"
+          class="k-segmented__option"
+          [class.is-active]="mode === 'area'"
+          (click)="mode = 'area'">
+          {{ 'editor.msModeArea' | translate }}
+        </button>
+      </div>
+
+      <p class="k-hint">
+        {{ (mode === 'area' ? 'editor.msTapHintArea' : 'editor.msTapHintDistance') | translate }}
+      </p>
+
+      <button type="button" class="k-btn k-btn--primary" (click)="startMeasuring()">
+        <app-icon name="locate-outline"></app-icon>
+        <span>{{ 'editor.msMeasureOnPage' | translate }}</span>
+      </button>
+    </div>
+
+    <div>
+      <div class="k-section-head">
+        <h3>{{ 'editor.msListTitle' | translate: { count: measurements.length } }}</h3>
+      </div>
+
+      @if (measurements.length === 0) {
+        <div class="k-empty">{{ 'editor.msEmpty' | translate }}</div>
+      } @else {
+        <div class="k-list">
+          @for (measurement of measurements; track measurement.id) {
+            <div class="k-row">
+              <button type="button" class="k-row__main" (click)="jumpTo(measurement)">
+                <span class="k-row__title">{{ measurement.formattedString }}</span>
+                <span class="k-row__meta">
+                  <span class="k-badge is-primary">
+                    {{ 'editor.kPageBadge' | translate: { page: measurement.pageNumber } }}
+                  </span>
+                  <span class="k-badge">
+                    {{
+                      (measurement.type === 'area' ? 'editor.msModeArea' : 'editor.msModeDistance')
+                        | translate
+                    }}
+                  </span>
+                  @if (measurement.scale) {
+                    <span class="k-badge">{{ scaleTextFor(measurement) }}</span>
+                  }
+                </span>
+              </button>
+              <button
+                type="button"
+                class="k-icon-btn is-danger"
+                (click)="remove(measurement)"
+                [attr.aria-label]="'editor.kDelete' | translate">
+                <app-icon name="trash-outline"></app-icon>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -172,6 +172,10 @@
           <app-icon name="square-outline"></app-icon>
           <span>{{ 'editor.whiteout' | translate }}</span>
         </button>
+        <button class="d-btn" (click)="openImageToolsModal()" [title]="'editor.pictureTools' | translate">
+          <app-icon name="image-outline"></app-icon>
+          <span>{{ 'editor.pictureTools' | translate }}</span>
+        </button>
         <button class="d-btn" (click)="openShapeMeasurementModal()" [title]="'editor.measure' | translate">
           <app-icon name="ruler"></app-icon>
           <span>{{ 'editor.measure' | translate }}</span>
@@ -241,7 +245,7 @@
         (toggleThumbnailsEvent)="showThumbnails = !showThumbnails"
         (toggleSearchEvent)="showSearch = !showSearch"
         >
-        <app-pdf-canvas></app-pdf-canvas>
+        <app-pdf-canvas (commentOpened)="onCommentOpened($event)"></app-pdf-canvas>
       </app-pdf-reader>
     </div>
   }
@@ -394,6 +398,10 @@
               <app-icon name="square-outline"></app-icon>
               <span>{{ 'editor.whiteout' | translate }}</span>
             </button>
+            <button class="m-sub-btn" (click)="openImageToolsModal()">
+              <app-icon name="image"></app-icon>
+              <span>{{ 'editor.pictureTools' | translate }}</span>
+            </button>
             <button class="m-sub-btn" (click)="openLinkModal()">
               <app-icon name="link-outline"></app-icon>
               <span>{{ 'editor.links' | translate }}</span>
@@ -418,6 +426,10 @@
             <button class="m-sub-btn" (click)="activateWhiteout()">
               <app-icon name="square-outline"></app-icon>
               <span>{{ 'editor.whiteout' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="openImageToolsModal()">
+              <app-icon name="image"></app-icon>
+              <span>{{ 'editor.pictureTools' | translate }}</span>
             </button>
             <button class="m-sub-btn" (click)="openShapeMeasurementModal()">
               <app-icon name="ruler"></app-icon>

@@ -1,0 +1,179 @@
+<div class="k-sheet">
+  <div class="k-sheet__header">
+    <div class="k-sheet__title">
+      <app-icon name="chatbox-ellipses-outline"></app-icon>
+      <h2>{{ 'editor.comments' | translate }}</h2>
+    </div>
+    <button
+      type="button"
+      class="k-sheet__close"
+      (click)="dismiss()"
+      [attr.aria-label]="'editor.kClose' | translate">
+      <app-icon name="close"></app-icon>
+    </button>
+  </div>
+
+  <div class="k-sheet__body">
+    <div class="k-card">
+      <div class="k-field">
+        <label class="k-label" for="cm-author">{{ 'editor.cmAuthorLabel' | translate }}</label>
+        <input
+          id="cm-author"
+          type="text"
+          class="k-input"
+          [(ngModel)]="author"
+          [placeholder]="'editor.cmAuthorPlaceholder' | translate" />
+      </div>
+
+      <div class="k-field">
+        <label class="k-label" for="cm-text">{{ 'editor.cmNewLabel' | translate }}</label>
+        <textarea
+          id="cm-text"
+          class="k-textarea"
+          rows="3"
+          [(ngModel)]="newComment"
+          [placeholder]="'editor.cmNewPlaceholder' | translate"></textarea>
+      </div>
+
+      <p class="k-hint">{{ 'editor.cmPlaceHint' | translate }}</p>
+
+      <div class="k-actions">
+        <button
+          type="button"
+          class="k-btn k-btn--secondary"
+          (click)="placeOnPage()"
+          [disabled]="!newComment.trim()">
+          <app-icon name="locate-outline"></app-icon>
+          <span>{{ 'editor.cmPlaceHintAction' | translate }}</span>
+        </button>
+        <button
+          type="button"
+          class="k-btn k-btn--primary"
+          (click)="addThread()"
+          [disabled]="!newComment.trim()">
+          <app-icon name="add-outline"></app-icon>
+          <span>{{ 'editor.cmAddThread' | translate }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="k-section-head">
+        <h3>
+          {{ 'editor.cmSummary' | translate: { count: threads.length, open: openCount } }}
+        </h3>
+      </div>
+
+      @if (threads.length === 0) {
+        <div class="k-empty">{{ 'editor.cmEmpty' | translate }}</div>
+      } @else {
+        <div class="k-list">
+          @for (thread of threads; track thread.id) {
+            <div class="k-thread" [class.is-resolved]="thread.resolved">
+              <div class="k-thread__head">
+                <span class="k-avatar">{{ thread.initials }}</span>
+                <button type="button" class="k-row__main" (click)="jumpTo(thread)">
+                  <span class="k-row__title">{{ thread.author }}</span>
+                  <span class="k-row__meta">
+                    <span class="k-badge is-primary">
+                      {{ 'editor.kPageBadge' | translate: { page: thread.pageNumber } }}
+                    </span>
+                    <span class="k-badge" [class.is-ok]="thread.resolved">
+                      {{
+                        (thread.resolved ? 'editor.cmResolvedBadge' : 'editor.cmOpenBadge')
+                          | translate
+                      }}
+                    </span>
+                    @if (thread.replies.length > 0) {
+                      <span class="k-badge">
+                        {{ 'editor.cmRepliesCount' | translate: { count: thread.replies.length } }}
+                      </span>
+                    }
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="k-icon-btn is-danger"
+                  (click)="deleteThread(thread)"
+                  [attr.aria-label]="'editor.kDelete' | translate">
+                  <app-icon name="trash-outline"></app-icon>
+                </button>
+              </div>
+
+              <p class="k-thread__body">{{ thread.text }}</p>
+
+              @for (reply of thread.replies; track reply.id) {
+                <div class="k-reply">
+                  <span class="k-avatar">{{ reply.initials }}</span>
+                  <span>{{ reply.text }}</span>
+                </div>
+              }
+
+              <div class="k-field">
+                <input
+                  type="text"
+                  class="k-input"
+                  [(ngModel)]="replyText[thread.id]"
+                  [placeholder]="'editor.cmReplyPlaceholder' | translate"
+                  (keyup.enter)="addReply(thread)" />
+              </div>
+
+              <div class="k-actions">
+                <button
+                  type="button"
+                  class="k-btn k-btn--secondary"
+                  (click)="addReply(thread)"
+                  [disabled]="!replyText[thread.id]">
+                  <app-icon name="arrow-redo-outline"></app-icon>
+                  <span>{{ 'editor.cmReply' | translate }}</span>
+                </button>
+                <button type="button" class="k-btn k-btn--accent" (click)="toggleResolved(thread)">
+                  <app-icon
+                    [name]="thread.resolved ? 'refresh' : 'checkmark-circle-outline'"></app-icon>
+                  <span>
+                    {{ (thread.resolved ? 'editor.cmReopen' : 'editor.cmResolve') | translate }}
+                  </span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="k-card">
+      @if (statusKey) {
+        <div class="k-notice k-notice--ok">
+          <app-icon name="checkmark-circle-outline"></app-icon>
+          <span>{{ statusKey | translate: statusParams }}</span>
+        </div>
+      }
+
+      @if (isExporting) {
+        <div class="k-progress">
+          <span class="k-spinner"></span>
+          <span>{{ 'editor.kWorking' | translate }}</span>
+        </div>
+      }
+
+      <div class="k-actions">
+        <button
+          type="button"
+          class="k-btn k-btn--secondary"
+          (click)="exportCsv()"
+          [disabled]="threads.length === 0 || isExporting">
+          <app-icon name="document-text-outline"></app-icon>
+          <span>{{ 'editor.cmExportCsv' | translate }}</span>
+        </button>
+        <button
+          type="button"
+          class="k-btn k-btn--secondary"
+          (click)="exportPdf()"
+          [disabled]="threads.length === 0 || isExporting">
+          <app-icon name="download-outline"></app-icon>
+          <span>{{ 'editor.cmExportPdf' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

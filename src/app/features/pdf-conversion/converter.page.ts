@@ -19,6 +19,7 @@ import { ConversionProgress, ConversionResult } from '../../core/conversion/conv
 import { ZipToPdfConverter, ZipFileInfo } from '../../core/conversion/converters/zip-to-pdf.converter';
 import * as pdfjsLib from 'pdfjs-dist';
 import { ToastService } from '../../core/services/toast.service';
+import { OCR_SUPPORTED_LANGUAGES, OcrSupportedLanguage } from '../../core/models/ocr.models';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -61,8 +62,8 @@ export class ConverterPage implements OnInit, OnDestroy {
   // Configurable options
   options: {
     dpi: number;
-    format: 'A4' | 'Letter';
-    orientation: 'Portrait' | 'Landscape';
+    format: 'A4' | 'Letter' | 'Original';
+    orientation: 'Portrait' | 'Landscape' | 'Auto';
     margin: number;
     fontSize: number;
     fontFamily: 'Helvetica' | 'TimesRoman' | 'Courier';
@@ -78,8 +79,14 @@ export class ConverterPage implements OnInit, OnDestroy {
     syntaxHighlight: boolean;
     includeAttachments: boolean;
     embedSourceImage?: boolean;
-    compression?: string;
+    compression?: 'none' | 'lzw' | 'g4';
     compact?: boolean;
+    ocrLanguage: OcrSupportedLanguage;
+    autoDetectColumns: boolean;
+    jsonMode: 'layout-preserving' | 'reflowable';
+    includeTables: boolean;
+    includeAnnotations: boolean;
+    includeMetadata: boolean;
   } = {
     dpi: 150,
     format: 'A4',
@@ -100,8 +107,16 @@ export class ConverterPage implements OnInit, OnDestroy {
     includeAttachments: true,
     embedSourceImage: false,
     compression: 'none',
-    compact: false
+    compact: false,
+    ocrLanguage: 'eng',
+    autoDetectColumns: true,
+    jsonMode: 'reflowable',
+    includeTables: true,
+    includeAnnotations: true,
+    includeMetadata: true
   };
+
+  readonly ocrLanguages = OCR_SUPPORTED_LANGUAGES;
 
   showFidelityReport: boolean = false;
 
@@ -123,6 +138,16 @@ export class ConverterPage implements OnInit, OnDestroy {
       // Configure sensible default orientation based on tool
       if (['excel-to-pdf', 'csv-to-pdf', 'ppt-to-pdf'].includes(this.converterId)) {
         this.options.orientation = 'Landscape';
+      }
+
+      /*
+       * TIFF and SVG sources carry their own dimensions, and the point of
+       * converting a 300 DPI scan or a drawing is usually to keep them. A4
+       * remains one tap away.
+       */
+      if (['tiff-to-pdf', 'svg-to-pdf'].includes(this.converterId)) {
+        this.options.format = 'Original';
+        this.options.orientation = 'Auto';
       }
     });
   }
@@ -162,17 +187,26 @@ export class ConverterPage implements OnInit, OnDestroy {
       }
     }
 
-    // Special inspection for PDF -> PNG (read page count)
-    if (this.converterId === 'pdf-to-png') {
+    // Page count, for the converters that let you pick pages
+    if (this.converterId === 'pdf-to-png' || this.converterId === 'pdf-to-svg') {
+      let loadingTask: ReturnType<typeof pdfjsLib.getDocument> | undefined;
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
+        loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
         const pdf = await loadingTask.promise;
         this.pdfPageCount = pdf.numPages;
         this.pagesArray = Array.from({ length: this.pdfPageCount }, (_, i) => i + 1);
         this.selectedPages = new Array(this.pdfPageCount).fill(true);
       } catch (e) {
         console.warn('Could not read PDF page count:', e);
+      } finally {
+        // Only the page count was wanted; destroy() is on the loading task,
+        // and skipping it leaves the worker holding the whole document.
+        try {
+          await loadingTask?.destroy();
+        } catch {
+          /* never opened */
+        }
       }
     }
 
@@ -220,7 +254,7 @@ export class ConverterPage implements OnInit, OnDestroy {
     // Build options
     const finalOptions: any = { ...this.options };
 
-    if (this.converterId === 'pdf-to-png' && this.pagesArray.length > 0) {
+    if (['pdf-to-png', 'pdf-to-svg'].includes(this.converterId) && this.pagesArray.length > 0) {
       finalOptions.selectedPages = this.pagesArray.filter((_, i) => this.selectedPages[i]);
     }
 
@@ -255,6 +289,20 @@ export class ConverterPage implements OnInit, OnDestroy {
       finalOptions.includeAttachments = this.options.includeAttachments;
     }
 
+    if (['images-to-word', 'images-to-excel'].includes(this.converterId)) {
+      finalOptions.ocrLanguage = this.options.ocrLanguage;
+    }
+
+    if (this.converterId === 'pdf-to-json') {
+      // `mode` is the shared fidelity name; the page keeps its own field so it
+      // cannot collide with the HTML converter's mode select.
+      finalOptions.mode = this.options.jsonMode;
+    }
+
+    if (this.converterId === 'pdf-to-tiff') {
+      finalOptions.dpi = Number(this.options.dpi) || 150;
+    }
+
     this.progress = { percent: 56, stage: 'Converting format...' };
     await new Promise(resolve => setTimeout(resolve, 320));
 
@@ -283,6 +331,21 @@ export class ConverterPage implements OnInit, OnDestroy {
     } finally {
       this.isProcessing = false;
     }
+  }
+
+  /**
+   * What the Save button offers, taken from the file that was actually
+   * produced rather than the converter's nominal target: PDF to Markdown in
+   * sidecar mode hands back a .zip holding the .md and its images, and a
+   * button reading "Save MD" would be describing a file that is not there.
+   */
+  get resultExtension(): string {
+    const name = this.result?.file?.name || '';
+    const dotIdx = name.lastIndexOf('.');
+    if (dotIdx > -1 && dotIdx < name.length - 1) {
+      return name.slice(dotIdx + 1);
+    }
+    return this.converter?.metadata.targetFormat || 'file';
   }
 
   async saveResultFile() {

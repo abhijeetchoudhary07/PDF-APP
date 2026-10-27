@@ -1,173 +1,184 @@
 import '../utilities/pdf-iterator-polyfill';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocument } from 'pdf-lib';
+import { PDFArray, PDFDict, PDFDocument, PDFName, PDFString, PDFHexString } from 'pdf-lib';
 import {
-  FindReplaceOptions,
   FindMatch,
+  FindReplaceOptions,
   FindReplaceResult
 } from '../models/editor-features.types';
-import { PdfEditorDocument, Rect } from '../models/pdf-editor.types';
+import { PdfEditorDocument } from '../models/pdf-editor.types';
+import {
+  buildSearchRegex,
+  matchOffsets,
+  substringBounds,
+  textRunsFromTextContent
+} from '../utilities/pdf-text-run.util';
+import { PdfTextEditorService } from './pdf-text-editor.service';
 
 const generateId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
+/**
+ * K1 — Find & replace across a PDF.
+ *
+ * Three different kinds of text live in a PDF and only two of them can be
+ * edited cheaply, which is the whole shape of this service:
+ *
+ *   • **Form field values** are strings in an object. Replacing one is a
+ *     string assignment.
+ *   • **Editor-added text** is the app's own overlay model, not in the file
+ *     yet. Replacing one is a property assignment.
+ *   • **Page text** is glyph-drawing operators inside a content stream, drawn
+ *     with a font that is usually an embedded subset. pdf-lib cannot add a
+ *     glyph to someone else's subset font, so there is no in-place edit to
+ *     make. The only honest option on-device is K6's route: cover the run and
+ *     redraw it in a matched standard font.
+ *
+ * So page text is opt-in (`replaceExistingPageText`), and when it is off the
+ * result says how many hits were left alone rather than counting them as
+ * replaced. The modal shows that number.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class PdfFindReplaceService {
-  constructor() {}
+  private textEditor = inject(PdfTextEditorService);
 
   /**
-   * Searches across all pages in the PDF document, including:
-   * 1. Extracted content stream text runs via PDF.js
-   * 2. Form field values from AcroForm via pdf-lib
-   * 3. Any editor-added text elements in state
+   * Every hit in the document: page text, form field values and the editor's
+   * own text overlays.
    */
   async findMatches(
     doc: PdfEditorDocument,
     query: string,
     options: FindReplaceOptions = {}
   ): Promise<FindMatch[]> {
-    if (!doc || !query || !query.trim()) {
-      return [];
-    }
+    if (!doc || !query || !query.trim()) return [];
 
-    const {
-      caseSensitive = false,
-      wholeWord = false,
-      includeFormFields = true
-    } = options;
-
+    const { includeFormFields = true } = options;
+    const regex = buildSearchRegex(query, options);
     const matches: FindMatch[] = [];
-    const flags = caseSensitive ? 'g' : 'gi';
-    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = wholeWord
-      ? new RegExp(`\\b${escapedQuery}\\b`, flags)
-      : new RegExp(escapedQuery, flags);
 
-    // 1. Search in PDF.js rendered page text content
-    let pdfjsDoc: any = null;
+    matches.push(...(await this.findInPageText(doc, regex)));
+    if (includeFormFields) {
+      matches.push(...(await this.findInFormFields(doc, regex)));
+    }
+    matches.push(...this.findInEditorElements(doc, regex));
+
+    /* Page order, then position down the page: the order someone reading the
+     * document would meet them, which is the order the match list shows. */
+    matches.sort((a, b) =>
+      a.pageNumber !== b.pageNumber
+        ? a.pageNumber - b.pageNumber
+        : a.bounds.y !== b.bounds.y
+          ? a.bounds.y - b.bounds.y
+          : a.bounds.x - b.bounds.x
+    );
+
+    return matches.map((match, index) => ({ ...match, matchIndex: index }));
+  }
+
+  /**
+   * `findMatches` under the name the modal first called it by.
+   *
+   * It takes the document either way round — bytes plus a model, or just the
+   * model — because the search needs both halves: the file for its page text
+   * and form fields, the model for the editor's own overlays.
+   */
+  async findAcrossDocument(
+    source: ArrayBuffer | Uint8Array | PdfEditorDocument,
+    query: string,
+    options: FindReplaceOptions = {},
+    editorDoc?: PdfEditorDocument
+  ): Promise<FindMatch[]> {
+    return this.findMatches(this.asEditorDocument(source, editorDoc), query, options);
+  }
+
+  private asEditorDocument(
+    source: ArrayBuffer | Uint8Array | PdfEditorDocument,
+    editorDoc?: PdfEditorDocument
+  ): PdfEditorDocument {
+    if (typeof source === 'object' && source !== null && 'pages' in source && 'arrayBuffer' in source) {
+      return source as PdfEditorDocument;
+    }
+    if (editorDoc) return editorDoc;
+
+    const arrayBuffer =
+      source instanceof Uint8Array
+        ? (source.buffer.slice(
+            source.byteOffset,
+            source.byteOffset + source.byteLength
+          ) as ArrayBuffer)
+        : (source as ArrayBuffer);
+
+    return {
+      id: 'doc',
+      name: 'document.pdf',
+      sizeBytes: arrayBuffer.byteLength,
+      pageCount: 1,
+      arrayBuffer,
+      pages: []
+    };
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // Finding
+  // ════════════════════════════════════════════════════════════════════
+
+  private async findInPageText(doc: PdfEditorDocument, regex: RegExp): Promise<FindMatch[]> {
+    const matches: FindMatch[] = [];
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(doc.arrayBuffer.slice(0))
+    });
+
     try {
-      pdfjsDoc = await pdfjsLib.getDocument({
-        data: new Uint8Array(doc.arrayBuffer.slice(0))
-      } as any).promise;
+      const pdf = await loadingTask.promise;
 
-      for (let pNum = 1; pNum <= doc.pageCount; pNum++) {
-        const page = await pdfjsDoc.getPage(pNum);
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+        const page = await pdf.getPage(pageNumber);
+        const pageHeight = page.getViewport({ scale: 1 }).height;
         const textContent = await page.getTextContent();
+        const runs = textRunsFromTextContent(textContent, pageNumber, pageHeight);
 
-        let pageMatchIndex = 0;
-        for (const item of textContent.items) {
-          if (!item.str) continue;
-
-          regex.lastIndex = 0;
-          let match: RegExpExecArray | null;
-          while ((match = regex.exec(item.str)) !== null) {
-            // item.transform: [scaleX, skewY, skewX, scaleY, transX, transY]
-            const tx = item.transform[4] || 0;
-            const ty = item.transform[5] || 0;
-            const width = item.width || Math.max(10, match[0].length * 8);
-            const height = item.height || 12;
-
+        for (const run of runs) {
+          for (const hit of matchOffsets(regex, run.text)) {
             matches.push({
               id: generateId(),
-              pageNumber: pNum,
-              matchIndex: pageMatchIndex++,
-              text: item.str,
-              matchedText: match[0],
-              bounds: {
-                x: tx,
-                y: ty,
-                width: width,
-                height: height
+              pageNumber,
+              matchIndex: 0,
+              text: run.text,
+              matchedText: hit.matched,
+              offset: hit.offset,
+              bounds: substringBounds(run, hit.offset, hit.matched.length),
+              runBounds: {
+                x: run.x,
+                y: run.y,
+                width: run.width,
+                height: run.height
               },
-              source: 'page-text'
+              source: 'page-text',
+              baselineY: run.baselineY,
+              fontSize: run.fontSize,
+              fontFamily: run.fontFamily
             });
-
-            if (match.index === regex.lastIndex) {
-              regex.lastIndex++;
-            }
           }
         }
       }
-    } catch (err) {
-      console.warn('PDF.js text search encountered error', err);
-    }
-
-    // 2. Search in form field values via pdf-lib
-    if (includeFormFields) {
+    } catch (error) {
+      console.warn('Page-text search failed', error);
+    } finally {
+      /*
+       * destroy() lives on the loading task, not on the document proxy. The
+       * worker and its copy of the file stay alive without this, and a search
+       * is run repeatedly as someone types.
+       */
       try {
-        const pdfDoc = await PDFDocument.load(doc.arrayBuffer.slice(0), { ignoreEncryption: true });
-        const form = pdfDoc.getForm();
-        const fields = form.getFields();
-
-        for (const field of fields) {
-          const fieldName = field.getName();
-          let fieldValue = '';
-          try {
-            // Check if field has text value
-            if ('getText' in field && typeof (field as any).getText === 'function') {
-              fieldValue = (field as any).getText() || '';
-            }
-          } catch (e) {
-            fieldValue = '';
-          }
-
-          if (fieldValue) {
-            regex.lastIndex = 0;
-            let match: RegExpExecArray | null;
-            while ((match = regex.exec(fieldValue)) !== null) {
-              matches.push({
-                id: generateId(),
-                pageNumber: 1, // Form field top-level page default
-                matchIndex: matches.length,
-                text: fieldValue,
-                matchedText: match[0],
-                bounds: { x: 0, y: 0, width: 100, height: 20 },
-                source: 'form-field',
-                fieldName
-              });
-
-              if (match.index === regex.lastIndex) {
-                regex.lastIndex++;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        // Form might not exist in PDF
-      }
-    }
-
-    // 3. Search in editor-added text elements
-    for (const page of doc.pages) {
-      for (const el of page.elements) {
-        if (el.type === 'text') {
-          const textEl = el as any;
-          if (textEl.text) {
-            regex.lastIndex = 0;
-            let match: RegExpExecArray | null;
-            while ((match = regex.exec(textEl.text)) !== null) {
-              matches.push({
-                id: generateId(),
-                pageNumber: page.pageNumber,
-                matchIndex: matches.length,
-                text: textEl.text,
-                matchedText: match[0],
-                bounds: { x: el.x, y: el.y, width: el.width, height: el.height },
-                source: 'editor-element',
-                elementId: el.id
-              });
-
-              if (match.index === regex.lastIndex) {
-                regex.lastIndex++;
-              }
-            }
-          }
-        }
+        await loadingTask.destroy();
+      } catch {
+        /* already gone */
       }
     }
 
@@ -175,144 +186,408 @@ export class PdfFindReplaceService {
   }
 
   /**
-   * Replaces matches across document.
-   * Form field values and editor text elements are directly updated.
-  /**
-   * Searches across document text, form fields, and editor elements
+   * Hits inside AcroForm text field values.
+   *
+   * The page number comes from walking each page's /Annots for the widget
+   * that carries this field, rather than reporting page 1 for everything: a
+   * "jump to match" that always lands on the first page is not a jump.
    */
-  async findAcrossDocument(
-    pdfDataOrDoc: ArrayBuffer | Uint8Array | PdfEditorDocument,
-    query: string,
-    options: FindReplaceOptions = {},
-    editorDoc?: PdfEditorDocument
-  ): Promise<FindMatch[]> {
-    if ('pages' in pdfDataOrDoc && 'arrayBuffer' in pdfDataOrDoc) {
-      return this.findMatches(pdfDataOrDoc as PdfEditorDocument, query, options);
+  private async findInFormFields(doc: PdfEditorDocument, regex: RegExp): Promise<FindMatch[]> {
+    const matches: FindMatch[] = [];
+
+    try {
+      const pdfDoc = await PDFDocument.load(doc.arrayBuffer.slice(0), { ignoreEncryption: true });
+      const form = pdfDoc.getForm();
+      const widgetPages = this.widgetPageIndex(pdfDoc);
+
+      for (const field of form.getFields()) {
+        const name = field.getName();
+        const value = this.textValueOf(field);
+        if (!value) continue;
+
+        for (const hit of matchOffsets(regex, value)) {
+          matches.push({
+            id: generateId(),
+            pageNumber: widgetPages.get(name) ?? 1,
+            matchIndex: 0,
+            text: value,
+            matchedText: hit.matched,
+            offset: hit.offset,
+            bounds: { x: 0, y: 0, width: 0, height: 0 },
+            runBounds: { x: 0, y: 0, width: 0, height: 0 },
+            source: 'form-field',
+            fieldName: name
+          });
+        }
+      }
+    } catch {
+      /* No AcroForm, or an encrypted form dictionary. Not an error here. */
     }
-    const arrayBuffer: ArrayBuffer = pdfDataOrDoc instanceof Uint8Array
-      ? (pdfDataOrDoc.buffer.slice(pdfDataOrDoc.byteOffset, pdfDataOrDoc.byteOffset + pdfDataOrDoc.byteLength) as ArrayBuffer)
-      : (pdfDataOrDoc as ArrayBuffer);
-    const doc: PdfEditorDocument = editorDoc || {
-      id: 'doc',
-      name: 'doc.pdf',
-      sizeBytes: arrayBuffer.byteLength,
-      pageCount: 1,
-      arrayBuffer,
-      pages: []
-    };
-    return this.findMatches(doc, query, options);
+
+    return matches;
+  }
+
+  private findInEditorElements(doc: PdfEditorDocument, regex: RegExp): FindMatch[] {
+    const matches: FindMatch[] = [];
+
+    for (const page of doc.pages || []) {
+      for (const element of page.elements || []) {
+        if (element.type !== 'text') continue;
+        const text = (element as { text?: string }).text;
+        if (!text) continue;
+
+        for (const hit of matchOffsets(regex, text)) {
+          matches.push({
+            id: generateId(),
+            pageNumber: page.pageNumber,
+            matchIndex: 0,
+            text,
+            matchedText: hit.matched,
+            offset: hit.offset,
+            bounds: {
+              x: element.x,
+              y: element.y,
+              width: element.width,
+              height: element.height
+            },
+            runBounds: {
+              x: element.x,
+              y: element.y,
+              width: element.width,
+              height: element.height
+            },
+            source: 'editor-element',
+            elementId: element.id
+          });
+        }
+      }
+    }
+
+    return matches;
+  }
+
+  /** Maps each field's fully-qualified name to the page its widget sits on. */
+  private widgetPageIndex(pdfDoc: PDFDocument): Map<string, number> {
+    const index = new Map<string, number>();
+    const pages = pdfDoc.getPages();
+
+    for (let i = 0; i < pages.length; i++) {
+      const annots = pages[i].node.lookup(PDFName.of('Annots'));
+      if (!(annots instanceof PDFArray)) continue;
+
+      for (let j = 0; j < annots.size(); j++) {
+        const dict = pdfDoc.context.lookup(annots.get(j));
+        if (!(dict instanceof PDFDict)) continue;
+
+        const name = this.qualifiedFieldName(pdfDoc, dict);
+        if (name && !index.has(name)) index.set(name, i + 1);
+      }
+    }
+
+    return index;
   }
 
   /**
-   * Replaces matches across form fields and editor text elements.
-   * Page text is noted for whiteout-and-retype (K6 integration).
+   * A field's fully-qualified name: its /T joined to its parents' by dots,
+   * which is the form the pdf-lib field API reports.
+   */
+  private qualifiedFieldName(pdfDoc: PDFDocument, widget: PDFDict): string | null {
+    const parts: string[] = [];
+    let node: PDFDict | undefined = widget;
+    let depth = 0;
+
+    while (node && depth < 16) {
+      const title = node.get(PDFName.of('T'));
+      if (title instanceof PDFString || title instanceof PDFHexString) {
+        parts.unshift(title.decodeText());
+      }
+
+      const parent: PDFDict | undefined = pdfDoc.context.lookupMaybe(
+        node.get(PDFName.of('Parent')),
+        PDFDict
+      );
+      node = parent;
+      depth++;
+    }
+
+    return parts.length > 0 ? parts.join('.') : null;
+  }
+
+  private textValueOf(field: unknown): string {
+    try {
+      const candidate = field as { getText?: () => string | undefined };
+      if (typeof candidate.getText === 'function') return candidate.getText() || '';
+    } catch {
+      /* A non-text field, or a value pdf-lib declines to decode. */
+    }
+    return '';
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // Replacing
+  // ════════════════════════════════════════════════════════════════════
+
+  /**
+   * Replaces matches and returns the rewritten file.
+   *
+   * The caller is expected to put `updatedPdfBytes` back into the editor
+   * document — form field edits and page-text rewrites live in the file, not
+   * in the overlay model, so dropping the bytes drops the replacement.
    */
   async replaceAll(
-    docOrBuffer: PdfEditorDocument | ArrayBuffer | Uint8Array,
+    doc: PdfEditorDocument,
     matchesOrQuery: FindMatch[] | string,
     replacementText: string,
-    options: FindReplaceOptions = {},
-    editorDoc?: PdfEditorDocument
-  ): Promise<FindReplaceResult & { updatedPdfBytes?: Uint8Array }> {
-    let doc: PdfEditorDocument;
-    if ('pages' in docOrBuffer && 'arrayBuffer' in docOrBuffer) {
-      doc = docOrBuffer as PdfEditorDocument;
-    } else {
-      const arrayBuffer: ArrayBuffer = docOrBuffer instanceof Uint8Array
-        ? (docOrBuffer.buffer.slice(docOrBuffer.byteOffset, docOrBuffer.byteOffset + docOrBuffer.byteLength) as ArrayBuffer)
-        : (docOrBuffer as ArrayBuffer);
-      doc = editorDoc || {
-        id: 'doc',
-        name: 'doc.pdf',
-        sizeBytes: arrayBuffer.byteLength,
-        pageCount: 1,
-        arrayBuffer,
-        pages: []
-      };
-    }
+    options: FindReplaceOptions = {}
+  ): Promise<FindReplaceResult> {
+    const matches =
+      typeof matchesOrQuery === 'string'
+        ? await this.findMatches(doc, matchesOrQuery, options)
+        : matchesOrQuery || [];
 
-    let matches: FindMatch[];
-    if (typeof matchesOrQuery === 'string') {
-      matches = await this.findMatches(doc, matchesOrQuery, options);
-    } else {
-      matches = matchesOrQuery || [];
-    }
+    const empty: FindReplaceResult = {
+      matchesFound: matches.length,
+      matchesReplaced: 0,
+      unsupportedExistingTextSkipped: 0,
+      runsRewrittenByWhiteout: 0,
+      runsStillInTextLayer: 0,
+      droppedCharacters: 0,
+      droppedSample: '',
+      replacedMatches: [],
+      updatedPdfBytes: new Uint8Array(doc.arrayBuffer.slice(0))
+    };
 
-    if (!matches || matches.length === 0) {
-      return {
-        matchesFound: 0,
-        matchesReplaced: 0,
-        replacedMatches: [],
-        updatedPdfBytes: new Uint8Array(doc.arrayBuffer.slice(0))
-      };
-    }
+    if (matches.length === 0) return empty;
 
-    let replacedCount = 0;
+    /* Annotated, not inferred: `new Uint8Array(buffer)` narrows to
+     * Uint8Array<ArrayBuffer>, while what pdf-lib's save() hands back is
+     * Uint8Array<ArrayBufferLike>, and the two do not assign. */
+    let bytes: Uint8Array = new Uint8Array(doc.arrayBuffer.slice(0));
     const replaced: FindMatch[] = [];
 
-    // 1. Replace in form fields using pdf-lib
-    const formMatches = matches.filter(m => m.source === 'form-field');
+    /* 1 — Form fields. */
+    const formMatches = matches.filter(match => match.source === 'form-field');
     if (formMatches.length > 0) {
-      try {
-        const pdfDoc = await PDFDocument.load(doc.arrayBuffer.slice(0), { ignoreEncryption: true });
-        const form = pdfDoc.getForm();
-
-        for (const fm of formMatches) {
-          if (!fm.fieldName) continue;
-          try {
-            const field = form.getTextField(fm.fieldName);
-            if (field) {
-              const currentVal = field.getText() || '';
-              const target = options.caseSensitive
-                ? fm.matchedText
-                : new RegExp(fm.matchedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-              const updatedVal = currentVal.replace(target, replacementText);
-              field.setText(updatedVal);
-              replacedCount++;
-              replaced.push(fm);
-            }
-          } catch (e) {
-            // field not a text field or couldn't be updated
-          }
-        }
-
-        const savedBytes = await pdfDoc.save();
-        doc.arrayBuffer = savedBytes.buffer.slice(savedBytes.byteOffset, savedBytes.byteOffset + savedBytes.byteLength) as ArrayBuffer;
-      } catch (err) {
-        console.warn('Form field replacement error', err);
-      }
+      const outcome = await this.replaceInFormFields(bytes, formMatches, replacementText, options);
+      bytes = outcome.bytes;
+      replaced.push(...outcome.replaced);
     }
 
-    // 2. Replace in editor-added text elements
-    const editorMatches = matches.filter(m => m.source === 'editor-element');
-    for (const em of editorMatches) {
-      for (const page of doc.pages) {
-        const el = page.elements.find(e => e.id === em.elementId);
-        if (el && el.type === 'text') {
-          const textEl = el as any;
-          const target = options.caseSensitive
-            ? em.matchedText
-            : new RegExp(em.matchedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-          textEl.text = textEl.text.replace(target, replacementText);
-          replacedCount++;
-          replaced.push(em);
-        }
-      }
-    }
+    /* 2 — The editor's own text overlays. */
+    const elementMatches = matches.filter(match => match.source === 'editor-element');
+    replaced.push(...this.replaceInEditorElements(doc, elementMatches, replacementText, options));
 
-    // 3. For page-text matches:
-    const pageTextMatches = matches.filter(m => m.source === 'page-text');
-    for (const ptm of pageTextMatches) {
-      replacedCount++;
-      replaced.push(ptm);
+    /* 3 — Page text, only when asked for. */
+    const pageMatches = matches.filter(match => match.source === 'page-text');
+    let runsRewritten = 0;
+    let runsStillInTextLayer = 0;
+    let droppedCharacters = 0;
+    let droppedSample = '';
+    let skipped = 0;
+
+    if (pageMatches.length > 0 && options.replaceExistingPageText) {
+      const outcome = await this.rewritePageText(bytes, pageMatches, replacementText, options);
+      bytes = outcome.bytes;
+      runsRewritten = outcome.runsRewritten;
+      runsStillInTextLayer = outcome.runsStillInTextLayer;
+      droppedCharacters = outcome.droppedCharacters;
+      droppedSample = outcome.droppedSample;
+      replaced.push(...outcome.replaced);
+    } else {
+      skipped = pageMatches.length;
     }
 
     return {
       matchesFound: matches.length,
-      matchesReplaced: replacedCount,
-      unsupportedExistingTextSkipped: 0,
+      matchesReplaced: replaced.length,
+      unsupportedExistingTextSkipped: skipped,
+      runsRewrittenByWhiteout: runsRewritten,
+      runsStillInTextLayer,
+      droppedCharacters,
+      droppedSample,
       replacedMatches: replaced,
-      updatedPdfBytes: new Uint8Array(doc.arrayBuffer.slice(0))
+      updatedPdfBytes: bytes
+    };
+  }
+
+  /** One match, same rules and same reporting as `replaceAll`. */
+  async replaceOne(
+    doc: PdfEditorDocument,
+    match: FindMatch,
+    replacementText: string,
+    options: FindReplaceOptions = {}
+  ): Promise<FindReplaceResult> {
+    return this.replaceAll(doc, [match], replacementText, options);
+  }
+
+  private async replaceInFormFields(
+    bytes: Uint8Array,
+    matches: FindMatch[],
+    replacementText: string,
+    options: FindReplaceOptions
+  ): Promise<{ bytes: Uint8Array; replaced: FindMatch[] }> {
+    const replaced: FindMatch[] = [];
+
+    try {
+      const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      const form = pdfDoc.getForm();
+
+      /*
+       * Grouped by field: two hits in one value have to be applied to the
+       * value once, or the second assignment overwrites the first and only
+       * one of them lands.
+       */
+      const byField = new Map<string, FindMatch[]>();
+      for (const match of matches) {
+        if (!match.fieldName) continue;
+        const list = byField.get(match.fieldName) || [];
+        list.push(match);
+        byField.set(match.fieldName, list);
+      }
+
+      let changed = false;
+
+      for (const [fieldName, fieldMatches] of byField) {
+        try {
+          const field = form.getTextField(fieldName);
+          const current = field.getText() || '';
+          const regex = buildSearchRegex(fieldMatches[0].matchedText, {
+            caseSensitive: options.caseSensitive,
+            wholeWord: options.wholeWord
+          });
+          const next = current.replace(regex, replacementText);
+          if (next === current) continue;
+
+          field.setText(next);
+          changed = true;
+          replaced.push(...fieldMatches);
+        } catch {
+          /* Not a text field, or read-only. Left out of the replaced count. */
+        }
+      }
+
+      if (changed) {
+        return { bytes: new Uint8Array(await pdfDoc.save({ useObjectStreams: false })), replaced };
+      }
+    } catch (error) {
+      console.warn('Form field replacement failed', error);
+    }
+
+    return { bytes, replaced };
+  }
+
+  private replaceInEditorElements(
+    doc: PdfEditorDocument,
+    matches: FindMatch[],
+    replacementText: string,
+    options: FindReplaceOptions
+  ): FindMatch[] {
+    const replaced: FindMatch[] = [];
+    const byElement = new Map<string, FindMatch[]>();
+
+    for (const match of matches) {
+      if (!match.elementId) continue;
+      const list = byElement.get(match.elementId) || [];
+      list.push(match);
+      byElement.set(match.elementId, list);
+    }
+
+    for (const [elementId, elementMatches] of byElement) {
+      for (const page of doc.pages || []) {
+        const element = (page.elements || []).find(candidate => candidate.id === elementId);
+        if (!element || element.type !== 'text') continue;
+
+        const textElement = element as { text: string };
+        const regex = buildSearchRegex(elementMatches[0].matchedText, {
+          caseSensitive: options.caseSensitive,
+          wholeWord: options.wholeWord
+        });
+        const next = textElement.text.replace(regex, replacementText);
+        if (next === textElement.text) continue;
+
+        textElement.text = next;
+        replaced.push(...elementMatches);
+      }
+    }
+
+    return replaced;
+  }
+
+  /**
+   * Page text, through K6's cover-and-redraw.
+   *
+   * The *whole run* is covered and redrawn, not just the matched word. An
+   * estimate of where one word sits inside a run is good enough to scroll to
+   * but not to paint over: a cover that is a few points short leaves the old
+   * letters showing at the edge. Redrawing the run entire has no such edge.
+   */
+  private async rewritePageText(
+    bytes: Uint8Array,
+    matches: FindMatch[],
+    replacementText: string,
+    options: FindReplaceOptions
+  ): Promise<{
+    bytes: Uint8Array;
+    replaced: FindMatch[];
+    runsRewritten: number;
+    runsStillInTextLayer: number;
+    droppedCharacters: number;
+    droppedSample: string;
+  }> {
+    const replaced: FindMatch[] = [];
+    const samples = new Set<string>();
+    let droppedCharacters = 0;
+    let runsRewritten = 0;
+    let runsStillInTextLayer = 0;
+    let current = bytes;
+
+    /* One rewrite per run, carrying every hit inside that run. */
+    const byRun = new Map<string, FindMatch[]>();
+    for (const match of matches) {
+      const key = `${match.pageNumber}:${Math.round(match.runBounds.x)}:${Math.round(match.runBounds.y)}:${match.text}`;
+      const list = byRun.get(key) || [];
+      list.push(match);
+      byRun.set(key, list);
+    }
+
+    for (const runMatches of byRun.values()) {
+      const first = runMatches[0];
+      const regex = buildSearchRegex(first.matchedText, {
+        caseSensitive: options.caseSensitive,
+        wholeWord: options.wholeWord
+      });
+      const newRunText = first.text.replace(regex, replacementText);
+      if (newRunText === first.text) continue;
+
+      const outcome = await this.textEditor.applyTextEdit(current, {
+        runId: first.id,
+        pageNumber: first.pageNumber,
+        originalText: first.text,
+        newText: newRunText,
+        bounds: first.runBounds,
+        baselineY: first.baselineY,
+        fontSize: first.fontSize || first.runBounds.height,
+        fontFamily: first.fontFamily || 'Helvetica',
+        fallbackWhiteoutApplied: true
+      });
+
+      if (!outcome.success || !outcome.updatedPdfBytes) continue;
+
+      current = outcome.updatedPdfBytes;
+      runsRewritten++;
+      if (!outcome.originalTextRemoved) runsStillInTextLayer++;
+      droppedCharacters += outcome.droppedCharacters;
+      if (outcome.droppedSample) samples.add(outcome.droppedSample);
+      replaced.push(...runMatches);
+    }
+
+    return {
+      bytes: current,
+      replaced,
+      runsRewritten,
+      runsStillInTextLayer,
+      droppedCharacters,
+      droppedSample: [...samples].join(' ')
     };
   }
 }

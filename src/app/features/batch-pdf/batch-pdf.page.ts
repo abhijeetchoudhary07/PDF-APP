@@ -10,6 +10,7 @@ import { HistoryService } from '../../core/services/history.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UsageQuotaService } from '../../core/services/usage-quota.service';
 import { OcrService } from '../../core/services/ocr.service';
+import { OCR_SUPPORTED_LANGUAGES, OcrSupportedLanguage } from '../../core/models/ocr.models';
 import { PdfToWordConverter } from '../../core/conversion/converters/pdf-to-word.converter';
 import { PdfSecurityService } from '../../core/services/pdf-security.service';
 import { PdfPrivacyService } from '../../core/services/pdf-privacy.service';
@@ -73,7 +74,14 @@ export class BatchPdfPage implements OnInit {
   private pdfPrivacyService = inject(PdfPrivacyService);
 
   readonly MAX_BATCH_SIZE = 10;
-  readonly CONCURRENCY_LIMIT = 1;
+
+  /**
+   * The five languages the app ships everywhere else. The batch screen used to
+   * offer Spanish, French, German, Italian and Portuguese — languages no other
+   * screen offers, whose models are not on the device — while leaving out
+   * Marathi, Bengali and Punjabi, which are.
+   */
+  readonly ocrLanguages = OCR_SUPPORTED_LANGUAGES;
 
   readonly operations: BatchOperationMeta[] = [
     { id: 'compress', label: 'Compress', icon: 'arrow-down', description: 'Compress files down to target KB ceiling.' },
@@ -88,7 +96,7 @@ export class BatchPdfPage implements OnInit {
   operation: BatchPdfOperation = 'compress';
   items: BatchPdfQueueItem[] = [];
   targetKB: number = 200;
-  ocrLanguage: string = 'eng';
+  ocrLanguage: OcrSupportedLanguage = 'eng';
   password: string = '';
   showPassword = false;
   autoSave: boolean = true;
@@ -267,6 +275,16 @@ export class BatchPdfPage implements OnInit {
 
       case 'rename-from-content': {
         const newName = await this.extractTitleAndGenerateFilename(item.file);
+        if (!newName) {
+          /*
+           * Reporting "done" for a file whose content could not be read, and
+           * handing back `name_renamed.pdf`, tells the person the operation
+           * worked on a file it never understood. An image-only scan has no
+           * text to take a title from, and saying so points at the fix: run
+           * OCR over it first.
+           */
+          throw new Error('No readable text to take a title from. Run OCR on this file first.');
+        }
         const arrayBuffer = await item.file.arrayBuffer();
         return new File([arrayBuffer], newName, { type: 'application/pdf' });
       }
@@ -276,7 +294,10 @@ export class BatchPdfPage implements OnInit {
     }
   }
 
-  async extractTitleAndGenerateFilename(file: File): Promise<string> {
+  /** The title this document calls itself, or null when it does not say. */
+  async extractTitleAndGenerateFilename(file: File): Promise<string | null> {
+    let loadingTask: ReturnType<typeof pdfjsLib.getDocument> | undefined;
+
     try {
       const arrayBuffer = await file.arrayBuffer();
       // 1. Check metadata title in pdf-lib
@@ -292,29 +313,44 @@ export class BatchPdfPage implements OnInit {
       }
 
       // 2. Try reading page 1 text items with pdfjs
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) } as any);
+      loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) } as any);
       const pdf = await loadingTask.promise;
       if (pdf.numPages > 0) {
         const page1 = await pdf.getPage(1);
         const textContent = await page1.getTextContent();
+
+        /*
+         * The title is the largest text on the page, not the first string in
+         * the content stream: a letterhead, a page number or a date often
+         * draws before it, and taking the first run named half the files
+         * after the header above the title.
+         */
+        let best: { text: string; size: number } | null = null;
         for (const item of textContent.items) {
-          if ('str' in item && typeof item.str === 'string') {
-            const str = item.str.trim();
-            if (str.length >= 4 && !/^\d+$/.test(str) && !str.startsWith('Page ')) {
-              const clean = this.sanitizeFilename(str);
-              if (clean.length >= 3) {
-                return `${clean}.pdf`;
-              }
-            }
-          }
+          if (!('str' in item) || typeof item.str !== 'string') continue;
+          const str = item.str.trim();
+          if (str.length < 4 || /^\d+$/.test(str) || str.startsWith('Page ')) continue;
+          const tx = (item as any).transform as number[] | undefined;
+          const size = tx ? Math.hypot(tx[0], tx[1]) : 0;
+          if (!best || size > best.size) best = { text: str, size };
+        }
+
+        if (best) {
+          const clean = this.sanitizeFilename(best.text);
+          if (clean.length >= 3) return `${clean}.pdf`;
         }
       }
     } catch {
       // ignore
+    } finally {
+      try {
+        await loadingTask?.destroy();
+      } catch {
+        /* never opened */
+      }
     }
 
-    const baseName = file.name.replace(/\.[^/.]+$/, '');
-    return `${baseName}_renamed.pdf`;
+    return null;
   }
 
   private sanitizeFilename(text: string): string {
@@ -379,10 +415,17 @@ export class BatchPdfPage implements OnInit {
 
         // Save output through StorageService.saveFile
         if (this.autoSave) {
+          /*
+           * Save under the name the operation produced. Renaming from content
+           * is pointless otherwise, and a batch whose outputs are all
+           * `batch_compress_<kb>kb_<second>.pdf` can collide with itself when
+           * two files round to the same size inside the same second.
+           */
           const uri = await this.storageService.saveFile(
             outputFile,
             `batch_${this.operation}`,
-            item.id
+            item.id,
+            { preserveName: true }
           );
           if (uri) {
             item.quotaCharged = true;
@@ -446,7 +489,12 @@ export class BatchPdfPage implements OnInit {
         this.toast.warning('Daily limit reached while saving remaining files.');
         break;
       }
-      const uri = await this.storageService.saveFile(item.outputFile!, `batch_${this.operation}`, item.id);
+      const uri = await this.storageService.saveFile(
+        item.outputFile!,
+        `batch_${this.operation}`,
+        item.id,
+        { preserveName: true }
+      );
       if (uri) {
         item.quotaCharged = true;
         savedCount++;
@@ -479,16 +527,25 @@ export class BatchPdfPage implements OnInit {
     return [headers.join(','), ...rows].join('\n');
   }
 
-  downloadCsvLog(): void {
+  /**
+   * Writes the result log through StorageService.
+   *
+   * An anchor with a blob URL downloads nothing inside the Android WebView, so
+   * on the platform this app ships to, the CSV export button did nothing at
+   * all.
+   */
+  async downloadCsvLog(): Promise<void> {
     const csv = this.generateCsvLog();
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const filename = `batch_${this.operation}_results_${new Date().toISOString().slice(0, 10)}.csv`;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    this.toast.success('Batch result log downloaded (CSV).');
+    const file = new File([new Blob([csv], { type: 'text/csv;charset=utf-8;' })], filename, {
+      type: 'text/csv'
+    });
+
+    const uri = await this.storageService.saveReportFile(file);
+    if (uri === 'web-download') {
+      this.toast.success('Batch result log downloaded (CSV).');
+    } else if (uri) {
+      this.toast.success('Batch result log saved to your Documents folder.');
+    }
   }
 }

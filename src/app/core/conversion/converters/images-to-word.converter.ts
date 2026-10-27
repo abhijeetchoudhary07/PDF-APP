@@ -22,8 +22,8 @@ export class ImagesToWordConverter implements IConverter {
     badge: 'OCR to DOCX',
     acceptMimeTypes: 'image/jpeg,image/png,image/webp,image/bmp',
     limitations: [
-      'Extracts textual paragraphs and detected lines into standard Word documents.',
-      'Recognition accuracy depends on image lighting, resolution, and text orientation.'
+      'Extracts textual paragraphs and detected lines into a standard Word document, in any of the five OCR languages.',
+      'Recognition accuracy depends on image lighting, resolution, and text orientation; low-confidence results are flagged.'
     ],
     disclaimer: '100% on-device OCR using client-side Tesseract intelligence. Your images are never uploaded to any external server.'
   };
@@ -56,13 +56,14 @@ export class ImagesToWordConverter implements IConverter {
       pagesRasterized: 0,
       indicOrRtlWarnings: []
     };
+    const warnings: string[] = [];
 
     try {
       onProgress?.({ percent: 15, stage: 'Initializing local OCR engine...' });
 
       const ocrDoc = await this.ocrService.performOcr(
         file,
-        (options.ocrLanguage || 'eng') as any,
+        (options.ocrLanguage || 'eng'),
         undefined,
         (event: any) => {
           onProgress?.({
@@ -73,6 +74,20 @@ export class ImagesToWordConverter implements IConverter {
       );
 
       onProgress?.({ percent: 85, stage: 'Formatting Word document paragraphs...' });
+
+      if (ocrDoc.averageConfidence > 0 && ocrDoc.averageConfidence < 70) {
+        warnings.push(
+          `OCR confidence was ${Math.round(ocrDoc.averageConfidence)}%. Proofread the text against the image.`
+        );
+        report.approximations.push(
+          `Low OCR confidence (${Math.round(ocrDoc.averageConfidence)}%) on this image`
+        );
+      }
+      if (options.ocrLanguage && options.ocrLanguage !== 'eng') {
+        // The .docx carries the text as Unicode, so Indic scripts survive here
+        // even though the built-in PDF fonts cannot draw them.
+        report.approximations.push(`Recognized using the ${options.ocrLanguage} language model`);
+      }
 
       const docChildren: Paragraph[] = [];
 
@@ -175,6 +190,7 @@ export class ImagesToWordConverter implements IConverter {
         success: true,
         file: outFile,
         downloadName: outName,
+        warnings: warnings.length ? warnings : undefined,
         report
       };
     } catch (err: any) {

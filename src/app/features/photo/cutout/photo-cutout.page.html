@@ -52,7 +52,16 @@
                   <line x1="12" y1="9" x2="12" y2="13"></line>
                   <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
-                <span>{{ suitability.reason || ('photoCutout.unsuitableNotice' | translate) }}</span>
+                <div class="status-banner-body">
+                  <span>{{ suitability.reason || ('photoCutout.unsuitableNotice' | translate) }}</span>
+                  @if (!overrideUnsuitable) {
+                    <button type="button" class="override-btn" (click)="acknowledgeUnsuitable()">
+                      {{ 'photoCutout.exportAnywayBtn' | translate }}
+                    </button>
+                  } @else {
+                    <span class="override-ack">{{ 'photoCutout.exportAnywayAck' | translate }}</span>
+                  }
+                </div>
               </div>
             }
           }
@@ -108,7 +117,7 @@
               type="button"
               class="mobile-touch-btn primary-btn large-cta"
               (click)="exportCutout()"
-              [disabled]="isProcessing">
+              [disabled]="isProcessing || !canExport">
               <span class="btn-content">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>

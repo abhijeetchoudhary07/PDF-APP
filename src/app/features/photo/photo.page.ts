@@ -193,7 +193,8 @@ export class PhotoPage implements OnDestroy {
     this.errorMessage = undefined;
     this.originalFile = file;
     this.originalPreviewUrl = this.fileService.createObjectUrl(file);
-    this.targetFormat = file.type || 'image/jpeg';
+    const validFormats = ['image/jpeg', 'image/png', 'image/webp'];
+    this.targetFormat = validFormats.includes(file.type) ? file.type : 'image/jpeg';
     this.processedResult = undefined;
     this.workflowState = 'CONFIGURING';
     this.cdr.detectChanges();
@@ -295,8 +296,13 @@ export class PhotoPage implements OnDestroy {
   }
 
   onCustomKBInput(): void {
-    if (this.selectedTargetKB < 5) this.selectedTargetKB = 5;
-    if (this.selectedTargetKB > 10000) this.selectedTargetKB = 10000;
+    const val = Number(this.selectedTargetKB);
+    if (Number.isFinite(val)) {
+      if (val < 5) this.selectedTargetKB = 5;
+      else if (val > 10000) this.selectedTargetKB = 10000;
+    } else {
+      this.selectedTargetKB = 50;
+    }
   }
 
   onCustomKBSlider(): void {
@@ -306,7 +312,8 @@ export class PhotoPage implements OnDestroy {
   adjustTargetKB(delta: number): void {
     this.isCustomKB = true;
     this.selectedPresetId = undefined;
-    const next = (this.selectedTargetKB || 50) + delta;
+    const current = Number(this.selectedTargetKB) || 50;
+    const next = current + delta;
     this.selectedTargetKB = Math.max(5, Math.min(10000, next));
     this.cdr.detectChanges();
   }
@@ -318,10 +325,12 @@ export class PhotoPage implements OnDestroy {
 
     return new Promise((resolve) => {
       const img = new Image();
+      const url = URL.createObjectURL(sourceFile);
       img.onload = () => {
+        URL.revokeObjectURL(url);
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = Math.max(1, img.naturalWidth || img.width);
+        canvas.height = Math.max(1, img.naturalHeight || img.height);
         const ctx = canvas.getContext('2d');
         if (!ctx) return resolve(sourceFile);
 
@@ -350,10 +359,20 @@ export class PhotoPage implements OnDestroy {
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
-          const name = (this.candidateName.trim() || 'NAME: CANDIDATE NAME').toUpperCase();
+          // Sanitize candidate name & date
+          const cleanName = (this.candidateName || '')
+            .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
+            .trim()
+            .slice(0, 50);
+          const name = (cleanName || 'NAME: CANDIDATE NAME').toUpperCase();
+
+          const cleanDate = (this.photoDate || '')
+            .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
+            .trim()
+            .slice(0, 20);
           const d = new Date();
           const defaultDate = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
-          const dateText = this.photoDate.trim() ? `DOP: ${this.photoDate.trim()}` : `DOP: ${defaultDate}`;
+          const dateText = cleanDate ? `DOP: ${cleanDate}` : `DOP: ${defaultDate}`;
 
           const fontSize = Math.max(11, Math.round(stripHeight * 0.32));
           ctx.font = `bold ${fontSize}px sans-serif`;
@@ -365,15 +384,17 @@ export class PhotoPage implements OnDestroy {
 
         // Border styling
         if (this.photoBorderStyle === 'thin-black') {
-          const borderWidth = Math.max(1, Math.round(canvas.width * 0.006));
+          const borderWidth = Math.max(1, Math.round(canvas.width * 0.005));
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = borderWidth;
-          ctx.strokeRect(borderWidth / 2, borderWidth / 2, canvas.width - borderWidth, canvas.height - borderWidth);
+          const half = borderWidth / 2;
+          ctx.strokeRect(half, half, canvas.width - borderWidth, canvas.height - borderWidth);
         } else if (this.photoBorderStyle === 'passport-white') {
           const borderWidth = Math.max(4, Math.round(canvas.width * 0.025));
           ctx.strokeStyle = '#FFFFFF';
           ctx.lineWidth = borderWidth;
-          ctx.strokeRect(borderWidth / 2, borderWidth / 2, canvas.width - borderWidth, canvas.height - borderWidth);
+          const half = borderWidth / 2;
+          ctx.strokeRect(half, half, canvas.width - borderWidth, canvas.height - borderWidth);
           ctx.strokeStyle = 'rgba(0,0,0,0.18)';
           ctx.lineWidth = 1;
           ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1);
@@ -388,8 +409,11 @@ export class PhotoPage implements OnDestroy {
           }
         }, outFormat, 0.96);
       };
-      img.onerror = () => resolve(sourceFile);
-      img.src = URL.createObjectURL(sourceFile);
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(sourceFile);
+      };
+      img.src = url;
     });
   }
 
@@ -403,23 +427,14 @@ export class PhotoPage implements OnDestroy {
     this.stageText = getProcessingStageLabel('analyzing', this.translationService);
     this.cdr.detectChanges();
 
-    /*
-     * Everything from here to the end of the two modes is guarded.
-     *
-     * The image APIs underneath reject with a bare DOM `Event` when a file
-     * cannot be decoded, and a rejection escaping this method left
-     * `isProcessing` true for the rest of the page's life: the spinner never
-     * stopped, no message appeared, and the only way out was to leave the
-     * page. The catch routes those failures into `processedResult`, which the
-     * block below already turns into the ERROR state.
-     */
     try {
       const fileToProcess = await this.applyPhotoCustomizations(this.originalFile);
 
       if (this.mode === 'kb') {
         const config: CompressionConfig = {
           targetKB: this.selectedTargetKB,
-          outputFormat: this.targetFormat || 'image/jpeg'
+          outputFormat: this.targetFormat || 'image/jpeg',
+          exactDimensions: this.selectedPresetId ? { width: this.targetWidth, height: this.targetHeight } : undefined
         };
         this.processingStage = 'optimizing';
         this.processingProgress = 65;
@@ -443,7 +458,13 @@ export class PhotoPage implements OnDestroy {
             outputFormat,
             0.95
           );
-          const newFile = new File([blob], this.originalFile.name, { type: outputFormat });
+          let ext = 'jpg';
+          if (outputFormat === 'image/png') ext = 'png';
+          else if (outputFormat === 'image/webp') ext = 'webp';
+
+          const baseName = this.originalFile.name.replace(/\.[^/.]+$/, '');
+          const outputFileName = `${baseName}.${ext}`;
+          const newFile = new File([blob], outputFileName, { type: outputFormat });
 
           this.processedResult = {
             success: true,
@@ -454,11 +475,11 @@ export class PhotoPage implements OnDestroy {
               type: newFile.type,
               sizeBytes: newFile.size,
               lastModified: newFile.lastModified,
-              extension: outputFormat.split('/')[1] || 'jpeg'
+              extension: ext
             }
           };
         } catch (e: any) {
-          this.processedResult = { success: false, error: e.toString() };
+          this.processedResult = { success: false, error: e?.message || e?.toString() || 'Resize failed.' };
         }
       }
     } catch (e: any) {
@@ -476,6 +497,7 @@ export class PhotoPage implements OnDestroy {
       this.workflowState = 'SUCCESS';
     } else {
       this.errorMessage = this.processedResult?.error || 'Failed to process photo.';
+      this.toast.error(this.errorMessage);
       this.workflowState = 'ERROR';
     }
     this.cdr.detectChanges();
@@ -490,7 +512,7 @@ export class PhotoPage implements OnDestroy {
   async savePhoto(): Promise<void> {
     if (!this.processedResult?.file || !this.originalFile) return;
     const uri = await this.storageService.saveFile(this.processedResult.file, 'photo');
-    if (uri && uri !== 'web-download') {
+    if (uri) {
       await this.historyService.addHistoryItem({
         operation: 'photo',
         originalFileName: this.originalFile.name,
@@ -503,7 +525,11 @@ export class PhotoPage implements OnDestroy {
           : undefined,
         outputPath: uri
       });
-      this.toast.success('Saved to your Documents folder.');
+      if (uri === 'web-download') {
+        this.toast.success('Photo downloaded successfully.');
+      } else {
+        this.toast.success('Saved to your Documents folder.');
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { PDFDocument } from 'pdf-lib';
 import {
   PdfEditorDocument,
   PdfEditorPage,
@@ -16,10 +17,47 @@ import {
   PdfHyperlink,
   CommentThread,
   CommentReply,
-  WhiteoutRegion,
   MeasurementResult,
-  TextEditCommand
+  MeasurementScale,
+  TextEditCommand,
+  WhiteoutRegion
 } from '../models/editor-features.types';
+
+/** A link waiting for the rectangle that will make it tappable. */
+export interface LinkDraft {
+  type: 'url' | 'page';
+  url?: string;
+  targetPage?: number;
+  label?: string;
+}
+
+/** A comment waiting for the spot its pin goes. */
+export interface CommentDraft {
+  author: string;
+  initials: string;
+  text: string;
+}
+
+/** A whiteout waiting for its area. `matchPage` samples the colour behind. */
+export interface WhiteoutDraft {
+  fillColor: string;
+  matchPage: boolean;
+}
+
+/** A measurement waiting for its points. */
+export interface MeasureDraft {
+  mode: 'distance' | 'area' | 'calibrate';
+  scale: MeasurementScale;
+  /** `calibrate` only: what the drawn length represents. */
+  knownValue?: number;
+}
+
+export type PlacementCompleted =
+  | { tool: 'link'; link: PdfHyperlink }
+  | { tool: 'comment'; thread: CommentThread }
+  | { tool: 'whiteout'; region: WhiteoutRegion; sampledFromPage: boolean }
+  | { tool: 'measure'; measurement: MeasurementResult }
+  | { tool: 'measure'; calibratedScale: MeasurementScale };
 
 const generateId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
@@ -88,7 +126,26 @@ export class PdfEditorStateService {
 
   private readonly MAX_HISTORY = 50;
 
+  /**
+   * Bumped every time the source bytes are swapped.
+   *
+   * The canvas puts it into the id it hands PdfRenderService, which caches
+   * by id and returns the document it already holds when the id has not
+   * changed — so without this, a rewritten file would keep rendering the
+   * pages it used to have.
+   *
+   * The reload itself is the canvas's job, not this service's: rendering is
+   * not state, and reaching for the renderer from here would mean this
+   * service could only be built inside an injection context.
+   */
+  private sourceRevisionSubject = new BehaviorSubject<number>(0);
+  public sourceRevision$: Observable<number> = this.sourceRevisionSubject.asObservable();
+
   constructor() {}
+
+  get sourceRevision(): number {
+    return this.sourceRevisionSubject.value;
+  }
 
   // --- Getters ---
 
@@ -618,6 +675,72 @@ export class PdfEditorStateService {
     this.redactionPreviewSubject.next(preview);
   }
 
+  /**
+   * Replaces the document's own bytes with a rewritten file.
+   *
+   * Some Part K tools do not add an overlay — they change what is in the
+   * file. A find & replace writes new form field values and redraws page
+   * text; a link delete strips an annotation; a picture replace repoints an
+   * XObject. None of that can live in the overlay model, so the editor's
+   * source has to be swapped, and everything reading from it told.
+   *
+   * It is undoable like any other edit: the previous bytes are kept in the
+   * command's closure. The page *models* are deliberately left alone —
+   * these rewrites never change the page count or page sizes, and rebuilding
+   * the models would throw away the annotations, links and comments the user
+   * has placed on top.
+   */
+  async replaceSourceBytes(bytes: Uint8Array, description: string): Promise<void> {
+    const doc = this.document;
+    if (!doc) return;
+
+    const previous = doc.arrayBuffer;
+    const next = bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength
+    ) as ArrayBuffer;
+
+    const apply = async (buffer: ArrayBuffer) => {
+      const current = this.document;
+      if (!current) return;
+
+      current.arrayBuffer = buffer;
+      current.sizeBytes = buffer.byteLength;
+
+      /*
+       * A page count that changed would leave the page models describing a
+       * document that is no longer there. No K tool does that, but checking
+       * costs nothing and the alternative is a blank canvas with no clue why.
+       */
+      try {
+        const probe = await PDFDocument.load(buffer.slice(0), { ignoreEncryption: true });
+        current.pageCount = probe.getPageCount();
+      } catch {
+        /* Leave the count as it was; whoever renders next will surface a
+         * real problem with the bytes. */
+      }
+
+      this.notifyDocumentChanged();
+      /* Last, so anything reloading off this already sees the new buffer. */
+      this.sourceRevisionSubject.next(this.sourceRevisionSubject.value + 1);
+    };
+
+    await apply(next);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'REPLACE_SOURCE',
+      description,
+      timestamp: Date.now(),
+      undo: () => {
+        void apply(previous);
+      },
+      redo: () => {
+        void apply(next);
+      }
+    });
+  }
+
   // --- Undo / Redo Command Execution ---
 
   private executeCommand(cmd: EditorCommand) {
@@ -660,6 +783,106 @@ export class PdfEditorStateService {
   setExporting(isExporting: boolean, progress = 0) {
     this.isExportingSubject.next(isExporting);
     this.exportProgressSubject.next(progress);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // Placement drafts
+  // ════════════════════════════════════════════════════════════════════
+  /*
+   * Four of the Part K tools need a place on the page before they can do
+   * anything: a link needs a rectangle to be tappable, a comment needs a
+   * spot for its pin, a whiteout needs an area, a measurement needs its
+   * points. Asking for coordinates in a form is not how anyone wants to
+   * place a box on a phone.
+   *
+   * So the sheet collects everything EXCEPT the geometry, parks it here as a
+   * draft, and closes. The canvas picks the draft up, lets the user draw or
+   * tap, and completes it. `placementCompleted$` then tells the editor page
+   * what landed, so it can confirm it and offer the sheet again.
+   */
+
+  private linkDraftSubject = new BehaviorSubject<LinkDraft | null>(null);
+  public linkDraft$ = this.linkDraftSubject.asObservable();
+
+  private commentDraftSubject = new BehaviorSubject<CommentDraft | null>(null);
+  public commentDraft$ = this.commentDraftSubject.asObservable();
+
+  private whiteoutDraftSubject = new BehaviorSubject<WhiteoutDraft | null>(null);
+  public whiteoutDraft$ = this.whiteoutDraftSubject.asObservable();
+
+  private measureDraftSubject = new BehaviorSubject<MeasureDraft | null>(null);
+  public measureDraft$ = this.measureDraftSubject.asObservable();
+
+  private placementCompletedSubject = new Subject<PlacementCompleted>();
+  public placementCompleted$ = this.placementCompletedSubject.asObservable();
+
+  /** K5's pen snapping, which the freehand draw tool reads. */
+  private shapeSnapSubject = new BehaviorSubject<boolean>(false);
+  public shapeSnap$ = this.shapeSnapSubject.asObservable();
+
+  get linkDraft(): LinkDraft | null {
+    return this.linkDraftSubject.value;
+  }
+
+  get commentDraft(): CommentDraft | null {
+    return this.commentDraftSubject.value;
+  }
+
+  get whiteoutDraft(): WhiteoutDraft | null {
+    return this.whiteoutDraftSubject.value;
+  }
+
+  get measureDraft(): MeasureDraft | null {
+    return this.measureDraftSubject.value;
+  }
+
+  get shapeSnapEnabled(): boolean {
+    return this.shapeSnapSubject.value;
+  }
+
+  setShapeSnapEnabled(enabled: boolean): void {
+    this.shapeSnapSubject.next(enabled);
+  }
+
+  /** Arms one of the placement tools, clearing any other draft first. */
+  startPlacement(
+    tool: 'link' | 'comment' | 'whiteout' | 'measure',
+    draft: LinkDraft | CommentDraft | WhiteoutDraft | MeasureDraft
+  ): void {
+    this.clearPlacement();
+
+    switch (tool) {
+      case 'link':
+        this.linkDraftSubject.next(draft as LinkDraft);
+        break;
+      case 'comment':
+        this.commentDraftSubject.next(draft as CommentDraft);
+        break;
+      case 'whiteout':
+        this.whiteoutDraftSubject.next(draft as WhiteoutDraft);
+        break;
+      case 'measure':
+        this.measureDraftSubject.next(draft as MeasureDraft);
+        break;
+    }
+
+    this.setSelectedElementId(null);
+    this.activeToolSubject.next(tool);
+  }
+
+  /** Drops every draft and returns to the select tool. */
+  clearPlacement(): void {
+    if (this.linkDraftSubject.value) this.linkDraftSubject.next(null);
+    if (this.commentDraftSubject.value) this.commentDraftSubject.next(null);
+    if (this.whiteoutDraftSubject.value) this.whiteoutDraftSubject.next(null);
+    if (this.measureDraftSubject.value) this.measureDraftSubject.next(null);
+  }
+
+  /** Called by the canvas once something has been placed. */
+  completePlacement(event: PlacementCompleted): void {
+    this.clearPlacement();
+    this.activeToolSubject.next('select');
+    this.placementCompletedSubject.next(event);
   }
 
   // --- K2: Hyperlinks ---

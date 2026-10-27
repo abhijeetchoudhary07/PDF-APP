@@ -52,8 +52,18 @@
           <!-- INTERACTIVE PREVIEW CANVAS -->
           <div class="preview-stage-card">
             <div class="canvas-viewport">
-              <canvas #previewCanvas class="guide-canvas"></canvas>
+              <canvas
+                #previewCanvas
+                class="guide-canvas"
+                (pointerdown)="onGuidePointerDown($event)"
+                (pointermove)="onGuidePointerMove($event)"
+                (pointerup)="onGuidePointerUp($event)"
+                (pointercancel)="onGuidePointerUp($event)"
+                (lostpointercapture)="onGuidePointerUp($event)">
+              </canvas>
             </div>
+
+            <p class="guide-help-text">{{ 'idPhoto.guideDragHint' | translate }}</p>
 
             <!-- Face Detection Controls -->
             <div class="detection-action-bar">
@@ -73,6 +83,19 @@
                     </svg>
                     <span>{{ 'idPhoto.autoDetectBtn' | translate }}</span>
                   }
+                </span>
+              </button>
+
+              <button
+                type="button"
+                class="mobile-touch-btn secondary-btn"
+                (click)="resetGuide()">
+                <span class="btn-content">
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M3 2v6h6"></path>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 8"></path>
+                  </svg>
+                  <span>{{ 'idPhoto.resetGuideBtn' | translate }}</span>
                 </span>
               </button>
 
@@ -99,7 +122,50 @@
                     </button>
                   }
                 </div>
-                <p class="helper-text">{{ selectedPreset.description }}</p>
+                <button
+                  type="button"
+                  class="preset-chip custom-size-chip"
+                  [class.active]="isCustomSize"
+                  (click)="useCustomSize()">
+                  {{ 'idPhoto.customSizeChip' | translate }}
+                </button>
+
+                @if (isCustomSize) {
+                  <div class="custom-size-grid">
+                    <label class="custom-size-field">
+                      <span>{{ 'idPhoto.customWidthLabel' | translate }}</span>
+                      <input
+                        type="number"
+                        inputmode="numeric"
+                        min="50"
+                        max="4000"
+                        [(ngModel)]="customWidthPx"
+                        (ngModelChange)="onCustomSizeChange()" />
+                    </label>
+                    <label class="custom-size-field">
+                      <span>{{ 'idPhoto.customHeightLabel' | translate }}</span>
+                      <input
+                        type="number"
+                        inputmode="numeric"
+                        min="50"
+                        max="4000"
+                        [(ngModel)]="customHeightPx"
+                        (ngModelChange)="onCustomSizeChange()" />
+                    </label>
+                    <label class="custom-size-field">
+                      <span>{{ 'idPhoto.customKbLabel' | translate }}</span>
+                      <input
+                        type="number"
+                        inputmode="numeric"
+                        min="5"
+                        max="2000"
+                        [(ngModel)]="customTargetKB"
+                        (ngModelChange)="onCustomSizeChange()" />
+                    </label>
+                  </div>
+                } @else {
+                  <p class="helper-text">{{ selectedPreset.description }}</p>
+                }
               </div>
 
               <!-- Head Ratio Sliders -->

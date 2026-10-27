@@ -35,10 +35,38 @@ export async function importScannedPage(
   await entry.click();
   await (await chooser).setFiles(getTestDataPath(fixture));
 
+  await dismissBlurGate(page);
+
   // Import lands on the crop step; accepting it moves to the pages dashboard.
   await expect(page.locator('.crop-card canvas.interactive-crop-canvas')).toBeVisible({ timeout: 15000 });
   await page.locator('app-button[data-testid="apply-crop"] button').click();
   await expect(page.locator('.pages-dashboard-card')).toBeVisible({ timeout: 15000 });
+}
+
+/**
+ * Clears the H4 blur gate if it opens.
+ *
+ * The fixtures these specs use -- `clean-document.jpg` and its siblings -- are
+ * all the same 350x450 synthetic gradient: Laplacian variance 3.2 against a
+ * threshold of 80, and only 8 distinct luminance levels, so the gate correctly
+ * calls every one of them blurry. (The sharper `*-document.png` fixtures added
+ * for the H4-H8 pipeline spec are not used here.)
+ * It used to render inline and could be ignored; it is a real modal now, so a
+ * test that does not answer it cannot reach anything behind it.
+ *
+ * Keep, rather than retake: retaking deletes the page and reopens the picker,
+ * which is not what these specs are driving.
+ */
+export async function dismissBlurGate(page: Page): Promise<void> {
+  const keep = page.locator('app-button[data-testid="blur-keep"] button');
+  // Asserted, not guarded. Every fixture in `e2e/test-data/scanner` is the
+  // same 350x450 gradient -- Laplacian variance 3.2 against a threshold of 80,
+  // eight distinct luminance levels -- so the gate opens on every import here.
+  // If one of them is ever replaced with a real scan this fails loudly, which
+  // is the point: a conditional guard would quietly stop exercising the gate.
+  await expect(keep).toBeVisible({ timeout: 20000 });
+  await keep.click();
+  await expect(keep).toBeHidden({ timeout: 10000 });
 }
 
 /*

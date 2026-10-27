@@ -1,3 +1,11 @@
+import type {
+  CommentThread,
+  MeasurementResult,
+  PdfHyperlink,
+  TextEditCommand,
+  WhiteoutRegion
+} from './editor-features.types';
+
 export type EditorTool =
   | 'select'
   | 'hand'
@@ -175,11 +183,18 @@ export interface PdfEditorPage {
   elements: PdfElement[];
   redactions: PdfRedaction[];
   thumbnailUrl?: string;
-  links?: any[];
-  comments?: any[];
-  whiteouts?: any[];
-  measurements?: any[];
-  textEdits?: any[];
+  /*
+   * The Part K overlays. They were typed `any[]` while the Part K services
+   * were being built, which hid the coordinate-space mistakes between the
+   * editor (top-left origin, PDF points) and the writers (bottom-left).
+   * Everything in these four arrays is top-left-origin; the export pipeline
+   * is the single place that flips to PDF space.
+   */
+  links?: PdfHyperlink[];
+  comments?: CommentThread[];
+  whiteouts?: WhiteoutRegion[];
+  measurements?: MeasurementResult[];
+  textEdits?: TextEditCommand[];
 }
 
 export interface PdfEditorDocument {
@@ -228,7 +243,9 @@ export type EditorCommandType =
   | 'DELETE_WHITEOUT'
   | 'EDIT_EXISTING_TEXT'
   | 'ADD_MEASUREMENT'
-  | 'DELETE_MEASUREMENT';
+  | 'DELETE_MEASUREMENT'
+  /* A whole-file rewrite: find & replace, a link delete, a picture swap. */
+  | 'REPLACE_SOURCE';
 
 export interface EditorCommand {
   id: string;

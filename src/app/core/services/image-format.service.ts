@@ -6,6 +6,16 @@ import {
   TiffFrame
 } from '../models/image-format.types';
 import { createSafeCanvas, getSafeContext } from '../utilities/canvas-headless.util';
+import {
+  ccittDecode,
+  ccittEncodeG4,
+  inflate,
+  lzwDecode,
+  lzwEncode,
+  packBitsDecode,
+  reverseBitsInBytes,
+  undoHorizontalPredictor
+} from '../utilities/tiff-codec.util';
 
 @Injectable({
   providedIn: 'root'
@@ -199,12 +209,17 @@ export class ImageFormatService {
   }
 
   /**
-   * Pure TypeScript Multi-Page TIFF Encoder.
-   * Produces compliant Baseline Little-Endian Multi-Page TIFF files with RGBA strips.
+   * Multi-page TIFF encoder.
+   *
+   * The compression the IFD claims is the compression the bytes actually
+   * carry: LZW and CCITT G4 run through the real codecs, because a tag that
+   * says 5 over uncompressed bytes produces a file that opens nowhere. DPI is
+   * written as XResolution/YResolution so a 300 DPI page arrives as a 300 DPI
+   * page rather than a very large 72 DPI one.
    */
   encodeMultiPageTiff(
     pages: (HTMLCanvasElement | ImageData | { width: number; height: number; data: Uint8ClampedArray })[],
-    _options?: MultiPageTiffExportOptions
+    options?: MultiPageTiffExportOptions
   ): Blob {
     if (pages.length === 0) {
       throw new Error('encodeMultiPageTiff requires at least one page');
@@ -232,56 +247,55 @@ export class ImageFormatService {
       }
     }
 
-    const isG4 = _options?.compression === 'g4';
-    const isLzw = _options?.compression === 'lzw';
-    const compressionVal = isG4 ? 4 : isLzw ? 5 : 1;
+    const compression = options?.compression || 'none';
+    const isG4 = compression === 'g4';
+    const dpi = Math.max(1, Math.round(options?.dpi || 72));
 
-    // Compute byte sizes and offsets
-    const NUM_TAGS = isG4 ? 9 : 10;
-    const BYTES_PER_TAG = 12;
-    const IFD_FIXED_SIZE = 2 + NUM_TAGS * BYTES_PER_TAG + 4; // 126 bytes
-    const BITS_PER_SAMPLE_SIZE = isG4 ? 0 : 8; // 4 shorts = 8 bytes for RGBA, 0 for 1-bit
-    const IFD_BLOCK_SIZE = IFD_FIXED_SIZE + BITS_PER_SAMPLE_SIZE;
+    // TIFF compression tag values.
+    const compressionVal = isG4 ? 4 : compression === 'lzw' ? 5 : 1;
 
-    // Prepared byte buffers for each frame
+    // Build every strip up front: compressed lengths are only known afterwards.
     const frameBytePayloads: Uint8Array[] = [];
-    let totalPixelBytes = 0;
 
     for (const f of normalizedFrames) {
       if (isG4) {
-        // Bilevel 1-bit conversion
-        const rowBytes = Math.ceil(f.width / 8);
-        const bilevel = new Uint8Array(rowBytes * f.height);
-        for (let y = 0; y < f.height; y++) {
-          const rowOffset = y * rowBytes;
-          for (let x = 0; x < f.width; x++) {
-            const idx = (y * f.width + x) * 4;
-            const gray = 0.299 * f.data[idx] + 0.587 * f.data[idx + 1] + 0.114 * f.data[idx + 2];
-            // PhotometricInterpretation 0 = WhiteIsZero: 0=white, 1=black
-            if (gray < 128) {
-              bilevel[rowOffset + (x >> 3)] |= (1 << (7 - (x & 7)));
-            }
-          }
-        }
-        frameBytePayloads.push(bilevel);
-        totalPixelBytes += bilevel.byteLength;
+        const packed = this.toPackedBilevel(f);
+        frameBytePayloads.push(ccittEncodeG4(packed, f.width, f.height));
       } else {
-        const rgbaBytes = new Uint8Array(f.data.buffer, f.data.byteOffset, f.width * f.height * 4);
-        frameBytePayloads.push(rgbaBytes);
-        totalPixelBytes += f.width * f.height * 4;
+        const rgbaBytes = new Uint8Array(
+          f.data.buffer,
+          f.data.byteOffset,
+          Math.min(f.data.byteLength, f.width * f.height * 4)
+        );
+        if (compression === 'lzw') {
+          frameBytePayloads.push(lzwEncode(rgbaBytes));
+        } else {
+          // Copy: the view may alias a canvas buffer that is reused.
+          frameBytePayloads.push(new Uint8Array(rgbaBytes));
+        }
       }
     }
 
+    // Tags, in the ascending order the spec requires. G4 is 1-bit single
+    // sample, so it carries neither the BitsPerSample array nor ExtraSamples.
+    const NUM_TAGS = isG4 ? 12 : 13;
+    const BYTES_PER_TAG = 12;
+    const IFD_FIXED_SIZE = 2 + NUM_TAGS * BYTES_PER_TAG + 4;
+    const BITS_PER_SAMPLE_SIZE = isG4 ? 0 : 8; // four SHORTs, written out of line
+    const RESOLUTION_SIZE = 16;                // two RATIONALs
+    const IFD_BLOCK_SIZE = IFD_FIXED_SIZE + BITS_PER_SAMPLE_SIZE + RESOLUTION_SIZE;
+
+    const totalPixelBytes = frameBytePayloads.reduce((sum, p) => sum + p.byteLength, 0);
     const totalBufferSize = 8 + normalizedFrames.length * IFD_BLOCK_SIZE + totalPixelBytes;
     const buffer = new ArrayBuffer(totalBufferSize);
     const view = new DataView(buffer);
     const bytes = new Uint8Array(buffer);
 
-    // 1. TIFF Header (8 bytes)
-    view.setUint8(0, 0x49); // 'I'
-    view.setUint8(1, 0x49); // 'I' (Little-Endian)
-    view.setUint16(2, 42, true); // TIFF magic 42
-    view.setUint32(4, 8, true); // Offset of first IFD
+    // Header: little-endian, magic 42, offset of the first IFD.
+    view.setUint8(0, 0x49);
+    view.setUint8(1, 0x49);
+    view.setUint16(2, 42, true);
+    view.setUint32(4, 8, true);
 
     let currentIfdOffset = 8;
     let currentPixelOffset = 8 + normalizedFrames.length * IFD_BLOCK_SIZE;
@@ -292,6 +306,7 @@ export class ImageFormatService {
       const isLast = i === normalizedFrames.length - 1;
       const nextIfdOffset = isLast ? 0 : currentIfdOffset + IFD_BLOCK_SIZE;
       const bitsOffset = currentIfdOffset + IFD_FIXED_SIZE;
+      const resolutionOffset = bitsOffset + BITS_PER_SAMPLE_SIZE;
       const pixelByteCount = payload.byteLength;
 
       if (!isG4) {
@@ -302,7 +317,12 @@ export class ImageFormatService {
         view.setUint16(bitsOffset + 6, 8, true);
       }
 
-      // Number of tags in this IFD
+      // XResolution / YResolution as RATIONAL (numerator, denominator).
+      view.setUint32(resolutionOffset, dpi, true);
+      view.setUint32(resolutionOffset + 4, 1, true);
+      view.setUint32(resolutionOffset + 8, dpi, true);
+      view.setUint32(resolutionOffset + 12, 1, true);
+
       view.setUint16(currentIfdOffset, NUM_TAGS, true);
       let tagOffset = currentIfdOffset + 2;
 
@@ -314,37 +334,31 @@ export class ImageFormatService {
         tagOffset += 12;
       };
 
-      // Tag 256: ImageWidth (LONG)
-      writeTag(256, 4, 1, frame.width);
-      // Tag 257: ImageLength (LONG)
-      writeTag(257, 4, 1, frame.height);
-      // Tag 258: BitsPerSample
+      // A SHORT value sits in the high half of its 4-byte field only when
+      // written big-endian; little-endian files put it in the low half, which
+      // is what setUint32 with a small value does.
+      writeTag(256, 4, 1, frame.width);                 // ImageWidth
+      writeTag(257, 4, 1, frame.height);                // ImageLength
       if (isG4) {
-        writeTag(258, 3, 1, 1);
+        writeTag(258, 3, 1, 1);                         // BitsPerSample = 1
       } else {
-        writeTag(258, 3, 4, bitsOffset);
+        writeTag(258, 3, 4, bitsOffset);                // BitsPerSample = [8,8,8,8]
       }
-      // Tag 259: Compression
-      writeTag(259, 3, 1, compressionVal);
-      // Tag 262: PhotometricInterpretation (0=WhiteIsZero for G4, 2=RGB)
-      writeTag(262, 3, 1, isG4 ? 0 : 2);
-      // Tag 273: StripOffsets (LONG, count 1)
-      writeTag(273, 4, 1, currentPixelOffset);
-      // Tag 277: SamplesPerPixel (1 for G4 bilevel, 4 for RGBA)
-      writeTag(277, 3, 1, isG4 ? 1 : 4);
-      // Tag 278: RowsPerStrip (LONG)
-      writeTag(278, 4, 1, frame.height);
-      // Tag 279: StripByteCounts (LONG)
-      writeTag(279, 4, 1, pixelByteCount);
+      writeTag(259, 3, 1, compressionVal);              // Compression
+      writeTag(262, 3, 1, isG4 ? 0 : 2);                // Photometric (0=WhiteIsZero)
+      writeTag(273, 4, 1, currentPixelOffset);          // StripOffsets
+      writeTag(277, 3, 1, isG4 ? 1 : 4);                // SamplesPerPixel
+      writeTag(278, 4, 1, frame.height);                // RowsPerStrip (one strip)
+      writeTag(279, 4, 1, pixelByteCount);              // StripByteCounts
+      writeTag(282, 5, 1, resolutionOffset);            // XResolution
+      writeTag(283, 5, 1, resolutionOffset + 8);        // YResolution
+      writeTag(296, 3, 1, 2);                           // ResolutionUnit = inch
       if (!isG4) {
-        // Tag 338: ExtraSamples (SHORT, 2 = unassociated alpha)
-        writeTag(338, 3, 1, 2);
+        writeTag(338, 3, 1, 2);                         // ExtraSamples = unassociated alpha
       }
 
-      // Offset of next IFD
       view.setUint32(tagOffset, nextIfdOffset, true);
 
-      // Copy pixel data
       bytes.set(payload, currentPixelOffset);
 
       currentPixelOffset += pixelByteCount;
@@ -355,8 +369,34 @@ export class ImageFormatService {
   }
 
   /**
-   * Pure TypeScript Multi-Page TIFF Decoder.
-   * Reads multi-page TIFF buffers and extracts every page as a TiffFrame.
+   * Luma threshold to a packed 1-bit bitmap where a set bit is black, which is
+   * what both CCITT and PhotometricInterpretation 0 expect.
+   */
+  private toPackedBilevel(frame: { width: number; height: number; data: Uint8ClampedArray }): Uint8Array {
+    const rowBytes = Math.ceil(frame.width / 8);
+    const packed = new Uint8Array(rowBytes * frame.height);
+    for (let y = 0; y < frame.height; y++) {
+      const rowOffset = y * rowBytes;
+      for (let x = 0; x < frame.width; x++) {
+        const idx = (y * frame.width + x) * 4;
+        const gray =
+          0.299 * frame.data[idx] + 0.587 * frame.data[idx + 1] + 0.114 * frame.data[idx + 2];
+        if (gray < 128) {
+          packed[rowOffset + (x >> 3)] |= 1 << (7 - (x & 7));
+        }
+      }
+    }
+    return packed;
+  }
+
+  /**
+   * Multi-page TIFF decoder.
+   *
+   * Written against what scanners and government portals actually produce
+   * rather than against what this app writes: multiple strips per page, LZW
+   * with a horizontal predictor, PackBits, Deflate and CCITT G3/G4, in either
+   * byte order. A page whose compression cannot be decoded is reported through
+   * `unsupported` instead of being handed back as noise.
    */
   decodeTiffPages(buffer: ArrayBuffer): TiffFrame[] {
     const view = new DataView(buffer);
@@ -379,17 +419,57 @@ export class ImageFormatService {
 
     let ifdOffset = view.getUint32(4, littleEndian);
     const frames: TiffFrame[] = [];
+    const seenIfds = new Set<number>();
     let pageNumber = 1;
 
     while (ifdOffset > 0 && ifdOffset + 2 <= buffer.byteLength) {
+      // A malformed file can point an IFD back at itself.
+      if (seenIfds.has(ifdOffset)) break;
+      seenIfds.add(ifdOffset);
+
       const numEntries = view.getUint16(ifdOffset, littleEndian);
       let width = 0;
       let height = 0;
-      let stripOffset = 0;
-      let stripByteCount = 0;
       let samplesPerPixel = 1;
       let bitsPerSample = 8;
-      let photometric = 2; // default RGB
+      let photometric = 2;
+      let compression = 1;
+      let predictor = 1;
+      let rowsPerStrip = 0;
+      let fillOrder = 1;
+      let t4Options = 0;
+      let xResolution = 0;
+      let resolutionUnit = 2;
+      let stripOffsets: number[] = [];
+      let stripByteCounts: number[] = [];
+      let colorMap: number[] = [];
+
+      const typeSize = (type: number): number => {
+        switch (type) {
+          case 1: case 2: case 6: case 7: return 1;
+          case 3: case 8: return 2;
+          case 4: case 9: case 11: return 4;
+          case 5: case 10: case 12: return 8;
+          default: return 1;
+        }
+      };
+
+      const readTypedAt = (type: number, at: number): number => {
+        if (at + typeSize(type) > buffer.byteLength) return 0;
+        switch (type) {
+          case 1: return view.getUint8(at);
+          case 3: return view.getUint16(at, littleEndian);
+          case 4: return view.getUint32(at, littleEndian);
+          case 5: {
+            const num = view.getUint32(at, littleEndian);
+            const den = view.getUint32(at + 4, littleEndian);
+            return den === 0 ? 0 : num / den;
+          }
+          case 8: return view.getInt16(at, littleEndian);
+          case 9: return view.getInt32(at, littleEndian);
+          default: return view.getUint8(at);
+        }
+      };
 
       let entryOffset = ifdOffset + 2;
       for (let e = 0; e < numEntries; e++) {
@@ -398,90 +478,153 @@ export class ImageFormatService {
         const tag = view.getUint16(entryOffset, littleEndian);
         const type = view.getUint16(entryOffset + 2, littleEndian);
         const count = view.getUint32(entryOffset + 4, littleEndian);
-        const valueOffset = view.getUint32(entryOffset + 8, littleEndian);
+        const valueFieldOffset = entryOffset + 8;
+        const inlineFits = typeSize(type) * count <= 4;
+        const dataStart = inlineFits ? valueFieldOffset : view.getUint32(valueFieldOffset, littleEndian);
 
-        const readVal = (): number => {
-          if (type === 3) return view.getUint16(entryOffset + 8, littleEndian); // SHORT
-          if (type === 4) return valueOffset; // LONG
-          return valueOffset;
-        };
-
-        if (tag === 256) width = readVal();
-        else if (tag === 257) height = readVal();
-        else if (tag === 262) photometric = readVal();
-        else if (tag === 273) stripOffset = readVal();
-        else if (tag === 277) samplesPerPixel = readVal();
-        else if (tag === 279) stripByteCount = readVal();
-        else if (tag === 258) {
-          if (count === 1) {
-            bitsPerSample = readVal();
-          } else if (valueOffset + 2 <= buffer.byteLength) {
-            bitsPerSample = view.getUint16(valueOffset, littleEndian);
+        const readAll = (): number[] => {
+          const out: number[] = [];
+          const size = typeSize(type);
+          const limit = Math.min(count, 1_000_000);
+          for (let n = 0; n < limit; n++) {
+            out.push(readTypedAt(type, dataStart + n * size));
           }
+          return out;
+        };
+        const readFirst = (): number => readTypedAt(type, dataStart);
+
+        switch (tag) {
+          case 256: width = readFirst(); break;
+          case 257: height = readFirst(); break;
+          case 258: bitsPerSample = readFirst(); break;
+          case 259: compression = readFirst(); break;
+          case 262: photometric = readFirst(); break;
+          case 266: fillOrder = readFirst(); break;
+          case 273: stripOffsets = readAll(); break;
+          case 277: samplesPerPixel = readFirst(); break;
+          case 278: rowsPerStrip = readFirst(); break;
+          case 279: stripByteCounts = readAll(); break;
+          case 282: xResolution = readFirst(); break;
+          case 292: case 293: t4Options = readFirst(); break;
+          case 296: resolutionUnit = readFirst(); break;
+          case 317: predictor = readFirst(); break;
+          case 320: colorMap = readAll(); break;
+          default: break;
         }
 
         entryOffset += 12;
       }
 
-      if (width > 0 && height > 0 && stripOffset > 0 && stripOffset < buffer.byteLength) {
-        const rawPixels = bytes.subarray(stripOffset, Math.min(buffer.byteLength, stripOffset + (stripByteCount || width * height * 4)));
-        const clamped = new Uint8ClampedArray(width * height * 4);
+      if (width > 0 && height > 0 && stripOffsets.length > 0) {
+        const effectiveRowsPerStrip = rowsPerStrip > 0 ? rowsPerStrip : height;
+        const isBilevel = bitsPerSample === 1;
+        const rowBytes = isBilevel
+          ? Math.ceil((width * samplesPerPixel) / 8)
+          : width * samplesPerPixel * Math.ceil(bitsPerSample / 8);
 
-        if (bitsPerSample === 1) {
-          // 1-bit Bilevel
-          let dstIdx = 0;
-          const rowBytes = Math.ceil(width / 8);
-          for (let y = 0; y < height; y++) {
-            const rowOffset = y * rowBytes;
-            for (let x = 0; x < width; x++) {
-              const byteVal = rawPixels[rowOffset + (x >> 3)] || 0;
-              const bit = (byteVal >> (7 - (x & 7))) & 1;
-              // PhotometricInterpretation 0 = WhiteIsZero: 0 is white (255), 1 is black (0)
-              const v = (photometric === 0) ? (bit ? 0 : 255) : (bit ? 255 : 0);
-              clamped[dstIdx++] = v;
-              clamped[dstIdx++] = v;
-              clamped[dstIdx++] = v;
-              clamped[dstIdx++] = 255;
+        // Stitch the strips into one contiguous uncompressed raster.
+        const fullRaster = new Uint8Array(rowBytes * height);
+        let rasterPos = 0;
+        let decodeFailed = false;
+
+        for (let s = 0; s < stripOffsets.length; s++) {
+          const stripStart = stripOffsets[s];
+          const stripRows = Math.min(effectiveRowsPerStrip, height - s * effectiveRowsPerStrip);
+          if (stripRows <= 0) break;
+          const expected = rowBytes * stripRows;
+          const declaredLength = stripByteCounts[s] ?? expected;
+          const available = Math.max(0, Math.min(declaredLength, buffer.byteLength - stripStart));
+          if (stripStart <= 0 || available === 0) {
+            rasterPos += expected;
+            continue;
+          }
+
+          let raw: Uint8Array<ArrayBufferLike> = bytes.subarray(stripStart, stripStart + available);
+          if (fillOrder === 2) raw = reverseBitsInBytes(raw);
+
+          let decoded: Uint8Array;
+          try {
+            switch (compression) {
+              case 1:
+                decoded = raw;
+                break;
+              case 2:
+                // Compression 2 is Modified Huffman with no EOLs and each row
+                // starting on a byte boundary.
+                decoded = ccittDecode(raw, width, stripRows, { k: 0, byteAlign: true });
+                break;
+              case 3:
+                decoded = ccittDecode(raw, width, stripRows, {
+                  k: (t4Options & 1) ? 1 : 0,
+                  byteAlign: (t4Options & 4) !== 0
+                });
+                break;
+              case 4:
+                decoded = ccittDecode(raw, width, stripRows, {
+                  k: -1,
+                  byteAlign: (t4Options & 4) !== 0
+                });
+                break;
+              case 5:
+                decoded = lzwDecode(raw, expected);
+                break;
+              case 8:
+              case 32946:
+                decoded = inflate(raw);
+                break;
+              case 32773:
+                decoded = packBitsDecode(raw, expected);
+                break;
+              default:
+                decodeFailed = true;
+                decoded = new Uint8Array(expected);
+                break;
             }
+          } catch {
+            decodeFailed = true;
+            decoded = new Uint8Array(expected);
           }
-        } else if (samplesPerPixel === 4) {
-          // Direct RGBA
-          clamped.set(rawPixels.subarray(0, width * height * 4));
-        } else if (samplesPerPixel === 3) {
-          // RGB -> RGBA
-          let srcIdx = 0;
-          let dstIdx = 0;
-          for (let p = 0; p < width * height; p++) {
-            clamped[dstIdx++] = rawPixels[srcIdx++];
-            clamped[dstIdx++] = rawPixels[srcIdx++];
-            clamped[dstIdx++] = rawPixels[srcIdx++];
-            clamped[dstIdx++] = 255;
+
+          if (predictor === 2 && compression !== 4 && compression !== 3 && compression !== 2) {
+            undoHorizontalPredictor(decoded, width, stripRows, samplesPerPixel, bitsPerSample);
           }
-        } else {
-          // Grayscale / 1-sample -> RGBA
-          let srcIdx = 0;
-          let dstIdx = 0;
-          for (let p = 0; p < width * height; p++) {
-            const v = rawPixels[srcIdx++] || 0;
-            clamped[dstIdx++] = v;
-            clamped[dstIdx++] = v;
-            clamped[dstIdx++] = v;
-            clamped[dstIdx++] = 255;
-          }
+
+          fullRaster.set(decoded.subarray(0, Math.min(decoded.length, expected)), rasterPos);
+          rasterPos += expected;
         }
+
+        const clamped = this.rasterToRgba(fullRaster, {
+          width,
+          height,
+          rowBytes,
+          samplesPerPixel,
+          bitsPerSample,
+          photometric,
+          compression,
+          colorMap
+        });
 
         const imgData = typeof ImageData !== 'undefined'
           ? new ImageData(clamped, width, height)
           : ({ data: clamped, width, height } as ImageData);
+
+        const dpi = resolutionUnit === 2 && xResolution > 0
+          ? xResolution
+          : resolutionUnit === 3 && xResolution > 0
+            ? xResolution * 2.54
+            : 0;
+
         frames.push({
           width,
           height,
           data: imgData,
-          pageNumber: pageNumber++
+          pageNumber: pageNumber++,
+          dpi: dpi > 0 ? Math.round(dpi) : undefined,
+          compression,
+          unsupported: decodeFailed || undefined
         });
       }
 
-      // Next IFD
       const nextIfdPtrOffset = ifdOffset + 2 + numEntries * 12;
       if (nextIfdPtrOffset + 4 <= buffer.byteLength) {
         ifdOffset = view.getUint32(nextIfdPtrOffset, littleEndian);
@@ -491,5 +634,102 @@ export class ImageFormatService {
     }
 
     return frames;
+  }
+
+  /** Expands a decoded TIFF raster of any supported depth into RGBA. */
+  private rasterToRgba(
+    raster: Uint8Array,
+    meta: {
+      width: number;
+      height: number;
+      rowBytes: number;
+      samplesPerPixel: number;
+      bitsPerSample: number;
+      photometric: number;
+      compression: number;
+      colorMap: number[];
+    }
+  ): Uint8ClampedArray<ArrayBuffer> {
+    const { width, height, rowBytes, samplesPerPixel, bitsPerSample, photometric, colorMap } = meta;
+    const out = new Uint8ClampedArray(width * height * 4);
+
+    for (let y = 0; y < height; y++) {
+      const rowStart = y * rowBytes;
+      for (let x = 0; x < width; x++) {
+        const dst = (y * width + x) * 4;
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        let a = 255;
+
+        if (bitsPerSample === 1) {
+          const byteVal = raster[rowStart + (x >> 3)] || 0;
+          const bit = (byteVal >> (7 - (x & 7))) & 1;
+          // WhiteIsZero (0) is the usual bilevel/fax convention: a set bit is
+          // black. BlackIsZero (1) is the inverse.
+          const value = photometric === 0 ? (bit ? 0 : 255) : (bit ? 255 : 0);
+          r = g = b = value;
+        } else if (bitsPerSample === 4 && samplesPerPixel === 1) {
+          const byteVal = raster[rowStart + (x >> 1)] || 0;
+          const nibble = (x & 1) === 0 ? (byteVal >> 4) & 0x0f : byteVal & 0x0f;
+          if (photometric === 3 && colorMap.length >= 48) {
+            r = (colorMap[nibble] || 0) >> 8;
+            g = (colorMap[16 + nibble] || 0) >> 8;
+            b = (colorMap[32 + nibble] || 0) >> 8;
+          } else {
+            const value = nibble * 17;
+            r = g = b = photometric === 0 ? 255 - value : value;
+          }
+        } else if (bitsPerSample === 16) {
+          const step = samplesPerPixel * 2;
+          const src = rowStart + x * step;
+          const sample = (i: number) => raster[src + i * 2 + 1] || 0; // high byte
+          if (samplesPerPixel >= 3) {
+            r = sample(0); g = sample(1); b = sample(2);
+            if (samplesPerPixel >= 4) a = sample(3);
+          } else {
+            r = g = b = sample(0);
+            if (photometric === 0) { r = 255 - r; g = r; b = r; }
+          }
+        } else {
+          const src = rowStart + x * samplesPerPixel;
+          if (samplesPerPixel >= 4) {
+            r = raster[src] || 0; g = raster[src + 1] || 0; b = raster[src + 2] || 0;
+            a = raster[src + 3] ?? 255;
+          } else if (samplesPerPixel === 3) {
+            r = raster[src] || 0; g = raster[src + 1] || 0; b = raster[src + 2] || 0;
+          } else if (photometric === 3 && colorMap.length >= 768) {
+            const idx = raster[src] || 0;
+            r = (colorMap[idx] || 0) >> 8;
+            g = (colorMap[256 + idx] || 0) >> 8;
+            b = (colorMap[512 + idx] || 0) >> 8;
+          } else {
+            const value = raster[src] || 0;
+            const corrected = photometric === 0 ? 255 - value : value;
+            r = g = b = corrected;
+          }
+        }
+
+        out[dst] = r;
+        out[dst + 1] = g;
+        out[dst + 2] = b;
+        out[dst + 3] = a;
+      }
+    }
+
+    // A fully transparent RGBA page is almost always a file that declared four
+    // samples without a meaningful alpha channel; treat it as opaque rather
+    // than handing back an invisible page.
+    if (samplesPerPixel >= 4) {
+      let anyOpaque = false;
+      for (let i = 3; i < out.length; i += 4) {
+        if (out[i] !== 0) { anyOpaque = true; break; }
+      }
+      if (!anyOpaque) {
+        for (let i = 3; i < out.length; i += 4) out[i] = 255;
+      }
+    }
+
+    return out;
   }
 }

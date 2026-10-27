@@ -72,6 +72,41 @@ describe('PhotoCutoutPage (I4)', () => {
     expect(component.feather).toBe(4);
   });
 
+  /**
+   * A cluttered photo cannot be cut out cleanly. It was reported in a banner
+   * but the export button stayed live, so the refusal was advisory only and
+   * the user still got a torn matte.
+   */
+  describe('unsuitable image handling', () => {
+    it('blocks export until an unsuitable image is explicitly accepted', () => {
+      component.suitability = { suitable: false, reason: 'Background is too varied.' };
+
+      expect(component.canExport).toBe(false);
+
+      component.acknowledgeUnsuitable();
+
+      expect(component.canExport).toBe(true);
+    });
+
+    it('allows export straight away for a suitable image', () => {
+      component.suitability = { suitable: true };
+
+      expect(component.canExport).toBe(true);
+      expect(component.overrideUnsuitable).toBe(false);
+    });
+
+    it('clears the acceptance when a different file is loaded', async () => {
+      component.suitability = { suitable: false, reason: 'Background is too varied.' };
+      component.acknowledgeUnsuitable();
+      expect(component.canExport).toBe(true);
+
+      component.reset();
+
+      expect(component.overrideUnsuitable).toBe(false);
+      expect(component.canExport).toBe(false);
+    });
+  });
+
   it('resets cleanly to empty state', () => {
     component.workflowState = 'SUCCESS';
     component.originalFile = new File(['mock'], 'doc.jpg', { type: 'image/jpeg' });

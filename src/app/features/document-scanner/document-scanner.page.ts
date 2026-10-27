@@ -11,6 +11,7 @@ import { FileService } from '../../core/services/file.service';
 import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
+import { OcrService } from '../../core/services/ocr.service';
 import { DocumentBridgeService } from '../../core/services/document-bridge.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TranslationService } from '../../core/services/translation.service';
@@ -29,6 +30,7 @@ import {
   AppButtonComponent,
   AppBadgeComponent,
   AppRelatedToolsComponent,
+  AppModalComponent,
   TranslatePipe
 } from '../../shared/components/ui';
 
@@ -50,6 +52,7 @@ export type ScannerView = 'empty' | 'cropping' | 'enhancing' | 'pages_list' | 'p
     AppButtonComponent,
     AppBadgeComponent,
     AppRelatedToolsComponent,
+    AppModalComponent,
     TranslatePipe
   ]
 })
@@ -60,6 +63,7 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
   private storageService = inject(StorageService);
   private shareService = inject(ShareService);
   private historyService = inject(HistoryService);
+  private ocrService = inject(OcrService);
   private documentBridgeService = inject(DocumentBridgeService);
   private toastService = inject(ToastService);
   private translationService = inject(TranslationService);
@@ -96,9 +100,26 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
   idCardStep: 'front' | 'back' | 'none' = 'none';
   private idCardFrontBlob?: Blob;
 
-  // --- H3: AUTO-CAPTURE & BATCH SCANNING ---
+  // --- H3: BATCH SCANNING ---
+  // Skips the crop detour on a low-confidence page so a stack of imports runs
+  // straight through; everything stays reviewable in the page list.
+  //
+  // The auto-capture half of H3 is NOT wired up. Firing the shutter on a
+  // stable quad needs a live in-app camera preview to analyse frames, and this
+  // page hands off to the OS camera instead, which returns one still. The
+  // decision function it would drive is DocumentScannerService.evaluateAutoCapture
+  // (built and unit-tested); the preview, the CAMERA manifest permission and
+  // the WebView permission plumbing are not. The toggle that used to sit in the
+  // toolbar only flipped a field no code read, so it was removed rather than
+  // left promising a shutter that never fires.
   batchMode = false;
-  shutterMode: 'manual' | 'auto' = 'manual';
+
+  // Capture processing feedback. A single page runs edge detection, a warp,
+  // enhancement, the blur score and the title OCR before anything appears on
+  // screen -- seconds on a phone, with nothing to show the tap registered.
+  isProcessingCapture = false;
+  processingCurrent = 0;
+  processingTotal = 0;
 
   // --- H4: BLUR GATE ---
   showBlurAlert = false;
@@ -108,6 +129,14 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
   // --- H8: AUTO-NAMING ---
   documentFileName = '';
   isEditingFileName = false;
+  // Reading the heading off page 1 needs the OCR engine, whose language data is
+  // fetched once and then cached. That is a download the capture path must not
+  // start on its own, so the scan lands with the instant heuristic name and the
+  // user asks for the OCR read. Either way the name is only ever a proposal in
+  // an editable field.
+  isSuggestingName = false;
+  nameSource: 'heuristic' | 'ocr' | 'manual' = 'heuristic';
+  suggestedTitlePreview = '';
 
   // Multi-page state
   pages: ScannedPage[] = [];
@@ -198,16 +227,29 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
         if (photo.webPath) {
           const response = await fetch(photo.webPath);
           const blob = await response.blob();
-          await this.processNewCapture(blob);
+          this.beginProcessing(1);
+          this.processingCurrent = 1;
+          try {
+            await this.processNewCapture(blob);
+          } finally {
+            this.endProcessing();
+          }
         }
       } else {
         // Desktop / Web: fallback to file input / gallery
         const file = await this.fileService.pickImageFile();
         if (file) {
-          await this.processNewCapture(file);
+          this.beginProcessing(1);
+          this.processingCurrent = 1;
+          try {
+            await this.processNewCapture(file);
+          } finally {
+            this.endProcessing();
+          }
         }
       }
     } catch (err: any) {
+      this.endProcessing();
       if (err?.message && !err.message.includes('User cancelled')) {
         this.toastService.show('error', 'Camera access error or permission denied.');
       }
@@ -216,11 +258,31 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
 
   async importFromGallery(): Promise<void> {
     const files = await this.fileService.pickMultipleImages();
-    if (files.length > 0) {
+    if (files.length === 0) return;
+    this.beginProcessing(files.length);
+    try {
       for (const f of files) {
+        this.processingCurrent++;
+        this.cdr.detectChanges();
         await this.processNewCapture(f);
       }
+    } finally {
+      this.endProcessing();
     }
+  }
+
+  private beginProcessing(total: number): void {
+    this.isProcessingCapture = true;
+    this.processingTotal = total;
+    this.processingCurrent = 0;
+    this.cdr.detectChanges();
+  }
+
+  private endProcessing(): void {
+    this.isProcessingCapture = false;
+    this.processingTotal = 0;
+    this.processingCurrent = 0;
+    this.cdr.detectChanges();
   }
 
   async processNewCapture(blobOrFile: Blob | File): Promise<void> {
@@ -240,7 +302,7 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
           const combinedBlob = await this.scannerService.canvasToBlob(composite);
           this.idCardStep = 'front';
           this.idCardFrontBlob = undefined;
-          await this.addSingleScannedPage(combinedBlob, 'id_card');
+          await this.addSingleScannedPage(combinedBlob, 'id_card', { alreadyComposed: true });
           this.toastService.show('success', this.translationService.translate('scanner.idCardCaptured'));
           return;
         } catch (e: any) {
@@ -273,12 +335,22 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
     await this.addSingleScannedPage(blobOrFile, this.scanMode);
   }
 
-  private async addSingleScannedPage(blobOrFile: Blob | File, mode: ScanMode = 'document'): Promise<void> {
+  private async addSingleScannedPage(
+    blobOrFile: Blob | File,
+    mode: ScanMode = 'document',
+    opts: { alreadyComposed?: boolean } = {}
+  ): Promise<void> {
     const originalUrl = this.fileService.createObjectUrl(blobOrFile);
     const canvas = await this.scannerService.toCanvas(blobOrFile);
 
-    // Auto edge detection
-    const detection = await this.scannerService.detectDocumentEdges(canvas);
+    // A composed sheet (the ID-card layout) is already square-on and carries
+    // its own white margins and labels. Detecting edges on it finds the card
+    // artwork rather than the page, so warping to that quad crops the labels
+    // off and throws away the true card proportions.
+    const fullPage = this.scannerService.fullPageCorners(canvas.width, canvas.height);
+    const detection = opts.alreadyComposed
+      ? { corners: fullPage, confidence: 100, lowConfidence: false }
+      : await this.scannerService.detectDocumentEdges(canvas);
 
     this.activeCropCorners = { ...detection.corners };
     this.activeConfidence = detection.confidence;
@@ -298,8 +370,12 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
     };
 
     // Perspective warp & enhancement
-    const warpedCanvas = await this.scannerService.perspectiveWarp(canvas, this.activeCropCorners);
-    const enhancedCanvas = await this.scannerService.enhanceImage(warpedCanvas, enhancementConfig);
+    const warpedCanvas = opts.alreadyComposed
+      ? canvas
+      : await this.scannerService.perspectiveWarp(canvas, this.activeCropCorners);
+    const enhancedCanvas = opts.alreadyComposed
+      ? warpedCanvas
+      : await this.scannerService.enhanceImage(warpedCanvas, enhancementConfig);
     const processedBlob = await this.scannerService.canvasToBlob(enhancedCanvas);
     const processedUrl = this.fileService.createObjectUrl(processedBlob);
 
@@ -309,8 +385,9 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
     // H6: Finger detection check
     const fingerRes = await this.scannerService.detectFingerIntrusions(enhancedCanvas);
 
-    // H7: Curvature detection check
-    const dewarpRes = await this.scannerService.dewarpCurvature(enhancedCanvas);
+    // H7: Curvature detection check. Measure only -- `dewarpCurvature` would
+    // also build the straightened canvas, which capture then discarded.
+    const curvatureRes = await this.scannerService.detectCurvature(enhancedCanvas);
 
     const newPage: ScannedPage = {
       id: `page_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -330,8 +407,11 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
       processedHeight: enhancedCanvas.height,
       scanMode: mode,
       blurScore: blurRes.score,
+      blurPercent: blurRes.scorePercent,
       isBlurry: blurRes.isBlurry,
       fingerDetected: fingerRes.detected,
+      curvatureDetected: curvatureRes.curvatureDetected,
+      curvatureMagnitude: curvatureRes.curvatureMagnitude,
       shadowRemovalApplied: false,
       fingerRemoved: false,
       dewarpApplied: false
@@ -348,7 +428,7 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
 
     // H4: Blur prompt if blurry
     if (blurRes.isBlurry) {
-      this.lastBlurScore = blurRes.score;
+      this.lastBlurScore = blurRes.scorePercent;
       this.pendingBlurPageId = newPage.id;
       this.showBlurAlert = true;
     }
@@ -617,14 +697,73 @@ export class DocumentScannerPage implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  toggleShutterMode(): void {
-    this.shutterMode = this.shutterMode === 'manual' ? 'auto' : 'manual';
-    this.triggerHaptic(ImpactStyle.Light);
-    this.cdr.detectChanges();
+  /**
+   * Typing is left alone; the name is sanitized when the field is committed.
+   *
+   * Sanitizing on every keystroke ate word separators: `sanitizeFileName`
+   * collapses whitespace to `_` and then strips a trailing one, so the space in
+   * "My Receipt" was removed the moment it was typed and the next letter landed
+   * against the previous word. It also fought the caret on every edit.
+   */
+  onDocumentFileNameInput(name: string): void {
+    this.documentFileName = name;
+    this.nameSource = 'manual';
   }
 
-  updateDocumentFileName(name: string): void {
-    this.documentFileName = this.scannerService.sanitizeFileName(name);
+  commitDocumentFileName(): void {
+    const clean = this.scannerService.sanitizeFileName(this.documentFileName || '');
+    if (clean !== this.documentFileName) {
+      this.documentFileName = clean;
+      this.cdr.detectChanges();
+    }
+  }
+
+  /**
+   * H8: reads the heading off the top of page 1 and proposes it as the name.
+   *
+   * Top 35% only -- that is where a title lives, and a strip is a fraction of
+   * the OCR cost of a full page. The result goes into the same editable field,
+   * never straight onto the file.
+   */
+  async suggestNameFromContent(): Promise<void> {
+    const first = this.pages[0];
+    if (!first || this.isSuggestingName) return;
+
+    this.isSuggestingName = true;
+    this.cdr.detectChanges();
+
+    try {
+      const canvas = await this.scannerService.toCanvas(first.processedImageBlob);
+      const stripHeight = Math.max(1, Math.round(canvas.height * 0.35));
+      const strip = this.scannerService.createCanvas(canvas.width, stripHeight);
+      const ctx = this.scannerService.getContext(strip);
+      if (!ctx) throw new Error('Canvas unavailable');
+      ctx.drawImage(canvas, 0, 0, canvas.width, stripHeight, 0, 0, canvas.width, stripHeight);
+
+      const stripBlob = await this.scannerService.canvasToBlob(strip, 'image/png');
+      const ocr = await this.ocrService.recognizeRegionWords(stripBlob, 'eng');
+      const ranked = this.scannerService.rankTitleLines(ocr.words, stripHeight);
+
+      const result = await this.scannerService.suggestDocumentTitle(
+        canvas,
+        ranked.length > 0 ? ranked.join('\n') : ocr.text
+      );
+
+      this.documentFileName = result.sanitizedFileName;
+      this.suggestedTitlePreview = result.proposedTitle;
+      this.nameSource = result.source === 'ocr' ? 'ocr' : 'heuristic';
+
+      if (result.source === 'ocr') {
+        this.toastService.show('success', this.translationService.translate('scanner.nameFromTextDone'));
+      } else {
+        this.toastService.show('info', this.translationService.translate('scanner.nameFromTextEmpty'));
+      }
+    } catch (err: any) {
+      this.toastService.show('error', this.translationService.translate('scanner.nameFromTextFailed'));
+    } finally {
+      this.isSuggestingName = false;
+      this.cdr.detectChanges();
+    }
   }
 
   async generatePdf(): Promise<void> {

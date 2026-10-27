@@ -102,6 +102,26 @@ export class HeadlessCanvasContext2D {
     };
   }
 
+  /**
+   * The counterpart `putImageData` always needed.
+   *
+   * Without it, every caller that builds pixels the standard way -- create a
+   * buffer, fill it, put it back -- threw here, and the services that decode
+   * a PDF's embedded images that way (the extractor, the reflow view) failed
+   * headlessly whatever the input. Matches the DOM signature: both a
+   * (width, height) pair and an existing ImageData are accepted.
+   */
+  createImageData(widthOrData: any, height?: number) {
+    if (widthOrData && typeof widthOrData === 'object' && 'width' in widthOrData) {
+      const w = Math.max(1, Math.round(widthOrData.width));
+      const h = Math.max(1, Math.round(widthOrData.height));
+      return { data: new Uint8ClampedArray(w * h * 4), width: w, height: h };
+    }
+    const w = Math.max(1, Math.round(widthOrData || 1));
+    const h = Math.max(1, Math.round(height || 1));
+    return { data: new Uint8ClampedArray(w * h * 4), width: w, height: h };
+  }
+
   putImageData(imgData: any, dx: number, dy: number) {
     const srcData = imgData.data;
     const sw = imgData.width;
@@ -241,6 +261,29 @@ export function ensureSafeContext(canvas: HTMLCanvasElement): any {
     canvas.toBlob = (callback: BlobCallback, type = 'image/jpeg') => {
       callback(new Blob(['mock_image'], { type }));
     };
+  }
+  /*
+   * jsdom's toDataURL throws without the native canvas package, so any code
+   * that turns a canvas into a data URL -- the reflow view's figures, for one
+   * -- could not be exercised headlessly at all.
+   *
+   * Probed rather than switched on isJsdom: the shim is installed only where
+   * the real method already throws, so a call that was returning a value
+   * keeps returning that same value, in the browser and in a test alike.
+   */
+  let dataUrlWorks = false;
+  try {
+    const probe = canvas.toDataURL('image/png');
+    // jsdom does not throw here: it logs "Not implemented" to its virtual
+    // console and hands back null, so the return value is what has to be
+    // checked, not just whether the call threw.
+    dataUrlWorks = typeof probe === 'string' && probe.startsWith('data:');
+  } catch {
+    dataUrlWorks = false;
+  }
+  if (!dataUrlWorks) {
+    canvas.toDataURL = (type = 'image/png') =>
+      `data:${type};base64,iVBORw0KGgo=`;
   }
   return ctx;
 }

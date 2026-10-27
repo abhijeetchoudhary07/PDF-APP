@@ -4,8 +4,7 @@ import {
   ChangeDetectorRef,
   ElementRef,
   ViewChild,
-  inject
-} from '@angular/core';
+  inject, HostListener } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FileService } from '../../../core/services/file.service';
@@ -172,6 +171,13 @@ export class PhotoWatermarkPage {
     };
   }
 
+
+  /** Re-render after a rotation so the preview uses the new width. */
+  @HostListener('window:resize')
+  @HostListener('window:orientationchange')
+  onViewportChange() {
+    this.updatePreview();
+  }
   updatePreview() {
     if (!this.sourceCanvas) return;
 
@@ -180,18 +186,40 @@ export class PhotoWatermarkPage {
       this.currentOptions
     );
 
-    // If DOM canvas is available, paint on it
-    if (this.previewCanvasRef?.nativeElement && this.watermarkedCanvas) {
-      const domCanvas = this.previewCanvasRef.nativeElement;
-      domCanvas.width = this.watermarkedCanvas.width;
-      domCanvas.height = this.watermarkedCanvas.height;
-      const ctx = domCanvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(this.watermarkedCanvas, 0, 0);
-      }
+    this.paintPreviewCanvas();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Paints the watermarked result onto the on-screen canvas.
+   *
+   * Split out from the render because the first call runs before Angular has
+   * rendered the CONFIGURING block, so the ViewChild did not exist yet and the
+   * paint was silently skipped — the preview stayed blank after upload until
+   * the user moved a slider. Flush change detection, then retry once on the
+   * next frame if the canvas is still not there.
+   */
+  private paintPreviewCanvas(retry = true) {
+    if (!this.watermarkedCanvas) return;
+
+    if (!this.previewCanvasRef?.nativeElement) {
+      this.cdr.detectChanges();
     }
 
-    this.cdr.markForCheck();
+    const domCanvas = this.previewCanvasRef?.nativeElement;
+    if (!domCanvas) {
+      if (retry) {
+        requestAnimationFrame(() => this.paintPreviewCanvas(false));
+      }
+      return;
+    }
+
+    domCanvas.width = this.watermarkedCanvas.width;
+    domCanvas.height = this.watermarkedCanvas.height;
+    const ctx = domCanvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(this.watermarkedCanvas, 0, 0);
+    }
   }
 
   applyPreset(preset: WatermarkPreset) {
