@@ -1,0 +1,166 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+
+      <!-- PAGE HEADER -->
+      <app-page-header
+        [title]="'photoCutout.title' | translate"
+        [subtitle]="'photoCutout.subtitle' | translate"
+        [breadcrumbs]="[
+          { label: ('tools.photo_tools.title' | translate), url: '/features/photo' },
+          { label: ('photoCutout.title' | translate) }
+        ]"
+        backUrl="/features/photo"
+        badge="CUTOUT"
+        badgeVariant="photo">
+      </app-page-header>
+
+      <!-- 1. EMPTY / UPLOAD STATE -->
+      @if (workflowState === 'EMPTY') {
+        <div class="workspace-panel">
+          <app-file-dropzone
+            icon="cut"
+            [title]="'photoCutout.dropzoneTitle' | translate"
+            [description]="'photoCutout.dropzoneDesc' | translate"
+            accept="image/jpeg,image/png,image/webp"
+            [errorMessage]="errorMessage"
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+      }
+
+      <!-- 2. CONFIGURING STATE -->
+      @if (workflowState === 'CONFIGURING' && originalFile) {
+        <div class="workspace-panel">
+
+          <!-- SUITABILITY BANNER -->
+          @if (suitability) {
+            @if (suitability.suitable) {
+              <div class="status-banner success-banner">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <span>{{ 'photoCutout.paperDetected' | translate }}</span>
+              </div>
+            } @else {
+              <div class="status-banner warning-banner">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div class="status-banner-body">
+                  <span>{{ suitability.reason || ('photoCutout.unsuitableNotice' | translate) }}</span>
+                  @if (!overrideUnsuitable) {
+                    <button type="button" class="override-btn" (click)="acknowledgeUnsuitable()">
+                      {{ 'photoCutout.exportAnywayBtn' | translate }}
+                    </button>
+                  } @else {
+                    <span class="override-ack">{{ 'photoCutout.exportAnywayAck' | translate }}</span>
+                  }
+                </div>
+              </div>
+            }
+          }
+
+          <!-- PREVIEW CARD WITH CHECKERED TRANSPARENCY PATTERN -->
+          <div class="preview-stage-card">
+            <div class="canvas-viewport checkered-bg">
+              <canvas #previewCanvas class="cutout-canvas"></canvas>
+            </div>
+            <div class="preview-footer-note">
+              <span>{{ 'photoCutout.checkerNote' | translate }}</span>
+            </div>
+          </div>
+
+          <!-- CONTROLS CARD -->
+          <div class="controls-card">
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-title">{{ 'photoCutout.tolerance' | translate }}</span>
+                <span class="slider-value">{{ tolerance }}</span>
+              </div>
+              <input
+                type="range"
+                class="mobile-range-slider"
+                min="10"
+                max="60"
+                step="1"
+                [(ngModel)]="tolerance"
+                (ngModelChange)="onParamChange()" />
+              <span class="slider-hint">{{ 'photoCutout.toleranceHint' | translate }}</span>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-title">{{ 'photoCutout.feather' | translate }}</span>
+                <span class="slider-value">{{ feather }} px</span>
+              </div>
+              <input
+                type="range"
+                class="mobile-range-slider"
+                min="0"
+                max="5"
+                step="1"
+                [(ngModel)]="feather"
+                (ngModelChange)="onParamChange()" />
+              <span class="slider-hint">{{ 'photoCutout.featherHint' | translate }}</span>
+            </div>
+          </div>
+
+          <!-- STICKY MOBILE BOTTOM ACTION BAR -->
+          <div class="mobile-sticky-bottom-bar">
+            <button
+              type="button"
+              class="mobile-touch-btn primary-btn large-cta"
+              (click)="exportCutout()"
+              [disabled]="isProcessing || !canExport">
+              <span class="btn-content">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>{{ 'photoCutout.exportPngBtn' | translate }}</span>
+              </span>
+            </button>
+          </div>
+
+        </div>
+      }
+
+      <!-- 3. PROCESSING ANIMATION -->
+      @if (isProcessing) {
+        <app-conversion-animation
+          [progress]="processingProgress"
+          [stageText]="stageText">
+        </app-conversion-animation>
+      }
+
+      <!-- 4. SUCCESS / RESULT STATE -->
+      @if (workflowState === 'SUCCESS' && processedFile && processedPreviewUrl) {
+        <div class="workspace-panel">
+          <app-result-preview
+            [file]="processedFile"
+            [beforeData]="beforePreviewData"
+            [afterData]="afterPreviewData"
+            [beforeUrl]="originalPreviewUrl"
+            [afterUrl]="processedPreviewUrl"
+            (saved)="saveOutput()"
+            (shared)="shareOutput()"
+            (resetRequested)="reset()">
+          </app-result-preview>
+        </div>
+      }
+
+      <!-- RELATED TOOLS -->
+      <app-related-tools currentToolId="document_cutout"></app-related-tools>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

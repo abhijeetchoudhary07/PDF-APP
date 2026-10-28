@@ -38,7 +38,86 @@ const TOOL_CATALOGUE: ToolItem[] = [
       icon: 'camera-outline',
       color: 'photo',
       keywords: ['photo', 'compress', 'resize', 'crop', 'image', 'passport', 'jpg', 'jpeg', 'png', 'kb', 'dimensions'],
-      relatedIds: ['presets', 'signature_tools', 'batch_images', 'doc_converter']
+      relatedIds: ['presets', 'signature_tools', 'batch_images', 'doc_converter', 'id_photo']
+    },
+    {
+      id: 'id_photo',
+      category: 'PHOTO',
+      title: 'ID & Passport Photo Studio',
+      description: 'Face detection, head-height ratio crop, background replacement, and print sheets.',
+      route: '/features/photo/id-photo',
+      icon: 'person-outline',
+      color: 'photo',
+      badge: 'Smart Crop',
+      keywords: ['id photo', 'passport photo', 'face detection', 'head ratio', 'background replacement', 'print sheet', 'cut marks', 'crop', 'dimensions'],
+      relatedIds: ['photo_tools', 'image_blur', 'photo_enhance', 'document_cutout']
+    },
+    {
+      id: 'image_blur',
+      category: 'PHOTO',
+      title: 'Blur & Redact Image',
+      description: 'Blur or pixelate faces, license plates, and sensitive details permanently.',
+      route: '/features/photo/blur',
+      icon: 'eye-off-outline',
+      color: 'photo',
+      badge: 'Privacy',
+      keywords: ['blur', 'pixelate', 'redact', 'hide details', 'face blur', 'license plate', 'privacy', 'censor'],
+      relatedIds: ['photo_tools', 'id_photo', 'document_cutout', 'pdf_privacy_sanitizer']
+    },
+    {
+      id: 'document_cutout',
+      category: 'PHOTO',
+      title: 'Document Background Cutout',
+      description: 'Remove paper background from documents and signatures for a transparent PNG.',
+      route: '/features/photo/cutout',
+      icon: 'cut-outline',
+      color: 'photo',
+      keywords: ['cutout', 'transparent png', 'background removal', 'signature cutout', 'document cutout', 'plain background', 'ink preserve'],
+      relatedIds: ['signature_tools', 'photo_tools', 'id_photo', 'image_blur']
+    },
+    {
+      id: 'photo_enhance',
+      category: 'PHOTO',
+      title: 'Upscale & Enhance',
+      description: 'Sharpen low-resolution scans and text photos with bicubic scaling and unsharp masking.',
+      route: '/features/photo/enhance',
+      icon: 'sparkles-outline',
+      color: 'photo',
+      keywords: ['enhance', 'upscale', 'sharpen', 'bicubic', 'unsharp mask', 'resolution', 'text clarity', 'scan enhance'],
+      relatedIds: ['photo_tools', 'id_photo', 'document_scanner', 'document_cutout']
+    },
+    {
+      id: 'photo_metadata',
+      category: 'PHOTO',
+      title: 'Image Metadata & Date Repair',
+      description: 'View EXIF, camera specs, GPS coordinates, and shift capture timestamps.',
+      route: '/features/photo/metadata',
+      icon: 'time-outline',
+      color: 'photo',
+      keywords: ['metadata', 'exif', 'gps', 'camera', 'date repair', 'timestamp', 'clock drift', 'strip exif'],
+      relatedIds: ['photo_tools', 'photo_watermark', 'id_photo', 'pdf_privacy_sanitizer']
+    },
+    {
+      id: 'photo_watermark',
+      category: 'PHOTO',
+      title: 'Photo Watermark',
+      description: 'Add custom text or logo watermarks with 9-point anchors, continuous tiling, and presets.',
+      route: '/features/photo/watermark',
+      icon: 'water-outline',
+      color: 'photo',
+      keywords: ['watermark', 'text watermark', 'logo watermark', 'tile watermark', 'confidential', 'sample', 'draft'],
+      relatedIds: ['photo_tools', 'photo_metadata', 'photo_sheet', 'pdf_header_footer']
+    },
+    {
+      id: 'photo_sheet',
+      category: 'PHOTO',
+      title: 'Photo Sheet Layout',
+      description: 'Arrange multiple photos onto A4 or 4x6 print sheets with cut marks and PDF export.',
+      route: '/features/photo/sheet',
+      icon: 'grid-outline',
+      color: 'photo',
+      keywords: ['photo sheet', 'print sheet', 'a4', '4x6', 'grid layout', 'cut marks', 'passport sheet', 'tiling'],
+      relatedIds: ['photo_tools', 'id_photo', 'photo_watermark', 'images_to_pdf']
     },
     {
       id: 'signature_tools',
@@ -423,7 +502,10 @@ const TOOL_CATALOGUE: ToolItem[] = [
       keywords: [
         'optimize', 'optimizer', 'dpi', 'downsample', 'resolution', 'dedupe',
         'duplicate images', 'grayscale', 'mono', 'black and white', '1-bit',
-        'proof', 'structure', 'fast web view', 'upload limit', 'fit size'
+        // Not "fast web view": pdf-lib has no linearizing writer, so the
+        // structure pass must not be searchable under a guarantee it cannot
+        // keep. It is an object-level cleanup and is labelled as one.
+        'proof', 'structure', 'upload limit', 'fit size', 'shrink', 'reduce size'
       ],
       relatedIds: ['pdf_compress', 'pdf_organize', 'pdf_layout', 'pdf_repair']
     },

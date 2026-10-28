@@ -52,12 +52,26 @@ export class ConversionHubPage implements OnInit {
       .map(c => c.metadata);
   }
 
+  get totalCount(): number {
+    return this.pdfToFormatConverters.length + this.formatToPdfConverters.length;
+  }
+
   get filteredPdfToFormat(): ConverterMetadata[] {
     return this.filterList(this.pdfToFormatConverters);
   }
 
   get filteredFormatToPdf(): ConverterMetadata[] {
     return this.filterList(this.formatToPdfConverters);
+  }
+
+  /**
+   * A short source label. `sourceFormats.join()` put five extensions in a
+   * badge, which wrapped into the card title at 360px.
+   */
+  sourceLabel(item: ConverterMetadata): string {
+    const formats = item.sourceFormats.map(f => f.replace('.', '').toUpperCase());
+    if (formats.length <= 2) return formats.join(', ');
+    return `${formats.slice(0, 2).join(', ')} +${formats.length - 2}`;
   }
 
   private filterList(list: ConverterMetadata[]): ConverterMetadata[] {

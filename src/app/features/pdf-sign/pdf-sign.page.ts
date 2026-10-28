@@ -7,6 +7,7 @@ import { PdfSignService, PlacedSignature } from '../../core/services/pdf-sign.se
 import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
+import { ValidationService } from '../../core/services/validation.service';
 import * as pdfjsLib from 'pdfjs-dist';
 import { ToastService } from '../../core/services/toast.service';
 
@@ -41,7 +42,7 @@ import {
     TranslatePipe
   ]
 })
-export class PdfSignPage implements AfterViewInit {
+export class PdfSignPage implements AfterViewInit, OnDestroy {
   private fileService = inject(FileService);
   private pdfSignService = inject(PdfSignService);
   private storageService = inject(StorageService);
@@ -50,9 +51,14 @@ export class PdfSignPage implements AfterViewInit {
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
   private toast = inject(ToastService);
+  private validationService = inject(ValidationService);
 
   @ViewChild('pdfCanvas') pdfCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('drawCanvas') drawCanvas?: ElementRef<HTMLCanvasElement>;
+
+  private activePdfDoc: any = null;
+  private activeLoadingTask: any = null;
+  private currentRenderTask: any = null;
 
   get creationTabs() {
     return [
@@ -98,6 +104,26 @@ export class PdfSignPage implements AfterViewInit {
     this.initDrawCanvas();
   }
 
+  ngOnDestroy(): void {
+    if (this.currentRenderTask) {
+      try {
+        this.currentRenderTask.cancel();
+      } catch {
+        // ignore
+      }
+      this.currentRenderTask = null;
+    }
+    if (this.activeLoadingTask) {
+      try {
+        this.activeLoadingTask.destroy();
+      } catch {
+        // ignore
+      }
+      this.activeLoadingTask = null;
+    }
+    this.activePdfDoc = null;
+  }
+
   get currentSignatures(): PlacedSignature[] {
     return this.signatures.filter(s => s.pageNumber === this.currentPage);
   }
@@ -109,17 +135,52 @@ export class PdfSignPage implements AfterViewInit {
   async selectPdf(): Promise<void> {
     const file = await this.fileService.pickPdfFile();
     if (!file) return;
+    await this.onPdfFileSelected(file);
+  }
+
+  async onFileInputChange(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      await this.onPdfFileSelected(input.files[0]);
+    }
+  }
+
+  async onPdfFileSelected(file: File): Promise<void> {
+    const val = this.validationService.validatePdf(file);
+    if (!val.valid) {
+      const alert = await this.alertCtrl.create({
+        header: 'Invalid Document',
+        message: val.error || 'Please select a valid PDF file.',
+        buttons: ['OK']
+      });
+      await alert.present();
+      return;
+    }
 
     this.isProcessing = true;
     try {
       this.pdfFile = file;
       this.pdfArrayBuffer = await file.arrayBuffer();
+      const bufVal = this.validationService.validatePdfBuffer(this.pdfArrayBuffer);
+      if (!bufVal.valid) {
+        throw new Error(bufVal.error);
+      }
 
-      const loadingTask = pdfjsLib.getDocument({
+      if (this.activeLoadingTask) {
+        try {
+          await this.activeLoadingTask.destroy();
+        } catch {
+          // ignore
+        }
+        this.activeLoadingTask = null;
+      }
+      this.activePdfDoc = null;
+
+      this.activeLoadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(this.pdfArrayBuffer.slice(0))
       } as any);
-      const pdf = await loadingTask.promise;
-      this.totalPages = pdf.numPages;
+      this.activePdfDoc = await this.activeLoadingTask.promise;
+      this.totalPages = this.activePdfDoc.numPages;
       this.currentPage = 1;
       this.signatures = [];
       this.selectedSignatureId = undefined;
@@ -139,28 +200,45 @@ export class PdfSignPage implements AfterViewInit {
   }
 
   async renderCurrentPdfPage(): Promise<void> {
-    if (!this.pdfArrayBuffer || !this.pdfCanvas?.nativeElement) return;
+    if (!this.pdfArrayBuffer || !this.pdfCanvas?.nativeElement || !this.activePdfDoc) return;
 
-    const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(this.pdfArrayBuffer.slice(0))
-    } as any);
-    const pdf = await loadingTask.promise;
-    const page = await pdf.getPage(this.currentPage);
+    if (this.currentRenderTask) {
+      try {
+        this.currentRenderTask.cancel();
+      } catch {
+        // ignore
+      }
+      this.currentRenderTask = null;
+    }
 
-    // Render at scale 1.2 for crisp mobile viewing
-    const viewport = page.getViewport({ scale: 1.2 });
-    this.viewportScale = 1.2;
-    this.pdfPageDimensions = { width: page.view[2] || viewport.width / 1.2, height: page.view[3] || viewport.height / 1.2 };
+    try {
+      const page = await this.activePdfDoc.getPage(this.currentPage);
 
-    const canvas = this.pdfCanvas.nativeElement;
-    canvas.width = Math.floor(viewport.width);
-    canvas.height = Math.floor(viewport.height);
+      // Render at scale 1.2 for crisp mobile viewing
+      const viewport = page.getViewport({ scale: 1.2 });
+      this.viewportScale = 1.2;
+      this.pdfPageDimensions = {
+        width: page.view[2] || viewport.width / 1.2,
+        height: page.view[3] || viewport.height / 1.2
+      };
 
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      await (page.render({ canvasContext: ctx, viewport } as any)).promise;
+      const canvas = this.pdfCanvas.nativeElement;
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        this.currentRenderTask = page.render({ canvasContext: ctx, viewport } as any);
+        await this.currentRenderTask.promise;
+        this.currentRenderTask = null;
+      }
+    } catch (e: any) {
+      if (e?.name === 'RenderingCancelledException') {
+        return;
+      }
+      console.warn('PDF render warning:', e);
     }
   }
 

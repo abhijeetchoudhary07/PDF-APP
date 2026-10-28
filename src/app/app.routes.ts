@@ -10,6 +10,74 @@ export const APP_ROUTES: Routes = [
     loadComponent: () => import('./features/photo/photo.page').then(m => m.PhotoPage)
   },
   {
+    path: 'features/photo/id-photo',
+    loadComponent: () => import('./features/photo/id-photo/id-photo.page').then(m => m.IdPhotoPage)
+  },
+  {
+    path: 'features/id-photo',
+    redirectTo: 'features/photo/id-photo',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/photo/blur',
+    loadComponent: () => import('./features/photo/blur/photo-blur.page').then(m => m.PhotoBlurPage)
+  },
+  {
+    path: 'features/photo-blur',
+    redirectTo: 'features/photo/blur',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/photo/cutout',
+    loadComponent: () => import('./features/photo/cutout/photo-cutout.page').then(m => m.PhotoCutoutPage)
+  },
+  {
+    path: 'features/photo-cutout',
+    redirectTo: 'features/photo/cutout',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/document-cutout',
+    redirectTo: 'features/photo/cutout',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/photo/enhance',
+    loadComponent: () => import('./features/photo/enhance/photo-enhance.page').then(m => m.PhotoEnhancePage)
+  },
+  {
+    path: 'features/photo-enhance',
+    redirectTo: 'features/photo/enhance',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/photo/metadata',
+    loadComponent: () => import('./features/photo/metadata/photo-metadata.page').then(m => m.PhotoMetadataPage)
+  },
+  {
+    path: 'features/photo-metadata',
+    redirectTo: 'features/photo/metadata',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/photo/watermark',
+    loadComponent: () => import('./features/photo/watermark/photo-watermark.page').then(m => m.PhotoWatermarkPage)
+  },
+  {
+    path: 'features/photo-watermark',
+    redirectTo: 'features/photo/watermark',
+    pathMatch: 'full'
+  },
+  {
+    path: 'features/photo/sheet',
+    loadComponent: () => import('./features/photo/sheet/photo-sheet.page').then(m => m.PhotoSheetPage)
+  },
+  {
+    path: 'features/photo-sheet',
+    redirectTo: 'features/photo/sheet',
+    pathMatch: 'full'
+  },
+  {
     path: 'features/signature',
     loadComponent: () => import('./features/signature/signature.page').then(m => m.SignaturePage)
   },

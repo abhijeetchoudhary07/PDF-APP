@@ -1,138 +1,780 @@
-<div class="reader-container" (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)">
-  <!-- TOP CONTROLS BAR -->
+<div
+  class="reader-container"
+  [class.theme-night]="preferences.theme === 'night'"
+  [class.theme-sepia]="preferences.theme === 'sepia'"
+  [class.spread-two-page]="preferences.pageSpread === 'two-page'"
+  [class.scroll-continuous]="preferences.scrollMode === 'continuous'"
+  (touchstart)="onTouchStart($event)"
+  (touchmove)="onTouchMove($event)"
+  (touchend)="onTouchEnd($event)"
+  >
+  <!-- ======================================================================
+       TOP CONTROLS BAR
+       Phone layout first: the four reader actions, the page pill and the
+       view-sheet button -- five 44px targets plus an 86px pill, which fits a
+       360px screen without scrolling. Paging is the scrubber's and the swipe
+       gesture's job there, and the zoom cluster moves into the sheet; both
+       reappear inline at 600px and 900px. The row scrolls as a backstop so
+       a long translation can never clip a control off the edge.
+       ================================================================== -->
   <div class="reader-toolbar">
-    <!-- Left: Thumbnails Toggle & Search Toggle -->
-    <div class="toolbar-section">
-      <button class="tool-btn" [class.active]="showThumbnails" (click)="toggleThumbnailsEvent.emit()" [title]="'editor.thumbnailsTitle' | translate">
-        <app-icon name="grid-outline"></app-icon>
+    <div class="toolbar-section left-actions">
+      <!-- Thumbnails & Bookmarks Drawer Toggle -->
+      <button
+        class="tool-btn"
+        [class.active]="showThumbnails"
+        (click)="toggleThumbnailsEvent.emit()"
+        [attr.aria-pressed]="showThumbnails"
+        [title]="'editor.thumbnailsTitle' | translate"
+        >
+        <app-icon name="grid"></app-icon>
       </button>
-      <button class="tool-btn" [class.active]="showSearch" (click)="toggleSearchEvent.emit()" [title]="'editor.searchTitle' | translate">
-        <app-icon name="search-outline"></app-icon>
+
+      <!-- Incremental Search Toggle (L1) -->
+      <button
+        class="tool-btn"
+        [class.active]="showSearch"
+        (click)="toggleSearchEvent.emit()"
+        [attr.aria-pressed]="showSearch"
+        [title]="'editor.searchTitle' | translate"
+        >
+        <app-icon name="search"></app-icon>
       </button>
+
+      <!-- Text Reflow Toggle (L3) -->
+      <button
+        class="tool-btn"
+        [class.active]="preferences.reflowMode"
+        (click)="toggleReflow()"
+        [attr.aria-pressed]="preferences.reflowMode"
+        [title]="'editor.reflowTitle' | translate"
+        >
+        <app-icon name="text"></app-icon>
+      </button>
+
+      <!-- Read-Aloud Toggle (L5) — hidden entirely when no voice exists -->
+      @if (isTtsSupported) {
+        <button
+          class="tool-btn tts-btn"
+          [class.active]="readAloudState.isPlaying"
+          (click)="toggleReadAloud()"
+          [title]="'editor.readAloudTitle' | translate"
+          >
+          <app-icon [name]="readAloudState.isPlaying ? 'pause' : 'volume-high'"></app-icon>
+        </button>
+      }
     </div>
 
-    <!-- Center: Page Navigation -->
+    <!-- Center: page position. Tapping the number focuses it for a jump. -->
     <div class="toolbar-section page-nav">
-      <button class="tool-btn" (click)="prevPage()" [disabled]="state.currentPageNumber <= 1" [title]="'editor.prevPageTitle' | translate">
-        <app-icon name="chevron-back-outline"></app-icon>
+      <button
+        class="tool-btn show-from-sm"
+        (click)="prevPage()"
+        [disabled]="state.currentPageNumber <= 1"
+        [title]="'editor.prevPageTitle' | translate"
+        >
+        <app-icon name="arrow-back"></app-icon>
       </button>
 
       <div class="page-input-wrapper">
         <input
           type="number"
+          inputmode="numeric"
           min="1"
           [max]="(state.document$ | async)?.pageCount || 1"
           [value]="state.currentPageNumber"
           (change)="onPageInputChange($any($event.target).value)"
+          [attr.aria-label]="'editor.pageAlt' | translate: { page: state.currentPageNumber }"
           />
         <span class="page-total">/ {{ (state.document$ | async)?.pageCount || 1 }}</span>
       </div>
 
-      <button class="tool-btn" (click)="nextPage()" [disabled]="state.currentPageNumber >= ((state.document$ | async)?.pageCount || 1)" [title]="'editor.nextPageTitle' | translate">
-        <app-icon name="chevron-forward-outline"></app-icon>
+      <button
+        class="tool-btn show-from-sm"
+        (click)="nextPage()"
+        [disabled]="state.currentPageNumber >= ((state.document$ | async)?.pageCount || 1)"
+        [title]="'editor.nextPageTitle' | translate"
+        >
+        <app-icon name="arrow-forward"></app-icon>
       </button>
     </div>
 
-    <!-- Right: Zoom & Fullscreen -->
+    <!-- Right: zoom on wide screens, the view sheet everywhere -->
     <div class="toolbar-section zoom-controls">
-      <button class="tool-btn" (click)="zoomOut()" [title]="'editor.zoomOutTitle' | translate">
-        <app-icon name="remove-outline"></app-icon>
+      <button class="tool-btn show-from-md" (click)="zoomOut()" [title]="'editor.zoomOutTitle' | translate">
+        <app-icon name="minus"></app-icon>
       </button>
-      <span class="zoom-label">{{ ((state.zoom$ | async) || 1.0) * 100 | number:'1.0-0' }}%</span>
-      <button class="tool-btn" (click)="zoomIn()" [title]="'editor.zoomInTitle' | translate">
-        <app-icon name="add-outline"></app-icon>
+      <span class="zoom-label show-from-md">{{ ((state.zoom$ | async) || 1.0) * 100 | number:'1.0-0' }}%</span>
+      <button class="tool-btn show-from-md" (click)="zoomIn()" [title]="'editor.zoomInTitle' | translate">
+        <app-icon name="plus"></app-icon>
       </button>
-      <button class="tool-btn" (click)="fitWidth()" [title]="'editor.fitWidthTitle' | translate">
-        <app-icon name="scan-outline"></app-icon>
+      <button class="tool-btn show-from-md" (click)="fitWidth()" [title]="'editor.fitWidthTitle' | translate">
+        <app-icon name="square"></app-icon>
       </button>
-      <button class="tool-btn" (click)="fitPage()" [title]="'editor.fitPageTitle' | translate">
-        <app-icon name="expand-outline"></app-icon>
+      <button class="tool-btn show-from-md" (click)="toggleFullscreen()" [title]="'editor.fullscreenTitle' | translate">
+        <app-icon [name]="isFullscreen ? 'minimize' : 'maximize'"></app-icon>
       </button>
-      <button class="tool-btn" (click)="toggleFullscreen()" [title]="'editor.fullscreenTitle' | translate">
-        <app-icon [name]="isFullscreen ? 'contract-outline' : 'fullscreen-outline'"></app-icon>
+
+      <!-- Opens the view sheet: reading modes, reflow, zoom, read-aloud -->
+      <button
+        class="tool-btn view-sheet-btn"
+        [class.active]="activeSheet !== 'none'"
+        (click)="openSheet('view')"
+        [title]="'editor.readingModeTitle' | translate"
+        >
+        <app-icon name="ellipsis-horizontal"></app-icon>
       </button>
     </div>
   </div>
 
-  <!-- SEARCH BAR (COLLAPSIBLE) -->
+  <!-- ======================================================================
+       L2/L3/L5 — VIEW OPTIONS SHEET
+       A bottom sheet on a phone (thumb-reachable) and an anchored popover
+       from 600px up. One panel, so there is only ever one thing open.
+       ================================================================== -->
+  @if (activeSheet === 'view') {
+    <div class="sheet-backdrop" (click)="closeSheet()"></div>
+    <div class="reading-modes-menu" role="dialog" [attr.aria-label]="'editor.readingModes' | translate">
+      <div class="menu-header">
+        <span>{{ 'editor.readingModes' | translate }}</span>
+        <button class="menu-close-btn" (click)="closeSheet()" [title]="'common.close' | translate">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+
+      <div class="sheet-scroll">
+        <!-- Theme (L2) -->
+        <div class="mode-group">
+          <span class="group-label">{{ 'editor.themeGroup' | translate }}</span>
+          <div class="mode-options">
+            <button
+              class="mode-chip"
+              [class.active]="preferences.theme === 'normal'"
+              (click)="setTheme('normal')"
+              >
+              <app-icon name="sunny"></app-icon>
+              {{ 'editor.themeNormal' | translate }}
+            </button>
+            <button
+              class="mode-chip"
+              [class.active]="preferences.theme === 'night'"
+              (click)="setTheme('night')"
+              >
+              <app-icon name="moon"></app-icon>
+              {{ 'editor.themeNight' | translate }}
+            </button>
+            <button
+              class="mode-chip"
+              [class.active]="preferences.theme === 'sepia'"
+              (click)="setTheme('sepia')"
+              >
+              <app-icon name="book"></app-icon>
+              {{ 'editor.themeSepia' | translate }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Page spread (L2) -->
+        <div class="mode-group">
+          <span class="group-label">{{ 'editor.spreadGroup' | translate }}</span>
+          <div class="mode-options">
+            <button
+              class="mode-chip"
+              [class.active]="preferences.pageSpread === 'single'"
+              (click)="setPageSpread('single')"
+              >
+              <app-icon name="square"></app-icon>
+              {{ 'editor.spreadSingle' | translate }}
+            </button>
+            <button
+              class="mode-chip"
+              [class.active]="preferences.pageSpread === 'two-page'"
+              (click)="setPageSpread('two-page')"
+              >
+              <app-icon name="columns"></app-icon>
+              {{ 'editor.spreadTwoPage' | translate }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Scroll mode (L2) -->
+        <div class="mode-group">
+          <span class="group-label">{{ 'editor.scrollGroup' | translate }}</span>
+          <div class="mode-options">
+            <button
+              class="mode-chip"
+              [class.active]="preferences.scrollMode === 'paged'"
+              (click)="setScrollMode('paged')"
+              >
+              <app-icon name="document-text"></app-icon>
+              {{ 'editor.scrollPaged' | translate }}
+            </button>
+            <button
+              class="mode-chip"
+              [class.active]="preferences.scrollMode === 'continuous'"
+              (click)="setScrollMode('continuous')"
+              >
+              <app-icon name="scroll-continuous"></app-icon>
+              {{ 'editor.scrollContinuous' | translate }}
+            </button>
+          </div>
+        </div>
+
+        <!-- A reader-owned surface cannot host the editing tools; say so. -->
+        @if (usesOwnSurface) {
+          <p class="sheet-note">{{ 'editor.readOnlySurfaceNote' | translate }}</p>
+        }
+
+        <!-- Reading view (L3) -->
+        <div class="mode-group">
+          <span class="group-label">{{ 'editor.reflowGroup' | translate }}</span>
+          <div class="mode-options">
+            <button
+              class="mode-chip wide"
+              [class.active]="preferences.reflowMode"
+              (click)="toggleReflow()"
+              >
+              <app-icon name="text"></app-icon>
+              {{ 'editor.reflowTitle' | translate }}
+            </button>
+          </div>
+          @if (preferences.reflowMode) {
+            <div class="sheet-row">
+              <span class="row-label">{{ 'editor.fontSizeLabel' | translate }}</span>
+              <div class="stepper">
+                <button class="step-btn" (click)="changeFontSize(-2)" [title]="'editor.fontSizeDecrease' | translate">
+                  <app-icon name="minus"></app-icon>
+                </button>
+                <span class="step-val">{{ preferences.fontSize || 16 }}</span>
+                <button class="step-btn" (click)="changeFontSize(2)" [title]="'editor.fontSizeIncrease' | translate">
+                  <app-icon name="plus"></app-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Zoom — on a phone this is the only place it lives -->
+        <div class="mode-group hide-from-md">
+          <span class="group-label">{{ 'editor.zoomGroup' | translate }}</span>
+          <div class="sheet-row">
+            <div class="stepper">
+              <button class="step-btn" (click)="zoomOut()" [title]="'editor.zoomOutTitle' | translate">
+                <app-icon name="minus"></app-icon>
+              </button>
+              <span class="step-val">{{ ((state.zoom$ | async) || 1.0) * 100 | number:'1.0-0' }}%</span>
+              <button class="step-btn" (click)="zoomIn()" [title]="'editor.zoomInTitle' | translate">
+                <app-icon name="plus"></app-icon>
+              </button>
+            </div>
+            <button class="mode-chip" (click)="fitWidth()">
+              <app-icon name="square"></app-icon>
+              {{ 'editor.fitWidthTitle' | translate }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Read aloud (L5) -->
+        @if (isTtsSupported) {
+          <div class="mode-group">
+            <span class="group-label">{{ 'editor.readAloudGroup' | translate }}</span>
+            <div class="mode-options">
+              <button
+                class="mode-chip wide"
+                [class.active]="readAloudState.isPlaying || readAloudState.isPaused"
+                (click)="toggleReadAloud()"
+                >
+                <app-icon [name]="readAloudState.isPlaying ? 'pause' : 'volume-high'"></app-icon>
+                {{ readAloudState.isPlaying ? ('editor.readAloudPause' | translate) : ('editor.readAloudTitle' | translate) }}
+              </button>
+            </div>
+
+            <div class="sheet-row">
+              <span class="row-label">{{ 'editor.speedLabel' | translate }}</span>
+              <div class="chip-row">
+                @for (r of ttsRates; track r) {
+                  <button
+                    class="mini-chip"
+                    [class.active]="readAloudState.rate === r"
+                    (click)="changeTtsRate(r)"
+                    >
+                    {{ r }}x
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- L5: voice selection -->
+            <div class="sheet-row column">
+              <span class="row-label">
+                <app-icon name="mic"></app-icon>
+                {{ 'editor.voiceLabel' | translate }}
+              </span>
+              <select
+                class="voice-select"
+                [ngModel]="selectedVoiceName"
+                (ngModelChange)="selectVoice($event)"
+                [attr.aria-label]="'editor.voiceLabel' | translate"
+                >
+                @for (v of voices; track v.name) {
+                  <option [value]="v.name">{{ v.name }} ({{ v.lang }})</option>
+                }
+              </select>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================================
+       L1 — SEARCH OVERLAY
+       ================================================================== -->
   @if (showSearch) {
     <div class="search-overlay">
       <div class="search-box">
-        <app-icon name="search-outline" class="search-icon"></app-icon>
+        <app-icon name="search" class="search-icon"></app-icon>
         <input
           type="text"
           [placeholder]="'editor.searchPlaceholder' | translate"
           [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchQueryInput()"
           (keyup.enter)="performSearch()"
           autofocus
           />
-        @if (searchResults.length > 0) {
-          <div class="search-meta">
-            {{ 'editor.searchMatches' | translate: { current: currentMatchIndex + 1, total: searchResults.length } }}
-          </div>
+        @if (isSearching) {
+          <span class="app-inline-spinner search-spinner" role="status"></span>
         }
-        @if (searchResults.length === 0 && searchQuery && !isSearching) {
-          <div class="search-meta no-match">
-            {{ 'editor.noMatches' | translate }}
-          </div>
-        }
-        <button class="tool-btn" (click)="prevMatch()" [disabled]="searchResults.length === 0" [title]="'editor.prevMatchTitle' | translate">
-          <app-icon name="chevron-up-outline"></app-icon>
+        <button
+          class="tool-btn"
+          (click)="prevMatch()"
+          [disabled]="!searchResult || searchResult.matches.length === 0"
+          [title]="'editor.prevMatchTitle' | translate"
+          >
+          <app-icon name="chevron-up"></app-icon>
         </button>
-        <button class="tool-btn" (click)="nextMatch()" [disabled]="searchResults.length === 0" [title]="'editor.nextMatchTitle' | translate">
-          <app-icon name="chevron-down-outline"></app-icon>
+        <button
+          class="tool-btn"
+          (click)="nextMatch()"
+          [disabled]="!searchResult || searchResult.matches.length === 0"
+          [title]="'editor.nextMatchTitle' | translate"
+          >
+          <app-icon name="chevron-down"></app-icon>
         </button>
-        <button class="tool-btn close-btn" (click)="closeSearch()" [title]="'editor.closeSearchTitle' | translate">
-          <app-icon name="close-outline"></app-icon>
+        <button
+          class="tool-btn close-btn"
+          (click)="closeSearch()"
+          [title]="'editor.closeSearchTitle' | translate"
+          >
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+
+      <!-- Match count, position, and how far the scan has got -->
+      @if (searchResult && searchQuery) {
+        <div class="search-meta">
+          @if (searchResult.matches.length > 0) {
+            <span class="status-count">
+              {{ 'editor.searchMatches' | translate: { current: currentMatchIndex + 1, total: searchResult.matches.length } }}
+            </span>
+          }
+          @if (searchResult.matches.length === 0 && !isSearching) {
+            <span class="status-count no-match">{{ 'editor.noMatches' | translate }}</span>
+          }
+          @if (!searchResult.isComplete) {
+            <span class="status-progress">
+              {{ 'editor.searchProgress' | translate: { done: searchResult.searchedPages, total: searchResult.totalPages } }}
+            </span>
+          }
+        </div>
+      }
+
+      <!-- Results list with page attribution and context -->
+      @if (searchResult && searchResult.matches.length > 0) {
+        <div class="search-snippets-drawer">
+          @for (m of searchResult.matches; track m.id; let idx = $index) {
+            <button
+              type="button"
+              class="snippet-item"
+              [class.active]="idx === currentMatchIndex"
+              (click)="jumpToMatch(idx)"
+              >
+              <span class="snippet-page">{{ 'editor.pageShort' | translate: { page: m.pageNumber } }}</span>
+              <span class="snippet-text">
+                <span class="snippet-prefix">{{ m.snippetPrefix }}</span>
+                <mark class="snippet-match">{{ m.snippetMatch }}</mark>
+                <span class="snippet-suffix">{{ m.snippetSuffix }}</span>
+              </span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- L4 — LAST-READ RESTORE BANNER -->
+  @if (lastReadPrompt) {
+    <div class="last-read-banner">
+      <div class="banner-content">
+        <app-icon name="bookmark"></app-icon>
+        <span>{{ 'editor.resumePrompt' | translate: { page: lastReadPrompt.pageNumber } }}</span>
+      </div>
+      <div class="banner-actions">
+        <button class="resume-btn" (click)="resumeLastRead()">
+          {{ 'editor.resumeBtn' | translate }}
+        </button>
+        <button class="start-btn" (click)="startFromBeginning()">
+          {{ 'editor.startBeginningBtn' | translate }}
+        </button>
+        <button class="dismiss-btn" (click)="dismissLastReadPrompt()" [title]="'common.close' | translate">
+          <app-icon name="close"></app-icon>
         </button>
       </div>
     </div>
   }
 
-  <!-- MAIN VIEW AREA WITH THUMBNAIL DRAWER -->
+  <!-- ====================== MAIN READER BODY ========================== -->
   <div class="reader-body">
-    <!-- Collapsible Sidebar Thumbnails -->
+    <!-- L4/L6 — SIDEBAR: thumbnails and outline -->
     @if (showThumbnails) {
-      <aside class="thumbnails-sidebar">
-        <div class="sidebar-header">
-          <span>{{ 'editor.pagesCount' | translate: { count: (state.document$ | async)?.pageCount || 0 } }}</span>
+      <div class="sidebar-backdrop" (click)="toggleThumbnailsEvent.emit()"></div>
+      <aside class="sidebar-drawer">
+        <div class="sidebar-tabs">
+          <button
+            class="tab-btn"
+            [class.active]="activeSidebarTab === 'thumbnails'"
+            (click)="setSidebarTab('thumbnails')"
+            >
+            <app-icon name="grid"></app-icon>
+            <span class="tab-text">{{ 'editor.thumbnailsTab' | translate }}</span>
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeSidebarTab === 'outline'"
+            (click)="setSidebarTab('outline')"
+            >
+            <app-icon name="bookmark"></app-icon>
+            <span class="tab-text">{{ 'editor.bookmarksTab' | translate }}</span>
+          </button>
+          <button
+            class="tab-close-btn"
+            (click)="toggleThumbnailsEvent.emit()"
+            [title]="'common.close' | translate"
+            >
+            <app-icon name="close"></app-icon>
+          </button>
         </div>
-        <div class="thumbnails-list">
-          @for (page of (state.document$ | async)?.pages; track page) {
-            <div
-              class="thumbnail-item"
-              [class.active]="page.pageNumber === state.currentPageNumber"
-              (click)="selectPage(page.pageNumber)"
-              >
-              <div class="thumb-preview">
-                @if (thumbnailUrls.get(page.pageNumber)) {
-                  <img
-                    [src]="thumbnailUrls.get(page.pageNumber)"
-                    [alt]="'editor.pageAlt' | translate: { page: page.pageNumber }"
-                    />
-                }
-                @if (!thumbnailUrls.get(page.pageNumber)) {
-                  <div class="thumb-placeholder">
-                    <app-icon name="document-text-outline"></app-icon>
+
+        <!-- THUMBNAILS, virtualised: only the rows on screen render (L6) -->
+        @if (activeSidebarTab === 'thumbnails') {
+          <div #thumbList class="thumbnails-list" (scroll)="onThumbListScroll()">
+            @if (thumbWindow) {
+              <div class="thumb-spacer" [style.height.px]="thumbWindow.padBefore"></div>
+              @for (p of thumbWindow.pages; track p) {
+                <div
+                  class="thumbnail-item"
+                  [style.height.px]="thumbRowHeight"
+                  [class.active]="p === state.currentPageNumber"
+                  (click)="selectPage(p)"
+                  >
+                  <div class="thumb-preview">
+                    @if (thumbnailUrls.get(p)) {
+                      <img
+                        [src]="thumbnailUrls.get(p)"
+                        [alt]="'editor.pageAlt' | translate: { page: p }"
+                        />
+                    } @else {
+                      <div class="thumb-placeholder">
+                        <app-icon name="document-text"></app-icon>
+                      </div>
+                    }
+                  </div>
+                  <span class="thumb-number">{{ p }}</span>
+                </div>
+              }
+              <div class="thumb-spacer" [style.height.px]="thumbWindow.padAfter"></div>
+            }
+          </div>
+        }
+
+        <!-- OUTLINE, flattened so any depth renders (L4) -->
+        @if (activeSidebarTab === 'outline') {
+          <div class="outline-tree">
+            @if (outlineRows.length === 0) {
+              <div class="outline-empty">
+                <app-icon name="bookmark" class="empty-icon"></app-icon>
+                <p>{{ 'editor.noBookmarksFound' | translate }}</p>
+                <button class="fallback-btn" (click)="setSidebarTab('thumbnails')">
+                  {{ 'editor.thumbnailsTab' | translate }}
+                </button>
+              </div>
+            } @else {
+              <div class="tree-container">
+                @for (row of outlineRows; track row.key) {
+                  <div
+                    class="node-label"
+                    [class.active]="isCurrentSection(row)"
+                    [style.padding-left.px]="10 + row.depth * 16"
+                    (click)="jumpToOutlineRow(row)"
+                    >
+                    @if (row.hasChildren) {
+                      <button
+                        class="expand-btn"
+                        (click)="toggleOutlineRow(row, $event)"
+                        [attr.aria-expanded]="row.expanded"
+                        [title]="'editor.toggleSection' | translate"
+                        >
+                        <app-icon [name]="row.expanded ? 'chevron-down' : 'chevron-forward'"></app-icon>
+                      </button>
+                    } @else {
+                      <span class="node-spacer"></span>
+                    }
+                    <span class="node-title">
+                      {{ row.title || ('editor.untitledSection' | translate) }}
+                    </span>
+                    <span class="node-page">{{ row.pageNumber }}</span>
                   </div>
                 }
-                @if (page.cropBox) {
-                  <span class="crop-badge">{{ 'editor.croppedBadge' | translate }}</span>
-                }
-                @if (page.redactions.length > 0) {
-                  <span class="redact-badge">{{ 'editor.redactedBadge' | translate }}</span>
-                }
               </div>
-              <span class="thumb-number">{{ page.pageNumber }}</span>
-            </div>
-          }
-        </div>
+            }
+          </div>
+        }
       </aside>
     }
 
-    <!-- Project-in content (The Canvas viewport) -->
-    <main class="canvas-viewport">
-      <ng-content></ng-content>
+    <!-- CANVAS / SURFACE / REFLOW VIEWPORT -->
+    <main #canvasViewport class="canvas-viewport" [class.reflow-active]="preferences.reflowMode">
+      <!-- 1. DEFAULT: the editor's own canvas, single page, paged scroll.
+              Unchanged for a document with no stored preference. -->
+      @if (!preferences.reflowMode && !usesOwnSurface) {
+        <div class="normal-view-wrapper">
+          <ng-content></ng-content>
+
+          <!-- L1 highlight boxes, one per rectangle of each hit -->
+          @if (currentMatchesOnActivePage.length > 0) {
+            <div class="search-highlights-layer">
+              @for (m of currentMatchesOnActivePage; track m.id) {
+                @for (r of matchRects(m); track $index) {
+                  <div
+                    class="search-highlight-box"
+                    [class.active-highlight]="activeMatchId === m.id"
+                    [style.left.px]="r.x"
+                    [style.top.px]="r.y"
+                    [style.width.px]="r.width"
+                    [style.height.px]="r.height"
+                    ></div>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- 2. L2: the reader's own surface — two-page spread and/or
+              continuous scroll. Read-only by design. -->
+      @if (!preferences.reflowMode && usesOwnSurface) {
+        <div
+          #surfaceScroll
+          class="reader-surface"
+          [class.is-continuous]="preferences.scrollMode === 'continuous'"
+          [class.is-spread]="preferences.pageSpread === 'two-page'"
+          (scroll)="onSurfaceScroll()"
+          >
+          @if (surfaceWindow && surfaceWindow.padBefore > 0) {
+            <div class="surface-spacer" [style.height.px]="surfaceWindow.padBefore"></div>
+          }
+
+          <div class="surface-rows">
+            @for (slot of surfacePages; track slot.pageNumber) {
+              <figure class="surface-page" [class.is-current]="slot.pageNumber === state.currentPageNumber">
+                <canvas #surfaceCanvas class="surface-canvas"></canvas>
+                @if (!slot.rendered) {
+                  <div class="surface-placeholder">
+                    <span class="app-inline-spinner" role="status"></span>
+                  </div>
+                }
+                <figcaption class="surface-page-number">{{ slot.pageNumber }}</figcaption>
+              </figure>
+            }
+          </div>
+
+          @if (surfaceWindow && surfaceWindow.padAfter > 0) {
+            <div class="surface-spacer" [style.height.px]="surfaceWindow.padAfter"></div>
+          }
+        </div>
+      }
+
+      <!-- 3. L3: REFLOW READING VIEW -->
+      @if (preferences.reflowMode) {
+        <div class="reflow-container" [style.font-size.px]="preferences.fontSize || 16">
+          <div class="reflow-banner">
+            <div class="banner-info">
+              <app-icon name="text"></app-icon>
+              <span>{{ 'editor.reflowBanner' | translate }}</span>
+            </div>
+            <div class="banner-controls">
+              <div class="font-size-adjust">
+                <button
+                  class="font-btn"
+                  (click)="changeFontSize(-2)"
+                  [title]="'editor.fontSizeDecrease' | translate"
+                  >
+                  A-
+                </button>
+                <span class="font-val">{{ preferences.fontSize || 16 }}px</span>
+                <button
+                  class="font-btn"
+                  (click)="changeFontSize(2)"
+                  [title]="'editor.fontSizeIncrease' | translate"
+                  >
+                  A+
+                </button>
+              </div>
+              <!-- One tap back to the true rendering -->
+              <button class="return-btn" (click)="toggleReflow()">
+                {{ 'editor.originalLayout' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <div class="reflow-content">
+            @if (isLoadingReflow) {
+              <div class="reflow-loading">
+                <span class="app-inline-spinner" role="status"></span>
+              </div>
+            }
+            @if (!isLoadingReflow && reflowBlocks.length === 0) {
+              <div class="reflow-empty">
+                <p>{{ 'editor.reflowEmpty' | translate: { page: state.currentPageNumber } }}</p>
+                <button class="return-btn" (click)="toggleReflow()">
+                  {{ 'editor.originalLayout' | translate }}
+                </button>
+              </div>
+            }
+            @for (block of reflowBlocks; track block.id) {
+              @if (block.type === 'heading') {
+                <h2 class="reflow-heading" [class.speaking]="isSentenceActive(block)">{{ block.text }}</h2>
+              }
+              @if (block.type === 'paragraph') {
+                <p class="reflow-paragraph" [class.speaking]="isSentenceActive(block)">{{ block.text }}</p>
+              }
+              <!-- L3: the page's images, in reading order -->
+              @if (block.type === 'image' && block.imageUrl) {
+                <figure class="reflow-figure">
+                  <img
+                    [src]="block.imageUrl"
+                    [alt]="'editor.reflowImageAlt' | translate: { page: block.pageNumber }"
+                    loading="lazy"
+                    />
+                </figure>
+              }
+            }
+            @if (!isLoadingReflow && reflowBlocks.length > 0) {
+              <p class="reflow-footnote">
+                {{ 'editor.reflowFootnote' | translate: { page: state.currentPageNumber, images: reflowImageCount } }}
+              </p>
+            }
+          </div>
+        </div>
+      }
     </main>
+  </div>
+
+  <!-- L5 — READ-ALOUD PLAYER -->
+  @if (readAloudState.isPlaying || readAloudState.isPaused) {
+    <div class="read-aloud-player">
+      <div class="player-top">
+        <div class="player-icon">
+          <app-icon name="volume-high"></app-icon>
+        </div>
+        <div class="player-text">
+          <span class="sentence-text">{{ readAloudState.currentSentence || ('editor.readAloud' | translate) }}</span>
+          @if (readAloudSentences.length > 0) {
+            <span class="sentence-pos">
+              {{ 'editor.sentencePosition' | translate: {
+                current: readAloudState.currentSentenceIndex + 1,
+                total: readAloudSentences.length,
+                page: readAloudState.currentPageNumber
+              } }}
+            </span>
+          }
+        </div>
+      </div>
+      <div class="player-controls">
+        <button class="player-btn" (click)="previousSentence()" [title]="'editor.prevSentence' | translate">
+          <app-icon name="chevron-back"></app-icon>
+        </button>
+        <button class="player-btn primary" (click)="toggleReadAloud()" [title]="'editor.readAloudTitle' | translate">
+          <app-icon [name]="readAloudState.isPlaying ? 'pause' : 'play'"></app-icon>
+        </button>
+        <button class="player-btn" (click)="nextSentence()" [title]="'editor.nextSentence' | translate">
+          <app-icon name="chevron-forward"></app-icon>
+        </button>
+        <button
+          class="player-speed-btn"
+          (click)="changeTtsRate(readAloudState.rate >= 2 ? 0.75 : readAloudState.rate + 0.25)"
+          [title]="'editor.speedLabel' | translate"
+          >
+          {{ readAloudState.rate }}x
+        </button>
+        <button class="player-btn close-player" (click)="stopReadAloud()" [title]="'common.close' | translate">
+          <app-icon name="close"></app-icon>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================================
+       L6 — THUMBNAIL SCRUBBER
+       Drag the track to preview a page before committing to it. The preview
+       card sits above the thumb so a thumb does not cover it.
+       ================================================================== -->
+  <div class="thumbnail-scrubber">
+    @if (isScrubbing) {
+      <div class="scrub-preview-card">
+        <div class="scrub-preview-image">
+          @if (scrubPreviewUrl) {
+            <img [src]="scrubPreviewUrl" [alt]="'editor.pageAlt' | translate: { page: scrubPageNumber }" />
+          } @else {
+            <div class="thumb-placeholder">
+              <app-icon name="document-text"></app-icon>
+            </div>
+          }
+        </div>
+        <span class="scrub-preview-label">
+          {{ 'editor.pageShort' | translate: { page: scrubPageNumber } }}
+        </span>
+      </div>
+    }
+    <div class="scrubber-track-container">
+      <button
+        class="scrub-step-btn"
+        (click)="prevPage()"
+        [disabled]="state.currentPageNumber <= 1"
+        [title]="'editor.prevPageTitle' | translate"
+        >
+        <app-icon name="chevron-back"></app-icon>
+      </button>
+      <input
+        type="range"
+        class="scrubber-range"
+        min="1"
+        [max]="(state.document$ | async)?.pageCount || 1"
+        [value]="state.currentPageNumber"
+        (input)="onScrubberInput($event)"
+        (change)="onScrubberChange($event)"
+        [title]="'editor.scrubberTitle' | translate"
+        [attr.aria-label]="'editor.scrubberTitle' | translate"
+        [attr.aria-valuetext]="'editor.pageShort' | translate: { page: scrubPageNumber }"
+        />
+      <button
+        class="scrub-step-btn"
+        (click)="nextPage()"
+        [disabled]="state.currentPageNumber >= ((state.document$ | async)?.pageCount || 1)"
+        [title]="'editor.nextPageTitle' | translate"
+        >
+        <app-icon name="chevron-forward"></app-icon>
+      </button>
+    </div>
   </div>
 </div>

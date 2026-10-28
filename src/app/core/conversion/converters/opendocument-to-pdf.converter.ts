@@ -114,14 +114,14 @@ export class OpenDocumentToPdfConverter implements IConverter {
     });
 
     const pdfDoc = await PDFDocument.create();
-    await PdfLayoutHelper.renderTextDocument(pdfDoc, paragraphs.join('\n\n'), {
+    const odtDropped = await PdfLayoutHelper.renderTextDocument(pdfDoc, paragraphs.join('\n\n'), {
       format: options.format || 'A4',
       orientation: options.orientation || 'Portrait',
       margin: options.margin || 40,
       fontSize: options.fontSize || 11
     });
 
-    return this.createPdfResult(pdfDoc, file);
+    return this.createPdfResult(pdfDoc, file, odtDropped);
   }
 
   /**
@@ -147,6 +147,8 @@ export class OpenDocumentToPdfConverter implements IConverter {
 
     const pdfDoc = await PDFDocument.create();
 
+    const odsDropped = { dropped: 0, sample: '' };
+
     for (let i = 0; i < wb.SheetNames.length; i++) {
       const sheetName = wb.SheetNames[i];
       const sheet = wb.Sheets[sheetName];
@@ -158,7 +160,7 @@ export class OpenDocumentToPdfConverter implements IConverter {
       const headers = (data[0] || []).map((h: any) => String(h || ''));
       const rows = data.slice(1).map(row => row.map((c: any) => String(c ?? '')));
 
-      await PdfLayoutHelper.renderTableDocument(
+      const sheetDropped = await PdfLayoutHelper.renderTableDocument(
         pdfDoc,
         headers,
         rows,
@@ -170,9 +172,12 @@ export class OpenDocumentToPdfConverter implements IConverter {
         },
         sheetName
       );
+
+      odsDropped.dropped += sheetDropped.dropped;
+      if (!odsDropped.sample) odsDropped.sample = sheetDropped.sample;
     }
 
-    return this.createPdfResult(pdfDoc, file);
+    return this.createPdfResult(pdfDoc, file, odsDropped);
   }
 
   /**
@@ -206,6 +211,20 @@ export class OpenDocumentToPdfConverter implements IConverter {
     if (pages.length === 0) {
       return { success: false, error: 'No slides found in this ODP presentation.' };
     }
+
+    /*
+     * pdf-lib's standard fonts throw on anything outside WinAnsi, so a single
+     * Devanagari letter on a slide used to fail the whole presentation.
+     */
+    const odpDropped = { dropped: 0, sample: '' };
+    const safe = (value: string): string => {
+      const result = PdfLayoutHelper.toDrawableText(value);
+      if (result.dropped > 0) {
+        odpDropped.dropped += result.dropped;
+        if (!odpDropped.sample) odpDropped.sample = result.sample;
+      }
+      return result.text;
+    };
 
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -245,7 +264,7 @@ export class OpenDocumentToPdfConverter implements IConverter {
         if (!text || currentY < 40) continue;
 
         if (t === 0) {
-          page.drawText(text, {
+          page.drawText(safe(text), {
             x: 50,
             y: currentY,
             size: 22,
@@ -254,7 +273,7 @@ export class OpenDocumentToPdfConverter implements IConverter {
           });
           currentY -= 40;
         } else {
-          page.drawText(`•  ${text}`, {
+          page.drawText(safe(`•  ${text}`), {
             x: 60,
             y: currentY,
             size: 14,
@@ -275,20 +294,35 @@ export class OpenDocumentToPdfConverter implements IConverter {
       });
     }
 
-    return this.createPdfResult(pdfDoc, file);
+    return this.createPdfResult(pdfDoc, file, odpDropped);
   }
 
-  private async createPdfResult(pdfDoc: PDFDocument, originalFile: File): Promise<ConversionResult> {
+  private async createPdfResult(
+    pdfDoc: PDFDocument,
+    originalFile: File,
+    dropped: { dropped: number; sample: string } = { dropped: 0, sample: '' }
+  ): Promise<ConversionResult> {
     const pdfBytes = await pdfDoc.save();
     const baseName = originalFile.name.replace(/\.[^/.]+$/, '') || 'document';
     const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
     const previewUrl = URL.createObjectURL(finalPdf);
+
+    const encodingWarning = PdfLayoutHelper.describeDroppedText(dropped.dropped, dropped.sample);
 
     return {
       success: true,
       file: finalPdf,
       previewUrl,
       downloadName: finalPdf.name,
+      warnings: encodingWarning ? [encodingWarning] : undefined,
+      report: {
+        approximations: [],
+        droppedElements: [],
+        substitutedFonts: [],
+        tablesDetected: 0,
+        pagesRasterized: 0,
+        indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+      },
       previewData: {
         pageCount: pdfDoc.getPageCount()
       },

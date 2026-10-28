@@ -1,0 +1,222 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        [title]="'tools.photo_watermark.title' | translate"
+        [subtitle]="'tools.photo_watermark.description' | translate"
+        [breadcrumbs]="[{ label: 'tools.photo_watermark.title' | translate }]"
+        badge="WATERMARK"
+        badgeVariant="photo"
+        backUrl="/features/photo">
+        @if (files.length > 0) {
+          <div actions class="header-actions">
+            <app-button variant="ghost" size="sm" (clicked)="reset()">
+              <app-icon name="refresh" class="btn-icon"></app-icon>
+              {{ 'common.reset' | translate }}
+            </app-button>
+          </div>
+        }
+      </app-page-header>
+
+      @if (workflowState === 'EMPTY') {
+        <div class="empty-state-card">
+          <app-file-dropzone
+            [accept]="'image/*'"
+            [multiple]="false"
+            [title]="'photoWatermark.selectPrompt' | translate"
+            [description]="'photoWatermark.selectSubtitle' | translate"
+            (fileSelected)="handleFileSelected($event)"
+            (filesSelected)="handleFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+      }
+
+      @if (workflowState === 'CONFIGURING') {
+        <!-- PRESETS SCROLLER -->
+        <div class="presets-section">
+          <span class="section-label">{{ 'photoWatermark.presets' | translate }}</span>
+          <div class="presets-scroll">
+            @for (preset of presets; track preset.id) {
+              <button
+                type="button"
+                class="preset-chip"
+                (click)="applyPreset(preset)">
+                {{ preset.name }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- LIVE PREVIEW CANVAS -->
+        <div class="canvas-preview-wrapper">
+          <canvas #previewCanvas class="preview-canvas"></canvas>
+        </div>
+
+        <!-- CONTROLS CONTAINER -->
+        <div class="watermark-controls-card">
+          <!-- TEXT INPUT -->
+          <div class="form-group">
+            <label class="form-label">{{ 'photoWatermark.textLabel' | translate }}</label>
+            <input
+              type="text"
+              [(ngModel)]="textValue"
+              (ngModelChange)="updatePreview()"
+              class="text-input"
+              maxlength="40" />
+          </div>
+
+          <!-- LAYOUT MODE SWITCHER -->
+          <div class="form-group">
+            <label class="form-label">{{ 'photoWatermark.layoutMode' | translate }}</label>
+            <div class="mode-toggle-group">
+              <button
+                type="button"
+                class="mode-toggle-btn"
+                [class.active]="layoutMode === 'single'"
+                (click)="layoutMode = 'single'; updatePreview()">
+                <app-icon name="pin" class="btn-icon"></app-icon>
+                {{ 'photoWatermark.singleAnchor' | translate }}
+              </button>
+              <button
+                type="button"
+                class="mode-toggle-btn"
+                [class.active]="layoutMode === 'tile'"
+                (click)="layoutMode = 'tile'; updatePreview()">
+                <app-icon name="grid" class="btn-icon"></app-icon>
+                {{ 'photoWatermark.tileContinuous' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 9-POINT ANCHOR PICKER -->
+          @if (layoutMode === 'single') {
+            <div class="form-group">
+              <label class="form-label">{{ 'photoWatermark.positionAnchor' | translate }}</label>
+              <div class="anchor-grid">
+                @for (pos of positions; track pos) {
+                  <button
+                    type="button"
+                    class="anchor-btn"
+                    [class.active]="selectedPosition === pos"
+                    (click)="selectedPosition = pos; updatePreview()">
+                    <span class="anchor-dot"></span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- TILE GAP SLIDER -->
+          @if (layoutMode === 'tile') {
+            <div class="form-group">
+              <div class="slider-header">
+                <label class="form-label">{{ 'photoWatermark.tileSpacing' | translate }}</label>
+                <span class="slider-val">{{ tileGap }}px</span>
+              </div>
+              <input
+                type="range"
+                [(ngModel)]="tileGap"
+                (ngModelChange)="updatePreview()"
+                min="30"
+                max="180"
+                step="5"
+                class="custom-slider" />
+            </div>
+          }
+
+          <!-- OPACITY SLIDER -->
+          <div class="form-group">
+            <div class="slider-header">
+              <label class="form-label">{{ 'photoWatermark.opacity' | translate }}</label>
+              <span class="slider-val">{{ (opacity * 100) | number:'1.0-0' }}%</span>
+            </div>
+            <input
+              type="range"
+              [(ngModel)]="opacity"
+              (ngModelChange)="updatePreview()"
+              min="0.05"
+              max="1.0"
+              step="0.05"
+              class="custom-slider" />
+          </div>
+
+          <!-- ROTATION SLIDER -->
+          <div class="form-group">
+            <div class="slider-header">
+              <label class="form-label">{{ 'photoWatermark.rotation' | translate }}</label>
+              <span class="slider-val">{{ rotationDegrees }}°</span>
+            </div>
+            <input
+              type="range"
+              [(ngModel)]="rotationDegrees"
+              (ngModelChange)="updatePreview()"
+              min="-90"
+              max="90"
+              step="5"
+              class="custom-slider" />
+          </div>
+
+          <!-- FONT SIZE SLIDER -->
+          <div class="form-group">
+            <div class="slider-header">
+              <label class="form-label">{{ 'photoWatermark.fontSize' | translate }}</label>
+              <span class="slider-val">{{ fontSize }}px</span>
+            </div>
+            <input
+              type="range"
+              [(ngModel)]="fontSize"
+              (ngModelChange)="updatePreview()"
+              min="14"
+              max="72"
+              step="2"
+              class="custom-slider" />
+          </div>
+
+          <!-- COLOR PICKER SWATCHES -->
+          <div class="form-group">
+            <label class="form-label">{{ 'photoWatermark.color' | translate }}</label>
+            <div class="color-swatches-row">
+              @for (c of colorOptions; track c.hex) {
+                <button
+                  type="button"
+                  class="color-swatch-btn"
+                  [style.background-color]="c.hex"
+                  [class.active]="textColor === c.hex"
+                  (click)="textColor = c.hex; updatePreview()">
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- STICKY EXPORT BAR -->
+        <div class="sticky-action-bar">
+          <div class="action-buttons-grid">
+            <app-button
+              variant="primary"
+              size="lg"
+              [block]="true"
+              (clicked)="saveOutput()"
+              [disabled]="isProcessing">
+              <app-icon name="download" class="btn-icon"></app-icon>
+              {{ 'common.save' | translate }}
+            </app-button>
+            <app-button
+              variant="secondary"
+              size="lg"
+              [block]="true"
+              (clicked)="shareOutput()"
+              [disabled]="isProcessing">
+              <app-icon name="share-social" class="btn-icon"></app-icon>
+              {{ 'common.share' | translate }}
+            </app-button>
+          </div>
+        </div>
+      }
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

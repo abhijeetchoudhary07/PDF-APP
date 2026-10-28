@@ -46,6 +46,13 @@ export class ValidationService {
       };
     }
 
+    if (file.size < 32) {
+      return {
+        valid: false,
+        error: 'PDF file is too small to be a valid document.'
+      };
+    }
+
     const isPdfType = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     if (!isPdfType) {
       return {
@@ -62,6 +69,30 @@ export class ValidationService {
       };
     }
 
+    return { valid: true };
+  }
+
+  validatePdfBuffer(buffer: ArrayBuffer | Uint8Array): { valid: boolean; error?: string } {
+    if (!buffer || buffer.byteLength === 0) {
+      return {
+        valid: false,
+        error: this.translationService.translate('validation.emptyPdf')
+      };
+    }
+    if (buffer.byteLength < 32) {
+      return {
+        valid: false,
+        error: 'PDF file is too small to be a valid document.'
+      };
+    }
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer.slice(0, 32));
+    const headerStr = new TextDecoder('latin1').decode(bytes.slice(0, 32));
+    if (!headerStr.includes('%PDF-')) {
+      return {
+        valid: false,
+        error: 'File does not contain a valid %PDF- header.'
+      };
+    }
     return { valid: true };
   }
 }

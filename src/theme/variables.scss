@@ -13,11 +13,22 @@
   --color-primary-soft: rgba(79, 70, 229, 0.08);
   --color-primary-soft-hover: rgba(79, 70, 229, 0.14);
   --color-primary-contrast: #ffffff;
+  /* Accent *text*, as opposed to an accent surface. #4f46e5 lands at 2.8:1 on
+   * the dark background, under the 3:1 floor, so accent text needs a token
+   * that lightens with the theme. --color-primary itself keeps its value
+   * because ~26 places paint it as a background under white
+   * --color-primary-contrast text, which lightening would break. */
+  --color-primary-text: var(--color-primary);
 
-  --color-secondary: #0ea5e9;
-  --color-secondary-hover: #0284c7;
+  /* #0ea5e9 left white button text at 2.77:1, under the 4.5 AA floor, on
+   * every secondary CTA in the app. Darkened within the same sky hue to 4.95:1.
+   * Accent TEXT uses --color-secondary-text instead, which lightens for dark
+   * mode -- darkening the base alone would have sunk the secondary badge. */
+  --color-secondary: #0376b3;
+  --color-secondary-hover: #0369a1;
   --color-secondary-soft: rgba(14, 165, 233, 0.08);
   --color-secondary-contrast: #ffffff;
+  --color-secondary-text: #0369a1;
 
   /* Surfaces & Backgrounds */
   --color-background: #f8fafc;
@@ -48,7 +59,10 @@
   --color-warning: #f59e0b;
   --color-warning-hover: #d97706;
   --color-warning-soft: rgba(245, 158, 11, 0.08);
-  --color-warning-contrast: #ffffff;
+  /* Amber is a light fill, so white on it is 2.2:1 — the label on every
+   * warning button was effectively unreadable. A dark amber reads at 7:1 and
+   * keeps the warning character. */
+  --color-warning-contrast: #451a03;
 
   --color-error: #ef4444;
   --color-error-hover: #dc2626;
@@ -249,6 +263,116 @@
   --bp-lg: 1024px;
   --bp-xl: 1280px;
   --bp-2xl: 1440px;
+
+  /* --- 14. LEGACY ALIASES ---
+   * Several feature pages were written against an older token vocabulary
+   * (`--surface-color`, `--text-primary`, Ionic's `--ion-color-step-*`, …).
+   * Those names were never defined, so every `var(--surface-color, #ffffff)`
+   * silently took its hardcoded light fallback — white cards and near-black
+   * text on a dark page. Aliasing them onto the real tokens here fixes the
+   * theme for all of them at once: the aliases are declared on :root, which is
+   * the same element the dark/light overrides below target, so they re-resolve
+   * with the theme instead of freezing at the light value.
+   *
+   * These are a compatibility shim, not part of the design system. New styles
+   * use the `--color-*` / `--font-*` / `--space-*` tokens directly.
+   */
+  --surface-color: var(--color-surface);
+  --surface-variant: var(--color-background-subtle);
+  --border-color: var(--color-border);
+  --primary-color: var(--color-primary);
+  --text-primary: var(--color-text);
+  --text-secondary: var(--color-text-secondary);
+
+  /* The Part I photo pages (metadata, watermark, photo sheet) reach for five
+   * more names from the same older vocabulary. Undefined, they took their
+   * light-mode literals while the aliased `--text-primary` above correctly
+   * followed the theme, which painted near-white text onto white cards —
+   * those three screens were unreadable in dark mode.
+   *
+   * `--text-muted` maps to the secondary token rather than
+   * `--color-text-muted`: the muted slate is 2.6:1 on the light surface, which
+   * fails WCAG for the body copy these pages use it for. */
+  --bg-surface: var(--color-surface);
+  --bg-surface-elevated: var(--color-surface-elevated);
+  --text-muted: var(--color-text-secondary);
+  --primary-light: var(--color-primary-soft);
+  --border-light: var(--color-divider);
+
+  /* Material-style names the scanner, OCR, validator, photo and preview
+   * components were written against. They were never declared anywhere, so
+   * every `var(--color-on-surface, #1e293b)` silently fell back to its light
+   * literal -- which in dark mode is the same slate as the surface behind it,
+   * painting the label in the exact colour of its own background. Aliasing
+   * them here fixes all of those call sites at once, and the fallbacks they
+   * still carry become dead text rather than the value in use. */
+  --color-on-surface: var(--color-text);
+  --color-on-surface-variant: var(--color-text-secondary);
+  --color-surface-container: var(--color-background-subtle);
+
+  /* Readable foregrounds for the category tints.
+   * A category badge painted `--color-photo` on `--color-photo-soft` is an
+   * orange on its own 8% wash: 2.5:1, which is unreadable at badge size. These
+   * are the same hues darkened (light) or lightened (dark) until they clear
+   * 4.5:1 on that wash, the way `--color-primary-text` already does for the
+   * primary badge. The base `--color-*` stays untouched for fills and borders,
+   * where it is a background, not text. */
+  --color-photo-text: #b35310;
+  --color-signature-text: #c23b7d;
+  --color-pdf-text: #c93939;
+  --color-convert-text: #0274af;
+  --color-organize-text: #7d53dd;
+  --color-edit-text: #0b7c72;
+  --color-sign-text: #9049d4;
+  --color-security-text: #d32424;
+  --color-batch-text: #047e58;
+  --color-presets-text: #5b5ede;
+
+  --color-danger: var(--color-error);
+  --color-danger-soft: var(--color-error-soft);
+
+  --font-xs: var(--font-caption);
+  --font-sm: var(--font-small);
+  --font-base: var(--font-body);
+  --font-xl: var(--font-h3);
+  --shadow-xs: var(--shadow-sm);
+
+  /* Ionic's own names. The app imports only core/normalize/structure/
+   * typography/display, none of which define these — the step ramp is not
+   * defined by Ionic anywhere, and the background/text/card names live solely
+   * in the dark palettes the app does not import. */
+  --ion-background-color: var(--color-background);
+  --ion-text-color: var(--color-text);
+  --ion-card-background: var(--color-surface);
+
+  --ion-color-step-50: var(--color-background-subtle);
+  --ion-color-step-100: var(--color-border);
+  --ion-color-step-150: var(--color-border);
+  --ion-color-step-200: var(--color-border);
+  --ion-color-step-500: var(--color-text-muted);
+  --ion-color-step-600: var(--color-text-secondary);
+  --ion-color-step-700: var(--color-text-secondary);
+  --ion-color-step-900: var(--color-text);
+
+  /* --- 15. STATUS CHIPS ---
+   * Paired background/foreground for the small status pills the diagnostic and
+   * comparison pages use (added / removed / changed / healthy / failed).
+   * They need both halves defined per theme: the pages previously hardcoded a
+   * pale tint with dark text, which inverts badly on a dark surface, and the
+   * `-soft` tokens alone are an 8% tint that leaves the saturated foreground
+   * well under 3:1 in light mode. Light values below are the ones the pages
+   * already shipped, so light mode is unchanged.
+   */
+  --chip-success-bg: #dcfce7;
+  --chip-success-fg: #166534;
+  --chip-warning-bg: #fef3c7;
+  --chip-warning-fg: #92400e;
+  --chip-error-bg: #fee2e2;
+  --chip-error-fg: #991b1b;
+  --chip-info-bg: #e0f2fe;
+  --chip-info-fg: #075985;
+  --chip-neutral-bg: #e2e8f0;
+  --chip-neutral-fg: #475569;
 }
 
 /* Touch & Mobile Floor: Ensure accessibility guidelines (>=44px touch targets) on mobile/coarse pointer */
@@ -277,7 +401,19 @@
 
     --color-text: #f8fafc;
     --color-text-secondary: #cbd5e1;
-    --color-text-muted: #64748b;
+    --color-text-muted: #8595ab;
+    --color-primary-text: #a5b4fc;
+    --color-photo-text: #f97316;
+    --color-signature-text: #ef62a7;
+    --color-pdf-text: #f26969;
+    --color-convert-text: #3a9fd3;
+    --color-organize-text: #a580f8;
+    --color-edit-text: #39a79d;
+    --color-sign-text: #b977f9;
+    --color-security-text: #e76b6b;
+    --color-batch-text: #32a984;
+    --color-presets-text: #888bf4;
+    --color-secondary-text: #7dd3fc;
 
     --header-surface: rgba(15, 23, 42, 0.88);
     --glass-surface: rgba(30, 41, 59, 0.62);
@@ -296,6 +432,18 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
     --shadow-card: 0 2px 8px -2px rgba(0, 0, 0, 0.3);
     --shadow-card-hover: 0 12px 24px -6px rgba(0, 0, 0, 0.5);
+
+    /* Status chips — dark pairings (see the light set in :root). */
+    --chip-success-bg: rgba(16, 185, 129, 0.18);
+    --chip-success-fg: #6ee7b7;
+    --chip-warning-bg: rgba(245, 158, 11, 0.18);
+    --chip-warning-fg: #fcd34d;
+    --chip-error-bg: rgba(239, 68, 68, 0.18);
+    --chip-error-fg: #fca5a5;
+    --chip-info-bg: rgba(59, 130, 246, 0.18);
+    --chip-info-fg: #93c5fd;
+    --chip-neutral-bg: #273549;
+    --chip-neutral-fg: #cbd5e1;
   }
 }
 
@@ -314,7 +462,19 @@
 
   --color-text: #f8fafc;
   --color-text-secondary: #cbd5e1;
-  --color-text-muted: #64748b;
+  --color-text-muted: #8595ab;
+  --color-primary-text: #a5b4fc;
+  --color-photo-text: #f97316;
+  --color-signature-text: #ef62a7;
+  --color-pdf-text: #f26969;
+  --color-convert-text: #3a9fd3;
+  --color-organize-text: #a580f8;
+  --color-edit-text: #39a79d;
+  --color-sign-text: #b977f9;
+  --color-security-text: #e76b6b;
+  --color-batch-text: #32a984;
+  --color-presets-text: #888bf4;
+  --color-secondary-text: #7dd3fc;
 
   --header-surface: rgba(15, 23, 42, 0.88);
   --glass-surface: rgba(30, 41, 59, 0.62);
@@ -333,6 +493,18 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
   --shadow-card: 0 2px 8px -2px rgba(0, 0, 0, 0.3);
   --shadow-card-hover: 0 12px 24px -6px rgba(0, 0, 0, 0.5);
+
+  /* Status chips — dark pairings (see the light set in :root). */
+  --chip-success-bg: rgba(16, 185, 129, 0.18);
+  --chip-success-fg: #6ee7b7;
+  --chip-warning-bg: rgba(245, 158, 11, 0.18);
+  --chip-warning-fg: #fcd34d;
+  --chip-error-bg: rgba(239, 68, 68, 0.18);
+  --chip-error-fg: #fca5a5;
+  --chip-info-bg: rgba(59, 130, 246, 0.18);
+  --chip-info-fg: #93c5fd;
+  --chip-neutral-bg: #273549;
+  --chip-neutral-fg: #cbd5e1;
 }
 
 [data-theme="light"], body.theme-light {
@@ -351,6 +523,8 @@
   --color-text: #0f172a;
   --color-text-secondary: #475569;
   --color-text-muted: #94a3b8;
+  --color-primary-text: var(--color-primary);
+  --color-secondary-text: #0369a1;
 
   --header-surface: rgba(255, 255, 255, 0.85);
   --glass-surface: rgba(255, 255, 255, 0.72);
@@ -362,4 +536,16 @@
   --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
   --shadow-card: 0 2px 8px -2px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.03);
   --shadow-card-hover: 0 12px 24px -6px rgba(15, 23, 42, 0.09), 0 4px 8px -2px rgba(15, 23, 42, 0.04);
+
+  /* Status chips — light pairings (see :root). */
+  --chip-success-bg: #dcfce7;
+  --chip-success-fg: #166534;
+  --chip-warning-bg: #fef3c7;
+  --chip-warning-fg: #92400e;
+  --chip-error-bg: #fee2e2;
+  --chip-error-fg: #991b1b;
+  --chip-info-bg: #e0f2fe;
+  --chip-info-fg: #075985;
+  --chip-neutral-bg: #e2e8f0;
+  --chip-neutral-fg: #475569;
 }

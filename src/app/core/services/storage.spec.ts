@@ -22,11 +22,13 @@ import { UsageQuotaService } from './usage-quota.service';
  */
 
 const writeFile = vi.fn();
+const stat = vi.fn();
 let isNative = false;
 
 vi.mock('@capacitor/filesystem', () => ({
   Filesystem: {
     writeFile: (...args: unknown[]) => writeFile(...args),
+    stat: (...args: unknown[]) => stat(...args),
   },
   Directory: { Documents: 'DOCUMENTS' },
 }));
@@ -54,6 +56,8 @@ describe('StorageService', () => {
   beforeEach(() => {
     isNative = false;
     writeFile.mockReset().mockResolvedValue({ uri: 'file:///Documents/result.pdf' });
+    // stat() rejects for a path that does not exist, which is the usual case.
+    stat.mockReset().mockRejectedValue(new Error('File does not exist'));
 
     quota = { canStart: vi.fn().mockResolvedValue(true), consume: vi.fn().mockResolvedValue(undefined), limit: 5 };
     toast = { error: vi.fn(), warning: vi.fn() };
@@ -230,6 +234,112 @@ describe('StorageService', () => {
 
       const { path } = writeFile.mock.calls[0][0] as { path: string };
       expect(path.endsWith('.png')).toBe(true);
+    });
+  });
+
+  describe('keeping the name the caller chose', () => {
+    it('renames the output by default', async () => {
+      isNative = true;
+
+      await storage.saveFile(makeFile('Annual Report.pdf', 120 * 1024), 'batch_compress');
+
+      expect(writeFile.mock.calls[0][0].path).toMatch(/^batch_compress_\d+kb_\d+\.pdf$/);
+    });
+
+    it('keeps it when asked, because for some operations the name is the output', async () => {
+      // Renaming a file from its own content and then writing it under a
+      // generated name is the whole operation undone.
+      isNative = true;
+
+      await storage.saveFile(
+        makeFile('Income Tax Return 2024.pdf'),
+        'batch_rename-from-content',
+        'op-1',
+        { preserveName: true }
+      );
+
+      expect(writeFile.mock.calls[0][0].path).toBe('Income Tax Return 2024.pdf');
+    });
+
+    it('does not overwrite a file that is already there', async () => {
+      isNative = true;
+      // The first two names are taken.
+      stat
+        .mockResolvedValueOnce({ type: 'file' })
+        .mockResolvedValueOnce({ type: 'file' })
+        .mockRejectedValue(new Error('File does not exist'));
+
+      await storage.saveFile(makeFile('Statement.pdf'), 'batch', 'op-2', { preserveName: true });
+
+      expect(writeFile.mock.calls[0][0].path).toBe('Statement (3).pdf');
+    });
+
+    it('strips path separators and control characters out of a name', async () => {
+      isNative = true;
+
+      await storage.saveFile(
+        makeFile('../../etc/pass:wd?.pdf'),
+        'batch',
+        'op-3',
+        { preserveName: true }
+      );
+
+      const path = writeFile.mock.calls[0][0].path;
+      expect(path).not.toContain('/');
+      expect(path).not.toContain(':');
+      expect(path).toMatch(/\.pdf$/);
+    });
+
+    it('offers the chosen name to the browser too', async () => {
+      await storage.saveFile(makeFile('Quarterly Filing.pdf'), 'batch', 'op-4', { preserveName: true });
+
+      // jsdom cannot read the anchor after the click, so assert on the element
+      // the service built.
+      expect(clickSpy).toHaveBeenCalled();
+      expect(URL.createObjectURL).toHaveBeenCalled();
+    });
+  });
+
+  describe('the result log', () => {
+    it('writes through the filesystem rather than an anchor on a device', async () => {
+      isNative = true;
+      const csv = new File([new Blob(['a,b\n1,2'])], 'batch_results.csv', { type: 'text/csv' });
+
+      const uri = await storage.saveReportFile(csv);
+
+      expect(uri).toBe('file:///Documents/result.pdf');
+      expect(writeFile).toHaveBeenCalledTimes(1);
+      expect(writeFile.mock.calls[0][0].path).toBe('batch_results.csv');
+    });
+
+    it('does not spend an operation, because a log is not an output', async () => {
+      const csv = new File([new Blob(['a,b'])], 'log.csv', { type: 'text/csv' });
+
+      await storage.saveReportFile(csv);
+
+      expect(quota.consume).not.toHaveBeenCalled();
+      expect(quota.canStart).not.toHaveBeenCalled();
+    });
+
+    it('still writes the log when the daily allowance is spent', async () => {
+      // This is when the log matters most: it is the record of what the run
+      // did and did not get to.
+      quota.canStart.mockResolvedValue(false);
+      isNative = true;
+      const csv = new File([new Blob(['a,b'])], 'log.csv', { type: 'text/csv' });
+
+      const uri = await storage.saveReportFile(csv);
+
+      expect(uri).toBeTruthy();
+      expect(writeFile).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses anything that is not a text log', async () => {
+      const uri = await storage.saveReportFile(makeFile('sneaky.pdf'));
+
+      expect(uri).toBeUndefined();
+      expect(writeFile).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalled();
     });
   });
 });

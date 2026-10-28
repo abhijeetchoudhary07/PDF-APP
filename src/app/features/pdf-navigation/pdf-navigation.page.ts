@@ -8,6 +8,7 @@ import {
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { AlertController } from '@ionic/angular';
 import { PDFDocument } from 'pdf-lib';
 import { PdfOutlineService } from '../../core/services/pdf-outline.service';
 import { PdfPageLabelService } from '../../core/services/pdf-page-label.service';
@@ -16,6 +17,7 @@ import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
 import { ToastService } from '../../core/services/toast.service';
+import { TranslationService } from '../../core/services/translation.service';
 import {
   NavigationMode,
   NavigationProgress,
@@ -88,6 +90,37 @@ export class PdfNavigationPage implements OnInit {
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
+  private alertCtrl = inject(AlertController);
+  private i18n = inject(TranslationService);
+
+  /**
+   * Translation for strings built in TypeScript — confirm dialogs, toast copy.
+   * The template uses the translate pipe; this is its TS-side counterpart.
+   */
+  private t(key: string, params?: Record<string, unknown>): string {
+    return this.i18n.translate(key, params);
+  }
+
+  /**
+   * An Ionic alert rather than `confirm()`, for the reason given in the presets
+   * page: the native dialog blocks the web view and Android draws it with
+   * "localhost says" above the question, which reads like the page has been
+   * hijacked rather than like the app asking.
+   */
+  private async confirmDestructive(header: string, message: string, confirmLabel: string): Promise<boolean> {
+    const alert = await this.alertCtrl.create({
+      header,
+      message,
+      buttons: [
+        { text: this.t('common.cancel'), role: 'cancel' },
+        { text: confirmLabel, role: 'destructive' }
+      ]
+    });
+
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    return role === 'destructive';
+  }
 
   currentStep: NavigationStep = 'select';
   activeMode: NavigationMode = 'bookmarks';
@@ -281,6 +314,39 @@ export class PdfNavigationPage implements OnInit {
 
     this.isModalOpen = false;
     this.cdr.detectChanges();
+  }
+
+  /**
+   * What the delete button is bound to. `deleteNode` stays a plain mutation so
+   * it can be driven and asserted directly; the question lives out here.
+   *
+   * Deleting a parent takes its whole subtree with it and there is no undo on
+   * this screen, so on a phone — where the button is one of seven in a row
+   * under your thumb — it has to ask first.
+   */
+  async confirmDeleteNode(id: string): Promise<void> {
+    const node = this.findNode(this.outlineNodes, id);
+    const confirmed = await this.confirmDestructive(
+      this.t('navigation.deleteBookmark'),
+      node && node.children.length > 0
+        ? this.t('navigation.deleteConfirm')
+        : `"${node?.title ?? ''}"`,
+      this.t('common.delete')
+    );
+    if (!confirmed) return;
+    this.deleteNode(id);
+  }
+
+  /** What the "clear all" button is bound to; `clearOutline` does the work. */
+  async confirmClearOutline(): Promise<void> {
+    if (this.outlineNodes.length === 0) return;
+    const confirmed = await this.confirmDestructive(
+      this.t('navigation.clearOutline'),
+      this.t('navigation.clearOutlineConfirm'),
+      this.t('common.delete')
+    );
+    if (!confirmed) return;
+    this.clearOutline();
   }
 
   deleteNode(id: string): void {
@@ -494,6 +560,22 @@ export class PdfNavigationPage implements OnInit {
     if (this.pageCount <= 0) return;
     this.previewRows = this.pageLabelService.preview(this.labelRanges, this.pageCount, 300);
     this.duplicateLabels = this.pageLabelService.findDuplicateLabels(this.labelRanges, this.pageCount);
+  }
+
+  /**
+   * The span a range actually covers: from its own start page up to the page
+   * before the next range begins, or to the end of the document if it is the
+   * last one. The card used to show only "Range 2", which on a phone meant
+   * scrolling to the preview to find out what it governed.
+   */
+  rangeSpanLabel(range: PageLabelRange): string {
+    const starts = [...this.labelRanges]
+      .map(r => r.startPage)
+      .sort((a, b) => a - b);
+    const next = starts.find(s => s > range.startPage);
+    return next === undefined
+      ? this.t('navigation.rangePagesEnd', { start: range.startPage })
+      : this.t('navigation.rangePages', { start: range.startPage, end: next - 1 });
   }
 
   addRange(): void {

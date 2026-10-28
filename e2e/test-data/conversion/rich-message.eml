@@ -1,0 +1,37 @@
+From: filings@indianformhelper.local
+To: applicant@example.com, reviewer@example.com
+Cc: records@example.com
+Subject: Filing receipt and supporting documents
+Date: Mon, 20 Oct 2026 10:00:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="OUTER"
+
+--OUTER
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+<p>Your filing has been received.</p>
+<p>Office stamp: <img src="cid:office_stamp" /></p>
+<p>Tracking pixel: <img src="https://tracker.example.com/pixel.png" /></p>
+<p>Keep this receipt for your records.</p>
+
+--OUTER
+Content-Type: image/png; name="stamp.png"
+Content-ID: <office_stamp>
+Content-Disposition: inline; filename="stamp.png"
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
+--OUTER
+Content-Type: application/pdf; name="report.pdf"
+Content-Disposition: attachment; filename="report.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjcKJYGBgYEKCjYgMCBvYmoKPDwKL0ZpbHRlciAvRmxhdGVEZWNvZGUKL0xlbmd0aCAxMTIKPj4Kc3RyZWFtCnicHYoxCkJBDET7OUVqQUzW7GQ/iIWgWNgIuYDIVxQtFPH87pdhHgxvXtgkVKa8r1jsx8d3/NzOp3no0LxptEHMJS8onQfY/2pClejNJ1Zu4eE0LtlY6UVrYQ3lLkpMS7sL1rXkHTnDNnHED2xcGgwKZW5kc3RyZWFtCmVuZG9iagoKNyAwIG9iago8PAovRmlsdGVyIC9GbGF0ZURlY29kZQovVHlwZSAvT2JqU3RtCi9OIDUKL0ZpcnN0IDI2Ci9MZW5ndGggMzY4Cj4+CnN0cmVhbQp4nNVS30vDMBB+z19xj/rgcknTXzIG29oqiDg2QVF86NowKiORNpP533tpt8kexGcpH8ndffcll34CECQoBQHECSgIAwkhRELBeMz449eHBr4oN7pj/K6pO3ilKsIS3hif251xINhkwn6489KVW7thQxMITz4yFq2td5VuYVzkRYEYI2KkCBGizGidE1KCpJhqMqE9IVYHUC4OEIMp1YoBUTz0+HrPDQ/9Oa3EjTwnG7gqGeLTuf6sfNCQf90nnTB+b+usdBousmuJMhIolYhRoXi5pOdodens/x2uv39jza8Tnv3nwhrH+Gq3dn3ok4LxWdlpXwF+q7ef2jVVyXhuKls3ZgP8qTFT0zXHxLmiN4y3Tau9q3rf8KXu7K6tyEie1yv7zUn8KsY0ocnjJCXvHqzGnx/W77rqqT7M9+5m5fxUQ8Ln7nXdlDO7Jz8jfWEajmQCiRIjUiJvT42xzru997lxdCcfRQfvk8Q3CoDHGgplbmRzdHJlYW0KZW5kb2JqCgo4IDAgb2JqCjw8Ci9TaXplIDkKL1Jvb3QgMiAwIFIKL0luZm8gMyAwIFIKL0ZpbHRlciAvRmxhdGVEZWNvZGUKL1R5cGUgL1hSZWYKL0xlbmd0aCA0MQovVyBbIDEgMiAyIF0KL0luZGV4IFsgMCA5IF0KPj4Kc3RyZWFtCnicFcSxEQAgDAOxt8MdLfs3zMNUCVYhoNtsSEpOlZY4IN7PFwZhxwOzCmVuZHN0cmVhbQplbmRvYmoKCnN0YXJ0eHJlZgo2NzEKJSVFT0Y=
+--OUTER
+Content-Type: text/plain; name="notes.txt"
+Content-Disposition: attachment; filename="notes.txt"
+Content-Transfer-Encoding: 7bit
+
+Supplementary notes for the reviewer.
+--OUTER--

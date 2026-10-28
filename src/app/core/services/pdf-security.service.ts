@@ -1,6 +1,6 @@
 import '../utilities/pdf-iterator-polyfill';
 import { Injectable } from '@angular/core';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFHexString } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import {
   PdfSecurityPermissions,
@@ -189,6 +189,26 @@ export class PdfSecurityService {
   async detectSecurity(source: File | ArrayBuffer): Promise<PdfSecurityStatus> {
     const arrayBuffer = source instanceof File ? await source.arrayBuffer() : source;
 
+    if (!arrayBuffer || arrayBuffer.byteLength < 5) {
+      return {
+        isEncrypted: false,
+        requiresUserPassword: false,
+        hasPermissionsRestricted: false,
+        error: 'PDF file is empty or too small to be valid.'
+      };
+    }
+
+    const headerBytes = new Uint8Array(arrayBuffer.slice(0, 10));
+    const headerStr = new TextDecoder('latin1').decode(headerBytes);
+    if (!headerStr.includes('%PDF-')) {
+      return {
+        isEncrypted: false,
+        requiresUserPassword: false,
+        hasPermissionsRestricted: false,
+        error: 'File is corrupted or missing standard %PDF- header.'
+      };
+    }
+
     // 1. Try loading in pdf-lib
     let pdfLibEncrypted = false;
     try {
@@ -327,15 +347,23 @@ export class PdfSecurityService {
         if (blob) {
           const imgBytes = await blob.arrayBuffer();
           const embedded = await newDoc.embedJpg(imgBytes);
-          const newPage = newDoc.addPage([page.view[2] || viewport.width / 2, page.view[3] || viewport.height / 2]);
+          const pageWidth = viewport.width / 2.0;
+          const pageHeight = viewport.height / 2.0;
+          const newPage = newDoc.addPage([pageWidth, pageHeight]);
           newPage.drawImage(embedded, {
             x: 0,
             y: 0,
-            width: newPage.getWidth(),
-            height: newPage.getHeight()
+            width: pageWidth,
+            height: pageHeight
           });
         }
       }
+    }
+
+    try {
+      await loadingTask.destroy();
+    } catch {
+      // ignore
     }
 
     const finalBytes = await newDoc.save({ useObjectStreams: false });
@@ -348,14 +376,15 @@ export class PdfSecurityService {
   /**
    * Computes the 32-bit permission integer P according to ISO 32000-1 / PDF 1.7.
    */
-  computePermissionsInteger(perms: PdfSecurityPermissions): number {
+  computePermissionsInteger(perms?: PdfSecurityPermissions): number {
+    const effective = perms || DEFAULT_PERMISSIONS;
     let p = -4; // 0xFFFFFFFC default (all bits 1 except bits 1 and 2)
 
     // Printing: Bit 3 and Bit 12
-    if (perms.allowPrinting === 'none') {
+    if (effective.allowPrinting === 'none') {
       p &= ~(1 << 2); // clear bit 3
       p &= ~(1 << 11); // clear bit 12
-    } else if (perms.allowPrinting === 'low-resolution') {
+    } else if (effective.allowPrinting === 'low-resolution') {
       p |= (1 << 2); // set bit 3
       p &= ~(1 << 11); // clear bit 12
     } else {
@@ -364,32 +393,32 @@ export class PdfSecurityService {
     }
 
     // Modifying contents: Bit 4
-    if (!perms.allowModifying) {
+    if (!effective.allowModifying) {
       p &= ~(1 << 3);
     }
 
     // Copying / extracting: Bit 5
-    if (!perms.allowCopying) {
+    if (!effective.allowCopying) {
       p &= ~(1 << 4);
     }
 
     // Annotating & filling forms: Bit 6
-    if (!perms.allowAnnotating) {
+    if (!effective.allowAnnotating) {
       p &= ~(1 << 5);
     }
 
     // Filling forms: Bit 9
-    if (!perms.allowFillingForms) {
+    if (!effective.allowFillingForms) {
       p &= ~(1 << 8);
     }
 
     // Content accessibility: Bit 10
-    if (!perms.allowContentAccessibility) {
+    if (!effective.allowContentAccessibility) {
       p &= ~(1 << 9);
     }
 
     // Document assembly: Bit 11
-    if (!perms.allowDocumentAssembly) {
+    if (!effective.allowDocumentAssembly) {
       p &= ~(1 << 10);
     }
 
@@ -406,6 +435,10 @@ export class PdfSecurityService {
   ): Promise<{ file: File; blob: Blob; sizeBytes: number }> {
     const arrayBuffer = source instanceof File ? await source.arrayBuffer() : source;
 
+    if (!arrayBuffer || arrayBuffer.byteLength < 5) {
+      throw new Error('Cannot protect an empty or zero-byte file.');
+    }
+
     if (!config.userPassword && !config.ownerPassword) {
       throw new Error('A password must be provided to protect the document.');
     }
@@ -414,12 +447,28 @@ export class PdfSecurityService {
     const ownerPass = config.ownerPassword || userPass;
     const permissionsInt = this.computePermissionsInteger(config.permissions);
 
-    // Save PDF through pdf-lib to ensure clean object structure
-    const pdfDoc = await PDFDocument.load(arrayBuffer.slice(0), { ignoreEncryption: true });
-    const rawBytes = await pdfDoc.save({ useObjectStreams: false });
+    const { oHex, uHex, idHex } = this.computeStandard128Keys(userPass, ownerPass, permissionsInt);
 
-    // Apply Standard 128-bit encryption to the PDF
-    const protectedBytes = this.applyStandard128Encryption(rawBytes, userPass, ownerPass, permissionsInt);
+    // Save PDF through pdf-lib with registered Encrypt dictionary
+    const pdfDoc = await PDFDocument.load(arrayBuffer.slice(0), { ignoreEncryption: true });
+
+    const encryptDict = pdfDoc.context.obj({
+      Filter: PDFName.of('Standard'),
+      V: 2,
+      R: 3,
+      Length: 128,
+      P: permissionsInt,
+      O: PDFHexString.of(oHex),
+      U: PDFHexString.of(uHex)
+    });
+    const encryptRef = pdfDoc.context.register(encryptDict);
+    (pdfDoc.context.trailerInfo as any).Encrypt = encryptRef;
+    (pdfDoc.context.trailerInfo as any).ID = pdfDoc.context.obj([
+      PDFHexString.of(idHex),
+      PDFHexString.of(idHex)
+    ]);
+
+    const protectedBytes = await pdfDoc.save({ useObjectStreams: false });
 
     const blob = new Blob([protectedBytes as any], { type: 'application/pdf' });
     const file = new File([blob], outputFileName, { type: 'application/pdf' });
@@ -428,14 +477,13 @@ export class PdfSecurityService {
   }
 
   /**
-   * Applies ISO 32000-1 Algorithm 2, 3, 4 standard 128-bit encryption.
+   * Computes ISO 32000-1 Algorithm 2, 3, 4 standard 128-bit encryption keys.
    */
-  private applyStandard128Encryption(
-    pdfBytes: Uint8Array,
+  private computeStandard128Keys(
     userPass: string,
     ownerPass: string,
     permissions: number
-  ): Uint8Array {
+  ): { oHex: string; uHex: string; idHex: string } {
     // 1. Pad passwords
     const padPassword = (pw: string): Uint8Array => {
       const out = new Uint8Array(32);
@@ -482,53 +530,27 @@ export class PdfSecurityService {
     for (let i = 0; i < 50; i++) hash = md5(hash);
     const encKey = hash.slice(0, 16);
 
-    // Compute User Key (U) - Algorithm 4
-    let uValue = rc4(encKey, new Uint8Array(PDF_PADDING));
+    // Compute User Key (U) - ISO 32000-1 Algorithm 4 (Revision 3)
+    const uHashData = new Uint8Array(32 + docId.length);
+    uHashData.set(PDF_PADDING, 0);
+    uHashData.set(docId, 32);
+    let checkData = rc4(encKey, md5(uHashData));
     for (let i = 1; i <= 19; i++) {
       const stepKey = new Uint8Array(16);
       for (let j = 0; j < 16; j++) stepKey[j] = encKey[j] ^ i;
-      uValue = rc4(stepKey, uValue);
+      checkData = rc4(stepKey, checkData);
     }
+    const uValue = new Uint8Array(32);
+    uValue.set(checkData, 0);
+    // Append 16 arbitrary bytes to form 32-byte U value (ISO 32000-1 §7.6.3.4 Step d)
+    uValue.set(new Uint8Array(16), 16);
 
-    // Build Encrypt Dictionary in PDF syntax
     const hex = (arr: Uint8Array) => Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-    const oHex = hex(oValue);
-    const uHex = hex(uValue);
-    const idHex = hex(docId);
-
-    // Find trailer and inject /Encrypt dict and /ID
-    const textDecoder = new TextDecoder('latin1');
-    const textEncoder = new TextEncoder();
-    const pdfText = textDecoder.decode(pdfBytes);
-
-    const trailerIdx = pdfText.lastIndexOf('trailer');
-    if (trailerIdx === -1) {
-      return pdfBytes;
-    }
-
-    // Next object number for Encrypt dictionary
-    const maxObjMatch = pdfText.match(/(\d+)\s+0\s+obj/g);
-    let maxObjNum = 100;
-    if (maxObjMatch) {
-      for (const m of maxObjMatch) {
-        const num = parseInt(m.split(' ')[0], 10);
-        if (num > maxObjNum) maxObjNum = num;
-      }
-    }
-    const encryptObjNum = maxObjNum + 1;
-
-    const encryptObjStr = `\n${encryptObjNum} 0 obj\n<<\n  /Filter /Standard\n  /V 2\n  /R 3\n  /Length 128\n  /P ${permissions}\n  /O <${oHex}>\n  /U <${uHex}>\n>>\nendobj\n`;
-
-    const trailerEnd = pdfText.indexOf('>>', trailerIdx);
-    if (trailerEnd === -1) return pdfBytes;
-
-    const beforeTrailerClose = pdfText.slice(0, trailerEnd);
-    const afterTrailerClose = pdfText.slice(trailerEnd);
-
-    const injectedTrailer = `${beforeTrailerClose}\n  /Encrypt ${encryptObjNum} 0 R\n  /ID [ <${idHex}> <${idHex}> ]\n${afterTrailerClose}`;
-    const finalPdfStr = encryptObjStr + injectedTrailer;
-
-    return textEncoder.encode(finalPdfStr);
+    return {
+      oHex: hex(oValue),
+      uHex: hex(uValue),
+      idHex: hex(docId)
+    };
   }
 
   private mapPdfJsPermissions(perms: number[] | null): Partial<PdfSecurityPermissions> {

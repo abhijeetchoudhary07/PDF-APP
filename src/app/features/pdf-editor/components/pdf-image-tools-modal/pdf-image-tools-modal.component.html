@@ -1,0 +1,192 @@
+<div class="k-sheet">
+  <div class="k-sheet__header">
+    <div class="k-sheet__title">
+      <app-icon name="image-outline"></app-icon>
+      <h2>{{ 'editor.pictureTools' | translate }}</h2>
+    </div>
+    <button
+      type="button"
+      class="k-sheet__close"
+      (click)="dismiss()"
+      [attr.aria-label]="'editor.kClose' | translate">
+      <app-icon name="close"></app-icon>
+    </button>
+  </div>
+
+  <div class="k-sheet__body">
+    <!--
+    Covering is not removing, and this sheet offers three actions that
+    cover. The notice sits above them rather than after the fact.
+    -->
+    <div class="k-notice k-notice--warn">
+      <app-icon name="alert-circle-outline"></app-icon>
+      <span>{{ 'editor.imCoverNotice' | translate }}</span>
+    </div>
+
+    @if (selected) {
+      <div class="k-card">
+        <div class="k-section-head">
+          <h3>{{ 'editor.imSelected' | translate }}</h3>
+          <span class="k-badge is-primary">
+            {{ 'editor.kPageBadge' | translate: { page: selected.pageNumber } }}
+          </span>
+        </div>
+
+        <p class="k-hint">
+          {{
+            'editor.imSizeOnPage'
+              | translate
+                : {
+                    w: round(selected.rect.width),
+                    h: round(selected.rect.height),
+                    pw: selected.pixelWidth,
+                    ph: selected.pixelHeight
+                  }
+          }}
+        </p>
+
+        <div class="k-segmented" role="group">
+          <button
+            type="button"
+            class="k-segmented__option"
+            [class.is-active]="action === 'replace'"
+            (click)="action = 'replace'">
+            {{ 'editor.imReplace' | translate }}
+          </button>
+          <button
+            type="button"
+            class="k-segmented__option"
+            [class.is-active]="action === 'crop'"
+            (click)="action = 'crop'">
+            {{ 'editor.imCrop' | translate }}
+          </button>
+          <button
+            type="button"
+            class="k-segmented__option"
+            [class.is-active]="action === 'delete'"
+            (click)="action = 'delete'">
+            {{ 'editor.imCover' | translate }}
+          </button>
+        </div>
+
+        @if (action === 'crop') {
+          <div class="k-field">
+            <span class="k-label">{{ 'editor.imCropLabel' | translate }}</span>
+            <div class="crop-grid">
+              <label class="crop-slider">
+                <span class="k-hint">{{ 'editor.lnLeft' | translate }}: {{ crop.left }}%</span>
+                <input type="range" min="0" max="45" step="1" [(ngModel)]="crop.left" />
+              </label>
+              <label class="crop-slider">
+                <span class="k-hint">{{ 'editor.lnTop' | translate }}: {{ crop.top }}%</span>
+                <input type="range" min="0" max="45" step="1" [(ngModel)]="crop.top" />
+              </label>
+              <label class="crop-slider">
+                <span class="k-hint">{{ 'editor.imCropRight' | translate }}: {{ crop.right }}%</span>
+                <input type="range" min="0" max="45" step="1" [(ngModel)]="crop.right" />
+              </label>
+              <label class="crop-slider">
+                <span class="k-hint">
+                  {{ 'editor.imCropBottom' | translate }}: {{ crop.bottom }}%
+                </span>
+                <input type="range" min="0" max="45" step="1" [(ngModel)]="crop.bottom" />
+              </label>
+            </div>
+          </div>
+        }
+
+        @if (action === 'replace') {
+          <p class="k-hint">{{ 'editor.imReplaceHint' | translate }}</p>
+        }
+
+        @if (action !== 'replace') {
+          <div class="k-field">
+            <label class="k-label" for="im-color">{{ 'editor.woColorLabel' | translate }}</label>
+            <input id="im-color" type="color" class="k-input" [(ngModel)]="coverColor" />
+          </div>
+        }
+
+        <div class="k-actions">
+          <button type="button" class="k-btn k-btn--secondary" (click)="selected = null">
+            <span>{{ 'editor.kCancel' | translate }}</span>
+          </button>
+          <button
+            type="button"
+            class="k-btn k-btn--primary"
+            (click)="apply()"
+            [disabled]="isBusy">
+            <app-icon name="checkmark-circle-outline"></app-icon>
+            <span>{{ 'editor.kApply' | translate }}</span>
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (isBusy) {
+      <div class="k-progress">
+        <span class="k-spinner"></span>
+        <span>{{ 'editor.kWorking' | translate }}</span>
+      </div>
+    }
+
+    @if (notice) {
+      <div [class]="'k-notice k-notice--' + notice.variant">
+        <app-icon
+          [name]="notice.variant === 'ok' ? 'checkmark-circle-outline' : 'alert-circle-outline'"></app-icon>
+        <span>{{ notice.text }}</span>
+      </div>
+    }
+
+    <div>
+      <div class="k-section-head">
+        <h3>
+          {{
+            'editor.imListTitle'
+              | translate: { page: state.currentPageNumber, count: images.length }
+          }}
+        </h3>
+        <button
+          type="button"
+          class="k-icon-btn"
+          (click)="scanPage()"
+          [disabled]="isScanning"
+          [attr.aria-label]="'editor.kRescan' | translate">
+          <app-icon name="refresh"></app-icon>
+        </button>
+      </div>
+
+      @if (isScanning) {
+        <div class="k-progress">
+          <span class="k-spinner"></span>
+          <span>{{ 'editor.imScanning' | translate }}</span>
+        </div>
+      } @else if (images.length === 0) {
+        <div class="k-empty">{{ 'editor.imEmpty' | translate }}</div>
+      } @else {
+        <div class="k-list">
+          @for (image of images; track image.id) {
+            <div class="k-row" [class.is-active]="image.id === selected?.id">
+              <button type="button" class="k-row__main" (click)="select(image)">
+                <span class="k-row__title">{{ image.objectName }}</span>
+                <span class="k-row__meta">
+                  <span class="k-badge">
+                    {{
+                      'editor.imSizeOnPage'
+                        | translate
+                          : {
+                              w: round(image.rect.width),
+                              h: round(image.rect.height),
+                              pw: image.pixelWidth,
+                              ph: image.pixelHeight
+                            }
+                    }}
+                  </span>
+                </span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

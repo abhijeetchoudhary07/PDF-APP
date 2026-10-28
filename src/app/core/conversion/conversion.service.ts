@@ -72,6 +72,23 @@ export class ConversionService {
         onProgress?.(p);
       });
 
+      if (result.success && !result.report) {
+        result.report = {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: []
+        };
+      }
+
+      if (options['fontSubstitutionMap'] && result.report) {
+        for (const [orig, sub] of Object.entries(options['fontSubstitutionMap'])) {
+          result.report.substitutedFonts.push({ original: orig, substituted: String(sub) });
+        }
+      }
+
       job.status = result.success ? 'done' : 'error';
       job.result = result;
 

@@ -38,6 +38,7 @@
               [description]="'dropzone.photoDesc' | translate"
               accept="image/jpeg,image/png,image/webp"
               [errorMessage]="errorMessage"
+              [state]="workflowState === 'ERROR' ? 'error' : 'empty'"
               (fileSelected)="onFileSelected($event)">
             </app-file-dropzone>
           </div>
@@ -46,6 +47,17 @@
         <!-- 2. SELECTED FILE & CONFIGURATION STATE -->
         @if (originalFile && workflowState !== 'SUCCESS') {
           <div class="configuring-section">
+            <!-- Error Banner if state is ERROR -->
+            @if (errorMessage && workflowState === 'ERROR') {
+              <div class="error-banner ion-margin-bottom" style="background: var(--color-error-soft, #fef2f2); border: 1.5px solid var(--color-error, #ef4444); color: var(--color-error, #dc2626); padding: 12px 16px; border-radius: 10px; font-size: 0.9rem; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  <span>{{ errorMessage }}</span>
+                </div>
+                <button type="button" (click)="errorMessage = undefined" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: inherit; padding: 0 4px;">&times;</button>
+              </div>
+            }
+
             <!-- File Preview Card -->
             <app-file-preview
               [file]="originalFile"
@@ -142,113 +154,6 @@
                   </div>
                 }
                 <p class="config-hint">{{ 'photoPage.targetSizeHint' | translate }}</p>
-                <!-- CUSTOMIZE COMPLETE STYLE SECTION -->
-                <div class="customize-style-section">
-                  <button
-                    type="button"
-                    class="style-toggle-btn"
-                    (click)="showCustomStyleOptions = !showCustomStyleOptions">
-                    <span class="style-toggle-title">
-                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                      </svg>
-                      Customize Complete Style & Formatting
-                    </span>
-                    <span class="toggle-indicator">{{ showCustomStyleOptions ? '▲ Hide' : '▼ Customize' }}</span>
-                  </button>
-                  @if (showCustomStyleOptions) {
-                    <div class="style-options-panel">
-                      <!-- Output Format -->
-                      <div class="style-option-group">
-                        <label class="style-sublabel">Output Format</label>
-                        <div class="style-chips-row">
-                          <button
-                            type="button"
-                            class="format-chip"
-                            [class.active]="targetFormat === 'image/jpeg'"
-                            (click)="targetFormat = 'image/jpeg'">
-                            JPEG (Gov Forms)
-                          </button>
-                          <button
-                            type="button"
-                            class="format-chip"
-                            [class.active]="targetFormat === 'image/png'"
-                            (click)="targetFormat = 'image/png'">
-                            PNG
-                          </button>
-                          <button
-                            type="button"
-                            class="format-chip"
-                            [class.active]="targetFormat === 'image/webp'"
-                            (click)="targetFormat = 'image/webp'">
-                            WebP
-                          </button>
-                        </div>
-                      </div>
-                      <!-- Border Styling -->
-                      <div class="style-option-group">
-                        <label class="style-sublabel">Border & Frame Style</label>
-                        <div class="style-chips-row">
-                          <button
-                            type="button"
-                            class="format-chip"
-                            [class.active]="photoBorderStyle === 'none'"
-                            (click)="photoBorderStyle = 'none'">
-                            No Border
-                          </button>
-                          <button
-                            type="button"
-                            class="format-chip"
-                            [class.active]="photoBorderStyle === 'thin-black'"
-                            (click)="photoBorderStyle = 'thin-black'">
-                            Thin Black Border
-                          </button>
-                          <button
-                            type="button"
-                            class="format-chip"
-                            [class.active]="photoBorderStyle === 'passport-white'"
-                            (click)="photoBorderStyle = 'passport-white'">
-                            Passport White Frame
-                          </button>
-                        </div>
-                      </div>
-                      <!-- Name & Date of Photo (DOP) Stamp -->
-                      <div class="style-option-group">
-                        <div class="toggle-row">
-                          <label class="toggle-label-wrap">
-                            <input type="checkbox" [(ngModel)]="addDateAndNameStamp" class="native-toggle-check" />
-                            <span class="custom-toggle-track">
-                              <span class="custom-toggle-thumb"></span>
-                            </span>
-                            <strong class="toggle-title">Add Name & Date of Photo (DOP) Strip</strong>
-                          </label>
-                        </div>
-                        <p class="style-hint">Required by some upload forms.</p>
-                        @if (addDateAndNameStamp) {
-                          <div class="stamp-fields-grid">
-                            <div class="field-group">
-                              <label class="field-label">Candidate Name</label>
-                              <input
-                                type="text"
-                                [(ngModel)]="candidateName"
-                                placeholder="e.g. RAHUL SHARMA"
-                                class="field-input uppercase-input" />
-                            </div>
-                            <div class="field-group">
-                              <label class="field-label">Date of Photo (DOP)</label>
-                              <input
-                                type="text"
-                                [(ngModel)]="photoDate"
-                                placeholder="e.g. 23.09.2026"
-                                class="field-input" />
-                            </div>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
               </div>
             }
             <!-- CONFIGURATION: EXACT PIXELS -->
@@ -295,6 +200,116 @@
                 </div>
               </div>
             }
+
+            <!-- SHARED CUSTOMIZE COMPLETE STYLE SECTION (FOR BOTH KB AND PIXEL RESIZE) -->
+            <div class="config-card">
+              <div class="customize-style-section" style="margin-top: 0; border-top: none; padding-top: 0;">
+                <button
+                  type="button"
+                  class="style-toggle-btn"
+                  (click)="showCustomStyleOptions = !showCustomStyleOptions">
+                  <span class="style-toggle-title">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                      <path d="M12 20h9"></path>
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    Customize Complete Style & Formatting
+                  </span>
+                  <span class="toggle-indicator">{{ showCustomStyleOptions ? '▲ Hide' : '▼ Customize' }}</span>
+                </button>
+                @if (showCustomStyleOptions) {
+                  <div class="style-options-panel">
+                    <!-- Output Format -->
+                    <div class="style-option-group">
+                      <label class="style-sublabel">Output Format</label>
+                      <div class="style-chips-row">
+                        <button
+                          type="button"
+                          class="format-chip"
+                          [class.active]="targetFormat === 'image/jpeg'"
+                          (click)="targetFormat = 'image/jpeg'">
+                          JPEG (Gov Forms)
+                        </button>
+                        <button
+                          type="button"
+                          class="format-chip"
+                          [class.active]="targetFormat === 'image/png'"
+                          (click)="targetFormat = 'image/png'">
+                          PNG
+                        </button>
+                        <button
+                          type="button"
+                          class="format-chip"
+                          [class.active]="targetFormat === 'image/webp'"
+                          (click)="targetFormat = 'image/webp'">
+                          WebP
+                        </button>
+                      </div>
+                    </div>
+                    <!-- Border Styling -->
+                    <div class="style-option-group">
+                      <label class="style-sublabel">Border & Frame Style</label>
+                      <div class="style-chips-row">
+                        <button
+                          type="button"
+                          class="format-chip"
+                          [class.active]="photoBorderStyle === 'none'"
+                          (click)="photoBorderStyle = 'none'">
+                          No Border
+                        </button>
+                        <button
+                          type="button"
+                          class="format-chip"
+                          [class.active]="photoBorderStyle === 'thin-black'"
+                          (click)="photoBorderStyle = 'thin-black'">
+                          Thin Black Border
+                        </button>
+                        <button
+                          type="button"
+                          class="format-chip"
+                          [class.active]="photoBorderStyle === 'passport-white'"
+                          (click)="photoBorderStyle = 'passport-white'">
+                          Passport White Frame
+                        </button>
+                      </div>
+                    </div>
+                    <!-- Name & Date of Photo (DOP) Stamp -->
+                    <div class="style-option-group">
+                      <div class="toggle-row">
+                        <label class="toggle-label-wrap">
+                          <input type="checkbox" [(ngModel)]="addDateAndNameStamp" class="native-toggle-check" />
+                          <span class="custom-toggle-track">
+                            <span class="custom-toggle-thumb"></span>
+                          </span>
+                          <strong class="toggle-title">Add Name & Date of Photo (DOP) Strip</strong>
+                        </label>
+                      </div>
+                      <p class="style-hint">Required by some upload forms.</p>
+                      @if (addDateAndNameStamp) {
+                        <div class="stamp-fields-grid">
+                          <div class="field-group">
+                            <label class="field-label">Candidate Name</label>
+                            <input
+                              type="text"
+                              [(ngModel)]="candidateName"
+                              placeholder="e.g. RAHUL SHARMA"
+                              class="field-input uppercase-input" />
+                          </div>
+                          <div class="field-group">
+                            <label class="field-label">Date of Photo (DOP)</label>
+                            <input
+                              type="text"
+                              [(ngModel)]="photoDate"
+                              placeholder="e.g. 23.09.2026"
+                              class="field-input" />
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
             <!-- PROCESSING INDICATOR & ANIMATION -->
             @if (isProcessing) {
               <div class="conversion-animation-box ion-margin-bottom">

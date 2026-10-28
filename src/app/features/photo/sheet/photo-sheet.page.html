@@ -1,0 +1,173 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        [title]="'tools.photo_sheet.title' | translate"
+        [subtitle]="'tools.photo_sheet.description' | translate"
+        [breadcrumbs]="[{ label: 'tools.photo_sheet.title' | translate }]"
+        badge="SHEET"
+        badgeVariant="photo"
+        backUrl="/features/photo">
+        @if (files.length > 0) {
+          <div actions class="header-actions">
+            <app-button variant="ghost" size="sm" (clicked)="reset()">
+              <app-icon name="refresh" class="btn-icon"></app-icon>
+              {{ 'common.reset' | translate }}
+            </app-button>
+          </div>
+        }
+      </app-page-header>
+
+      @if (workflowState === 'EMPTY') {
+        <div class="empty-state-card">
+          <app-file-dropzone
+            [accept]="'image/*'"
+            [multiple]="true"
+            [title]="'photoSheet.selectPrompt' | translate"
+            [description]="'photoSheet.selectSubtitle' | translate"
+            (fileSelected)="handleFileSelected($event)"
+            (filesSelected)="handleFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+      }
+
+      @if (workflowState === 'CONFIGURING') {
+        <!-- PAPER SELECTION CAROUSEL / ROW -->
+        <div class="config-block">
+          <span class="block-label">{{ 'photoSheet.paperSize' | translate }}</span>
+          <div class="paper-options-row">
+            @for (opt of paperOptions; track opt.id) {
+              <button
+                type="button"
+                class="paper-btn"
+                [class.active]="paperSize === opt.id"
+                (click)="paperSize = opt.id; updateSheetPreview()">
+                {{ opt.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- GRID PRESETS ROW -->
+        <div class="config-block">
+          <span class="block-label">{{ 'photoSheet.gridPreset' | translate }}</span>
+          <div class="presets-row">
+            @for (p of gridPresets; track p.label) {
+              <button
+                type="button"
+                class="preset-btn"
+                [class.active]="rows === p.rows && columns === p.columns"
+                (click)="applyGridPreset(p)">
+                {{ p.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- LIVE SHEET PREVIEW -->
+        <div class="sheet-preview-container">
+          <canvas #sheetCanvas class="sheet-preview-canvas"></canvas>
+        </div>
+
+        <!-- SHEET OPTIONS CARD -->
+        <div class="sheet-controls-card">
+          <!-- REPEAT TOGGLE (IF 1 PHOTO) OR MULTI-PHOTO INFO -->
+          <div class="form-group">
+            <label class="form-label">{{ 'photoSheet.placementMode' | translate }}</label>
+            <div class="toggle-row">
+              <button
+                type="button"
+                class="toggle-btn"
+                [class.active]="repeatSingle"
+                (click)="repeatSingle = true; updateSheetPreview()">
+                {{ 'photoSheet.repeatOnePhoto' | translate }}
+              </button>
+              <button
+                type="button"
+                class="toggle-btn"
+                [class.active]="!repeatSingle"
+                (click)="repeatSingle = false; updateSheetPreview()">
+                {{ 'photoSheet.uniqueSequence' | translate }} ({{ files.length }})
+              </button>
+            </div>
+          </div>
+
+          <!-- CUT MARKS TOGGLE -->
+          <div class="form-group switch-group">
+            <div class="switch-info">
+              <span class="form-label">{{ 'photoSheet.cutMarks' | translate }}</span>
+              <span class="field-hint">{{ 'photoSheet.cutMarksDesc' | translate }}</span>
+            </div>
+            <label class="custom-switch">
+              <input
+                type="checkbox"
+                [(ngModel)]="showCutMarks"
+                (ngModelChange)="updateSheetPreview()" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- MARGIN SLIDER -->
+          <div class="form-group">
+            <div class="slider-header">
+              <label class="form-label">{{ 'photoSheet.margin' | translate }}</label>
+              <span class="slider-val">{{ marginMm }} mm</span>
+            </div>
+            <input
+              type="range"
+              [(ngModel)]="marginMm"
+              (ngModelChange)="updateSheetPreview()"
+              min="2"
+              max="25"
+              step="1"
+              class="custom-slider" />
+          </div>
+
+          <!-- GUTTER SLIDER -->
+          <div class="form-group">
+            <div class="slider-header">
+              <label class="form-label">{{ 'photoSheet.gutter' | translate }}</label>
+              <span class="slider-val">{{ gutterMm }} mm</span>
+            </div>
+            <input
+              type="range"
+              [(ngModel)]="gutterMm"
+              (ngModelChange)="updateSheetPreview()"
+              min="0"
+              max="20"
+              step="1"
+              class="custom-slider" />
+          </div>
+        </div>
+
+        <!-- STICKY DUAL EXPORT BAR (IMAGE & PDF) -->
+        <div class="sticky-export-bar">
+          <div class="export-buttons-grid">
+            <app-button
+              variant="primary"
+              size="lg"
+              [block]="true"
+              (clicked)="exportAsImage()"
+              [disabled]="isProcessing">
+              <app-icon name="image" class="btn-icon"></app-icon>
+              {{ 'photoSheet.exportImage' | translate }}
+            </app-button>
+            <app-button
+              variant="secondary"
+              size="lg"
+              [block]="true"
+              (clicked)="exportAsPdf()"
+              [disabled]="isProcessing">
+              <app-icon name="document" class="btn-icon"></app-icon>
+              {{ 'photoSheet.exportPdf' | translate }}
+            </app-button>
+          </div>
+        </div>
+      }
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

@@ -1,0 +1,138 @@
+<div class="k-sheet">
+  <div class="k-sheet__header">
+    <div class="k-sheet__title">
+      <app-icon name="text-outline"></app-icon>
+      <h2>{{ 'editor.editText' | translate }}</h2>
+    </div>
+    <button
+      type="button"
+      class="k-sheet__close"
+      (click)="dismiss()"
+      [attr.aria-label]="'editor.kClose' | translate">
+      <app-icon name="close"></app-icon>
+    </button>
+  </div>
+
+  <div class="k-sheet__body">
+    <!--
+    What this tool does and does not do, before anything else on the sheet.
+    It covers and redraws; it does not reflow a paragraph. Someone who
+    expects otherwise should find that out here, not after an edit.
+    -->
+    <div class="k-notice k-notice--info">
+      <app-icon name="information-circle-outline"></app-icon>
+      <span>{{ 'editor.etHowItWorks' | translate }}</span>
+    </div>
+
+    <div class="k-notice k-notice--warn">
+      <app-icon name="alert-circle-outline"></app-icon>
+      <span>{{ 'editor.etOutOfScope' | translate }}</span>
+    </div>
+
+    @if (selectedRun) {
+      <div class="k-card">
+        <div class="k-field">
+          <label class="k-label" for="et-text">{{ 'editor.etEditLabel' | translate }}</label>
+          <textarea
+            id="et-text"
+            class="k-textarea"
+            rows="2"
+            [(ngModel)]="editedText"></textarea>
+          <p class="k-hint">
+            {{
+              'editor.etRunMeta'
+                | translate: { font: selectedRun.fontFamily, size: selectedRun.fontSize }
+            }}
+          </p>
+        </div>
+
+        @if (willSubstituteFont) {
+          <div class="k-notice k-notice--warn">
+            <app-icon name="alert-circle-outline"></app-icon>
+            <span>{{ 'editor.etSubstituted' | translate: { font: selectedRun.fontFamily } }}</span>
+          </div>
+        }
+
+        <div class="k-actions">
+          <button type="button" class="k-btn k-btn--secondary" (click)="clearSelection()">
+            <span>{{ 'editor.kCancel' | translate }}</span>
+          </button>
+          <button
+            type="button"
+            class="k-btn k-btn--primary"
+            (click)="applyEdit()"
+            [disabled]="isApplying || editedText === selectedRun.text">
+            <app-icon name="checkmark-circle-outline"></app-icon>
+            <span>{{ 'editor.etApplyEdit' | translate }}</span>
+          </button>
+        </div>
+
+        @if (isApplying) {
+          <div class="k-progress">
+            <span class="k-spinner"></span>
+            <span>{{ 'editor.kWorking' | translate }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    @if (resultNotices.length > 0) {
+      <div class="k-card">
+        @for (notice of resultNotices; track notice.key) {
+          <div class="k-notice" [class]="'k-notice k-notice--' + notice.variant">
+            <app-icon
+              [name]="notice.variant === 'ok' ? 'checkmark-circle-outline' : 'alert-circle-outline'"></app-icon>
+            <span>{{ notice.key | translate: notice.params }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <div>
+      <div class="k-section-head">
+        <h3>
+          {{
+            'editor.etRunsTitle'
+              | translate: { page: state.currentPageNumber, count: textRuns.length }
+          }}
+        </h3>
+        <button
+          type="button"
+          class="k-icon-btn"
+          (click)="scanPage()"
+          [disabled]="isScanning"
+          [attr.aria-label]="'editor.kRescan' | translate">
+          <app-icon name="refresh"></app-icon>
+        </button>
+      </div>
+
+      @if (isScanning) {
+        <div class="k-progress">
+          <span class="k-spinner"></span>
+          <span>{{ 'editor.etScanning' | translate }}</span>
+        </div>
+      } @else if (textRuns.length === 0) {
+        <div class="k-empty">{{ 'editor.etEmpty' | translate }}</div>
+      } @else {
+        <p class="k-hint">{{ 'editor.etSelectHint' | translate }}</p>
+        <div class="k-list">
+          @for (run of textRuns; track run.id) {
+            <div class="k-row" [class.is-active]="run.id === selectedRun?.id">
+              <button type="button" class="k-row__main" (click)="selectRun(run)">
+                <span class="k-row__title">{{ run.text }}</span>
+                <span class="k-row__meta">
+                  <span class="k-badge">
+                    {{ 'editor.etRunMeta' | translate: { font: run.fontFamily, size: run.fontSize } }}
+                  </span>
+                  @if (run.hasMissingGlyphs) {
+                    <span class="k-badge is-warn">{{ 'editor.etFontSwap' | translate }}</span>
+                  }
+                </span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

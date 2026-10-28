@@ -45,9 +45,10 @@ export class PdfToPngConverter implements IConverter {
     } = {},
     onProgress?: (p: ConversionProgress) => void
   ): Promise<ConversionResult> {
+    let loadingTask: ReturnType<typeof pdfjsLib.getDocument> | undefined;
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
+      loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
       const pdf = await loadingTask.promise;
       const numPages = pdf.numPages;
 
@@ -156,6 +157,8 @@ export class PdfToPngConverter implements IConverter {
         success: false,
         error: `Failed to render PDF to PNG: ${e?.message || e.toString()}`
       };
+    } finally {
+      await loadingTask?.destroy();
     }
   }
 }

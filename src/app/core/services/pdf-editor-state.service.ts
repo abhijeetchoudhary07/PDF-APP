@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { PDFDocument } from 'pdf-lib';
 import {
   PdfEditorDocument,
   PdfEditorPage,
@@ -12,6 +13,51 @@ import {
   ToolSettings,
   EditorCommand
 } from '../models/pdf-editor.types';
+import {
+  PdfHyperlink,
+  CommentThread,
+  CommentReply,
+  MeasurementResult,
+  MeasurementScale,
+  TextEditCommand,
+  WhiteoutRegion
+} from '../models/editor-features.types';
+
+/** A link waiting for the rectangle that will make it tappable. */
+export interface LinkDraft {
+  type: 'url' | 'page';
+  url?: string;
+  targetPage?: number;
+  label?: string;
+}
+
+/** A comment waiting for the spot its pin goes. */
+export interface CommentDraft {
+  author: string;
+  initials: string;
+  text: string;
+}
+
+/** A whiteout waiting for its area. `matchPage` samples the colour behind. */
+export interface WhiteoutDraft {
+  fillColor: string;
+  matchPage: boolean;
+}
+
+/** A measurement waiting for its points. */
+export interface MeasureDraft {
+  mode: 'distance' | 'area' | 'calibrate';
+  scale: MeasurementScale;
+  /** `calibrate` only: what the drawn length represents. */
+  knownValue?: number;
+}
+
+export type PlacementCompleted =
+  | { tool: 'link'; link: PdfHyperlink }
+  | { tool: 'comment'; thread: CommentThread }
+  | { tool: 'whiteout'; region: WhiteoutRegion; sampledFromPage: boolean }
+  | { tool: 'measure'; measurement: MeasurementResult }
+  | { tool: 'measure'; calibratedScale: MeasurementScale };
 
 const generateId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
@@ -80,7 +126,26 @@ export class PdfEditorStateService {
 
   private readonly MAX_HISTORY = 50;
 
+  /**
+   * Bumped every time the source bytes are swapped.
+   *
+   * The canvas puts it into the id it hands PdfRenderService, which caches
+   * by id and returns the document it already holds when the id has not
+   * changed — so without this, a rewritten file would keep rendering the
+   * pages it used to have.
+   *
+   * The reload itself is the canvas's job, not this service's: rendering is
+   * not state, and reaching for the renderer from here would mean this
+   * service could only be built inside an injection context.
+   */
+  private sourceRevisionSubject = new BehaviorSubject<number>(0);
+  public sourceRevision$: Observable<number> = this.sourceRevisionSubject.asObservable();
+
   constructor() {}
+
+  get sourceRevision(): number {
+    return this.sourceRevisionSubject.value;
+  }
 
   // --- Getters ---
 
@@ -610,9 +675,85 @@ export class PdfEditorStateService {
     this.redactionPreviewSubject.next(preview);
   }
 
+  /**
+   * Replaces the document's own bytes with a rewritten file.
+   *
+   * Some Part K tools do not add an overlay — they change what is in the
+   * file. A find & replace writes new form field values and redraws page
+   * text; a link delete strips an annotation; a picture replace repoints an
+   * XObject. None of that can live in the overlay model, so the editor's
+   * source has to be swapped, and everything reading from it told.
+   *
+   * It is undoable like any other edit: the previous bytes are kept in the
+   * command's closure. The page *models* are deliberately left alone —
+   * these rewrites never change the page count or page sizes, and rebuilding
+   * the models would throw away the annotations, links and comments the user
+   * has placed on top.
+   */
+  async replaceSourceBytes(bytes: Uint8Array, description: string): Promise<void> {
+    const doc = this.document;
+    if (!doc) return;
+
+    const previous = doc.arrayBuffer;
+    const next = bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength
+    ) as ArrayBuffer;
+
+    const apply = async (buffer: ArrayBuffer) => {
+      const current = this.document;
+      if (!current) return;
+
+      current.arrayBuffer = buffer;
+      current.sizeBytes = buffer.byteLength;
+
+      /*
+       * A page count that changed would leave the page models describing a
+       * document that is no longer there. No K tool does that, but checking
+       * costs nothing and the alternative is a blank canvas with no clue why.
+       */
+      try {
+        const probe = await PDFDocument.load(buffer.slice(0), { ignoreEncryption: true });
+        current.pageCount = probe.getPageCount();
+      } catch {
+        /* Leave the count as it was; whoever renders next will surface a
+         * real problem with the bytes. */
+      }
+
+      this.notifyDocumentChanged();
+      /* Last, so anything reloading off this already sees the new buffer. */
+      this.sourceRevisionSubject.next(this.sourceRevisionSubject.value + 1);
+    };
+
+    await apply(next);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'REPLACE_SOURCE',
+      description,
+      timestamp: Date.now(),
+      undo: () => {
+        void apply(previous);
+      },
+      redo: () => {
+        void apply(next);
+      }
+    });
+  }
+
   // --- Undo / Redo Command Execution ---
 
   private executeCommand(cmd: EditorCommand) {
+    if (cmd.type === 'REPLACE_SOURCE') {
+      // Memory hardening: Limit heavy whole-file ArrayBuffer closures to avoid heap exhaustion
+      const replaceSourceCmds = this.undoStack.filter(c => c.type === 'REPLACE_SOURCE');
+      if (replaceSourceCmds.length >= 10) {
+        const oldestIdx = this.undoStack.findIndex(c => c.type === 'REPLACE_SOURCE');
+        if (oldestIdx !== -1) {
+          this.undoStack.splice(oldestIdx, 1);
+        }
+      }
+    }
     this.undoStack.push(cmd);
     if (this.undoStack.length > this.MAX_HISTORY) {
       this.undoStack.shift();
@@ -627,6 +768,9 @@ export class PdfEditorStateService {
     const cmd = this.undoStack.pop()!;
     cmd.undo();
     this.redoStack.push(cmd);
+    if (this.redoStack.length > this.MAX_HISTORY) {
+      this.redoStack.shift();
+    }
     this.updateUndoRedoSubjects();
     this.isDirtySubject.next(true);
     return true;
@@ -637,6 +781,9 @@ export class PdfEditorStateService {
     const cmd = this.redoStack.pop()!;
     cmd.redo();
     this.undoStack.push(cmd);
+    if (this.undoStack.length > this.MAX_HISTORY) {
+      this.undoStack.shift();
+    }
     this.updateUndoRedoSubjects();
     this.isDirtySubject.next(true);
     return true;
@@ -652,6 +799,480 @@ export class PdfEditorStateService {
   setExporting(isExporting: boolean, progress = 0) {
     this.isExportingSubject.next(isExporting);
     this.exportProgressSubject.next(progress);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // Placement drafts
+  // ════════════════════════════════════════════════════════════════════
+  /*
+   * Four of the Part K tools need a place on the page before they can do
+   * anything: a link needs a rectangle to be tappable, a comment needs a
+   * spot for its pin, a whiteout needs an area, a measurement needs its
+   * points. Asking for coordinates in a form is not how anyone wants to
+   * place a box on a phone.
+   *
+   * So the sheet collects everything EXCEPT the geometry, parks it here as a
+   * draft, and closes. The canvas picks the draft up, lets the user draw or
+   * tap, and completes it. `placementCompleted$` then tells the editor page
+   * what landed, so it can confirm it and offer the sheet again.
+   */
+
+  private linkDraftSubject = new BehaviorSubject<LinkDraft | null>(null);
+  public linkDraft$ = this.linkDraftSubject.asObservable();
+
+  private commentDraftSubject = new BehaviorSubject<CommentDraft | null>(null);
+  public commentDraft$ = this.commentDraftSubject.asObservable();
+
+  private whiteoutDraftSubject = new BehaviorSubject<WhiteoutDraft | null>(null);
+  public whiteoutDraft$ = this.whiteoutDraftSubject.asObservable();
+
+  private measureDraftSubject = new BehaviorSubject<MeasureDraft | null>(null);
+  public measureDraft$ = this.measureDraftSubject.asObservable();
+
+  private placementCompletedSubject = new Subject<PlacementCompleted>();
+  public placementCompleted$ = this.placementCompletedSubject.asObservable();
+
+  /** K5's pen snapping, which the freehand draw tool reads. */
+  private shapeSnapSubject = new BehaviorSubject<boolean>(false);
+  public shapeSnap$ = this.shapeSnapSubject.asObservable();
+
+  get linkDraft(): LinkDraft | null {
+    return this.linkDraftSubject.value;
+  }
+
+  get commentDraft(): CommentDraft | null {
+    return this.commentDraftSubject.value;
+  }
+
+  get whiteoutDraft(): WhiteoutDraft | null {
+    return this.whiteoutDraftSubject.value;
+  }
+
+  get measureDraft(): MeasureDraft | null {
+    return this.measureDraftSubject.value;
+  }
+
+  get shapeSnapEnabled(): boolean {
+    return this.shapeSnapSubject.value;
+  }
+
+  setShapeSnapEnabled(enabled: boolean): void {
+    this.shapeSnapSubject.next(enabled);
+  }
+
+  /** Arms one of the placement tools, clearing any other draft first. */
+  startPlacement(
+    tool: 'link' | 'comment' | 'whiteout' | 'measure',
+    draft: LinkDraft | CommentDraft | WhiteoutDraft | MeasureDraft
+  ): void {
+    this.clearPlacement();
+
+    switch (tool) {
+      case 'link':
+        this.linkDraftSubject.next(draft as LinkDraft);
+        break;
+      case 'comment':
+        this.commentDraftSubject.next(draft as CommentDraft);
+        break;
+      case 'whiteout':
+        this.whiteoutDraftSubject.next(draft as WhiteoutDraft);
+        break;
+      case 'measure':
+        this.measureDraftSubject.next(draft as MeasureDraft);
+        break;
+    }
+
+    this.setSelectedElementId(null);
+    this.activeToolSubject.next(tool);
+  }
+
+  /** Drops every draft and returns to the select tool. */
+  clearPlacement(): void {
+    if (this.linkDraftSubject.value) this.linkDraftSubject.next(null);
+    if (this.commentDraftSubject.value) this.commentDraftSubject.next(null);
+    if (this.whiteoutDraftSubject.value) this.whiteoutDraftSubject.next(null);
+    if (this.measureDraftSubject.value) this.measureDraftSubject.next(null);
+  }
+
+  /** Called by the canvas once something has been placed. */
+  completePlacement(event: PlacementCompleted): void {
+    this.clearPlacement();
+    this.activeToolSubject.next('select');
+    this.placementCompletedSubject.next(event);
+  }
+
+  // --- K2: Hyperlinks ---
+
+  addLink(link: Omit<PdfHyperlink, 'id'>): PdfHyperlink {
+    const page = this.currentPage;
+    if (!page) throw new Error('No active page');
+
+    if (!page.links) page.links = [];
+
+    const newLink: PdfHyperlink = {
+      ...link,
+      id: generateId()
+    };
+
+    page.links.push(newLink);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'ADD_LINK',
+      description: `Add link on page ${page.pageNumber}`,
+      timestamp: Date.now(),
+      undo: () => {
+        if (page.links) {
+          const idx = page.links.findIndex(l => l.id === newLink.id);
+          if (idx !== -1) page.links.splice(idx, 1);
+        }
+        this.notifyDocumentChanged();
+      },
+      redo: () => {
+        if (!page.links) page.links = [];
+        page.links.push(newLink);
+        this.notifyDocumentChanged();
+      }
+    });
+
+    this.notifyDocumentChanged();
+    return newLink;
+  }
+
+  deleteLink(linkId: string) {
+    const page = this.currentPage;
+    if (!page || !page.links) return;
+
+    const idx = page.links.findIndex(l => l.id === linkId);
+    if (idx === -1) return;
+
+    const removed = page.links[idx];
+    page.links.splice(idx, 1);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'DELETE_LINK',
+      description: `Delete link`,
+      timestamp: Date.now(),
+      undo: () => {
+        if (!page.links) page.links = [];
+        page.links.splice(idx, 0, removed);
+        this.notifyDocumentChanged();
+      },
+      redo: () => {
+        if (page.links) {
+          const i = page.links.findIndex(l => l.id === linkId);
+          if (i !== -1) page.links.splice(i, 1);
+        }
+        this.notifyDocumentChanged();
+      }
+    });
+
+    this.notifyDocumentChanged();
+  }
+
+  // --- K3: Comments & Reviews ---
+
+  addCommentThread(thread: Omit<CommentThread, 'id' | 'createdAt' | 'replies' | 'resolved'>): CommentThread {
+    const page = this.currentPage;
+    if (!page) throw new Error('No active page');
+
+    if (!page.comments) page.comments = [];
+
+    const newThread: CommentThread = {
+      ...thread,
+      id: generateId(),
+      createdAt: Date.now(),
+      resolved: false,
+      replies: []
+    };
+
+    page.comments.push(newThread);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'ADD_COMMENT',
+      description: `Add comment thread on page ${page.pageNumber}`,
+      timestamp: Date.now(),
+      undo: () => {
+        if (page.comments) {
+          const idx = page.comments.findIndex(c => c.id === newThread.id);
+          if (idx !== -1) page.comments.splice(idx, 1);
+        }
+        this.notifyDocumentChanged();
+      },
+      redo: () => {
+        if (!page.comments) page.comments = [];
+        page.comments.push(newThread);
+        this.notifyDocumentChanged();
+      }
+    });
+
+    this.notifyDocumentChanged();
+    return newThread;
+  }
+
+  addCommentReply(threadId: string, reply: Omit<CommentReply, 'id' | 'createdAt'>): CommentReply | null {
+    const doc = this.document;
+    if (!doc) return null;
+
+    let targetThread: CommentThread | undefined;
+    for (const p of doc.pages) {
+      if (p.comments) {
+        targetThread = p.comments.find(c => c.id === threadId);
+        if (targetThread) break;
+      }
+    }
+
+    if (!targetThread) return null;
+
+    const newReply: CommentReply = {
+      ...reply,
+      id: generateId(),
+      createdAt: Date.now()
+    };
+
+    targetThread.replies.push(newReply);
+    this.notifyDocumentChanged();
+    return newReply;
+  }
+
+  resolveCommentThread(threadId: string, resolved: boolean) {
+    const doc = this.document;
+    if (!doc) return;
+
+    for (const p of doc.pages) {
+      if (p.comments) {
+        const thread = p.comments.find(c => c.id === threadId);
+        if (thread) {
+          thread.resolved = resolved;
+          this.executeCommand({
+            id: generateId(),
+            type: 'RESOLVE_COMMENT',
+            description: `${resolved ? 'Resolve' : 'Reopen'} comment thread`,
+            timestamp: Date.now(),
+            undo: () => {
+              thread.resolved = !resolved;
+              this.notifyDocumentChanged();
+            },
+            redo: () => {
+              thread.resolved = resolved;
+              this.notifyDocumentChanged();
+            }
+          });
+          this.notifyDocumentChanged();
+          return;
+        }
+      }
+    }
+  }
+
+  deleteCommentThread(threadId: string) {
+    const doc = this.document;
+    if (!doc) return;
+
+    for (const page of doc.pages) {
+      if (!page.comments) continue;
+      const idx = page.comments.findIndex(c => c.id === threadId);
+      if (idx !== -1) {
+        const removed = page.comments[idx];
+        page.comments.splice(idx, 1);
+
+        this.executeCommand({
+          id: generateId(),
+          type: 'DELETE_COMMENT',
+          description: `Delete comment thread`,
+          timestamp: Date.now(),
+          undo: () => {
+            if (!page.comments) page.comments = [];
+            page.comments.splice(idx, 0, removed);
+            this.notifyDocumentChanged();
+          },
+          redo: () => {
+            if (page.comments) {
+              const i = page.comments.findIndex(c => c.id === threadId);
+              if (i !== -1) page.comments.splice(i, 1);
+            }
+            this.notifyDocumentChanged();
+          }
+        });
+
+        this.notifyDocumentChanged();
+        return;
+      }
+    }
+  }
+
+  // --- K4: Whiteout ---
+
+  addWhiteout(region: Omit<WhiteoutRegion, 'id'>): WhiteoutRegion {
+    const page = this.currentPage;
+    if (!page) throw new Error('No active page');
+
+    if (!page.whiteouts) page.whiteouts = [];
+
+    const newWhiteout: WhiteoutRegion = {
+      ...region,
+      id: generateId()
+    };
+
+    page.whiteouts.push(newWhiteout);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'ADD_WHITEOUT',
+      description: `Add whiteout on page ${page.pageNumber}`,
+      timestamp: Date.now(),
+      undo: () => {
+        if (page.whiteouts) {
+          const idx = page.whiteouts.findIndex(w => w.id === newWhiteout.id);
+          if (idx !== -1) page.whiteouts.splice(idx, 1);
+        }
+        this.notifyDocumentChanged();
+      },
+      redo: () => {
+        if (!page.whiteouts) page.whiteouts = [];
+        page.whiteouts.push(newWhiteout);
+        this.notifyDocumentChanged();
+      }
+    });
+
+    this.notifyDocumentChanged();
+    return newWhiteout;
+  }
+
+  deleteWhiteout(whiteoutId: string) {
+    const page = this.currentPage;
+    if (!page || !page.whiteouts) return;
+
+    const idx = page.whiteouts.findIndex(w => w.id === whiteoutId);
+    if (idx === -1) return;
+
+    const removed = page.whiteouts[idx];
+    page.whiteouts.splice(idx, 1);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'DELETE_WHITEOUT',
+      description: `Delete whiteout`,
+      timestamp: Date.now(),
+      undo: () => {
+        if (!page.whiteouts) page.whiteouts = [];
+        page.whiteouts.splice(idx, 0, removed);
+        this.notifyDocumentChanged();
+      },
+      redo: () => {
+        if (page.whiteouts) {
+          const i = page.whiteouts.findIndex(w => w.id === whiteoutId);
+          if (i !== -1) page.whiteouts.splice(i, 1);
+        }
+        this.notifyDocumentChanged();
+      }
+    });
+
+    this.notifyDocumentChanged();
+  }
+
+  // --- K5: Measurements ---
+
+  addMeasurement(measurement: Omit<MeasurementResult, 'id'>): MeasurementResult {
+    const page = this.currentPage;
+    if (!page) throw new Error('No active page');
+
+    if (!page.measurements) page.measurements = [];
+
+    const newMeasurement: MeasurementResult = {
+      ...measurement,
+      id: generateId()
+    };
+
+    page.measurements.push(newMeasurement);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'ADD_MEASUREMENT',
+      description: `Add ${measurement.type} measurement on page ${page.pageNumber}`,
+      timestamp: Date.now(),
+      undo: () => {
+        if (page.measurements) {
+          const idx = page.measurements.findIndex(m => m.id === newMeasurement.id);
+          if (idx !== -1) page.measurements.splice(idx, 1);
+        }
+        this.notifyDocumentChanged();
+      },
+      redo: () => {
+        if (!page.measurements) page.measurements = [];
+        page.measurements.push(newMeasurement);
+        this.notifyDocumentChanged();
+      }
+    });
+
+    this.notifyDocumentChanged();
+    return newMeasurement;
+  }
+
+  deleteMeasurement(measurementId: string) {
+    const page = this.currentPage;
+    if (!page || !page.measurements) return;
+
+    const idx = page.measurements.findIndex(m => m.id === measurementId);
+    if (idx === -1) return;
+
+    const removed = page.measurements[idx];
+    page.measurements.splice(idx, 1);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'DELETE_MEASUREMENT',
+      description: `Delete measurement`,
+      timestamp: Date.now(),
+      undo: () => {
+        if (!page.measurements) page.measurements = [];
+        page.measurements.splice(idx, 0, removed);
+        this.notifyDocumentChanged();
+      },
+      redo: () => {
+        if (page.measurements) {
+          const i = page.measurements.findIndex(m => m.id === measurementId);
+          if (i !== -1) page.measurements.splice(i, 1);
+        }
+        this.notifyDocumentChanged();
+      }
+    });
+
+    this.notifyDocumentChanged();
+  }
+
+  // --- K6: Text Edits ---
+
+  addTextEdit(edit: TextEditCommand) {
+    const page = this.currentPage;
+    if (!page) throw new Error('No active page');
+
+    if (!page.textEdits) page.textEdits = [];
+
+    page.textEdits.push(edit);
+
+    this.executeCommand({
+      id: generateId(),
+      type: 'EDIT_EXISTING_TEXT',
+      description: `Edit text on page ${page.pageNumber}`,
+      timestamp: Date.now(),
+      undo: () => {
+        if (page.textEdits) {
+          const idx = page.textEdits.findIndex(e => e.runId === edit.runId);
+          if (idx !== -1) page.textEdits.splice(idx, 1);
+        }
+        this.notifyDocumentChanged();
+      },
+      redo: () => {
+        if (!page.textEdits) page.textEdits = [];
+        page.textEdits.push(edit);
+        this.notifyDocumentChanged();
+      }
+    });
+
+    this.notifyDocumentChanged();
   }
 
   private notifyDocumentChanged() {

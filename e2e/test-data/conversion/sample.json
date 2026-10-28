@@ -1,0 +1,14 @@
+{
+  "appName": "Indian Form Helper",
+  "version": "1.0.0",
+  "privacy": true,
+  "supportedFormats": 24,
+  "offlineOnly": true,
+  "features": [
+    "pdf-to-markdown",
+    "pdf-to-html",
+    "pdf-to-epub",
+    "code-to-pdf",
+    "email-to-pdf"
+  ]
+}

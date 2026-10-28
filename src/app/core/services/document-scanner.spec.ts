@@ -175,4 +175,542 @@ describe('DocumentScannerService', () => {
       expect(warped.height).toBeGreaterThan(400);
     });
   });
+
+  describe('H1 — Capture Modes: Book Spread & ID Card', () => {
+    it('should default to document mode and remember selected mode in session', () => {
+      expect(service.getScanMode()).toBe('document');
+      service.setScanMode('book');
+      expect(service.getScanMode()).toBe('book');
+      service.setScanMode('id_card');
+      expect(service.getScanMode()).toBe('id_card');
+      service.setScanMode('document');
+    });
+
+    it('should detect the gutter in a synthetic book spread fixture and split into two pages', async () => {
+      const spread = service.createCanvas(300, 150);
+      const ctx = service.getContext(spread)!;
+
+      // Fill white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 300, 150);
+
+      // Left page text (columns 20 to 120)
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(20, 20, 100, 10);
+      ctx.fillRect(20, 40, 100, 10);
+      ctx.fillRect(20, 60, 100, 10);
+
+      // Dark spine shadow at column 150 (width 10)
+      ctx.fillStyle = '#333333';
+      ctx.fillRect(145, 0, 10, 150);
+
+      // Right page text (columns 170 to 270)
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(170, 20, 100, 10);
+      ctx.fillRect(170, 40, 100, 10);
+      ctx.fillRect(170, 60, 100, 10);
+
+      const gutterResult = service.detectGutter(spread);
+      expect(gutterResult).toBeDefined();
+      // Should find gutter near the spine shadow at x = 145..155
+      expect(gutterResult.gutterX).toBeGreaterThanOrEqual(140);
+      expect(gutterResult.gutterX).toBeLessThanOrEqual(160);
+      expect(gutterResult.confidence).toBeGreaterThanOrEqual(70);
+
+      // Split book spread
+      const [leftPage, rightPage] = await service.splitBookSpread(spread, gutterResult.gutterX);
+      expect(leftPage.width).toBe(gutterResult.gutterX);
+      expect(leftPage.height).toBe(150);
+      expect(rightPage.width).toBe(300 - gutterResult.gutterX);
+      expect(rightPage.height).toBe(150);
+    });
+
+    it('should layout front and back ID card images onto one page with true card proportions', async () => {
+      const front = service.createCanvas(200, 126); // ~1.58 ratio
+      const back = service.createCanvas(200, 126);
+
+      const fctx = service.getContext(front)!;
+      fctx.fillStyle = '#1e3a8a';
+      fctx.fillRect(0, 0, 200, 126);
+
+      const bctx = service.getContext(back)!;
+      bctx.fillStyle = '#065f46';
+      bctx.fillRect(0, 0, 200, 126);
+
+      const sheet = await service.layoutIdCard(front, back, { showLabels: true });
+      expect(sheet).toBeDefined();
+      expect(sheet.width).toBe(1240);
+      expect(sheet.height).toBe(1754);
+
+      // Check card ratio on sheet: width = 1240 * 0.72 = 893, height = 893 / 1.5858 ~ 563
+      const sctx = service.getContext(sheet)!;
+      const data = sctx.getImageData(0, 0, sheet.width, sheet.height).data;
+      expect(data.length).toBe(1240 * 1754 * 4);
+    });
+
+    it('fullPageCorners covers the whole image, so a composed sheet is not re-cropped', () => {
+      const c = service.fullPageCorners(1240, 1754);
+      expect(c.topLeft).toEqual({ x: 0, y: 0 });
+      expect(c.topRight).toEqual({ x: 1240, y: 0 });
+      expect(c.bottomRight).toEqual({ x: 1240, y: 1754 });
+      expect(c.bottomLeft).toEqual({ x: 0, y: 1754 });
+    });
+
+    it('document mode output should be byte-identical to base enhancement for a fixture', async () => {
+      const canvas = service.createCanvas(60, 60);
+      const ctx = service.getContext(canvas)!;
+      ctx.fillStyle = '#f2f2f2';
+      ctx.fillRect(0, 0, 60, 60);
+      ctx.fillStyle = '#222222';
+      ctx.fillRect(10, 10, 40, 20);
+
+      const run1 = await service.enhanceImage(canvas, {
+        preset: 'document',
+        brightness: 0,
+        contrast: 0,
+        sharpen: 0
+      });
+
+      const run2 = await service.enhanceImage(canvas, {
+        preset: 'document',
+        brightness: 0,
+        contrast: 0,
+        sharpen: 0
+      });
+
+      const d1 = service.getContext(run1)!.getImageData(0, 0, 60, 60).data;
+      const d2 = service.getContext(run2)!.getImageData(0, 0, 60, 60).data;
+
+      expect(d1.length).toBe(d2.length);
+      let identical = true;
+      for (let i = 0; i < d1.length; i++) {
+        if (d1[i] !== d2[i]) {
+          identical = false;
+          break;
+        }
+      }
+      expect(identical).toBe(true);
+    });
+  });
+
+  describe('H2 — Capture Modes: Whiteboard, Photo & Table', () => {
+    it('whiteboard mode preserves hue on coloured marker strokes and whitens background', async () => {
+      const canvas = service.createCanvas(50, 50);
+      const ctx = service.getContext(canvas)!;
+
+      // Off-white background
+      ctx.fillStyle = '#e8e8e8';
+      ctx.fillRect(0, 0, 50, 50);
+
+      // Red saturated marker stroke at (20, 20)
+      ctx.fillStyle = '#e6194b';
+      ctx.fillRect(20, 20, 5, 5);
+
+      const enhanced = await service.enhanceWhiteboard(canvas);
+      const ectx = service.getContext(enhanced)!;
+
+      // Check background at (5, 5) is whitened
+      const bgPixel = ectx.getImageData(5, 5, 1, 1).data;
+      expect(bgPixel[0]).toBeGreaterThanOrEqual(240);
+      expect(bgPixel[1]).toBeGreaterThanOrEqual(240);
+      expect(bgPixel[2]).toBeGreaterThanOrEqual(240);
+
+      // Check red stroke at (22, 22) preserves hue (R is high, G and B are low)
+      const redPixel = ectx.getImageData(22, 22, 1, 1).data;
+      expect(redPixel[0]).toBeGreaterThan(150);
+      expect(redPixel[0]).toBeGreaterThan(redPixel[1] * 2);
+      expect(redPixel[0]).toBeGreaterThan(redPixel[2] * 2);
+    });
+
+    it('photo mode leaves pixels effectively unaltered', async () => {
+      const canvas = service.createCanvas(40, 40);
+      const ctx = service.getContext(canvas)!;
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillRect(0, 0, 40, 40);
+
+      const originalData = ctx.getImageData(0, 0, 40, 40).data;
+      const photoOut = await service.enhancePhoto(canvas);
+      const photoData = service.getContext(photoOut)!.getImageData(0, 0, 40, 40).data;
+
+      expect(photoData.length).toBe(originalData.length);
+      expect(photoData[0]).toBe(originalData[0]);
+      expect(photoData[1]).toBe(originalData[1]);
+      expect(photoData[2]).toBe(originalData[2]);
+    });
+  });
+
+  describe('H3 — Auto-Capture & Batch Scanning', () => {
+    const quad: DocumentCorners = {
+      topLeft: { x: 50, y: 50 },
+      topRight: { x: 450, y: 50 },
+      bottomRight: { x: 450, y: 550 },
+      bottomLeft: { x: 50, y: 550 }
+    };
+
+    it('should trigger when quad is stable for consecutive frames, covers frame, and is sharp', () => {
+      const quadHistory = [quad, quad, quad]; // zero drift
+      const result = service.evaluateAutoCapture(quadHistory, quad, 500, 600, 120, 80);
+
+      expect(result.canTrigger).toBe(true);
+      expect(result.stabilityProgress).toBeGreaterThanOrEqual(0.85);
+      expect(result.coverageRatio).toBeGreaterThanOrEqual(0.25);
+      expect(result.isBlurry).toBe(false);
+    });
+
+    it('should not trigger if corners are drifting rapidly', () => {
+      const unstableHistory: DocumentCorners[] = [
+        { topLeft: { x: 10, y: 10 }, topRight: { x: 300, y: 20 }, bottomRight: { x: 320, y: 400 }, bottomLeft: { x: 20, y: 390 } },
+        { topLeft: { x: 40, y: 50 }, topRight: { x: 380, y: 70 }, bottomRight: { x: 400, y: 450 }, bottomLeft: { x: 50, y: 440 } }
+      ];
+      const result = service.evaluateAutoCapture(unstableHistory, quad, 500, 600, 120, 80);
+
+      expect(result.canTrigger).toBe(false);
+      expect(result.reason).toContain('steady');
+    });
+
+    it('should not trigger if quad area does not meet minimum coverage', () => {
+      const smallQuad: DocumentCorners = {
+        topLeft: { x: 10, y: 10 },
+        topRight: { x: 50, y: 10 },
+        bottomRight: { x: 50, y: 50 },
+        bottomLeft: { x: 10, y: 50 }
+      };
+      const result = service.evaluateAutoCapture([smallQuad, smallQuad], smallQuad, 500, 600, 120, 80);
+
+      expect(result.canTrigger).toBe(false);
+      expect(result.coverageRatio).toBeLessThan(0.25);
+    });
+
+    it('should remain responsive across 20 consecutive batch captures', () => {
+      const start = performance.now();
+      for (let i = 0; i < 20; i++) {
+        const evalRes = service.evaluateAutoCapture([quad, quad], quad, 500, 600, 110, 80);
+        expect(evalRes).toBeDefined();
+      }
+      const duration = performance.now() - start;
+      expect(duration).toBeLessThan(500); // 20 evaluations well within 500ms
+    });
+  });
+
+  describe('H4 — Blur Gate', () => {
+    it('should give higher sharpness score to sharp pattern than to smooth/blurred pattern', async () => {
+      // Sharp pattern with high contrast edges
+      const sharpCanvas = service.createCanvas(100, 100);
+      const sctx = service.getContext(sharpCanvas)!;
+      sctx.fillStyle = '#000000';
+      sctx.fillRect(0, 0, 100, 100);
+      sctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 100; i += 10) {
+        sctx.fillRect(i, 0, 5, 100);
+      }
+
+      // Blurred / flat pattern
+      const blurCanvas = service.createCanvas(100, 100);
+      const bctx = service.getContext(blurCanvas)!;
+      bctx.fillStyle = '#888888';
+      bctx.fillRect(0, 0, 100, 100);
+
+      const sharpScore = await service.calculateBlurScore(sharpCanvas, 50);
+      const blurScore = await service.calculateBlurScore(blurCanvas, 50);
+
+      expect(sharpScore.score).toBeGreaterThan(blurScore.score);
+      expect(sharpScore.isBlurry).toBe(false);
+      expect(blurScore.isBlurry).toBe(true);
+    });
+
+    it('reports a display percentage, because the raw variance is not one', async () => {
+      const sharp = service.createCanvas(200, 200);
+      const sctx = service.getContext(sharp)!;
+      sctx.fillStyle = '#000000';
+      sctx.fillRect(0, 0, 200, 200);
+      sctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 200; i += 8) sctx.fillRect(i, 0, 4, 200);
+
+      const res = await service.calculateBlurScore(sharp);
+
+      // A crisp page of text scores in the tens of thousands, so the badge
+      // used to read "Sharp 27225%".
+      expect(res.score).toBeGreaterThan(100);
+      expect(res.scorePercent).toBeGreaterThanOrEqual(0);
+      expect(res.scorePercent).toBeLessThanOrEqual(100);
+    });
+
+    it('sharpnessPercent is bounded, monotonic and puts the threshold mid-scale', () => {
+      expect(service.sharpnessPercent(0)).toBe(0);
+      expect(service.sharpnessPercent(-5)).toBe(0);
+      expect(service.sharpnessPercent(1e9)).toBe(100);
+
+      // Ordering by the percentage has to match ordering by the raw score,
+      // or the badge would rank pages differently from the blur gate.
+      const samples = [0, 10, 80, 740, 8544, 27225];
+      const mapped = samples.map(v => service.sharpnessPercent(v));
+      for (let i = 1; i < mapped.length; i++) {
+        expect(mapped[i]).toBeGreaterThanOrEqual(mapped[i - 1]);
+      }
+
+      // The default gate sits at 80, which should read as clearly poor
+      // without collapsing to zero.
+      const atThreshold = service.sharpnessPercent(80);
+      expect(atThreshold).toBeGreaterThan(0);
+      expect(atThreshold).toBeLessThan(60);
+    });
+
+    it('threshold decision is stable across image sizes', async () => {
+      const makePattern = (size: number) => {
+        const c = service.createCanvas(size, size);
+        const ctx = service.getContext(c)!;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = '#ffffff';
+        const step = Math.round(size / 10);
+        for (let i = 0; i < size; i += step * 2) {
+          ctx.fillRect(i, 0, step, size);
+        }
+        return c;
+      };
+
+      const small = makePattern(100);
+      const large = makePattern(300);
+
+      const scoreSmall = await service.calculateBlurScore(small, 50);
+      const scoreLarge = await service.calculateBlurScore(large, 50);
+
+      // Both should pass threshold
+      expect(scoreSmall.isBlurry).toBe(false);
+      expect(scoreLarge.isBlurry).toBe(false);
+    });
+  });
+
+  describe('H5 — Shadow & Glare Removal', () => {
+    it('flattens synthetic illumination gradient to near-uniform background', async () => {
+      const canvas = service.createCanvas(120, 60);
+      const ctx = service.getContext(canvas)!;
+
+      // Draw horizontal lighting gradient (240 down to 80)
+      for (let x = 0; x < 120; x++) {
+        const lum = Math.round(240 - (x / 120) * 150);
+        ctx.fillStyle = `rgb(${lum},${lum},${lum})`;
+        ctx.fillRect(x, 0, 1, 60);
+      }
+
+      const res = await service.removeShadowsAndGlare(canvas, 16);
+      expect(res.applied).toBe(true);
+
+      const normData = service.getContext(res.canvas)!.getImageData(0, 0, 120, 60).data;
+      const leftPixel = normData[0]; // x=0
+      const rightPixel = normData[(119) * 4]; // x=119
+
+      // Background difference should be flattened significantly
+      expect(Math.abs(leftPixel - rightPixel)).toBeLessThan(80);
+    });
+
+    it('leaves an already-even page within tolerance of unchanged', async () => {
+      const canvas = service.createCanvas(60, 60);
+      const ctx = service.getContext(canvas)!;
+      ctx.fillStyle = '#f5f5f5';
+      ctx.fillRect(0, 0, 60, 60);
+
+      const res = await service.removeShadowsAndGlare(canvas, 16);
+      expect(res.applied).toBe(false); // Detected as even, not modified
+    });
+  });
+
+  describe('H6 — Finger & Edge Removal', () => {
+    it('detects skin-toned finger intrusion touching border', async () => {
+      const canvas = service.createCanvas(100, 100);
+      const ctx = service.getContext(canvas)!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 100, 100);
+
+      // Draw skin tone block touching left edge (x: 0..10, y: 30..70)
+      // Caucasian / Indian skin in RGB: R: 180, G: 120, B: 90
+      ctx.fillStyle = 'rgb(180, 120, 90)';
+      ctx.fillRect(0, 30, 12, 40);
+
+      const det = await service.detectFingerIntrusions(canvas);
+      expect(det.detected).toBe(true);
+      expect(det.edge).toBe('left');
+      expect(det.boundingBox).toBeDefined();
+
+      const cleaned = await service.removeFingerIntrusions(canvas, det);
+      expect(cleaned).toBeDefined();
+    });
+
+    it('rejects dark corner / shadow as false positive and does not silently inpaint', async () => {
+      const canvas = service.createCanvas(100, 100);
+      const ctx = service.getContext(canvas)!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 100, 100);
+
+      // Dark corner (R: 20, G: 20, B: 20)
+      ctx.fillStyle = 'rgb(20, 20, 20)';
+      ctx.fillRect(0, 0, 15, 15);
+
+      const det = await service.detectFingerIntrusions(canvas);
+      expect(det.detected).toBe(false);
+    });
+  });
+
+  describe('H7 — Book Curvature Dewarping', () => {
+    it('detects flat page as flat and skips dewarping', async () => {
+      const canvas = service.createCanvas(100, 100);
+      const ctx = service.getContext(canvas)!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 100, 100);
+
+      // Straight horizontal text lines
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(10, 30, 80, 4);
+      ctx.fillRect(10, 50, 80, 4);
+      ctx.fillRect(10, 70, 80, 4);
+
+      const res = await service.dewarpCurvature(canvas);
+      expect(res.curvatureDetected).toBe(false);
+    });
+
+    it('detects curved baselines and applies dewarping vertical resampling', async () => {
+      const canvas = service.createCanvas(120, 100);
+      const ctx = service.getContext(canvas)!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 120, 100);
+
+      // Parabolically curved lines across full width: sag in middle
+      ctx.fillStyle = '#000000';
+      for (let x = 0; x < 120; x++) {
+        const offset = Math.round(0.008 * (x - 60) ** 2);
+        ctx.fillRect(x, 25 + offset, 1, 4);
+        ctx.fillRect(x, 50 + offset, 1, 4);
+      }
+
+      const res = await service.dewarpCurvature(canvas);
+      expect(res.curvatureDetected).toBe(true);
+      expect(res.curvatureMagnitude).toBeGreaterThan(0);
+      expect(res.canvas).toBeDefined();
+    });
+
+    it('detectCurvature agrees with dewarpCurvature without resampling the page', async () => {
+      const flat = service.createCanvas(100, 100);
+      const fctx = service.getContext(flat)!;
+      fctx.fillStyle = '#ffffff';
+      fctx.fillRect(0, 0, 100, 100);
+      fctx.fillStyle = '#000000';
+      // Full-width rules: every sampled column sees the same baselines, so a
+      // flat page is flat rather than an artefact of empty margin columns.
+      fctx.fillRect(0, 30, 100, 4);
+      fctx.fillRect(0, 50, 100, 4);
+      fctx.fillRect(0, 70, 100, 4);
+
+      const curved = service.createCanvas(120, 100);
+      const cctx = service.getContext(curved)!;
+      cctx.fillStyle = '#ffffff';
+      cctx.fillRect(0, 0, 120, 100);
+      cctx.fillStyle = '#000000';
+      for (let x = 0; x < 120; x++) {
+        const offset = Math.round(0.008 * (x - 60) ** 2);
+        cctx.fillRect(x, 25 + offset, 1, 4);
+        cctx.fillRect(x, 50 + offset, 1, 4);
+      }
+
+      const flatProbe = await service.detectCurvature(flat);
+      const curvedProbe = await service.detectCurvature(curved);
+
+      expect(flatProbe.curvatureDetected).toBe(false);
+      expect(curvedProbe.curvatureDetected).toBe(true);
+
+      // The capture path uses the probe in place of the full dewarp, so the two
+      // must never disagree about whether a page is curved.
+      expect(flatProbe.curvatureDetected).toBe((await service.dewarpCurvature(flat)).curvatureDetected);
+      expect(curvedProbe.curvatureDetected).toBe((await service.dewarpCurvature(curved)).curvatureDetected);
+      expect(curvedProbe.curvatureMagnitude).toBe((await service.dewarpCurvature(curved)).curvatureMagnitude);
+    });
+
+    it('a probe on a flat page returns the original canvas untouched', async () => {
+      const flat = service.createCanvas(100, 100);
+      const ctx = service.getContext(flat)!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 100, 100);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 30, 100, 4);
+      ctx.fillRect(0, 50, 100, 4);
+      ctx.fillRect(0, 70, 100, 4);
+
+      const res = await service.dewarpCurvature(flat);
+      expect(res.curvatureDetected).toBe(false);
+      expect(res.canvas).toBe(flat);
+    });
+  });
+
+  describe('H8 — Auto-Naming from Content', () => {
+    it('proposes title from OCR heading and sanitizes filesystem-unsafe characters', async () => {
+      const canvas = service.createCanvas(100, 100);
+      const ocrText = 'ANNUAL FINANCIAL REPORT: 2026/Q4 *FINAL*?\nPage 1 of 12\nConfidential';
+
+      const result = await service.suggestDocumentTitle(canvas, ocrText);
+      expect(result.source).toBe('ocr');
+      expect(result.proposedTitle).toBe('ANNUAL FINANCIAL REPORT: 2026/Q4 *FINAL*?');
+      expect(result.sanitizedFileName).toBe('ANNUAL_FINANCIAL_REPORT_2026_Q4_FINAL');
+      expect(result.sanitizedFileName).not.toMatch(/[\\/:*?"<>|]/);
+    });
+
+    it('falls back gracefully to timestamp scan name on blank page', async () => {
+      const blankCanvas = service.createCanvas(100, 100);
+      const ctx = service.getContext(blankCanvas)!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 100, 100);
+
+      const result = await service.suggestDocumentTitle(blankCanvas);
+      expect(result.source).toBe('fallback');
+      expect(result.sanitizedFileName).toMatch(/^Scan_\d{8}_\d{4}$/);
+    });
+
+    it('ranks the largest, highest, shortest line first so it becomes the title', () => {
+      // A heading in 40px type at the top, then body text in 16px below it.
+      const words = [
+        { text: 'Electricity', bbox: { x0: 60, y0: 60, x1: 260, y1: 100 } },
+        { text: 'Bill', bbox: { x0: 270, y0: 60, x1: 340, y1: 100 } },
+        { text: 'Consumer', bbox: { x0: 60, y0: 150, x1: 150, y1: 166 } },
+        { text: 'number', bbox: { x0: 156, y0: 150, x1: 230, y1: 166 } },
+        { text: '2291', bbox: { x0: 236, y0: 150, x1: 290, y1: 166 } },
+        { text: 'Units', bbox: { x0: 60, y0: 190, x1: 110, y1: 206 } },
+        { text: 'consumed', bbox: { x0: 116, y0: 190, x1: 220, y1: 206 } }
+      ];
+
+      const ranked = service.rankTitleLines(words, 350);
+      expect(ranked[0]).toBe('Electricity Bill');
+      expect(ranked).toContain('Consumer number 2291');
+      expect(ranked.length).toBe(3);
+    });
+
+    it('the ranked lines feed suggestDocumentTitle, so the heading becomes the file name', async () => {
+      const canvas = service.createCanvas(100, 100);
+      const ranked = service.rankTitleLines(
+        [
+          { text: 'Salary', bbox: { x0: 40, y0: 40, x1: 160, y1: 84 } },
+          { text: 'Slip', bbox: { x0: 168, y0: 40, x1: 240, y1: 84 } },
+          { text: 'Employee', bbox: { x0: 40, y0: 140, x1: 130, y1: 156 } },
+          { text: 'code', bbox: { x0: 136, y0: 140, x1: 180, y1: 156 } }
+        ],
+        300
+      );
+
+      const result = await service.suggestDocumentTitle(canvas, ranked.join('\n'));
+      expect(result.source).toBe('ocr');
+      expect(result.sanitizedFileName).toBe('Salary_Slip');
+    });
+
+    it('returns nothing to rank when OCR found no usable words', () => {
+      expect(service.rankTitleLines([], 100)).toEqual([]);
+      expect(
+        service.rankTitleLines([{ text: '   ', bbox: { x0: 0, y0: 0, x1: 10, y1: 10 } }], 100)
+      ).toEqual([]);
+    });
+
+    it('sanitizeFileName removes illegal characters and limits length', () => {
+      const unsafe = '  ///Invalid: File * Name? <Test> | "Pipe" \0 End.pdf  ';
+      const clean = service.sanitizeFileName(unsafe);
+      expect(clean).not.toMatch(/[\\/:*?"<>|\0]/);
+      expect(clean).toBe('Invalid_File_Name_Test_Pipe_End.pdf');
+    });
+  });
 });
+

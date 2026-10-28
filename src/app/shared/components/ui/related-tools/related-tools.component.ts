@@ -121,7 +121,7 @@ import { AutoScrollDirective } from '../../../directives/auto-scroll.directive';
       padding: 0 4px;
       font-size: var(--font-small, 13px);
       font-weight: var(--font-weight-semibold, 600);
-      color: var(--color-primary);
+      color: var(--color-primary-text);
       text-decoration: none;
       white-space: nowrap;
     }
@@ -204,7 +204,7 @@ import { AutoScrollDirective } from '../../../directives/auto-scroll.directive';
       padding: 1px 5px;
       border-radius: var(--radius-full, 9999px);
       background: var(--color-primary-soft);
-      color: var(--color-primary);
+      color: var(--color-primary-text);
     }
 
     .card-desc {

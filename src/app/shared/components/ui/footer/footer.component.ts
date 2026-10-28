@@ -215,6 +215,9 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       text-decoration: none;
       transition: color var(--transition-fast, 150ms);
       line-height: 1.4;
+      display: flex;
+      align-items: center;
+      min-height: var(--min-touch-target, 44px);
     }
 
     .col-links a:hover {
@@ -321,7 +324,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       }
 
       .col-links {
-        gap: 6px;
+        gap: 0;
 
         a {
           font-size: 11px;

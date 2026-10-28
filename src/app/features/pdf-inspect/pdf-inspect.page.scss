@@ -274,7 +274,7 @@
       padding: 4px 10px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      min-height: 32px;
+      min-height: var(--min-touch-target, 44px);
     }
 
     .copy-code-btn {

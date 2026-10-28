@@ -1,3 +1,11 @@
+import type {
+  CommentThread,
+  MeasurementResult,
+  PdfHyperlink,
+  TextEditCommand,
+  WhiteoutRegion
+} from './editor-features.types';
+
 export type EditorTool =
   | 'select'
   | 'hand'
@@ -13,7 +21,13 @@ export type EditorTool =
   | 'line'
   | 'arrow'
   | 'redact'
-  | 'crop';
+  | 'crop'
+  | 'find_replace'
+  | 'link'
+  | 'comment'
+  | 'whiteout'
+  | 'measure'
+  | 'edit_text';
 
 export type ShapeType = 'rectangle' | 'circle' | 'line' | 'arrow';
 export type AnnotationType = 'highlight' | 'underline' | 'strikethrough' | 'note' | 'textbox';
@@ -169,6 +183,18 @@ export interface PdfEditorPage {
   elements: PdfElement[];
   redactions: PdfRedaction[];
   thumbnailUrl?: string;
+  /*
+   * The Part K overlays. They were typed `any[]` while the Part K services
+   * were being built, which hid the coordinate-space mistakes between the
+   * editor (top-left origin, PDF points) and the writers (bottom-left).
+   * Everything in these four arrays is top-left-origin; the export pipeline
+   * is the single place that flips to PDF space.
+   */
+  links?: PdfHyperlink[];
+  comments?: CommentThread[];
+  whiteouts?: WhiteoutRegion[];
+  measurements?: MeasurementResult[];
+  textEdits?: TextEditCommand[];
 }
 
 export interface PdfEditorDocument {
@@ -205,7 +231,21 @@ export type EditorCommandType =
   | 'SET_PAGE_NUMBERING'
   | 'ADD_REDACTION'
   | 'APPLY_REDACTION'
-  | 'DELETE_REDACTION';
+  | 'DELETE_REDACTION'
+  | 'ADD_LINK'
+  | 'UPDATE_LINK'
+  | 'DELETE_LINK'
+  | 'ADD_COMMENT'
+  | 'UPDATE_COMMENT'
+  | 'RESOLVE_COMMENT'
+  | 'DELETE_COMMENT'
+  | 'ADD_WHITEOUT'
+  | 'DELETE_WHITEOUT'
+  | 'EDIT_EXISTING_TEXT'
+  | 'ADD_MEASUREMENT'
+  | 'DELETE_MEASUREMENT'
+  /* A whole-file rewrite: find & replace, a link delete, a picture swap. */
+  | 'REPLACE_SOURCE';
 
 export interface EditorCommand {
   id: string;

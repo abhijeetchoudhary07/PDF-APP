@@ -153,6 +153,42 @@
           <app-icon name="shield-checkmark-outline"></app-icon>
         </button>
       </div>
+      <div class="divider"></div>
+      <!-- Tool Group: Advanced Tools (K1-K7) -->
+      <div class="tool-group">
+        <button class="d-btn" (click)="openFindReplaceModal()" [title]="'editor.findReplace' | translate">
+          <app-icon name="search-outline"></app-icon>
+          <span>{{ 'editor.findReplace' | translate }}</span>
+        </button>
+        <button class="d-btn" (click)="openLinkModal()" [title]="'editor.links' | translate">
+          <app-icon name="link-outline"></app-icon>
+          <span>{{ 'editor.links' | translate }}</span>
+        </button>
+        <button class="d-btn" (click)="openCommentModal()" [title]="'editor.comments' | translate">
+          <app-icon name="chatbox-ellipses-outline"></app-icon>
+          <span>{{ 'editor.comments' | translate }}</span>
+        </button>
+        <button class="d-btn" (click)="activateWhiteout()" [title]="'editor.whiteout' | translate">
+          <app-icon name="square-outline"></app-icon>
+          <span>{{ 'editor.whiteout' | translate }}</span>
+        </button>
+        <button class="d-btn" (click)="openImageToolsModal()" [title]="'editor.pictureTools' | translate">
+          <app-icon name="image-outline"></app-icon>
+          <span>{{ 'editor.pictureTools' | translate }}</span>
+        </button>
+        <button class="d-btn" (click)="openShapeMeasurementModal()" [title]="'editor.measure' | translate">
+          <app-icon name="ruler"></app-icon>
+          <span>{{ 'editor.measure' | translate }}</span>
+        </button>
+        <button class="d-btn" (click)="openTextEditModal()" [title]="'editor.editText' | translate">
+          <app-icon name="text-outline"></app-icon>
+          <span>{{ 'editor.editText' | translate }}</span>
+        </button>
+        <button class="d-btn" (click)="openFlattenOverlayModal()" [title]="'editor.flattenOverlay' | translate">
+          <app-icon name="layers-outline"></app-icon>
+          <span>{{ 'editor.flattenOverlay' | translate }}</span>
+        </button>
+      </div>
       <!-- Contextual Quick Styling -->
       <div class="divider"></div>
       <div class="tool-group styling-controls">
@@ -209,7 +245,7 @@
         (toggleThumbnailsEvent)="showThumbnails = !showThumbnails"
         (toggleSearchEvent)="showSearch = !showSearch"
         >
-        <app-pdf-canvas></app-pdf-canvas>
+        <app-pdf-canvas (commentOpened)="onCommentOpened($event)"></app-pdf-canvas>
       </app-pdf-reader>
     </div>
   }
@@ -275,6 +311,10 @@
               <app-icon name="search-outline"></app-icon>
               <span>{{ 'editor.search' | translate }}</span>
             </button>
+            <button class="m-sub-btn" (click)="openFindReplaceModal()">
+              <app-icon name="search"></app-icon>
+              <span>{{ 'editor.findReplace' | translate }}</span>
+            </button>
             <button class="m-sub-btn" (click)="state.zoomIn()">
               <app-icon name="add-outline"></app-icon>
               <span>{{ 'editor.zoomInShort' | translate }}</span>
@@ -304,6 +344,10 @@
               <app-icon name="chatbox-ellipses-outline"></app-icon>
               <span>{{ 'editor.note' | translate }}</span>
             </button>
+            <button class="m-sub-btn" (click)="openCommentModal()">
+              <app-icon name="chatbox"></app-icon>
+              <span>{{ 'editor.comments' | translate }}</span>
+            </button>
           </div>
         }
         <!-- Shapes Submenu -->
@@ -329,6 +373,10 @@
               <app-icon name="arrow-forward-outline"></app-icon>
               <span>{{ 'editor.arrow' | translate }}</span>
             </button>
+            <button class="m-sub-btn" (click)="openShapeMeasurementModal()">
+              <app-icon name="ruler"></app-icon>
+              <span>{{ 'editor.measure' | translate }}</span>
+            </button>
           </div>
         }
         <!-- Insert Submenu -->
@@ -338,15 +386,63 @@
               <app-icon name="text-outline"></app-icon>
               <span>{{ 'editor.textBox' | translate }}</span>
             </button>
+            <button class="m-sub-btn" (click)="openTextEditModal()">
+              <app-icon name="text"></app-icon>
+              <span>{{ 'editor.editText' | translate }}</span>
+            </button>
             <button class="m-sub-btn" (click)="insertImage()">
               <app-icon name="image-outline"></app-icon>
               <span>{{ 'editor.image' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="activateWhiteout()">
+              <app-icon name="square-outline"></app-icon>
+              <span>{{ 'editor.whiteout' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="openImageToolsModal()">
+              <app-icon name="image"></app-icon>
+              <span>{{ 'editor.pictureTools' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="openLinkModal()">
+              <app-icon name="link-outline"></app-icon>
+              <span>{{ 'editor.links' | translate }}</span>
             </button>
           </div>
         }
         <!-- Tools Submenu -->
         @if (mobileActiveGroup === 'tools') {
           <div class="sub-group">
+            <button class="m-sub-btn" (click)="openFindReplaceModal()">
+              <app-icon name="search"></app-icon>
+              <span>{{ 'editor.findReplace' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="openLinkModal()">
+              <app-icon name="link"></app-icon>
+              <span>{{ 'editor.links' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="openCommentModal()">
+              <app-icon name="chatbox"></app-icon>
+              <span>{{ 'editor.comments' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="activateWhiteout()">
+              <app-icon name="square-outline"></app-icon>
+              <span>{{ 'editor.whiteout' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="openImageToolsModal()">
+              <app-icon name="image"></app-icon>
+              <span>{{ 'editor.pictureTools' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="openShapeMeasurementModal()">
+              <app-icon name="ruler"></app-icon>
+              <span>{{ 'editor.measure' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="openTextEditModal()">
+              <app-icon name="text"></app-icon>
+              <span>{{ 'editor.editText' | translate }}</span>
+            </button>
+            <button class="m-sub-btn" (click)="openFlattenOverlayModal()">
+              <app-icon name="layers"></app-icon>
+              <span>{{ 'editor.flattenOverlay' | translate }}</span>
+            </button>
             <button class="m-sub-btn" (click)="openCropModal()">
               <app-icon name="crop-outline"></app-icon>
               <span>{{ 'editor.crop' | translate }}</span>

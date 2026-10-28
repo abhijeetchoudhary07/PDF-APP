@@ -285,15 +285,30 @@
 
     .row-content {
       min-width: 0;
-      flex: 1 1 calc(100% - 40px);
+      flex: 1 1 calc(100% - 52px);
     }
 
+
+    /*
+     * On a phone the actions get their own line under the title, laid out as a
+     * grid rather than a flex row. auto-fit keeps every button at least one
+     * full touch target wide and wraps the overflow instead of shrinking the
+     * buttons: a 360px phone fits all seven on one line, a 320px one wraps the
+     * last. Shrinking them below 44px — which is what a flex row did — is what
+     * made "move up" and "delete" neighbours you could confuse under a thumb.
+     */
     .row-actions {
       width: 100%;
-      justify-content: flex-end;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(var(--min-touch-target, 44px), 1fr));
+      justify-items: stretch;
       padding-top: 6px;
       margin-top: 2px;
       border-top: 1px dashed var(--color-divider, #f1f5f9);
+
+      .row-btn {
+        width: 100%;
+      }
     }
   }
 
@@ -326,6 +341,23 @@
       height: 6px;
       border-radius: 50%;
       background: var(--color-text-muted, #94a3b8);
+    }
+
+    /*
+     * The disclosure control is the one thing on this row you reach for while
+     * scrolling, and at 28px it sat right beside the title, which opens the
+     * edit sheet. Give it a real target on touch rather than overhanging the
+     * title — an overhanging hit area here would swallow taps meant for it.
+     * This has to sit after the base .toggle-btn rule above: the two match at
+     * the same specificity, so source order is what decides.
+     */
+    @media (max-width: 640px) {
+      width: var(--min-touch-target, 44px);
+
+      .toggle-btn {
+        width: var(--min-touch-target, 44px);
+        height: var(--min-touch-target, 44px);
+      }
     }
   }
 
@@ -364,8 +396,8 @@
     flex-shrink: 0;
 
     .row-btn {
-      min-width: 34px;
-      min-height: 34px;
+      min-width: var(--min-touch-target, 44px);
+      min-height: var(--min-touch-target, 44px);
       border: none;
       background: transparent;
       color: var(--color-text-secondary, #475569);
@@ -479,6 +511,16 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      /* The span wraps under the name on a narrow phone rather than squeezing it. */
+      flex-wrap: wrap;
+      min-width: 0;
+
+      .range-span {
+        font-size: var(--font-caption, 11px);
+        font-weight: 500;
+        color: var(--color-text-muted, #94a3b8);
+        white-space: nowrap;
+      }
 
       .range-num-badge {
         font-size: 11px;
@@ -497,8 +539,8 @@
     }
 
     .remove-range-btn {
-      min-width: 36px;
-      min-height: 36px;
+      min-width: var(--min-touch-target, 44px);
+      min-height: var(--min-touch-target, 44px);
       border: none;
       background: transparent;
       color: var(--color-error, #ef4444);

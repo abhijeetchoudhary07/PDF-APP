@@ -1,6 +1,6 @@
 import '../utilities/pdf-iterator-polyfill';
 import { Injectable, inject } from '@angular/core';
-import { PDFDocument, degrees } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFDict, degrees } from 'pdf-lib';
 import { ImageService } from './image.service';
 import { SignatureProcessingService } from './signature-processing.service';
 
@@ -63,7 +63,9 @@ export class PdfSignService {
   async makeBackgroundTransparent(file: File, brightnessThreshold = 230): Promise<string> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      const url = URL.createObjectURL(file);
       img.onload = () => {
+        URL.revokeObjectURL(url);
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
@@ -91,8 +93,11 @@ export class PdfSignService {
         ctx.putImageData(imgData, 0, 0);
         resolve(canvas.toDataURL('image/png'));
       };
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+      img.src = url;
     });
   }
 
@@ -120,6 +125,10 @@ export class PdfSignService {
     signatures: PlacedSignature[],
     outputFileName = 'signed_document.pdf'
   ): Promise<{ file: File; blob: Blob; sizeBytes: number }> {
+    if (!sourceBuffer || sourceBuffer.byteLength < 32) {
+      throw new Error('Cannot embed signatures into an empty or corrupt PDF.');
+    }
+
     if (!signatures || signatures.length === 0) {
       const blob = new Blob([sourceBuffer], { type: 'application/pdf' });
       const file = new File([blob], outputFileName, { type: 'application/pdf' });
@@ -158,6 +167,24 @@ export class PdfSignService {
       } catch {
         // Continue if single signature fails to embed
       }
+    }
+
+    // Defensive hygiene: Strip active scripts upon re-export
+    try {
+      const catalog = pdfDoc.catalog;
+      if (catalog.has(PDFName.of('OpenAction'))) {
+        catalog.delete(PDFName.of('OpenAction'));
+      }
+      if (catalog.has(PDFName.of('AA'))) {
+        catalog.delete(PDFName.of('AA'));
+      }
+      const names = catalog.get(PDFName.of('Names'));
+      const namesDict = names ? pdfDoc.context.lookup(names) : undefined;
+      if (namesDict instanceof PDFDict && namesDict.has(PDFName.of('JavaScript'))) {
+        namesDict.delete(PDFName.of('JavaScript'));
+      }
+    } catch {
+      // Ignore
     }
 
     const finalBytes = await pdfDoc.save({ useObjectStreams: false });

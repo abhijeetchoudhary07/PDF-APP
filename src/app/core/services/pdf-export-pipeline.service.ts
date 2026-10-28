@@ -23,6 +23,10 @@ import {
   PdfRedaction,
   FontStyleName
 } from '../models/pdf-editor.types';
+import { PdfLinkEditorService } from './pdf-link-editor.service';
+import { PdfCommentReviewService } from './pdf-comment-review.service';
+import { PdfLayoutHelper } from '../conversion/utils/pdf-layout.helper';
+import { coverRectForRun } from '../utilities/pdf-text-run.util';
 
 export interface ExportResult {
   file: File;
@@ -48,7 +52,10 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   providedIn: 'root'
 })
 export class PdfExportPipelineService {
-  constructor() {}
+  constructor(
+    private linkEditor: PdfLinkEditorService = new PdfLinkEditorService(),
+    private commentReview: PdfCommentReviewService = new PdfCommentReviewService()
+  ) {}
 
   async exportDocument(
     doc: PdfEditorDocument,
@@ -134,6 +141,105 @@ export class PdfExportPipelineService {
       // Draw Overlay Elements (Text, Images, Shapes, Drawings, Annotations)
       await this.drawPageElements(destPdf, destPage, pageModel.elements, fonts, boldFonts);
 
+      // Draw Whiteouts (K4)
+      if (pageModel.whiteouts && pageModel.whiteouts.length > 0) {
+        const pageSize = destPage.getSize();
+        for (const w of pageModel.whiteouts) {
+          const pdfY = pageSize.height - w.rect.y - w.rect.height;
+          const bgRgb = hexToRgb(w.fillColor || '#FFFFFF');
+          destPage.drawRectangle({
+            x: w.rect.x,
+            y: pdfY,
+            width: w.rect.width,
+            height: w.rect.height,
+            color: rgb(bgRgb.r, bgRgb.g, bgRgb.b),
+            borderWidth: 0
+          });
+        }
+      }
+
+      /*
+       * In-place text edits (K6).
+       *
+       * These are edits recorded on the page model rather than already
+       * written into the source bytes, which is what the editor's own sheet
+       * does now. Two things here are not optional:
+       *
+       *   • The baseline. A cover whose top is the box top and whose text
+       *     sits two points above it lands the replacement high and leaves
+       *     descenders showing underneath.
+       *   • The encoding guard. The standard fonts THROW on a character they
+       *     cannot encode, so one Devanagari edit would take the whole
+       *     export down rather than producing a document with a gap in it.
+       */
+      if (pageModel.textEdits && pageModel.textEdits.length > 0) {
+        const pageSize = destPage.getSize();
+
+        for (const edit of pageModel.textEdits) {
+          const baselineY = edit.baselineY ?? edit.bounds.y + edit.bounds.height;
+          const font = (fonts as any)[edit.fontFamily] || fonts.Helvetica;
+          const drawable = PdfLayoutHelper.toDrawableText(edit.newText);
+          const cover = coverRectForRun({
+            x: edit.bounds.x,
+            baselineY,
+            width: Math.max(
+              edit.bounds.width,
+              font.widthOfTextAtSize(drawable.text, edit.fontSize)
+            ),
+            fontSize: edit.fontSize
+          });
+
+          destPage.drawRectangle({
+            x: cover.x,
+            y: pageSize.height - cover.y - cover.height,
+            width: cover.width,
+            height: cover.height,
+            color: rgb(1, 1, 1),
+            borderWidth: 0
+          });
+
+          if (drawable.text.length > 0) {
+            destPage.drawText(drawable.text, {
+              x: edit.bounds.x,
+              y: pageSize.height - baselineY,
+              size: edit.fontSize,
+              font,
+              color: rgb(0, 0, 0)
+            });
+          }
+        }
+      }
+
+      // Draw Measurements (K5)
+      if (pageModel.measurements && pageModel.measurements.length > 0) {
+        const pageSize = destPage.getSize();
+        for (const m of pageModel.measurements) {
+          if (m.points && m.points.length >= 2) {
+            for (let pIdx = 0; pIdx < m.points.length - 1; pIdx++) {
+              const p1 = m.points[pIdx];
+              const p2 = m.points[pIdx + 1];
+              destPage.drawLine({
+                start: { x: p1.x, y: pageSize.height - p1.y },
+                end: { x: p2.x, y: pageSize.height - p2.y },
+                thickness: 2,
+                color: rgb(0.1, 0.5, 0.9)
+              });
+            }
+            const firstPt = m.points[0];
+            /* Through the guard as well: the unit comes from a list of ASCII
+             * names today, but a reading drawn from user input must not be
+             * able to throw during an export. */
+            destPage.drawText(PdfLayoutHelper.toDrawableText(m.formattedString).text, {
+              x: firstPt.x,
+              y: pageSize.height - firstPt.y + 4,
+              size: 10,
+              font: fonts.Helvetica,
+              color: rgb(0.1, 0.4, 0.8)
+            });
+          }
+        }
+      }
+
       // Draw Global / Page Watermark if applicable
       if (doc.watermark) {
         const shouldWatermark =
@@ -164,6 +270,18 @@ export class PdfExportPipelineService {
 
       const progressPercent = Math.round(15 + ((i + 1) / totalPages) * 75);
       onProgress?.(progressPercent);
+    }
+
+    // Attach Hyperlinks (K2)
+    const allLinks = doc.pages.flatMap(p => p.links || []);
+    if (allLinks.length > 0) {
+      await this.linkEditor.applyLinksToPdf(destPdf, allLinks);
+    }
+
+    // Attach Comments & Reviews (K3)
+    const allComments = doc.pages.flatMap(p => p.comments || []);
+    if (allComments.length > 0) {
+      await this.commentReview.applyCommentsToPdf(destPdf, allComments);
     }
 
     onProgress?.(95);
@@ -256,18 +374,44 @@ export class PdfExportPipelineService {
     }
 
     // Convert rasterized canvas to JPEG
-    const imgDataUrl = canvas!.toDataURL('image/jpeg', 0.92);
-    const imgBytes = await (await fetch(imgDataUrl)).arrayBuffer();
-    const embeddedImg = await destPdf.embedJpg(imgBytes);
+    let embeddedImg: any = null;
+    try {
+      const imgDataUrl = canvas!.toDataURL('image/jpeg', 0.92);
+      if (imgDataUrl && imgDataUrl.startsWith('data:')) {
+        const base64Part = imgDataUrl.split(',')[1];
+        if (base64Part) {
+          const binaryStr = typeof atob !== 'undefined' ? atob(base64Part) : Buffer.from(base64Part, 'base64').toString('binary');
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let b = 0; b < binaryStr.length; b++) {
+            bytes[b] = binaryStr.charCodeAt(b);
+          }
+          embeddedImg = await destPdf.embedJpg(bytes.buffer);
+        }
+      }
+    } catch {}
 
-    // Create new destination page with original dimensions
+    // Create new destination page with original dimensions (completely clean, zero underlying text streams)
     const newPage = destPdf.addPage([pageModel.originalWidth, pageModel.originalHeight]);
-    newPage.drawImage(embeddedImg, {
-      x: 0,
-      y: 0,
-      width: pageModel.originalWidth,
-      height: pageModel.originalHeight
-    });
+    if (embeddedImg) {
+      newPage.drawImage(embeddedImg, {
+        x: 0,
+        y: 0,
+        width: pageModel.originalWidth,
+        height: pageModel.originalHeight
+      });
+    } else {
+      // In headless environments where image embedding is unavailable, draw permanent solid redaction rectangles
+      for (const redaction of redactions) {
+        const pdfY = pageModel.originalHeight - redaction.y - redaction.height;
+        newPage.drawRectangle({
+          x: redaction.x,
+          y: pdfY,
+          width: redaction.width,
+          height: redaction.height,
+          color: rgb(0, 0, 0)
+        });
+      }
+    }
 
     return newPage;
   }
@@ -309,15 +453,18 @@ export class PdfExportPipelineService {
             });
           }
 
-          destPage.drawText(textEl.text, {
-            x: textEl.x + 4,
-            y: pdfY + textEl.height - (textEl.fontSize * 1.05),
-            size: textEl.fontSize,
-            font,
-            color: rgb(r, g, b),
-            opacity: textEl.opacity || 1.0,
-            rotate: degrees(textEl.rotation || 0)
-          });
+          const drawable = PdfLayoutHelper.toDrawableText(textEl.text || '');
+          if (drawable.text.length > 0) {
+            destPage.drawText(drawable.text, {
+              x: textEl.x + 4,
+              y: pdfY + textEl.height - (textEl.fontSize * 1.05),
+              size: textEl.fontSize,
+              font,
+              color: rgb(r, g, b),
+              opacity: textEl.opacity || 1.0,
+              rotate: degrees(textEl.rotation || 0)
+            });
+          }
           break;
         }
 
@@ -500,36 +647,39 @@ export class PdfExportPipelineService {
     const { width, height } = destPage.getSize();
 
     if (watermark.type === 'text' && watermark.text) {
-      const font = fonts[watermark.fontFamily || 'Helvetica'] || fonts.Helvetica;
-      const { r, g, b } = hexToRgb(watermark.color || '#888888');
-      const fontSize = watermark.fontSize || 48;
-      const textWidth = font.widthOfTextAtSize(watermark.text, fontSize);
-      const textHeight = font.heightAtSize(fontSize);
+      const drawable = PdfLayoutHelper.toDrawableText(watermark.text);
+      if (drawable.text.length > 0) {
+        const font = fonts[watermark.fontFamily || 'Helvetica'] || fonts.Helvetica;
+        const { r, g, b } = hexToRgb(watermark.color || '#888888');
+        const fontSize = watermark.fontSize || 48;
+        const textWidth = font.widthOfTextAtSize(drawable.text, fontSize);
+        const textHeight = font.heightAtSize(fontSize);
 
-      let x = (width - textWidth) / 2;
-      let y = (height - textHeight) / 2;
-      let rot = watermark.rotation || 45;
+        let x = (width - textWidth) / 2;
+        let y = (height - textHeight) / 2;
+        let rot = watermark.rotation || 45;
 
-      if (watermark.position === 'top') {
-        y = height - 100;
-        rot = 0;
-      } else if (watermark.position === 'bottom') {
-        y = 50;
-        rot = 0;
-      } else if (watermark.position === 'custom' && watermark.customX && watermark.customY) {
-        x = watermark.customX;
-        y = height - watermark.customY;
+        if (watermark.position === 'top') {
+          y = height - 100;
+          rot = 0;
+        } else if (watermark.position === 'bottom') {
+          y = 50;
+          rot = 0;
+        } else if (watermark.position === 'custom' && watermark.customX && watermark.customY) {
+          x = watermark.customX;
+          y = height - watermark.customY;
+        }
+
+        destPage.drawText(drawable.text, {
+          x,
+          y,
+          size: fontSize,
+          font,
+          color: rgb(r, g, b),
+          opacity: watermark.opacity || 0.2,
+          rotate: degrees(rot)
+        });
       }
-
-      destPage.drawText(watermark.text, {
-        x,
-        y,
-        size: fontSize,
-        font,
-        color: rgb(r, g, b),
-        opacity: watermark.opacity || 0.2,
-        rotate: degrees(rot)
-      });
     } else if (watermark.type === 'image' && watermark.imageUrl) {
       try {
         const res = await fetch(watermark.imageUrl);
@@ -577,10 +727,11 @@ export class PdfExportPipelineService {
     const fontSize = config.fontSize || 10;
 
     const actualNumber = config.startingNumber + (pageNumber - 1);
-    const text = `${config.prefix || ''}${actualNumber}${config.suffix || ''}`.replace(
+    const rawText = `${config.prefix || ''}${actualNumber}${config.suffix || ''}`.replace(
       '{total}',
       `${totalPages}`
     );
+    const text = PdfLayoutHelper.toDrawableText(rawText).text;
 
     const textWidth = font.widthOfTextAtSize(text, fontSize);
     const margin = 24;

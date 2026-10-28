@@ -69,7 +69,7 @@ export class TextToPdfConverter implements IConverter {
       if (options.fontFamily === 'TimesRoman') fontType = StandardFonts.TimesRoman;
       if (options.fontFamily === 'Courier') fontType = StandardFonts.Courier;
 
-      await PdfLayoutHelper.renderTextDocument(
+      const dropped = await PdfLayoutHelper.renderTextDocument(
         pdfDoc,
         textContent,
         {
@@ -93,11 +93,22 @@ export class TextToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(dropped.dropped, dropped.sample);
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
+        warnings: encodingWarning ? [encodingWarning] : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: {
           pageCount: pdfDoc.getPageCount(),
           characterCount: textContent.length,

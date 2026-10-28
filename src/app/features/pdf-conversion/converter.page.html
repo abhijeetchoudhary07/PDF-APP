@@ -96,17 +96,19 @@
           <div class="config-panel">
             <div class="config-card">
               <h4 class="config-title">Conversion Settings</h4>
-              <!-- PDF TO PNG OPTIONS -->
-              @if (converterId === 'pdf-to-png') {
+              <!-- PDF TO PNG / PDF TO SVG OPTIONS -->
+              @if (converterId === 'pdf-to-png' || converterId === 'pdf-to-svg') {
                 <div class="options-group">
-                  <div class="field-group">
-                    <label class="field-label">Resolution / DPI</label>
-                    <select [(ngModel)]="options.dpi" class="field-select">
-                      <option [value]="72">Standard (72 DPI)</option>
-                      <option [value]="150">High Quality (150 DPI)</option>
-                      <option [value]="300">Ultra Print (300 DPI)</option>
-                    </select>
-                  </div>
+                  @if (converterId === 'pdf-to-png') {
+                    <div class="field-group">
+                      <label class="field-label">Resolution / DPI</label>
+                      <select [(ngModel)]="options.dpi" class="field-select">
+                        <option [ngValue]="72">Standard (72 DPI)</option>
+                        <option [ngValue]="150">High Quality (150 DPI)</option>
+                        <option [ngValue]="300">Ultra Print (300 DPI)</option>
+                      </select>
+                    </div>
+                  }
                   <!-- Page Selector -->
                   @if (pdfPageCount > 0) {
                     <div class="page-selector-box">
@@ -157,8 +159,33 @@
                   </div>
                 </div>
               }
-              <!-- LAYOUT OPTIONS (DOCX, XLSX, TXT, CSV, HTML TO PDF) -->
-              @if (['word-to-pdf', 'excel-to-pdf', 'text-to-pdf', 'rtf-to-pdf', 'html-to-pdf', 'csv-to-pdf', 'epub-to-pdf', 'opendocument-to-pdf'].includes(converterId)) {
+              <!-- PDF TO MARKDOWN OPTIONS -->
+              @if (converterId === 'pdf-to-markdown') {
+                <div class="options-group">
+                  <div class="field-group">
+                    <label class="field-label">Image Extraction Mode</label>
+                    <select [(ngModel)]="options.imageMode" class="field-select">
+                      <option value="inline">Inline Base64 (Single .md file)</option>
+                      <option value="sidecar">Sidecar Folder (ZIP with .md &amp; images/)</option>
+                      <option value="none">Text Only (Omit Images)</option>
+                    </select>
+                  </div>
+                </div>
+              }
+              <!-- PDF TO HTML OPTIONS -->
+              @if (converterId === 'pdf-to-html') {
+                <div class="options-group">
+                  <div class="field-group">
+                    <label class="field-label">HTML Rendering Mode</label>
+                    <select [(ngModel)]="options.htmlMode" class="field-select">
+                      <option value="reflowable">Reflowable (Optimized for Mobile &amp; E-Readers)</option>
+                      <option value="layout-preserving">Layout-Preserving (Fixed Coordinate Positioning)</option>
+                    </select>
+                  </div>
+                </div>
+              }
+              <!-- LAYOUT OPTIONS (DOCX, XLSX, TXT, CSV, HTML, MD, CODE, EMAIL, TIFF, SVG TO PDF) -->
+              @if (['word-to-pdf', 'excel-to-pdf', 'text-to-pdf', 'rtf-to-pdf', 'html-to-pdf', 'csv-to-pdf', 'epub-to-pdf', 'opendocument-to-pdf', 'markdown-to-pdf', 'json-to-pdf', 'xml-to-pdf', 'yaml-to-pdf', 'eml-to-pdf', 'msg-to-pdf'].includes(converterId)) {
                 <div class="options-grid">
                   <div class="field-group">
                     <label class="field-label">Page Size</label>
@@ -174,16 +201,169 @@
                       <option value="Landscape">Landscape (Horizontal)</option>
                     </select>
                   </div>
-                  @if (converterId === 'text-to-pdf') {
+                  @if (['text-to-pdf', 'markdown-to-pdf', 'json-to-pdf', 'xml-to-pdf', 'yaml-to-pdf'].includes(converterId)) {
                     <div class="field-group">
                       <label class="field-label">Font Family</label>
                       <select [(ngModel)]="options.fontFamily" class="field-select">
+                        <option value="Courier">Courier (Monospace)</option>
                         <option value="Helvetica">Helvetica (Sans)</option>
                         <option value="TimesRoman">Times New Roman (Serif)</option>
-                        <option value="Courier">Courier (Monospace)</option>
                       </select>
                     </div>
                   }
+                </div>
+              }
+              <!-- TIFF / SVG TO PDF SIZING -->
+              @if (['tiff-to-pdf', 'svg-to-pdf'].includes(converterId)) {
+                <div class="options-grid">
+                  <div class="field-group">
+                    <label class="field-label" for="opt-page-size">Page Size</label>
+                    <select id="opt-page-size" [(ngModel)]="options.format" class="field-select">
+                      <option value="Original">Keep Original Size</option>
+                      <option value="A4">A4 (Standard)</option>
+                      <option value="Letter">US Letter</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="opt-orientation">Orientation</label>
+                    <select id="opt-orientation" [(ngModel)]="options.orientation" class="field-select">
+                      <option value="Auto">Auto (Match Source)</option>
+                      <option value="Portrait">Portrait (Vertical)</option>
+                      <option value="Landscape">Landscape (Horizontal)</option>
+                    </select>
+                  </div>
+                </div>
+              }
+              <!-- OCR LANGUAGE (IMAGE TO OFFICE) -->
+              @if (['images-to-word', 'images-to-excel'].includes(converterId)) {
+                <div class="options-grid">
+                  <div class="field-group">
+                    <label class="field-label" for="opt-ocr-language">Text Language</label>
+                    <select id="opt-ocr-language" [(ngModel)]="options.ocrLanguage" class="field-select">
+                      @for (lang of ocrLanguages; track lang.code) {
+                        <option [value]="lang.code">{{ lang.nativeName }} ({{ lang.name }})</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+              }
+              <!-- IMAGES TO WORD OPTIONS -->
+              @if (converterId === 'images-to-word') {
+                <div class="options-group">
+                  <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="options.embedSourceImage" class="native-check" />
+                    <span class="custom-check-box"></span>
+                    <div>
+                      <strong>Embed Source Photo</strong>
+                      <p>Embed the original image above the recognized textual paragraphs</p>
+                    </div>
+                  </label>
+                </div>
+              }
+              <!-- IMAGES TO EXCEL OPTIONS -->
+              @if (converterId === 'images-to-excel') {
+                <div class="options-group">
+                  <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="options.autoDetectColumns" class="native-check" />
+                    <span class="custom-check-box"></span>
+                    <div>
+                      <strong>Detect Columns From Layout</strong>
+                      <p>Split cells on the gaps between words instead of commas and tabs</p>
+                    </div>
+                  </label>
+                </div>
+              }
+              <!-- PDF TO TIFF OPTIONS -->
+              @if (converterId === 'pdf-to-tiff') {
+                <div class="options-grid">
+                  <div class="field-group">
+                    <label class="field-label">Resolution / DPI</label>
+                    <select [(ngModel)]="options.dpi" class="field-select">
+                      <option [ngValue]="72">Standard (72 DPI)</option>
+                      <option [ngValue]="150">High Quality (150 DPI)</option>
+                      <option [ngValue]="300">Ultra Print (300 DPI)</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">TIFF Compression</label>
+                    <select [(ngModel)]="options.compression" class="field-select">
+                      <option value="none">None (Full Quality RGB)</option>
+                      <option value="lzw">LZW Compression</option>
+                      <option value="g4">CCITT G4 (Bilevel Monochrome)</option>
+                    </select>
+                  </div>
+                </div>
+              }
+              <!-- PDF TO JSON OPTIONS -->
+              @if (converterId === 'pdf-to-json') {
+                <div class="options-grid">
+                  <div class="field-group">
+                    <label class="field-label" for="opt-json-mode">Text Structure</label>
+                    <select id="opt-json-mode" [(ngModel)]="options.jsonMode" class="field-select">
+                      <option value="reflowable">Reflowable (Joined Reading Lines)</option>
+                      <option value="layout-preserving">Layout-Preserving (Every Text Item)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="options-group">
+                  <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="options.compact" class="native-check" />
+                    <span class="custom-check-box"></span>
+                    <div>
+                      <strong>Compact Output</strong>
+                      <p>Minify JSON output removing whitespace for fast LLM transmission</p>
+                    </div>
+                  </label>
+                  <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="options.includeTables" class="native-check" />
+                    <span class="custom-check-box"></span>
+                    <div>
+                      <strong>Detect Tables</strong>
+                      <p>Include detected rows and columns alongside the raw text items</p>
+                    </div>
+                  </label>
+                  <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="options.includeAnnotations" class="native-check" />
+                    <span class="custom-check-box"></span>
+                    <div>
+                      <strong>Include Annotations</strong>
+                      <p>Keep comments, stamps and form annotations (links are always kept)</p>
+                    </div>
+                  </label>
+                  <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="options.includeMetadata" class="native-check" />
+                    <span class="custom-check-box"></span>
+                    <div>
+                      <strong>Include Document Metadata</strong>
+                      <p>Title, author, producer and dates from the PDF information dictionary</p>
+                    </div>
+                  </label>
+                </div>
+              }
+              <!-- JSON / XML / YAML INDENT GUIDES -->
+              @if (['json-to-pdf', 'xml-to-pdf', 'yaml-to-pdf'].includes(converterId)) {
+                <div class="options-group">
+                  <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="options.indentGuides" class="native-check" />
+                    <span class="custom-check-box"></span>
+                    <div>
+                      <strong>Indentation Guides</strong>
+                      <p>Render subtle vertical lines matching nested indentation blocks</p>
+                    </div>
+                  </label>
+                </div>
+              }
+              <!-- EMAIL ATTACHMENTS OPTION -->
+              @if (['eml-to-pdf', 'msg-to-pdf'].includes(converterId)) {
+                <div class="options-group">
+                  <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="options.includeAttachments" class="native-check" />
+                    <span class="custom-check-box"></span>
+                    <div>
+                      <strong>Process Attachments</strong>
+                      <p>Merge PDF attachments and embed inline image attachments</p>
+                    </div>
+                  </label>
                 </div>
               }
               <!-- ZIP TO PDF CHECKLIST -->
@@ -270,6 +450,25 @@
                 }
               </div>
             </div>
+            <!-- Conversion Notices (blocked remote images, characters the
+                 built-in PDF fonts cannot draw, and similar) -->
+            @if (result.warnings?.length) {
+              <div class="warning-banner">
+                <div class="warning-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                </div>
+                <div class="warning-text">
+                  <strong>Please note</strong>
+                  @for (w of result.warnings; track w) {
+                    <p>{{ w }}</p>
+                  }
+                </div>
+              </div>
+            }
             <!-- Table Preview -->
             @if (result.previewData?.headers) {
               <div class="table-preview-wrap">
@@ -302,6 +501,59 @@
                 <img [src]="result.previewUrl" alt="Converted Preview" class="preview-img" />
               </div>
             }
+
+            <!-- Conversion Fidelity Report (J10) -->
+            @if (result.report) {
+              <div class="fidelity-report-card">
+                <button type="button" class="fidelity-report-header" (click)="showFidelityReport = !showFidelityReport">
+                  <div class="fidelity-title-left">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    <strong>Fidelity &amp; Audit Report</strong>
+                  </div>
+                  <span class="fidelity-toggle-arrow" [class.rotated]="showFidelityReport">&rsaquo;</span>
+                </button>
+
+                @if (showFidelityReport) {
+                  <div class="fidelity-report-body">
+                    <div class="fidelity-stat-row">
+                      <span>Tables Detected:</span>
+                      <strong>{{ result.report.tablesDetected }}</strong>
+                    </div>
+                    <div class="fidelity-stat-row">
+                      <span>Pages Rasterized:</span>
+                      <strong>{{ result.report.pagesRasterized }}</strong>
+                    </div>
+                    @if (result.report.substitutedFonts.length > 0) {
+                      <div class="fidelity-detail-group">
+                        <span class="detail-label">Substituted Fonts:</span>
+                        @for (f of result.report.substitutedFonts; track f) {
+                          <div class="detail-item">{{ f.original }} &rarr; {{ f.substituted }}</div>
+                        }
+                      </div>
+                    }
+                    @if (result.report.droppedElements.length > 0) {
+                      <div class="fidelity-detail-group">
+                        <span class="detail-label">Dropped / Flattened:</span>
+                        @for (d of result.report.droppedElements; track d) {
+                          <div class="detail-item text-warning">&bull; {{ d }}</div>
+                        }
+                      </div>
+                    }
+                    @if (result.report.approximations.length > 0) {
+                      <div class="fidelity-detail-group">
+                        <span class="detail-label">Approximations:</span>
+                        @for (a of result.report.approximations; track a) {
+                          <div class="detail-item text-muted">&bull; {{ a }}</div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
             <!-- Action Buttons -->
             <div class="result-actions-grid">
               <app-button variant="success" size="lg" (clicked)="saveResultFile()">
@@ -310,7 +562,7 @@
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                Save {{ converter.metadata.targetFormat | uppercase }}
+                Save {{ resultExtension | uppercase }}
               </app-button>
               <app-button variant="outline" size="lg" (clicked)="shareResultFile()">
                 <svg icon-start viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 6px;">

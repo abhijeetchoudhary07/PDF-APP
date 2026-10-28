@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import JSZip from 'jszip';
+import { PdfLayoutHelper } from '../utils/pdf-layout.helper';
 import { IConverter } from '../converter.interface';
 import { ConverterMetadata, ConversionProgress, ConversionResult } from '../conversion.types';
 
@@ -40,6 +41,14 @@ export class PptToPdfConverter implements IConverter {
     if (!name.endsWith('.pptx')) {
       return { valid: false, error: 'Selected file is not a valid PowerPoint (.pptx) presentation.' };
     }
+    // Verify ZIP magic bytes to reject polyglots / disguised binaries
+    if (file.size >= 4) {
+      const header = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      const isZip = header[0] === 0x50 && header[1] === 0x4b && (header[2] === 0x03 || header[2] === 0x05 || header[2] === 0x07);
+      if (!isZip) {
+        return { valid: false, error: 'File is not a valid PowerPoint (.pptx) presentation (invalid file signature).' };
+      }
+    }
     return { valid: true };
   }
 
@@ -72,6 +81,23 @@ export class PptToPdfConverter implements IConverter {
       if (slideFiles.length === 0) {
         return { success: false, error: 'No slides found in this PowerPoint presentation.' };
       }
+
+      /*
+       * pdf-lib's standard fonts throw on anything outside WinAnsi, so a
+       * single Devanagari letter on a slide used to fail the whole deck.
+       */
+      let droppedCount = 0;
+      const droppedChars: string[] = [];
+      const safe = (value: string): string => {
+        const result = PdfLayoutHelper.toDrawableText(value);
+        if (result.dropped > 0) {
+          droppedCount += result.dropped;
+          for (const ch of result.sample) {
+            if (droppedChars.length < 6 && !droppedChars.includes(ch)) droppedChars.push(ch);
+          }
+        }
+        return result.text;
+      };
 
       const pdfDoc = await PDFDocument.create();
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -120,7 +146,7 @@ export class PptToPdfConverter implements IConverter {
 
         // Draw title
         if (slideData.title) {
-          page.drawText(slideData.title, {
+          page.drawText(safe(slideData.title), {
             x: 50,
             y: currentY,
             size: 24,
@@ -133,7 +159,7 @@ export class PptToPdfConverter implements IConverter {
         // Draw body texts / bullets
         for (const item of slideData.items) {
           if (currentY < 40) break;
-          const bulletText = `•  ${item}`;
+          const bulletText = safe(`•  ${item}`);
           page.drawText(bulletText, {
             x: 60,
             y: currentY,
@@ -166,11 +192,22 @@ export class PptToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(droppedCount, droppedChars.join(' '));
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
+        warnings: encodingWarning ? [encodingWarning] : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: {
           slideCount: slideFiles.length
         },

@@ -27,6 +27,7 @@ import {
   ShapeType,
   AnnotationType
 } from '../../core/models/pdf-editor.types';
+import { PlacementCompleted } from '../../core/services/pdf-editor-state.service';
 
 import { PdfReaderComponent } from './components/pdf-reader/pdf-reader.component';
 import { PdfCanvasComponent } from './components/pdf-canvas/pdf-canvas.component';
@@ -34,6 +35,17 @@ import { PdfCropModalComponent } from './components/pdf-crop-modal/pdf-crop-moda
 import { PdfWatermarkModalComponent } from './components/pdf-watermark-modal/pdf-watermark-modal.component';
 import { PdfPageNumberModalComponent } from './components/pdf-page-number-modal/pdf-page-number-modal.component';
 import { PdfRedactionModalComponent } from './components/pdf-redaction-modal/pdf-redaction-modal.component';
+import { PdfFindReplaceModalComponent } from './components/pdf-find-replace-modal/pdf-find-replace-modal.component';
+import { PdfLinkModalComponent } from './components/pdf-link-modal/pdf-link-modal.component';
+import { PdfCommentReviewModalComponent } from './components/pdf-comment-review-modal/pdf-comment-review-modal.component';
+import { PdfShapeMeasurementModalComponent } from './components/pdf-shape-measurement-modal/pdf-shape-measurement-modal.component';
+import { PdfTextEditModalComponent } from './components/pdf-text-edit-modal/pdf-text-edit-modal.component';
+import { PdfFlattenOverlayModalComponent } from './components/pdf-flatten-overlay-modal/pdf-flatten-overlay-modal.component';
+import { PdfImageToolsModalComponent } from './components/pdf-image-tools-modal/pdf-image-tools-modal.component';
+import { PdfWhiteoutModalComponent } from './components/pdf-whiteout-modal/pdf-whiteout-modal.component';
+import { TranslationService } from '../../core/services/translation.service';
+import { PdfShapeMeasurementService } from '../../core/services/pdf-shape-measurement.service';
+import { CommentThread } from '../../core/models/editor-features.types';
 import {
   AppButtonComponent,
   AppIconComponent,
@@ -75,6 +87,8 @@ export class PdfEditorPage implements OnInit, OnDestroy {
   private alertCtrl = inject(AlertController);
   private actionSheetCtrl = inject(ActionSheetController);
   private router = inject(Router);
+  private i18n = inject(TranslationService);
+  private shapes = inject(PdfShapeMeasurementService);
 
   showThumbnails = false;
   showSearch = false;
@@ -94,6 +108,71 @@ export class PdfEditorPage implements OnInit, OnDestroy {
     this.subs.add(
       this.state.exportProgress$.subscribe(p => (this.exportProgress = p))
     );
+
+    /*
+     * Placement runs on the canvas, not in the sheet that started it, so
+     * this is where the person finds out it worked. Without it, tapping the
+     * page to put a comment down gives no feedback at all beyond a small
+     * marker that may be under their finger.
+     */
+    this.subs.add(
+      this.state.placementCompleted$.subscribe(event => {
+        void this.announcePlacement(event);
+      })
+    );
+  }
+
+  /** Confirms what landed on the page, and reopens the sheet behind it. */
+  private async announcePlacement(event: PlacementCompleted): Promise<void> {
+    switch (event.tool) {
+      case 'link':
+        await this.showToast(
+          this.i18n.translate('editor.placedLink', { page: event.link.pageNumber }),
+          'success'
+        );
+        await this.openLinkModal();
+        return;
+
+      case 'comment':
+        await this.showToast(
+          this.i18n.translate('editor.placedComment', { page: event.thread.pageNumber }),
+          'success'
+        );
+        await this.openCommentModal();
+        return;
+
+      case 'whiteout':
+        await this.showToast(
+          this.i18n.translate('editor.placedWhiteout', { page: event.region.pageNumber }),
+          'warning'
+        );
+        return;
+
+      case 'measure':
+        if ('calibratedScale' in event) {
+          await this.showToast(
+            this.i18n.translate('editor.calibrationSet', {
+              text: this.shapes.calibrationLabel(event.calibratedScale).text
+            }),
+            'success'
+          );
+        } else {
+          await this.showToast(
+            this.i18n.translate('editor.placedMeasurement', {
+              value: event.measurement.formattedString
+            }),
+            'success'
+          );
+        }
+        await this.openShapeMeasurementModal();
+        return;
+    }
+  }
+
+  /** Opens the review sheet on the thread whose pin was tapped. */
+  async onCommentOpened(thread: CommentThread): Promise<void> {
+    this.state.setCurrentPage(thread.pageNumber);
+    await this.openCommentModal();
   }
 
   ngOnDestroy() {
@@ -120,7 +199,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
       if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
         await this.loadPdfFile(file);
       } else {
-        this.showToast('Please drop a valid PDF file.', 'warning');
+        await this.showToast(this.i18n.translate('editor.dropPdfOnly'), 'warning');
       }
     }
   }
@@ -132,7 +211,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
 
   async loadPdfFile(file: File) {
     this.isExporting = true;
-    this.exportStage = 'Loading PDF document...';
+    this.exportStage = this.i18n.translate('editor.loadingDocument');
     this.exportProgress = 10;
 
     try {
@@ -147,7 +226,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
       this.exportProgress = 40;
 
       // Initialize PdfRenderService
-      const docId = `doc_${Date.now()}`;
+      const docId = `doc_${file.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_${file.size}`;
       await this.renderService.loadPdf(arrayBuffer, docId);
 
       this.exportProgress = 70;
@@ -183,9 +262,15 @@ export class PdfEditorPage implements OnInit, OnDestroy {
 
       this.state.initDocument(docModel);
       this.exportProgress = 100;
-      this.showToast(`Loaded ${file.name} (${numPages} pages)`, 'success');
+      await this.showToast(
+        this.i18n.translate('editor.loadedDocument', { name: file.name, pages: numPages }),
+        'success'
+      );
     } catch (e: any) {
-      this.showToast(`Failed to load PDF: ${e.message}`, 'danger');
+      await this.showToast(
+        this.i18n.translate('editor.kFailed', { reason: e?.message || String(e) }),
+        'danger'
+      );
     } finally {
       this.isExporting = false;
     }
@@ -286,6 +371,70 @@ export class PdfEditorPage implements OnInit, OnDestroy {
     await modal.present();
   }
 
+  async openFindReplaceModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfFindReplaceModalComponent
+    });
+    await modal.present();
+  }
+
+  async openLinkModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfLinkModalComponent
+    });
+    await modal.present();
+  }
+
+  async openCommentModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfCommentReviewModalComponent
+    });
+    await modal.present();
+  }
+
+  async openShapeMeasurementModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfShapeMeasurementModalComponent
+    });
+    await modal.present();
+  }
+
+  async openTextEditModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfTextEditModalComponent
+    });
+    await modal.present();
+  }
+
+  async openFlattenOverlayModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfFlattenOverlayModalComponent
+    });
+    await modal.present();
+  }
+
+  async openImageToolsModal() {
+    const modal = await this.modalCtrl.create({
+      component: PdfImageToolsModalComponent
+    });
+    await modal.present();
+  }
+
+  /**
+   * The whiteout sheet.
+   *
+   * This replaces an alert that dropped a fixed 140 x 30 rectangle at a
+   * fixed spot on the page and called it placed. Whiteout is an area tool,
+   * so it now opens a sheet that explains what covering does, offers the way
+   * out to real redaction, and hands the area off to be drawn on the page.
+   */
+  async activateWhiteout() {
+    const modal = await this.modalCtrl.create({
+      component: PdfWhiteoutModalComponent
+    });
+    await modal.present();
+  }
+
   // --- Export & Share ---
 
   async exportPdf() {
@@ -293,7 +442,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
     if (!doc) return;
 
     this.isExporting = true;
-    this.exportStage = 'Compiling PDF with overlays and security checks...';
+    this.exportStage = this.i18n.translate('editor.exportingStage');
     this.exportProgress = 5;
 
     try {
@@ -316,9 +465,12 @@ export class PdfEditorPage implements OnInit, OnDestroy {
         outputPath: uri || 'web-download'
       });
 
-      this.showToast('Export complete! PDF saved.', 'success');
+      await this.showToast(this.i18n.translate('editor.exportDone'), 'success');
     } catch (e: any) {
-      this.showToast(`Export failed: ${e.message}`, 'danger');
+      await this.showToast(
+        this.i18n.translate('editor.kFailed', { reason: e?.message || String(e) }),
+        'danger'
+      );
     } finally {
       this.isExporting = false;
     }
@@ -329,7 +481,7 @@ export class PdfEditorPage implements OnInit, OnDestroy {
     if (!doc) return;
 
     this.isExporting = true;
-    this.exportStage = 'Preparing PDF for sharing...';
+    this.exportStage = this.i18n.translate('editor.sharingStage');
     this.exportProgress = 10;
 
     try {
@@ -342,9 +494,12 @@ export class PdfEditorPage implements OnInit, OnDestroy {
       );
 
       await this.shareService.shareFile(result.file, result.file.name);
-      this.showToast('Share initiated.', 'success');
+      await this.showToast(this.i18n.translate('editor.shareStarted'), 'success');
     } catch (e: any) {
-      this.showToast(`Share failed: ${e.message}`, 'danger');
+      await this.showToast(
+        this.i18n.translate('editor.kFailed', { reason: e?.message || String(e) }),
+        'danger'
+      );
     } finally {
       this.isExporting = false;
     }
@@ -353,8 +508,8 @@ export class PdfEditorPage implements OnInit, OnDestroy {
   private async showToast(message: string, color: 'success' | 'warning' | 'danger' | 'medium' = 'medium') {
     const toast = await this.toastCtrl.create({
       message,
-      duration: 3000,
-      position: 'bottom',
+      duration: 2500,
+      position: 'top',
       color
     });
     await toast.present();

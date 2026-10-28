@@ -325,3 +325,167 @@
     border-radius: 2px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   PART K OVERLAYS
+
+   Everything here is non-interactive except the comment pin and the
+   placement hint's buttons: these layers show what has been placed, and
+   must not swallow the pointer from whichever tool is active.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.k-whiteout-box {
+  position: absolute;
+  pointer-events: none;
+  /* A dashed edge marks it as an editor overlay. It is not written to the
+   * output, where the cover is a plain filled rectangle. */
+  outline: 1px dashed var(--color-border-hover);
+  outline-offset: -1px;
+}
+
+.k-link-box {
+  position: absolute;
+  pointer-events: none;
+  border: 1.5px dashed var(--color-secondary);
+  border-radius: 3px;
+  background: rgba(3, 118, 179, 0.08);
+
+  &.is-dangling {
+    border-color: var(--color-error);
+    background: rgba(239, 68, 68, 0.1);
+  }
+}
+
+.k-link-tag {
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: 100%;
+  max-width: 220px;
+  padding: 1px 5px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-secondary);
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.k-measure-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.k-measure-line {
+  fill: none;
+  stroke: var(--color-secondary);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+
+  &.is-live {
+    stroke-dasharray: 4 3;
+  }
+}
+
+.k-measure-shape {
+  fill: rgba(3, 118, 179, 0.14);
+  stroke: var(--color-secondary);
+  stroke-width: 1.5;
+
+  &.is-live {
+    stroke-dasharray: 4 3;
+  }
+}
+
+.k-measure-dot {
+  fill: var(--color-secondary);
+}
+
+.k-measure-label {
+  position: absolute;
+  pointer-events: none;
+  transform: translateY(-110%);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--color-secondary);
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.k-comment-pin {
+  position: absolute;
+  /* The pin is the one Part K overlay that is tapped, so it gets the 44px
+   * floor through a transparent ::before rather than by growing the visible
+   * marker, which would cover the text it is pointing at. */
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid rgba(0, 0, 0, 0.35);
+  border-radius: 50% 50% 50% 2px;
+  background: #ffd34d;
+  color: #3f2d00;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: var(--min-touch-target, 44px);
+    height: var(--min-touch-target, 44px);
+    transform: translate(-50%, -50%);
+  }
+
+  &.is-resolved {
+    background: #43bd82;
+    color: #052e1b;
+  }
+}
+
+.k-placement-hint {
+  position: absolute;
+  inset-inline: 8px;
+  bottom: 8px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  flex-wrap: wrap;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-text);
+  color: var(--color-text-inverse);
+  font-size: var(--font-caption, 0.78rem);
+  line-height: 1.4;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.2));
+
+  span {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+}
+
+.k-placement-hint__action {
+  flex: none;
+  min-height: var(--min-touch-target, 44px);
+  padding: 0 var(--control-pad-x-sm, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: inherit;
+  font-size: var(--font-caption, 0.78rem);
+  font-weight: 650;
+  font-family: inherit;
+  cursor: pointer;
+}

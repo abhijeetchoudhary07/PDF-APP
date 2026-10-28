@@ -64,6 +64,24 @@ export class RtfToPdfConverter implements IConverter {
         message: 'Applying fonts, styles, and alignments...'
       });
 
+      /*
+       * Everything drawn goes through the encoder: pdf-lib's standard fonts
+       * throw on anything outside WinAnsi, which used to fail the whole
+       * conversion on a single Devanagari letter.
+       */
+      let droppedCount = 0;
+      const droppedChars: string[] = [];
+      const safe = (value: string): string => {
+        const result = PdfLayoutHelper.toDrawableText(value);
+        if (result.dropped > 0) {
+          droppedCount += result.dropped;
+          for (const ch of result.sample) {
+            if (droppedChars.length < 6 && !droppedChars.includes(ch)) droppedChars.push(ch);
+          }
+        }
+        return result.text;
+      };
+
       const pdfDoc = await PDFDocument.create();
       const normalFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -87,7 +105,7 @@ export class RtfToPdfConverter implements IConverter {
         }
 
         // Wrap full paragraph into lines
-        const wrappedLines = PdfLayoutHelper.wrapText(fullParaText, normalFont, baseFontSize, printableWidth);
+        const wrappedLines = PdfLayoutHelper.wrapText(safe(fullParaText), normalFont, baseFontSize, printableWidth);
 
         for (const lineText of wrappedLines) {
           if (currentY < margin + 20) {
@@ -136,11 +154,22 @@ export class RtfToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(droppedCount, droppedChars.join(' '));
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
+        warnings: encodingWarning ? [encodingWarning] : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: {
           pageCount: pdfDoc.getPageCount(),
           paragraphCount: paragraphs.length

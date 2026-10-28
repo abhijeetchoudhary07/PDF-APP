@@ -36,41 +36,45 @@ export class OcrService {
   }> {
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
-    const pdf = await loadingTask.promise;
-    const pageCount = pdf.numPages;
+    try {
+      const pdf = await loadingTask.promise;
+      const pageCount = pdf.numPages;
 
-    const pagesWithText: number[] = [];
-    const scannedPages: number[] = [];
-    let textSample = '';
+      const pagesWithText: number[] = [];
+      const scannedPages: number[] = [];
+      let textSample = '';
 
-    for (let i = 1; i <= pageCount; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      let pageText = '';
+      for (let i = 1; i <= pageCount; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        let pageText = '';
 
-      for (const item of textContent.items) {
-        if ('str' in item && typeof item.str === 'string' && item.str.trim().length > 0) {
-          pageText += item.str + ' ';
+        for (const item of textContent.items) {
+          if ('str' in item && typeof item.str === 'string' && item.str.trim().length > 0) {
+            pageText += item.str + ' ';
+          }
+        }
+
+        if (pageText.trim().length > 25) {
+          pagesWithText.push(i);
+          if (!textSample && pageText.trim().length > 0) {
+            textSample = pageText.trim().substring(0, 300);
+          }
+        } else {
+          scannedPages.push(i);
         }
       }
 
-      if (pageText.trim().length > 25) {
-        pagesWithText.push(i);
-        if (!textSample && pageText.trim().length > 0) {
-          textSample = pageText.trim().substring(0, 300);
-        }
-      } else {
-        scannedPages.push(i);
-      }
+      return {
+        hasText: pagesWithText.length > 0,
+        pageCount,
+        textSample,
+        pagesWithText,
+        scannedPages
+      };
+    } finally {
+      await loadingTask?.destroy();
     }
-
-    return {
-      hasText: pagesWithText.length > 0,
-      pageCount,
-      textSample,
-      pagesWithText,
-      scannedPages
-    };
   }
 
   /**
@@ -79,48 +83,52 @@ export class OcrService {
   async extractExistingText(file: File, selectedPages?: number[]): Promise<OcrDocumentResult> {
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
-    const pdf = await loadingTask.promise;
-    const totalPages = pdf.numPages;
+    try {
+      const pdf = await loadingTask.promise;
+      const totalPages = pdf.numPages;
 
-    const targetPages = selectedPages && selectedPages.length > 0
-      ? selectedPages.filter(p => p >= 1 && p <= totalPages)
-      : Array.from({ length: totalPages }, (_, i) => i + 1);
+      const targetPages = selectedPages && selectedPages.length > 0
+        ? selectedPages.filter(p => p >= 1 && p <= totalPages)
+        : Array.from({ length: totalPages }, (_, i) => i + 1);
 
-    const pages: OcrPageResult[] = [];
-    let fullText = '';
+      const pages: OcrPageResult[] = [];
+      let fullText = '';
 
-    for (const pageNum of targetPages) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      let pageText = '';
+      for (const pageNum of targetPages) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        let pageText = '';
 
-      for (const item of textContent.items) {
-        if ('str' in item && typeof item.str === 'string') {
-          pageText += item.str + ' ';
+        for (const item of textContent.items) {
+          if ('str' in item && typeof item.str === 'string') {
+            pageText += item.str + ' ';
+          }
         }
+
+        const cleanText = OcrService.sanitizeOcrText(pageText);
+        fullText += `--- Page ${pageNum} ---\n${cleanText}\n\n`;
+
+        pages.push({
+          pageNumber: pageNum,
+          text: cleanText,
+          confidence: 100,
+          words: [],
+          language: 'digital',
+          status: 'completed'
+        });
       }
 
-      const cleanText = pageText.trim();
-      fullText += `--- Page ${pageNum} ---\n${cleanText}\n\n`;
-
-      pages.push({
-        pageNumber: pageNum,
-        text: cleanText,
-        confidence: 100,
-        words: [],
-        language: 'digital',
-        status: 'completed'
-      });
+      return {
+        fileName: file.name,
+        totalPages: targetPages.length,
+        pages,
+        fullText: fullText.trim(),
+        averageConfidence: 100,
+        languages: ['digital']
+      };
+    } finally {
+      await loadingTask?.destroy();
     }
-
-    return {
-      fileName: file.name,
-      totalPages: targetPages.length,
-      pages,
-      fullText: fullText.trim(),
-      averageConfidence: 100,
-      languages: ['digital']
-    };
   }
 
   /**
@@ -181,6 +189,26 @@ export class OcrService {
     }
   }
 
+  /**
+   * Sanitizes OCR text, stripping ASCII control characters to prevent malformed text stream injection.
+   */
+  static sanitizeOcrText(rawText: string): string {
+    if (!rawText) return '';
+    return rawText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+  }
+
+  private async recognizeWithTimeout(worker: Worker, image: any, timeoutMs = 90000): Promise<any> {
+    let timer: any;
+    const timeoutPromise = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`OCR recognition timed out after ${timeoutMs / 1000}s.`)), timeoutMs);
+    });
+    try {
+      return await Promise.race([worker.recognize(image), timeoutPromise]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   private async ocrImageFile(
     worker: Worker,
     file: File,
@@ -199,11 +227,11 @@ export class OcrService {
 
     const imgUrl = URL.createObjectURL(file);
     try {
-      const ocrRes = await worker.recognize(imgUrl);
+      const ocrRes = await this.recognizeWithTimeout(worker, imgUrl);
       if (this.isCancelled) throw new Error('OCR job was cancelled.');
 
       const words: OcrWord[] = ((ocrRes.data as any).words || []).map((w: any) => ({
-        text: w.text,
+        text: OcrService.sanitizeOcrText(w.text),
         confidence: w.confidence,
         bbox: {
           x0: w.bbox.x0,
@@ -215,7 +243,7 @@ export class OcrService {
 
       const pageResult: OcrPageResult = {
         pageNumber: 1,
-        text: ocrRes.data.text.trim(),
+        text: OcrService.sanitizeOcrText(ocrRes.data.text),
         confidence: Math.round(ocrRes.data.confidence),
         words,
         language: languages,
@@ -252,101 +280,111 @@ export class OcrService {
   ): Promise<OcrDocumentResult> {
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
-    const pdf = await loadingTask.promise;
-    const totalPages = pdf.numPages;
+    try {
+      const pdf = await loadingTask.promise;
+      const totalPages = pdf.numPages;
 
-    const targetPages = selectedPages && selectedPages.length > 0
-      ? selectedPages.filter(p => p >= 1 && p <= totalPages)
-      : Array.from({ length: totalPages }, (_, i) => i + 1);
+      const targetPages = selectedPages && selectedPages.length > 0
+        ? selectedPages.filter(p => p >= 1 && p <= totalPages)
+        : Array.from({ length: totalPages }, (_, i) => i + 1);
 
-    const pages: OcrPageResult[] = [];
-    let fullText = '';
-    let totalConfidence = 0;
+      const pages: OcrPageResult[] = [];
+      let fullText = '';
+      let totalConfidence = 0;
 
-    for (let idx = 0; idx < targetPages.length; idx++) {
-      if (this.isCancelled) throw new Error('OCR job was cancelled.');
+      for (let idx = 0; idx < targetPages.length; idx++) {
+        if (this.isCancelled) throw new Error('OCR job was cancelled.');
 
-      const pageNum = targetPages[idx];
-      const overallProgress = idx / targetPages.length;
+        const pageNum = targetPages[idx];
+        const overallProgress = idx / targetPages.length;
 
-      onProgress?.({
-        stage: 'recognizing',
-        progress: overallProgress,
-        pageNumber: pageNum,
-        totalPages: targetPages.length,
-        message: `Recognizing text on page ${pageNum} of ${totalPages}...`
-      });
-
-      // Render page to canvas at 2x scale for crisp OCR recognition
-      const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 2.0 });
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.floor(viewport.width);
-      canvas.height = Math.floor(viewport.height);
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        pages.push({
+        onProgress?.({
+          stage: 'recognizing',
+          progress: overallProgress,
           pageNumber: pageNum,
-          text: '',
-          confidence: 0,
-          words: [],
-          language: languages,
-          status: 'error',
-          errorMessage: 'Could not create canvas context.'
+          totalPages: targetPages.length,
+          message: `Recognizing text on page ${pageNum} of ${totalPages}...`
         });
-        continue;
+
+        // Render page to canvas at 2x scale for crisp OCR recognition
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          pages.push({
+            pageNumber: pageNum,
+            text: '',
+            confidence: 0,
+            words: [],
+            language: languages,
+            status: 'error',
+            errorMessage: 'Could not create canvas context.'
+          });
+          continue;
+        }
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await (page.render({ canvasContext: ctx, viewport, canvas } as any)).promise;
+
+        try {
+          // Recognize via worker with timeout guard
+          const ocrRes = await this.recognizeWithTimeout(worker, canvas);
+          if (this.isCancelled) throw new Error('OCR job was cancelled.');
+
+          const words: OcrWord[] = ((ocrRes.data as any).words || []).map((w: any) => ({
+            text: OcrService.sanitizeOcrText(w.text),
+            confidence: w.confidence,
+            bbox: {
+              x0: w.bbox.x0,
+              y0: w.bbox.y0,
+              x1: w.bbox.x1,
+              y1: w.bbox.y1
+            }
+          }));
+
+          const pageText = OcrService.sanitizeOcrText(ocrRes.data.text);
+          const pageConfidence = Math.round(ocrRes.data.confidence);
+
+          fullText += `--- Page ${pageNum} ---\n${pageText}\n\n`;
+          totalConfidence += pageConfidence;
+
+          pages.push({
+            pageNumber: pageNum,
+            text: pageText,
+            confidence: pageConfidence,
+            words,
+            language: languages,
+            status: 'completed'
+          });
+        } finally {
+          // Clean up canvas buffer to avoid memory leaks during multi-page scans
+          canvas.width = 0;
+          canvas.height = 0;
+        }
       }
 
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      await (page.render({ canvasContext: ctx, viewport, canvas } as any)).promise;
-
-      // Recognize via worker
-      const ocrRes = await worker.recognize(canvas);
-      if (this.isCancelled) throw new Error('OCR job was cancelled.');
-
-      const words: OcrWord[] = ((ocrRes.data as any).words || []).map((w: any) => ({
-        text: w.text,
-        confidence: w.confidence,
-        bbox: {
-          x0: w.bbox.x0,
-          y0: w.bbox.y0,
-          x1: w.bbox.x1,
-          y1: w.bbox.y1
-        }
-      }));
-
-      const pageText = ocrRes.data.text.trim();
-      const pageConfidence = Math.round(ocrRes.data.confidence);
-
-      fullText += `--- Page ${pageNum} ---\n${pageText}\n\n`;
-      totalConfidence += pageConfidence;
-
-      pages.push({
-        pageNumber: pageNum,
-        text: pageText,
-        confidence: pageConfidence,
-        words,
-        language: languages,
-        status: 'completed'
+      onProgress?.({
+        stage: 'completed',
+        progress: 1.0,
+        message: 'OCR completed successfully!'
       });
+
+      return {
+        fileName: file.name,
+        totalPages: targetPages.length,
+        pages,
+        fullText: fullText.trim(),
+        averageConfidence: targetPages.length > 0 ? Math.round(totalConfidence / targetPages.length) : 0,
+        languages: languages.split('+')
+      };
+    } finally {
+      await loadingTask?.destroy();
     }
-
-    onProgress?.({
-      stage: 'completed',
-      progress: 1.0,
-      message: 'OCR completed successfully!'
-    });
-
-    return {
-      fileName: file.name,
-      totalPages: targetPages.length,
-      pages,
-      fullText: fullText.trim(),
-      averageConfidence: targetPages.length > 0 ? Math.round(totalConfidence / targetPages.length) : 0,
-      languages: languages.split('+')
-    };
   }
 
   /**
@@ -499,6 +537,39 @@ export class OcrService {
     const jsonStr = JSON.stringify(ocrResult, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
     return new File([blob], `${baseName}_ocr_structured.json`, { type: 'application/json' });
+  }
+
+  /**
+   * Recognises a small image region and returns its words with bounding boxes.
+   *
+   * Used by the scanner's H8 auto-naming to read the heading strip off page 1.
+   * It runs on its own worker and deliberately does not touch `activeWorker` or
+   * `isCancelled`: those belong to a full document job, and a title read must
+   * not be able to cancel one or be cancelled by one.
+   */
+  async recognizeRegionWords(
+    blob: Blob,
+    language: string = 'eng'
+  ): Promise<{ text: string; words: OcrWord[] }> {
+    const worker = await createWorker(language, 1);
+    const url = URL.createObjectURL(blob);
+    try {
+      const res = await worker.recognize(url);
+      const words: OcrWord[] = ((res.data as any).words || []).map((w: any) => ({
+        text: w.text,
+        confidence: w.confidence,
+        bbox: {
+          x0: w.bbox.x0,
+          y0: w.bbox.y0,
+          x1: w.bbox.x1,
+          y1: w.bbox.y1
+        }
+      }));
+      return { text: (res.data.text || '').trim(), words };
+    } finally {
+      URL.revokeObjectURL(url);
+      await worker.terminate();
+    }
   }
 
   /**

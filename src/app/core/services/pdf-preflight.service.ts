@@ -1,7 +1,7 @@
 import '../utilities/pdf-iterator-polyfill';
 import { Injectable, inject } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
-import { PDFDocument, PDFName, PDFDict, PDFStream, PDFRawStream, degrees } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFDict, PDFPage, PDFStream, PDFRawStream, degrees } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import {
   PreflightProfile,
@@ -83,6 +83,25 @@ export class PdfPreflightService {
   private readonly storage = inject(StorageService);
 
   /**
+   * Page size as a reader displays it: /Rotate 90 or 270 swaps the MediaBox
+   * axes, so a rotated A4 page displays portrait however the box is stored.
+   *
+   * pdf-lib's `getSize()` is the unrotated box, and measuring that directly
+   * got both uniformity rules wrong on any rotated page -- and left the
+   * orientation fix, which only sets /Rotate, unable to flip its own rule to
+   * pass on re-check.
+   */
+  private displaySize(page: PDFPage): { width: number; height: number } {
+    const { width, height } = page.getSize();
+    const angle = this.normalizedRotation(page);
+    return angle === 90 || angle === 270 ? { width: height, height: width } : { width, height };
+  }
+
+  private normalizedRotation(page: PDFPage): number {
+    return ((page.getRotation().angle % 360) + 360) % 360;
+  }
+
+  /**
    * Runs complete preflight check against a specified profile.
    */
   async runPreflight(
@@ -113,13 +132,47 @@ export class PdfPreflightService {
       // Unparseable or heavily corrupted
     }
 
-    let pdfJsDoc: any = null;
+    /*
+     * pdf.js is needed for two measurements only -- the page-count fallback and
+     * the searchable-text sweep -- so both are taken here and the loading task
+     * is torn down straight away.
+     *
+     * `getDocument` returns a loading task that owns a worker, and only the
+     * task has `destroy()`. Holding it open for the length of the rule pass
+     * leaked one worker per run, and `fixAllFailedRules` runs this once per
+     * fixable rule plus once more at the end -- several leaked workers per tap
+     * on the mid-range Android this ships to.
+     */
+    let pdfJsOpened = false;
+    let searchableTextChars = 0;
+    let task: any = null;
     try {
-      const task = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) } as any);
-      pdfJsDoc = await task.promise;
+      task = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) } as any);
+      const pdfJsDoc = await task.promise;
+      pdfJsOpened = true;
       if (pageCount === 0) pageCount = pdfJsDoc.numPages;
+
+      if (profile.requireSearchableText) {
+        for (let p = 1; p <= pdfJsDoc.numPages; p++) {
+          try {
+            const page = await pdfJsDoc.getPage(p);
+            const text = await page.getTextContent();
+            searchableTextChars += (text.items || []).reduce((acc: number, it: any) => acc + (it.str ? it.str.trim().length : 0), 0);
+          } catch {
+            // A page that will not parse contributes no text; the rest still count.
+          }
+        }
+      }
     } catch {
-      // Ignored
+      // pdf.js could not open the file; the pdf-lib pass still carries the rules.
+    } finally {
+      if (task) {
+        try {
+          await task.destroy();
+        } catch {
+          // Worker already gone.
+        }
+      }
     }
 
     // 1. RULE: Max file size
@@ -169,7 +222,7 @@ export class PdfPreflightService {
         const pages = pdfLibDoc.getPages();
         const dimSet = new Set<string>();
         for (const p of pages) {
-          const { width, height } = p.getSize();
+          const { width, height } = this.displaySize(p);
           dimSet.add(`${Math.round(width)}×${Math.round(height)} pt`);
         }
         isUniform = dimSet.size <= 1;
@@ -198,7 +251,7 @@ export class PdfPreflightService {
       if (pdfLibDoc && pageCount > 0) {
         const pages = pdfLibDoc.getPages();
         for (const p of pages) {
-          const { width, height } = p.getSize();
+          const { width, height } = this.displaySize(p);
           if (width > height) landscapeCount++;
           else portraitCount++;
         }
@@ -385,18 +438,7 @@ export class PdfPreflightService {
 
     // 10. RULE: Searchable text present
     if (profile.requireSearchableText) {
-      let totalTextChars = 0;
-      if (pdfJsDoc && pageCount > 0) {
-        for (let p = 1; p <= pageCount; p++) {
-          try {
-            const page = await pdfJsDoc.getPage(p);
-            const text = await page.getTextContent();
-            totalTextChars += (text.items || []).reduce((acc: number, it: any) => acc + (it.str ? it.str.trim().length : 0), 0);
-          } catch {
-            // Ignore
-          }
-        }
-      }
+      const totalTextChars = pdfJsOpened ? searchableTextChars : 0;
 
       const pass = totalTextChars >= 50;
       rules.push({
@@ -495,9 +537,11 @@ export class PdfPreflightService {
       const doc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
       const pages = doc.getPages();
       for (const p of pages) {
-        const { width, height } = p.getSize();
+        const { width, height } = this.displaySize(p);
         if (width > height) {
-          p.setRotation(degrees(90));
+          // A quarter turn on top of whatever the page already carries, so a
+          // page that is landscape *as displayed* ends up portrait.
+          p.setRotation(degrees((this.normalizedRotation(p) + 90) % 360));
         }
       }
       fixedBytes = await doc.save();

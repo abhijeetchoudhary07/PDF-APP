@@ -783,7 +783,7 @@
             color: var(--color-primary);
             font-weight: var(--font-weight-semibold);
             text-decoration: none;
-            min-height: 32px;
+            min-height: var(--min-touch-target, 44px);
             display: inline-flex;
             align-items: center;
 

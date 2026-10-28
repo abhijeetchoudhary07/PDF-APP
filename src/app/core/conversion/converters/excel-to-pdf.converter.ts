@@ -35,6 +35,15 @@ export class ExcelToPdfConverter implements IConverter {
     if (!name.endsWith('.xlsx') && !name.endsWith('.xls')) {
       return { valid: false, error: 'Selected file is not an Excel spreadsheet (.xlsx, .xls).' };
     }
+    // Verify magic bytes (ZIP header for .xlsx or OLE2 header for .xls) to reject polyglots
+    if (file.size >= 4) {
+      const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+      const isZip = header[0] === 0x50 && header[1] === 0x4b && (header[2] === 0x03 || header[2] === 0x05 || header[2] === 0x07);
+      const isOle = header[0] === 0xd0 && header[1] === 0xcf && header[2] === 0x11 && header[3] === 0xe0;
+      if (!isZip && !isOle) {
+        return { valid: false, error: 'File is not a valid Excel spreadsheet (invalid file signature).' };
+      }
+    }
     return { valid: true };
   }
 
@@ -67,6 +76,13 @@ export class ExcelToPdfConverter implements IConverter {
 
       let firstSheetPreview: { headers: string[]; rows: string[][] } | undefined;
 
+      // Accumulated across every sheet/entry, so one notice covers the file.
+      const dropped = { dropped: 0, sample: '' };
+      const track = (result: { dropped: number; sample: string }) => {
+        dropped.dropped += result.dropped;
+        if (!dropped.sample) dropped.sample = result.sample;
+      };
+
       for (let s = 0; s < sheetNamesToProcess.length; s++) {
         const sheetName = sheetNamesToProcess[s];
         const percent = Math.round(30 + ((s + 1) / sheetNamesToProcess.length) * 55);
@@ -96,7 +112,7 @@ export class ExcelToPdfConverter implements IConverter {
           };
         }
 
-        await PdfLayoutHelper.renderTableDocument(
+        track(await PdfLayoutHelper.renderTableDocument(
           pdfDoc,
           headers,
           rows,
@@ -107,7 +123,7 @@ export class ExcelToPdfConverter implements IConverter {
             fontSize: options.fontSize || 8
           },
           sheetNamesToProcess.length > 1 ? sheetName : undefined
-        );
+        ));
       }
 
       if (pdfDoc.getPageCount() === 0) {
@@ -125,11 +141,22 @@ export class ExcelToPdfConverter implements IConverter {
       const finalPdf = new File([pdfBytes as any], `${baseName}.pdf`, { type: 'application/pdf' });
       const previewUrl = URL.createObjectURL(finalPdf);
 
+      const encodingWarning = PdfLayoutHelper.describeDroppedText(dropped.dropped, dropped.sample);
+
       return {
         success: true,
         file: finalPdf,
         previewUrl,
         downloadName: finalPdf.name,
+        warnings: encodingWarning ? [encodingWarning] : undefined,
+        report: {
+          approximations: [],
+          droppedElements: [],
+          substitutedFonts: [],
+          tablesDetected: 0,
+          pagesRasterized: 0,
+          indicOrRtlWarnings: encodingWarning ? [encodingWarning] : []
+        },
         previewData: firstSheetPreview,
         metadata: {
           name: finalPdf.name,

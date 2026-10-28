@@ -1,0 +1,377 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+
+      <!-- PAGE HEADER -->
+      <app-page-header
+        [title]="'idPhoto.title' | translate"
+        [subtitle]="'idPhoto.subtitle' | translate"
+        [breadcrumbs]="[
+          { label: ('tools.photo_tools.title' | translate), url: '/features/photo' },
+          { label: ('idPhoto.title' | translate) }
+        ]"
+        backUrl="/features/photo"
+        badge="ID PHOTO"
+        badgeVariant="photo">
+      </app-page-header>
+
+      <!-- 1. EMPTY / UPLOAD STATE -->
+      @if (workflowState === 'EMPTY') {
+        <div class="workspace-panel">
+          <app-file-dropzone
+            icon="person"
+            [title]="'idPhoto.dropzoneTitle' | translate"
+            [description]="'idPhoto.dropzoneDesc' | translate"
+            accept="image/jpeg,image/png,image/webp"
+            [errorMessage]="errorMessage"
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+      }
+
+      <!-- 2. CONFIGURING STATE -->
+      @if (workflowState === 'CONFIGURING' && originalFile) {
+        <div class="workspace-panel">
+
+          <!-- MODE TABS -->
+          <div class="mode-tabs-wrap">
+            <app-tabs
+              [tabs]="[
+                { id: 'crop', label: ('idPhoto.tabCrop' | translate) },
+                { id: 'background', label: ('idPhoto.tabBackground' | translate) },
+                { id: 'sheet', label: ('idPhoto.tabSheet' | translate) }
+              ]"
+              [selectedTab]="activeTab"
+              [fullWidth]="true"
+              (tabChange)="activeTab = $any($event)">
+            </app-tabs>
+          </div>
+
+          <!-- INTERACTIVE PREVIEW CANVAS -->
+          <div class="preview-stage-card">
+            <div class="canvas-viewport">
+              <canvas
+                #previewCanvas
+                class="guide-canvas"
+                (pointerdown)="onGuidePointerDown($event)"
+                (pointermove)="onGuidePointerMove($event)"
+                (pointerup)="onGuidePointerUp($event)"
+                (pointercancel)="onGuidePointerUp($event)"
+                (lostpointercapture)="onGuidePointerUp($event)">
+              </canvas>
+            </div>
+
+            <p class="guide-help-text">{{ 'idPhoto.guideDragHint' | translate }}</p>
+
+            <!-- Face Detection Controls -->
+            <div class="detection-action-bar">
+              <button
+                type="button"
+                class="mobile-touch-btn secondary-btn"
+                (click)="autoDetectFace()"
+                [disabled]="isFaceDetecting">
+                <span class="btn-content">
+                  @if (isFaceDetecting) {
+                    <span class="spinner-dot"></span>
+                    <span>{{ 'idPhoto.detecting' | translate }}</span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                      <circle cx="12" cy="7" r="4"></circle>
+                      <path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2"></path>
+                    </svg>
+                    <span>{{ 'idPhoto.autoDetectBtn' | translate }}</span>
+                  }
+                </span>
+              </button>
+
+              <button
+                type="button"
+                class="mobile-touch-btn secondary-btn"
+                (click)="resetGuide()">
+                <span class="btn-content">
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M3 2v6h6"></path>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 8"></path>
+                  </svg>
+                  <span>{{ 'idPhoto.resetGuideBtn' | translate }}</span>
+                </span>
+              </button>
+
+              <span class="guide-mode-tag" [class.auto]="!manualGuideMode">
+                {{ manualGuideMode ? ('idPhoto.manualGuideActive' | translate) : ('idPhoto.faceDetectedActive' | translate) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- TAB 1: CROP & PRESETS -->
+          @if (activeTab === 'crop') {
+            <div class="controls-card">
+              <!-- Standard Dimension & KB Presets -->
+              <div class="control-group">
+                <label class="control-label">{{ 'idPhoto.standardPresetsTitle' | translate }}</label>
+                <div class="preset-chips" appAutoScroll [autoScrollSpeed]="0.6" [autoScrollPauseDelay]="2500">
+                  @for (preset of presets; track preset.id) {
+                    <button
+                      type="button"
+                      class="preset-chip"
+                      [class.active]="selectedPreset.id === preset.id && !isCustomSize"
+                      (click)="selectPreset(preset)">
+                      {{ preset.name }}
+                    </button>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="preset-chip custom-size-chip"
+                  [class.active]="isCustomSize"
+                  (click)="useCustomSize()">
+                  {{ 'idPhoto.customSizeChip' | translate }}
+                </button>
+
+                @if (isCustomSize) {
+                  <div class="custom-size-grid">
+                    <label class="custom-size-field">
+                      <span>{{ 'idPhoto.customWidthLabel' | translate }}</span>
+                      <input
+                        type="number"
+                        inputmode="numeric"
+                        min="50"
+                        max="4000"
+                        [(ngModel)]="customWidthPx"
+                        (ngModelChange)="onCustomSizeChange()" />
+                    </label>
+                    <label class="custom-size-field">
+                      <span>{{ 'idPhoto.customHeightLabel' | translate }}</span>
+                      <input
+                        type="number"
+                        inputmode="numeric"
+                        min="50"
+                        max="4000"
+                        [(ngModel)]="customHeightPx"
+                        (ngModelChange)="onCustomSizeChange()" />
+                    </label>
+                    <label class="custom-size-field">
+                      <span>{{ 'idPhoto.customKbLabel' | translate }}</span>
+                      <input
+                        type="number"
+                        inputmode="numeric"
+                        min="5"
+                        max="2000"
+                        [(ngModel)]="customTargetKB"
+                        (ngModelChange)="onCustomSizeChange()" />
+                    </label>
+                  </div>
+                } @else {
+                  <p class="helper-text">{{ selectedPreset.description }}</p>
+                }
+              </div>
+
+              <!-- Head Ratio Sliders -->
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-title">{{ 'idPhoto.headHeightRatio' | translate }}</span>
+                  <span class="slider-value">{{ headHeightPct }}%</span>
+                </div>
+                <input
+                  type="range"
+                  class="mobile-range-slider"
+                  min="55"
+                  max="85"
+                  step="1"
+                  [(ngModel)]="headHeightPct"
+                  (ngModelChange)="onParamChange()" />
+                <span class="slider-hint">{{ 'idPhoto.headHeightHint' | translate }}</span>
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-title">{{ 'idPhoto.eyeLinePosition' | translate }}</span>
+                  <span class="slider-value">{{ eyeLinePct }}%</span>
+                </div>
+                <input
+                  type="range"
+                  class="mobile-range-slider"
+                  min="30"
+                  max="55"
+                  step="1"
+                  [(ngModel)]="eyeLinePct"
+                  (ngModelChange)="onParamChange()" />
+                <span class="slider-hint">{{ 'idPhoto.eyeLineHint' | translate }}</span>
+              </div>
+            </div>
+          }
+
+          <!-- TAB 2: BACKGROUND REPLACEMENT (I2) -->
+          @if (activeTab === 'background') {
+            <div class="controls-card">
+              <div class="toggle-card">
+                <div class="toggle-info">
+                  <strong>{{ 'idPhoto.replaceBackgroundTitle' | translate }}</strong>
+                  <p>{{ 'idPhoto.replaceBackgroundDesc' | translate }}</p>
+                </div>
+                <label class="mobile-switch">
+                  <input type="checkbox" [(ngModel)]="replaceBackground" />
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              @if (replaceBackground) {
+                <!-- Suitability Status Banner -->
+                @if (suitability.suitable) {
+                  <div class="status-banner success-banner">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span>{{ 'idPhoto.backgroundSuitable' | translate }}</span>
+                  </div>
+                } @else {
+                  <div class="status-banner warning-banner">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+                      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                      <line x1="12" y1="9" x2="12" y2="13"></line>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <span>{{ suitability.reason || ('idPhoto.backgroundCluttered' | translate) }}</span>
+                  </div>
+                }
+
+                <!-- Color Selection -->
+                <div class="color-options-grid">
+                  <button
+                    type="button"
+                    class="color-pick-card"
+                    [class.selected]="selectedBgColor === 'white'"
+                    (click)="selectedBgColor = 'white'">
+                    <span class="color-swatch white-swatch"></span>
+                    <span class="color-name">{{ 'idPhoto.colorWhite' | translate }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="color-pick-card"
+                    [class.selected]="selectedBgColor === 'light-blue'"
+                    (click)="selectedBgColor = 'light-blue'">
+                    <span class="color-swatch blue-swatch"></span>
+                    <span class="color-name">{{ 'idPhoto.colorLightBlue' | translate }}</span>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- TAB 3: PRINT SHEET (I2) -->
+          @if (activeTab === 'sheet') {
+            <div class="controls-card">
+              <div class="toggle-card">
+                <div class="toggle-info">
+                  <strong>{{ 'idPhoto.generatePrintSheetTitle' | translate }}</strong>
+                  <p>{{ 'idPhoto.generatePrintSheetDesc' | translate }}</p>
+                </div>
+                <label class="mobile-switch">
+                  <input type="checkbox" [(ngModel)]="sheetMode" />
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              @if (sheetMode) {
+                <div class="sheet-options-container">
+                  <div class="option-row">
+                    <label class="control-label">{{ 'idPhoto.paperSizeLabel' | translate }}</label>
+                    <div class="segmented-control">
+                      <button
+                        type="button"
+                        class="seg-btn"
+                        [class.active]="sheetPaperSize === '4x6'"
+                        (click)="sheetPaperSize = '4x6'">
+                        4 × 6 in
+                      </button>
+                      <button
+                        type="button"
+                        class="seg-btn"
+                        [class.active]="sheetPaperSize === 'a4'"
+                        (click)="sheetPaperSize = 'a4'">
+                        A4 Paper
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="option-row">
+                    <label class="control-label">{{ 'idPhoto.copyCountLabel' | translate }}</label>
+                    <div class="chips-row">
+                      @for (n of [4, 6, 8, 12]; track n) {
+                        <button
+                          type="button"
+                          class="number-chip"
+                          [class.active]="sheetCopies === n"
+                          (click)="sheetCopies = n">
+                          {{ n }} {{ 'idPhoto.copies' | translate }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="checkbox-row">
+                    <label class="custom-checkbox-label">
+                      <input type="checkbox" [(ngModel)]="includeCutMarks" />
+                      <span>{{ 'idPhoto.includeCutMarks' | translate }}</span>
+                    </label>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- STICKY MOBILE BOTTOM ACTION BAR -->
+          <div class="mobile-sticky-bottom-bar">
+            <button
+              type="button"
+              class="mobile-touch-btn primary-btn large-cta"
+              (click)="generateIdPhoto()"
+              [disabled]="isProcessing">
+              <span class="btn-content">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span>{{ sheetMode ? ('idPhoto.createSheetBtn' | translate) : ('idPhoto.createPhotoBtn' | translate) }}</span>
+              </span>
+            </button>
+          </div>
+
+        </div>
+      }
+
+      <!-- 3. PROCESSING ANIMATION -->
+      @if (isProcessing) {
+        <app-conversion-animation
+          [progress]="processingProgress"
+          [stageText]="stageText">
+        </app-conversion-animation>
+      }
+
+      <!-- 4. SUCCESS / RESULT STATE -->
+      @if (workflowState === 'SUCCESS' && processedFile && processedPreviewUrl) {
+        <div class="workspace-panel">
+          <app-result-preview
+            [file]="processedFile"
+            [beforeData]="beforePreviewData"
+            [afterData]="afterPreviewData"
+            [beforeUrl]="originalPreviewUrl"
+            [afterUrl]="processedPreviewUrl"
+            (saved)="saveOutput()"
+            (shared)="shareOutput()"
+            (resetRequested)="reset()">
+          </app-result-preview>
+        </div>
+      }
+
+      <!-- RELATED TOOLS -->
+      <app-related-tools currentToolId="id_photo"></app-related-tools>
+
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

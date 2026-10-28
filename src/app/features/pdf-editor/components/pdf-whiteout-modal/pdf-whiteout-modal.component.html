@@ -1,0 +1,95 @@
+<div class="k-sheet">
+  <div class="k-sheet__header">
+    <div class="k-sheet__title">
+      <app-icon name="square-outline"></app-icon>
+      <h2>{{ 'editor.whiteout' | translate }}</h2>
+    </div>
+    <button
+      type="button"
+      class="k-sheet__close"
+      (click)="dismiss()"
+      [attr.aria-label]="'editor.kClose' | translate">
+      <app-icon name="close"></app-icon>
+    </button>
+  </div>
+
+  <div class="k-sheet__body">
+    <!--
+    The notice first, and it says "covers" rather than "removes", because
+    that is the distinction someone hiding an account number has to know
+    about. The way out to real redaction is a button, not a sentence.
+    -->
+    <div class="k-notice k-notice--warn">
+      <app-icon name="alert-circle-outline"></app-icon>
+      <span>{{ 'editor.woNotice' | translate }}</span>
+    </div>
+
+    <div class="k-card">
+      <label class="k-toggle">
+        <input type="checkbox" [(ngModel)]="matchPage" />
+        <span>{{ 'editor.woMatchPage' | translate }}</span>
+      </label>
+      <p class="k-hint">
+        {{ (matchPage ? 'editor.woSampled' : 'editor.woColourFixed') | translate }}
+      </p>
+
+      @if (!matchPage) {
+        <div class="k-field">
+          <label class="k-label" for="wo-colour">{{ 'editor.woColorLabel' | translate }}</label>
+          <input id="wo-colour" type="color" class="k-input" [(ngModel)]="fillColor" />
+        </div>
+      }
+
+      <p class="k-hint">{{ 'editor.woPlaceHint' | translate }}</p>
+
+      <div class="k-actions">
+        <button type="button" class="k-btn k-btn--danger" (click)="useRedaction()">
+          <app-icon name="shield-outline"></app-icon>
+          <span>{{ 'editor.woUseRedact' | translate }}</span>
+        </button>
+        <button type="button" class="k-btn k-btn--primary" (click)="startDrawing()">
+          <app-icon name="crop-outline"></app-icon>
+          <span>{{ 'editor.woPlace' | translate }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="k-section-head">
+        <h3>{{ 'editor.woListTitle' | translate: { count: regions.length } }}</h3>
+      </div>
+
+      @if (regions.length === 0) {
+        <div class="k-empty">{{ 'editor.woEmpty' | translate }}</div>
+      } @else {
+        <div class="k-list">
+          @for (region of regions; track region.id) {
+            <div class="k-row">
+              <button type="button" class="k-row__main" (click)="jumpTo(region)">
+                <span class="k-row__title">
+                  {{ round(region.rect.width) }} × {{ round(region.rect.height) }} pt
+                </span>
+                <span class="k-row__meta">
+                  <span class="k-badge is-primary">
+                    {{ 'editor.kPageBadge' | translate: { page: region.pageNumber } }}
+                  </span>
+                  <span class="k-badge">{{ region.fillColor }}</span>
+                  @if (region.colorSampledFromPage) {
+                    <span class="k-badge is-ok">{{ 'editor.woSampledBadge' | translate }}</span>
+                  }
+                </span>
+              </button>
+              <button
+                type="button"
+                class="k-icon-btn is-danger"
+                (click)="remove(region)"
+                [attr.aria-label]="'editor.kDelete' | translate">
+                <app-icon name="trash-outline"></app-icon>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

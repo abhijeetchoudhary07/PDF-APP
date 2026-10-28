@@ -41,6 +41,7 @@
               </div>
               <h2>Sign Any PDF Offline</h2>
               <p>Draw, upload, or reuse your signature. Place multiple signatures on any page, resize, rotate, and export with zero data leaving your device.</p>
+              <input #fileInput type="file" accept="application/pdf" style="display:none" (change)="onFileInputChange($event)" />
               <app-button
                 variant="primary"
                 size="lg"

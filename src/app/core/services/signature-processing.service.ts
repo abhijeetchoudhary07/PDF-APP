@@ -10,7 +10,9 @@ export class SignatureProcessingService {
   async processSignature(file: File, options?: { grayscale?: boolean, contrast?: number, threshold?: number }): Promise<File> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      const url = URL.createObjectURL(file);
       img.onload = () => {
+        URL.revokeObjectURL(url);
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
@@ -64,8 +66,11 @@ export class SignatureProcessingService {
           }
         }, file.type);
       };
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+      img.src = url;
     });
   }
 
@@ -73,7 +78,9 @@ export class SignatureProcessingService {
   async autoCrop(file: File): Promise<File> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      const url = URL.createObjectURL(file);
       img.onload = () => {
+        URL.revokeObjectURL(url);
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
@@ -125,8 +132,11 @@ export class SignatureProcessingService {
           }
         }, file.type);
       };
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+      img.src = url;
     });
   }
 }

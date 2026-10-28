@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { getTestDataPath, setupCapacitorMocks } from '../fixtures/mocks';
-import { importScannedPage } from './scanner-helpers';
+import { importScannedPage, dismissBlurGate } from './scanner-helpers';
 
 /*
  * All three of these were wrapped in `if (await fileInput.count() > 0)` against
@@ -18,6 +18,9 @@ test.describe('Document Scanner — Edge Detection & Crop Modes @scanner', () =>
     const chooser = page.waitForEvent('filechooser');
     await page.locator('app-button[data-testid="import-gallery"] button').first().click();
     await (await chooser).setFiles(getTestDataPath(fixture));
+    // Every fixture here is the same low-detail gradient, so the H4 gate opens
+    // over the crop step and blocks it until answered.
+    await dismissBlurGate(page);
     await expect(page.locator('.crop-card')).toBeVisible({ timeout: 15000 });
   }
 

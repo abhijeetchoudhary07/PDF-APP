@@ -218,10 +218,16 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @for (row of downsamplePlan.rows; track row.imageKey) {
+                      @for (row of downsamplePlan.rows; track row.imageKey; let i = $index) {
                         <tr>
                           <td>
-                            <span class="img-badge">{{ row.imageKey }}</span>
+                            <!--
+                              row.imageKey is the PDF indirect reference ("5 0 R")
+                              and is how the writer finds the object again — but it
+                              means nothing to someone looking at their own scan,
+                              so the column counts instead.
+                            -->
+                            <span class="img-badge">{{ 'optimize.imageNumber' | translate: { number: i + 1 } }}</span>
                           </td>
                           <td>{{ row.pageNumbers.join(', ') || '1' }}</td>
                           <td>
@@ -231,7 +237,8 @@
                             @if (row.skippedReason) {
                               <span class="skipped-tag">{{ row.skippedReason }}</span>
                             } @else {
-                              <span class="saved-tag">+{{ (row.savedBytes / 1024) | number:'1.0-1' }} KB</span>
+                              <!-- Under a column headed "Saved", a leading "+" reads as growth. -->
+                              <span class="saved-tag">{{ (row.savedBytes / 1024) | number:'1.0-1' }} KB</span>
                             }
                           </td>
                         </tr>
@@ -348,14 +355,21 @@
                 </div>
 
                 <div class="group-list">
-                  @for (group of dedupePlan.groups; track group.keepKey) {
+                  @for (group of dedupePlan.groups; track group.keepKey; let i = $index) {
                     <div class="group-card">
                       <div class="group-header">
-                        <span class="keep-badge">{{ 'optimize.keepObject' | translate }}: {{ group.keepKey }}</span>
+                        <span class="keep-badge">{{ 'optimize.imageNumber' | translate: { number: i + 1 } }}</span>
                         <span class="dim-badge">{{ group.pixelWidth }}&times;{{ group.pixelHeight }} px</span>
                       </div>
+                      <!--
+                        This said "Replaces: 8 0 R, 11 0 R, 14 0 R, ..." — the PDF
+                        indirect references the writer uses internally. Nobody
+                        looking at their own letterhead knows what "8 0 R" is, so
+                        say how many copies there are and what will remain.
+                      -->
                       <p class="drop-text">
-                        {{ 'optimize.replaces' | translate }}: {{ group.dropKeys.join(', ') }}
+                        {{ 'optimize.dedupeCopies' | translate: { count: group.dropKeys.length + 1 } }}
+                        &middot; {{ (group.savedBytes / 1024) | number:'1.0-1' }} KB
                       </p>
                     </div>
                   }
@@ -384,6 +398,44 @@
             <h3>{{ 'optimize.f4Title' | translate }}</h3>
             <p class="card-desc">{{ 'optimize.f4Desc' | translate }}</p>
           </div>
+
+          <!--
+            Without an optimized buffer the "after" pane renders the original
+            again, so the two panes are identical while still being labelled
+            Original and Optimized. Say so rather than letting the comparison
+            look like it found no difference.
+          -->
+          @if (!outputBuffer) {
+            <div class="note-box">
+              <app-icon name="information-circle" [size]="18"></app-icon>
+              <span>{{ 'optimize.proofNotYet' | translate }}</span>
+            </div>
+          } @else if (proofSummary) {
+            <div class="proof-summary-bar">
+              <div class="proof-summary-col">
+                <span class="proof-summary-lbl">{{ 'optimize.originalSize' | translate }}</span>
+                <span class="proof-summary-val">{{ (proofSummary.beforeBytes / 1024) | number:'1.0-1' }} KB</span>
+              </div>
+              <div class="proof-summary-col">
+                <span class="proof-summary-lbl">{{ 'optimize.newSize' | translate }}</span>
+                <span class="proof-summary-val">{{ (proofSummary.afterBytes / 1024) | number:'1.0-1' }} KB</span>
+              </div>
+              <div class="proof-summary-col">
+                <span class="proof-summary-lbl">{{ 'optimize.proofSizeChange' | translate }}</span>
+                <span class="proof-summary-val" [class.grew]="proofSummary.savedBytes < 0">
+                  {{ absProofPercent }}%
+                  {{ (proofSummary.savedBytes < 0 ? 'optimize.larger' : 'optimize.smaller') | translate }}
+                </span>
+              </div>
+            </div>
+
+            @if (proofSummary.textRasterized) {
+              <div class="note-box warn">
+                <app-icon name="alert-circle" [size]="18"></app-icon>
+                <span>{{ 'optimize.notice_text-rasterized' | translate }}</span>
+              </div>
+            }
+          }
 
           <div class="proof-toolbar">
             <div class="page-stepper">
@@ -674,10 +726,17 @@
           <div class="size-arrow">&rarr;</div>
           <div class="size-col">
             <span class="size-lbl">{{ 'optimize.newSize' | translate }}</span>
-            <span class="size-val new-val">{{ (outputResult.sizeBytes / 1024) | number:'1.0-1' }} KB</span>
+            <span class="size-val new-val" [class.grew]="outputResult.savedBytes < 0">{{ (outputResult.sizeBytes / 1024) | number:'1.0-1' }} KB</span>
           </div>
+          <!--
+            A rasterising path can easily make a file bigger than it started —
+            turning six pages of text into six images is a 48x jump. Saying
+            "-4753% smaller" in green over that is the one thing this screen
+            must not do, so the sign picks the word and the colour.
+          -->
           <div class="saving-chip" [class.negative]="outputResult.savedBytes < 0">
-            {{ outputResult.savedPercent }}% {{ 'optimize.smaller' | translate }}
+            {{ absSavedPercent }}%
+            {{ (outputResult.savedBytes < 0 ? 'optimize.larger' : 'optimize.smaller') | translate }}
           </div>
         </div>
 
@@ -688,6 +747,36 @@
               <div class="notice-badge-item">
                 <app-icon name="checkmark" [size]="14"></app-icon>
                 <span>{{ 'optimize.notice_' + notice.kind | translate: { count: notice.count || 0, bytes: ((notice.bytes || 0) / 1024) | number:'1.0-1' } }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!--
+          F5 asks for every step taken, what it saved and what it cost. The
+          chain already records all of it; it just was not shown, so a user who
+          asked for 500 KB got a number and no account of how it was reached.
+        -->
+        @if (fitResult?.steps?.length) {
+          <div class="fit-steps-ledger">
+            <h4>{{ 'optimize.stepsTaken' | translate }}</h4>
+            @for (step of fitResult!.steps; track step.kind) {
+              <div class="fit-step-row" [class.did-run]="step.ran">
+                <app-icon
+                  [name]="step.ran ? 'checkmark-circle' : 'remove-circle'"
+                  [size]="16"
+                ></app-icon>
+                <span class="fit-step-name">{{ 'optimize.step_' + step.kind | translate }}</span>
+                @if (step.ran) {
+                  <span class="fit-step-saved">
+                    &minus;{{ (step.savedBytes / 1024) | number:'1.0-1' }} KB
+                    @if (step.rasterized) {
+                      <span class="fit-step-cost">{{ 'optimize.stepRasterized' | translate }}</span>
+                    }
+                  </span>
+                } @else if (step.skippedReason) {
+                  <span class="fit-step-skip">{{ 'optimize.skip_' + step.skippedReason | translate }}</span>
+                }
               </div>
             }
           </div>

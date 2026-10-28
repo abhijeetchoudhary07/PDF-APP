@@ -1,0 +1,25 @@
+@use '../k-modal' as *;
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+/* The crop sliders: a labelled row that wraps rather than clipping. */
+.crop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3, 12px);
+}
+
+.crop-slider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+
+  input[type='range'] {
+    width: 100%;
+    min-height: var(--min-touch-target, 44px);
+    accent-color: var(--color-primary);
+  }
+}

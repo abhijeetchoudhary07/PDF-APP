@@ -1,0 +1,613 @@
+:host {
+  display: block;
+  background-color: var(--color-background, #f8fafc);
+  color: var(--color-text, #0f172a);
+}
+
+.tool-page-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px;
+  padding-bottom: 96px; // Ensure content doesn't get hidden behind sticky bottom action bar
+}
+
+.workspace-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.mode-tabs-wrap {
+  margin-bottom: 4px;
+}
+
+/* PREVIEW STAGE & CANVAS */
+.preview-stage-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.canvas-viewport {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #111827;
+  padding: 12px;
+  min-height: 260px;
+}
+
+.guide-canvas {
+  max-width: 100%;
+  max-height: 380px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  /* The guide is dragged directly on the canvas, so the browser must not
+     claim the gesture for scrolling or text selection. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.guide-help-text {
+  margin: 0;
+  padding: 10px 16px 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  // Body copy, so the secondary token: --color-text-muted is a decorative
+  // slate-400 that only reaches 2.6:1 on the light surface.
+  color: var(--color-text-secondary, #475569);
+  text-align: center;
+}
+
+.custom-size-chip {
+  margin-top: 8px;
+}
+
+.custom-size-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.custom-size-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  span {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-secondary, #475569);
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1.5px solid var(--color-border, #e2e8f0);
+    border-radius: 10px;
+    background: var(--color-background-subtle, #f1f5f9);
+    color: var(--color-text, #0f172a);
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary, #4f46e5);
+    }
+  }
+}
+
+.detection-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 8px;
+  padding: 12px 16px;
+  background: var(--color-surface, #ffffff);
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  gap: 12px;
+}
+
+.guide-mode-tag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #64748b);
+  background: var(--color-background-subtle, #f1f5f9);
+  padding: 6px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+
+  &.auto {
+    color: var(--color-success, #10b981);
+    background: var(--color-success-soft, rgba(16, 185, 129, 0.1));
+  }
+}
+
+/* CONTROLS CARD */
+.controls-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text, #0f172a);
+}
+
+.helper-text {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #64748b);
+  margin: 0;
+}
+
+/* PRESET CHIPS */
+.preset-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 8px 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.preset-chip {
+  flex-shrink: 0;
+  min-height: 44px; // Play store mobile touch target
+  padding: 8px 16px;
+  background: var(--color-background-subtle, #f1f5f9);
+  border: 1.5px solid var(--color-border, #e2e8f0);
+  border-radius: 22px;
+  color: var(--color-text, #0f172a);
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.active {
+    background: var(--color-primary-soft, rgba(79, 70, 229, 0.1));
+    border-color: var(--color-primary, #4f46e5);
+    color: var(--color-primary-text, #4f46e5);
+  }
+}
+
+/* SLIDERS */
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.slider-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text, #0f172a);
+}
+
+.slider-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary-text, #4f46e5);
+}
+
+.slider-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #64748b);
+}
+
+.mobile-range-slider {
+  /*
+   * The element itself is a 44px thumb target; the visible 8px track is drawn
+   * by the track pseudo-elements so the control still reads as a thin slider.
+   * `pan-y` keeps vertical page scrolling while horizontal drags adjust it.
+   */
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+  touch-action: pan-y;
+
+  &::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--color-border, #e2e8f0);
+  }
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    margin-top: -9px;
+    border-radius: 50%;
+    border: 2px solid var(--color-surface, #ffffff);
+    background: var(--color-primary, #4f46e5);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  &::-moz-range-track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--color-border, #e2e8f0);
+  }
+
+  &::-moz-range-progress {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--color-primary, #4f46e5);
+  }
+
+  &::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--color-surface, #ffffff);
+    border-radius: 50%;
+    background: var(--color-primary, #4f46e5);
+  }
+
+  &:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--color-primary, #4f46e5);
+    outline-offset: 2px;
+  }
+}
+
+/* TOGGLES & SWITCHES */
+.toggle-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: 0.9rem;
+    color: var(--color-text, #0f172a);
+  }
+
+  p {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary, #64748b);
+    margin: 0;
+  }
+}
+
+.mobile-switch {
+  position: relative;
+  // The pill stays 50x28, but the control itself has to be 44px tall to be
+  // hittable with a thumb, so the track is centred inside that tap area.
+  display: inline-flex;
+  align-items: center;
+  width: 50px;
+  height: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+  touch-action: manipulation;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+    right: 0;
+    height: 28px;
+    background-color: var(--color-border, #cbd5e1);
+    transition: 0.3s;
+    border-radius: 28px;
+
+    &:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      top: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  input:checked + .slider {
+    background-color: var(--color-primary, #4f46e5);
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(22px);
+  }
+}
+
+/* STATUS BANNERS */
+.status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.825rem;
+  line-height: 1.4;
+
+  &.success-banner {
+    background: var(--color-success-soft, rgba(16, 185, 129, 0.1));
+    color: var(--color-success, #059669);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  &.warning-banner {
+    background: var(--color-warning-soft, rgba(245, 158, 11, 0.1));
+    color: var(--color-warning-hover, #d97706);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+}
+
+/* COLOR SELECTION */
+.color-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.color-pick-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--color-background-subtle, #f1f5f9);
+  border: 2px solid var(--color-border, #e2e8f0);
+  border-radius: 12px;
+  cursor: pointer;
+  min-height: 48px;
+
+  &.selected {
+    border-color: var(--color-primary, #4f46e5);
+    background: var(--color-primary-soft, rgba(79, 70, 229, 0.08));
+  }
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+
+  &.white-swatch {
+    background: #ffffff;
+  }
+
+  &.blue-swatch {
+    background: #c8dff5;
+  }
+}
+
+.color-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text, #0f172a);
+}
+
+/* PRINT SHEET OPTIONS */
+.sheet-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
+}
+
+.option-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.segmented-control {
+  display: flex;
+  background: var(--color-background-subtle, #f1f5f9);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.seg-btn {
+  flex: 1;
+  // 44px is the Play Store mobile touch target; `flex: 1` already gives the
+  // width, so only the height needs stating (never min-width a flex button).
+  min-height: 44px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #64748b);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.active {
+    background: var(--color-surface, #ffffff);
+    color: var(--color-text, #0f172a);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.chips-row {
+  display: flex;
+  gap: 8px;
+}
+
+.number-chip {
+  flex: 1;
+  min-height: 44px;
+  background: var(--color-background-subtle, #f1f5f9);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text, #0f172a);
+  cursor: pointer;
+
+  &.active {
+    background: var(--color-primary-soft, rgba(79, 70, 229, 0.1));
+    border-color: var(--color-primary, #4f46e5);
+    color: var(--color-primary-text, #4f46e5);
+  }
+}
+
+.custom-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text, #0f172a);
+  cursor: pointer;
+  min-height: var(--min-touch-target, 44px);
+  touch-action: manipulation;
+
+  input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    // The label is already 44px tall; the padding extends the box's own hit
+    // area to match so a tap just left of the tick still registers.
+    margin: 10px 0;
+    flex-shrink: 0;
+    accent-color: var(--color-primary, #4f46e5);
+  }
+}
+
+/* BUTTONS & ACTIONS */
+.mobile-touch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px; // 44px touch target
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  padding: 10px 18px;
+  transition: all 0.2s ease;
+
+  .btn-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &.secondary-btn {
+    background: var(--color-background-subtle, #f1f5f9);
+    border: 1px solid var(--color-border, #e2e8f0);
+    color: var(--color-text, #0f172a);
+  }
+
+  &.primary-btn {
+    background: var(--color-primary, #4f46e5);
+    color: #ffffff;
+
+    &:active {
+      background: var(--color-primary-hover, #4338ca);
+    }
+  }
+
+  &.large-cta {
+    width: 100%;
+    min-height: 50px;
+    font-size: 1rem;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* STICKY BOTTOM ACTION BAR (Mobile view excellence) */
+.mobile-sticky-bottom-bar {
+  /*
+   * Sticky, not fixed. `.app-main-content` runs the global `pageIn` transform
+   * animation, which makes it the containing block for fixed descendants, so a
+   * fixed bar lands at the foot of the page instead of the viewport and the
+   * primary action ends up off-screen. This matches `.sticky-mobile-bottom-bar`
+   * in global.scss.
+   */
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background: var(--color-surface, #ffffff);
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  margin: 4px -16px 0;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.spinner-dot {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

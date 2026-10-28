@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { PDFDocument, StandardFonts, PDFName, PDFString } from 'pdf-lib';
+import { PDFDocument, StandardFonts, PDFName, PDFString, degrees } from 'pdf-lib';
 import { PdfPreflightService } from './pdf-preflight.service';
 import { PdfLayoutService } from './pdf-layout.service';
 import { PdfPrivacyService } from './pdf-privacy.service';
@@ -155,6 +155,50 @@ describe('PdfPreflightService (G3: Preflight & Submission Check)', () => {
     const { updatedReport } = await service.applyFix(blankBytes.buffer, 'no_blank_pages', strictProfile);
     const blankRuleAfter = updatedReport.rules.find(r => r.id === 'no_blank_pages');
     expect(blankRuleAfter?.status).toBe('pass');
+  });
+
+  it('detects orientation failure and flips rule to pass upon auto-fix', async () => {
+    const mixedBytes = await createFixture({ pageCount: 2, mixedSizes: true });
+    const beforeReport = await service.runPreflight(mixedBytes.buffer, strictProfile, 'mixed_orientation.pdf');
+
+    const orientationRuleBefore = beforeReport.rules.find(r => r.id === 'orientation_uniformity');
+    expect(orientationRuleBefore?.status).toBe('fail');
+    expect(orientationRuleBefore?.fixable).toBe(true);
+
+    // The fix only sets /Rotate, so the rule has to read rotation to see it.
+    const { updatedReport } = await service.applyFix(mixedBytes.buffer, 'orientation_uniformity', strictProfile);
+    const orientationRuleAfter = updatedReport.rules.find(r => r.id === 'orientation_uniformity');
+    expect(orientationRuleAfter?.status).toBe('pass');
+  });
+
+  it('measures a rotated page at the orientation it displays', async () => {
+    // A landscape MediaBox turned a quarter turn displays as portrait, so a
+    // document of portrait pages plus one rotated landscape page is uniform in
+    // both size and orientation however the boxes are stored.
+    const doc = await PDFDocument.create();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+
+    const portrait = doc.addPage([595.28, 841.89]);
+    portrait.drawText('Portrait page with sufficient characters to pass searchable text rule.', {
+      x: 50,
+      y: 700,
+      size: 12,
+      font
+    });
+
+    const rotated = doc.addPage([841.89, 595.28]);
+    rotated.drawText('Rotated page with sufficient characters to pass searchable text rule.', {
+      x: 50,
+      y: 500,
+      size: 12,
+      font
+    });
+    rotated.setRotation(degrees(90));
+
+    const report = await service.runPreflight((await doc.save()).buffer, strictProfile, 'rotated.pdf');
+
+    expect(report.rules.find(r => r.id === 'orientation_uniformity')?.status).toBe('pass');
+    expect(report.rules.find(r => r.id === 'page_size_uniformity')?.status).toBe('pass');
   });
 
   it('exports and imports profile as JSON correctly', () => {
