@@ -64,15 +64,15 @@ see [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md).
 | **Privacy policy URL** | `https://abhijeetchoudhary07.github.io/PDF-APP/privacy` — **404 today.** Published from `docs/hosted` by `.github/workflows/pages.yml`, which is committed and pushed but has never run: Pages has no source. Switch **Settings → Pages → Source: GitHub Actions** on once, then run the workflow. | |
 | **Default language** | English (India) — `en-IN` | |
 
-### Full description (1 812 / 4 000 characters)
+### Full description (1 860 / 4 000 characters)
 
 ```
 Indian Form Helper fixes the documents that government exam and job portals
 keep rejecting — on your phone, without uploading anything.
 
-Applying for SSC, UPSC, IBPS, a state PSC or a job portal means meeting exact
-rules: a photo under 50 KB at 200x230 pixels, a signature on a white
-background, a PDF under 500 KB. Getting that wrong means a rejected form.
+Application forms set exact rules: a photo under 50 KB at 200x230 pixels, a
+signature on a white background, a PDF under 500 KB. Getting that wrong means
+a rejected form.
 
 WHY IT IS DIFFERENT
 Every tool runs inside the app on your device. Your certificates, ID proofs
@@ -83,8 +83,7 @@ PHOTO AND SIGNATURE
 • Compress a photo to an exact KB without it turning to mush
 • Crop to an exact pixel size or aspect ratio
 • Clean a photographed signature — white background, dark ink, auto-cropped
-• One-tap presets for SSC, UPSC and major portals, so you do not have to read
-  the specification sheet
+• Presets for the common sizes, each named by its exact pixels and KB limit
 
 PDF TOOLKIT
 • Shrink a PDF to an exact size limit

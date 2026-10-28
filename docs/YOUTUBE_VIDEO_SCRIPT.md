@@ -88,19 +88,19 @@ Legend:
 
 ---
 
-### [1:15 – 2:05] SECTION 3: PHOTO & SIGNATURE MASTER TOOLS (EXAM PRESETS)
+### [1:15 – 2:05] SECTION 3: PHOTO & SIGNATURE MASTER TOOLS (SIZE PRESETS)
 *Goal: Show the exact workflow solving the two most common causes of portal rejection: photo dimension mismatch and dark shadowy signatures.*
 
-#### `1:15 – 1:38` | One-Tap Exam Presets (SSC, UPSC, IBPS)
-- **[VIS]:** Screen recording of the app UI. User taps **"Photo Tools"** -> Taps **"Exam Presets"**. A clean carousel opens showing verified badges for **SSC CGL/CHSL**, **UPSC Civil Services**, **IBPS PO/Clerk**, **Railways RRB**, and **Indian Passport**.
-- User selects **"SSC (Staff Selection Commission)"**.
+#### `1:15 – 1:38` | One-Tap Size Presets
+- **[VIS]:** Screen recording of the app UI. User taps **"Photo Tools"** -> Taps **"Presets"**. A clean carousel opens showing size profiles named by their dimensions and limit: **35 x 45 mm (413 x 531 px) 50 KB**, **200 x 230 px**, **350 x 450 px**.
+- User selects **"35 x 45 mm (413 x 531 px) - 50 KB"**.
 - The app automatically locks the canvas to exact 350×450 pixels, 3.5:4.5 ratio, and max 50 KB. The user slides the compression slider to "45 KB". Live preview updates instantly with zero blur and high face clarity.
 - **[TXT]:** 
-  • `1-Tap Official Presets: SSC, UPSC, IBPS, State PSC 🎯`
+  • `1-Tap Size Presets: exact pixels + KB 🎯`
   • `Exact Pixel & Ratio Lock (No Calculations Needed!)`
   • `Target File Size Slider: Under 50 KB Guaranteed`
 - **[SFX]:** Crisp camera shutter click (`CHIK-CHIK!`), sliding slider foley, green checkmark ding.
-- **[VO]:** *"Chaliye dekhte hain iske features. Sabse pehla: Photo & Signature Tools. Aapko notification padh ke dimensions ya ratio calculate karne ki bilkul zaroorat nahi hai. App ke andar SSC, UPSC aur major state portals ke ready-made presets hain! Bas tap karo aur aapki photo exact required pixel aur KB me fit ho jayegi bina quality lose kiye."*
+- **[VO]:** *"Chaliye dekhte hain iske features. Sabse pehla: Photo & Signature Tools. Aapko notification padh ke dimensions ya ratio calculate karne ki bilkul zaroorat nahi hai. App ke andar common sizes ke ready-made presets hain - har preset apne exact pixel aur KB se naam diya gaya hai! Bas tap karo aur aapki photo exact required pixel aur KB me fit ho jayegi bina quality lose kiye."*
 
 #### `1:38 – 2:05` | The Magic Signature Cleaner (Dirty Shadow -> Pure White Paper)
 - **[VIS]:** Before/After split screen comparison:
@@ -183,7 +183,7 @@ Legend:
   |---|---|---|
   | ❌ ₹50–100 per photo | ❌ Data Leak / Aadhaar Risk | ✅ **100% Free** |
   | ❌ 2-hour queue | ❌ Spam ads & watermarks | ✅ **100% Offline (Airplane Mode)** |
-  | ❌ Rejection risk | ❌ Blur & dimension errors | ✅ **Official Exam Presets** |
+  | ❌ Rejection risk | ❌ Blur & dimension errors | ✅ **Exact size presets** |
 - Montage of victorious Indian students proudly holding admit cards and laptops showing "Application Accepted ✅".
 - **[TXT]:** 
   • `1. Zero Form Rejection Guarantee 🎯`
@@ -234,7 +234,7 @@ Ab cyber cafe me ghanto khade rehne aur 50-100 rupaye kharch karne ki bilkul zar
 ⏱️ VIDEO CHAPTERS (TIMESTAMPS):
 0:00 - The Real Problem: Exam Form Rejections & Cyber Cafe Hassle
 0:35 - Introducing Indian Form Helper (100% Offline & Private)
-1:15 - Photo Tools: SSC, UPSC, IBPS 1-Tap Presets
+1:15 - Photo Tools: 1-Tap Size Presets
 1:40 - Magic Signature Cleaner: Dirty Shadows to Pure White Paper
 2:05 - PDF Studio: Compress 10 MB to 300 KB Without Blur
 2:30 - Merge Multiple Documents & Sign on Mobile
@@ -243,7 +243,7 @@ Ab cyber cafe me ghanto khade rehne aur 50-100 rupaye kharch karne ki bilkul zar
 3:50 - How to Download & Start Using Free
 
 ⭐ TOP FEATURES HIGHLIGHTED:
-✅ 1-Tap Exam Presets: SSC CGL, UPSC, IBPS, Railways, Passport, PAN
+✅ 1-Tap Size Presets: named by exact pixels and KB
 ✅ Magic Signature Cleaner: Converts yellow/gray shadowy clicks into pure white background with dark black ink
 ✅ Exact KB PDF Compressor: Shrink PDFs to exact 200 KB / 500 KB limits with razor-sharp text
 ✅ Merge & Organize: Combine 10th marksheet, 12th marksheet and Aadhaar into one single PDF
@@ -301,5 +301,5 @@ indian form helper, ssc cgl photo resize app, upsc photo size compressor, how to
 
 **Community Post Copy:**
 > *"Kya aapka form kabhi 50 KB photo ya signature shadow ki wajah se reject hua hai? 🤦‍♂️*  
-> *Humne banaya hai 'Indian Form Helper' — jo 100% OFFLINE aapke phone me sabhi exam notifications (SSC, UPSC, Banking, Railways) ke exact dimensions me photo aur PDF taiyar karta hai bina kisi server par upload kiye!*  
+> *Humne banaya hai 'Indian Form Helper' — jo 100% OFFLINE aapke phone me aapke form ki exact dimensions me photo aur PDF taiyar karta hai bina kisi server par upload kiye!*  
 > *Check out our complete 4-minute explainer guide and never visit a cyber cafe again! 🚀"*

@@ -19,7 +19,7 @@ Tools are categorized into 10 cohesive functional groups:
 | **SIGN** | `/features/pdf/sign` | Sign PDF (draw, upload, reuse, position, rotate) & Signature Requests | `pdf-lib` + Canvas Drawing Pad |
 | **PROTECT** | `/features/pdf/security` | Password protect, permission bitmasks, unlock, flatten | ISO 32000-1 Algorithm 2/3/4 + `pdf-lib` |
 | **BATCH** | `/features/batch` | Batch photos & Batch PDFs | Web Workers + Sequential Processing |
-| **PRESETS** | `/features/presets` | Pre-configured exam & job portals (SSC, UPSC, IBPS, State) | Local JSON Preset Store |
+| **PRESETS** | `/features/presets` | Size profiles named by dimensions + KB only, never by board | Local JSON Preset Store |
 
 ---
 
