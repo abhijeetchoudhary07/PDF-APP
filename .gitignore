@@ -47,6 +47,11 @@ videos/
 scratch/
 screenshots/
 e2e-screenshots/
+e2e/test-data/audit/
+e2e/test-data/conversion-audit/
+e2e/test-data/editor-audit/
+e2e/test-data/scanner-audit/
+
 
 
 # --- Android / Capacitor ---------------------------------------------------

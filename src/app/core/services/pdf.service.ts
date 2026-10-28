@@ -122,7 +122,12 @@ export class PdfService {
   }
 
   async compressPdfToExactKB(file: File, config: CompressionConfig): Promise<ProcessingResult & { targetMissed?: boolean }> {
+    if (!file || file.size < 32) {
+      return { success: false, error: 'Cannot compress an empty or invalid PDF.' };
+    }
     const targetBytes = (config.targetKB || 500) * 1024;
+    let pdfRender: any = null;
+    let loadingTask: any = null;
     
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -145,8 +150,8 @@ export class PdfService {
 
       // Step 2: Rasterize to images if naive save isn't enough
       // We will binary search the JPEG quality of the rasterized pages
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
-      const pdfRender = await loadingTask.promise;
+      loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
+      pdfRender = await loadingTask.promise;
       const numPages = pdfRender.numPages;
 
       const pageCanvases: HTMLCanvasElement[] = [];
@@ -229,6 +234,14 @@ export class PdfService {
     } catch (e: any) {
       // If pdf.worker.min.mjs fails to load due to 404, we catch it here.
       return { success: false, error: e.toString() };
+    } finally {
+      if (loadingTask) {
+        try {
+          await loadingTask.destroy();
+        } catch {
+          // ignore
+        }
+      }
     }
   }
 }

@@ -744,6 +744,16 @@ export class PdfEditorStateService {
   // --- Undo / Redo Command Execution ---
 
   private executeCommand(cmd: EditorCommand) {
+    if (cmd.type === 'REPLACE_SOURCE') {
+      // Memory hardening: Limit heavy whole-file ArrayBuffer closures to avoid heap exhaustion
+      const replaceSourceCmds = this.undoStack.filter(c => c.type === 'REPLACE_SOURCE');
+      if (replaceSourceCmds.length >= 10) {
+        const oldestIdx = this.undoStack.findIndex(c => c.type === 'REPLACE_SOURCE');
+        if (oldestIdx !== -1) {
+          this.undoStack.splice(oldestIdx, 1);
+        }
+      }
+    }
     this.undoStack.push(cmd);
     if (this.undoStack.length > this.MAX_HISTORY) {
       this.undoStack.shift();
@@ -758,6 +768,9 @@ export class PdfEditorStateService {
     const cmd = this.undoStack.pop()!;
     cmd.undo();
     this.redoStack.push(cmd);
+    if (this.redoStack.length > this.MAX_HISTORY) {
+      this.redoStack.shift();
+    }
     this.updateUndoRedoSubjects();
     this.isDirtySubject.next(true);
     return true;
@@ -768,6 +781,9 @@ export class PdfEditorStateService {
     const cmd = this.redoStack.pop()!;
     cmd.redo();
     this.undoStack.push(cmd);
+    if (this.undoStack.length > this.MAX_HISTORY) {
+      this.undoStack.shift();
+    }
     this.updateUndoRedoSubjects();
     this.isDirtySubject.next(true);
     return true;

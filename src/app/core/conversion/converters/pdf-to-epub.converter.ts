@@ -54,6 +54,7 @@ export class PdfToEpubConverter implements IConverter {
     options: PdfToEpubOptions = {},
     onProgress?: (p: ConversionProgress) => void
   ): Promise<ConversionResult> {
+    let loadingTask: ReturnType<typeof pdfjsLib.getDocument> | undefined;
     try {
       onProgress?.({
         percent: 15,
@@ -80,7 +81,7 @@ export class PdfToEpubConverter implements IConverter {
         }
       );
 
-      const loadingTask = pdfjsLib.getDocument({
+      loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(arrayBuffer.slice(0))
       } as any);
       const pdf = await loadingTask.promise;
@@ -207,6 +208,8 @@ img { max-width: 100%; height: auto; display: block; margin: 1em auto; }
         success: false,
         error: `Failed to convert PDF to EPUB: ${e?.message || e.toString()}`
       };
+    } finally {
+      await loadingTask?.destroy();
     }
   }
 

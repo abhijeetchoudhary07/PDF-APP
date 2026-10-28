@@ -147,6 +147,17 @@ export class XmlToPdfConverter implements IConverter {
   }
 
   private validateXml(text: string): string | null {
+    // Defensive check against XML External Entity (XXE) and Entity Expansion Bombs
+    if (/<!ENTITY/i.test(text) || /<!DOCTYPE[^>]*\[/i.test(text)) {
+      if (/SYSTEM\s+["']/i.test(text) || /PUBLIC\s+["']/i.test(text)) {
+        return 'External entity declarations (XXE) are disallowed for security.';
+      }
+      const entityMatches = text.match(/<!ENTITY\s+/gi);
+      if (entityMatches && entityMatches.length > 5) {
+        return 'Excessive or recursive entity declarations are disallowed for security.';
+      }
+    }
+
     let parser: any;
     if (typeof DOMParser !== 'undefined') {
       parser = new DOMParser();

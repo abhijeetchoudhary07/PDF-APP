@@ -54,6 +54,7 @@ export class PdfToMarkdownConverter implements IConverter {
     options: PdfToMarkdownOptions = {},
     onProgress?: (p: ConversionProgress) => void
   ): Promise<ConversionResult> {
+    let loadingTask: ReturnType<typeof pdfjsLib.getDocument> | undefined;
     try {
       const imageMode = options.imageMode ?? 'inline';
       onProgress?.({
@@ -88,7 +89,7 @@ export class PdfToMarkdownConverter implements IConverter {
       });
 
       // Step 2: Open with pdfjsLib to inspect text positioning, fonts, and annotations
-      const loadingTask = pdfjsLib.getDocument({
+      loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(arrayBuffer.slice(0))
       } as any);
       const pdf = await loadingTask.promise;
@@ -280,6 +281,8 @@ export class PdfToMarkdownConverter implements IConverter {
         success: false,
         error: `Failed to convert PDF to Markdown: ${e?.message || e.toString()}`
       };
+    } finally {
+      await loadingTask?.destroy();
     }
   }
 

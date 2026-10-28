@@ -45,6 +45,7 @@ export class PdfToHtmlConverter implements IConverter {
     options: PdfToHtmlOptions = {},
     onProgress?: (p: ConversionProgress) => void
   ): Promise<ConversionResult> {
+    let loadingTask: ReturnType<typeof pdfjsLib.getDocument> | undefined;
     try {
       const mode = options.mode ?? 'reflowable'; // Reflowable is default for phone reading
       const embedImages = options.embedImages ?? true;
@@ -74,7 +75,7 @@ export class PdfToHtmlConverter implements IConverter {
         }
       );
 
-      const loadingTask = pdfjsLib.getDocument({
+      loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(arrayBuffer.slice(0))
       } as any);
       const pdf = await loadingTask.promise;
@@ -131,6 +132,8 @@ export class PdfToHtmlConverter implements IConverter {
         success: false,
         error: `Failed to convert PDF to HTML: ${e?.message || e.toString()}`
       };
+    } finally {
+      await loadingTask?.destroy();
     }
   }
 

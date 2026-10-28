@@ -3,6 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import pptxgen from 'pptxgenjs';
 import { IConverter } from '../converter.interface';
 import { ConverterMetadata, ConversionProgress, ConversionResult } from '../conversion.types';
+import { createSafeCanvas } from '../../utilities/canvas-headless.util';
 
 @Injectable({
   providedIn: 'root'
@@ -45,9 +46,10 @@ export class PdfToPptConverter implements IConverter {
     } = {},
     onProgress?: (p: ConversionProgress) => void
   ): Promise<ConversionResult> {
+    let loadingTask: ReturnType<typeof pdfjsLib.getDocument> | undefined;
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
+      loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) } as any);
       const pdf = await loadingTask.promise;
       const numPages = pdf.numPages;
 
@@ -76,9 +78,7 @@ export class PdfToPptConverter implements IConverter {
         const page = await pdf.getPage(pageNum);
         const viewport = page.getViewport({ scale });
 
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        const canvas = createSafeCanvas(viewport.width, viewport.height);
         const ctx = canvas.getContext('2d');
 
         if (ctx) {
@@ -142,6 +142,8 @@ export class PdfToPptConverter implements IConverter {
         success: false,
         error: `Failed to convert PDF to PowerPoint: ${e?.message || e.toString()}`
       };
+    } finally {
+      await loadingTask?.destroy();
     }
   }
 }

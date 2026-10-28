@@ -42,6 +42,14 @@ export class WordToPdfConverter implements IConverter {
     if (!name.endsWith('.docx')) {
       return { valid: false, error: 'Please select a valid Word (.docx) file.' };
     }
+    // Verify ZIP magic bytes (PK\x03\x04 or standard zip headers) to reject polyglot scripts / executables
+    if (file.size >= 4) {
+      const header = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      const isZip = header[0] === 0x50 && header[1] === 0x4b && (header[2] === 0x03 || header[2] === 0x05 || header[2] === 0x07);
+      if (!isZip) {
+        return { valid: false, error: 'File is not a valid Word (.docx) OpenXML document (invalid file signature).' };
+      }
+    }
     return { valid: true };
   }
 
@@ -65,7 +73,12 @@ export class WordToPdfConverter implements IConverter {
         message: 'Converting paragraphs and headings...'
       });
 
-      const result = await mammoth.convertToHtml({ arrayBuffer });
+      const mammothInput: { arrayBuffer: ArrayBuffer; buffer?: any } = { arrayBuffer };
+      if (typeof Buffer !== 'undefined' && typeof Buffer.from === 'function') {
+        mammothInput.buffer = Buffer.from(arrayBuffer);
+      }
+
+      const result = await mammoth.convertToHtml(mammothInput as any);
       const rawHtml = result.value;
       const warnings = result.messages.map(m => m.message);
 

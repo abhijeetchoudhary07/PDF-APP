@@ -8,6 +8,7 @@ import { PdfSecurityService } from '../../core/services/pdf-security.service';
 import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
+import { ValidationService } from '../../core/services/validation.service';
 import { SingleFileWorkflowState, ProcessingStage, PROCESSING_STAGE_LABELS } from '../../core/models/file-workflow-state.model';
 import {
   PdfSecurityPermissions,
@@ -62,6 +63,9 @@ export class PdfSecurityPage implements OnInit {
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
   private cdr = inject(ChangeDetectorRef);
+  private validationService = inject(ValidationService);
+
+  failedUnlockAttempts = 0;
 
   mode: 'unlock' | 'protect' = 'protect';
 
@@ -114,17 +118,33 @@ export class PdfSecurityPage implements OnInit {
   }
 
   async onUnlockFileSelected(file: File): Promise<void> {
+    const val = this.validationService.validatePdf(file);
+    if (!val.valid) {
+      this.unlockWorkflowState = 'ERROR';
+      this.errorMessage = val.error || 'Invalid PDF file.';
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.unlockFile = file;
     this.unlockPassword = '';
     this.unlockStatus = undefined;
     this.unlockResultFile = undefined;
     this.unlockWorkflowState = 'FILE_SELECTED';
     this.errorMessage = '';
+    this.failedUnlockAttempts = 0;
 
     try {
       this.currentStage = 'analyzing';
       this.unlockArrayBuffer = await file.arrayBuffer();
+      const bufVal = this.validationService.validatePdfBuffer(this.unlockArrayBuffer);
+      if (!bufVal.valid) {
+        throw new Error(bufVal.error);
+      }
       this.unlockStatus = await this.pdfSecurity.detectSecurity(this.unlockArrayBuffer);
+      if (this.unlockStatus.error) {
+        throw new Error(this.unlockStatus.error);
+      }
       this.unlockWorkflowState = 'CONFIGURING';
       this.currentStage = 'idle';
 
@@ -163,6 +183,12 @@ export class PdfSecurityPage implements OnInit {
   async executeUnlock(): Promise<void> {
     if (!this.unlockFile || !this.unlockArrayBuffer) return;
 
+    // Brute-force defensive throttling: progressively delay rapid repeated failures
+    if (this.failedUnlockAttempts >= 3) {
+      const delayMs = Math.min(2000, 300 * Math.pow(1.5, this.failedUnlockAttempts - 3));
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+
     this.isUnlocking = true;
     this.unlockWorkflowState = 'PROCESSING';
     this.currentStage = 'processing';
@@ -188,17 +214,21 @@ export class PdfSecurityPage implements OnInit {
         outputPath: uri
       });
 
-      // Clear password from memory immediately
+      // Clear password and reset failed counter upon success
+      this.failedUnlockAttempts = 0;
       this.unlockPassword = '';
       this.unlockResultFile = result.file;
       this.currentStage = 'complete';
       this.unlockWorkflowState = 'SUCCESS';
     } catch (e: any) {
+      this.failedUnlockAttempts++;
       this.unlockWorkflowState = 'ERROR';
       this.errorMessage = e.message || 'Incorrect password or unsupported encryption.';
       const alert = await this.alertCtrl.create({
         header: 'Unlock Failed',
-        message: this.errorMessage,
+        message: this.failedUnlockAttempts >= 3
+          ? `${this.errorMessage} (${this.failedUnlockAttempts} failed attempts - rate limiting active)`
+          : this.errorMessage,
         buttons: ['OK']
       });
       await alert.present();
@@ -216,6 +246,14 @@ export class PdfSecurityPage implements OnInit {
   }
 
   async onProtectFileSelected(file: File): Promise<void> {
+    const val = this.validationService.validatePdf(file);
+    if (!val.valid) {
+      this.protectWorkflowState = 'ERROR';
+      this.errorMessage = val.error || 'Invalid PDF file.';
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.protectFile = file;
     this.protectResultFile = undefined;
     this.protectWorkflowState = 'FILE_SELECTED';
@@ -228,6 +266,10 @@ export class PdfSecurityPage implements OnInit {
     try {
       this.currentStage = 'analyzing';
       this.protectArrayBuffer = await file.arrayBuffer();
+      const bufVal = this.validationService.validatePdfBuffer(this.protectArrayBuffer);
+      if (!bufVal.valid) {
+        throw new Error(bufVal.error);
+      }
       this.protectWorkflowState = 'CONFIGURING';
       this.currentStage = 'idle';
     } catch (e: any) {

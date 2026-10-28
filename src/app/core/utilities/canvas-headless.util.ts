@@ -26,6 +26,13 @@ export class HeadlessCanvasContext2D {
   rotate() {}
   transform() {}
   setTransform() {}
+  resetTransform() {}
+  getTransform() {
+    if (typeof DOMMatrix !== 'undefined') {
+      return new DOMMatrix();
+    }
+    return { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+  }
   beginPath() {}
   closePath() {}
   clip() {}
@@ -36,6 +43,9 @@ export class HeadlessCanvasContext2D {
   fill() {}
   arc() {}
   fillText() {}
+  measureText(text: string) {
+    return { width: (text || '').length * 8 };
+  }
 
   clearRect(x: number, y: number, w: number, h: number) {
     this.paintRect(x, y, w, h, 0, 0, 0, 0);

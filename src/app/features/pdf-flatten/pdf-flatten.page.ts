@@ -7,6 +7,7 @@ import { PdfFlattenService, FlattenInspectionResult, FlattenResult, FlattenTarge
 import { StorageService } from '../../core/services/storage.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
+import { ValidationService } from '../../core/services/validation.service';
 import { SingleFileWorkflowState, ProcessingStage, PROCESSING_STAGE_LABELS } from '../../core/models/file-workflow-state.model';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -55,6 +56,7 @@ export class PdfFlattenPage {
   private historyService = inject(HistoryService);
   private alertCtrl = inject(AlertController);
   private cdr = inject(ChangeDetectorRef);
+  private validationService = inject(ValidationService);
 
   @ViewChild('originalCanvas') originalCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('flattenedCanvas') flattenedCanvas?: ElementRef<HTMLCanvasElement>;
@@ -91,6 +93,14 @@ export class PdfFlattenPage {
   }
 
   async onFileSelected(file: File): Promise<void> {
+    const val = this.validationService.validatePdf(file);
+    if (!val.valid) {
+      this.workflowState = 'ERROR';
+      this.errorMessage = val.error || 'Invalid PDF file.';
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.pdfFile = file;
     this.flattenResult = undefined;
     this.currentPage = 1;
@@ -100,6 +110,10 @@ export class PdfFlattenPage {
     try {
       this.currentStage = 'analyzing';
       this.pdfArrayBuffer = await file.arrayBuffer();
+      const bufVal = this.validationService.validatePdfBuffer(this.pdfArrayBuffer);
+      if (!bufVal.valid) {
+        throw new Error(bufVal.error);
+      }
       this.inspection = await this.flattenService.inspectElementsToFlatten(this.pdfArrayBuffer);
       this.workflowState = 'CONFIGURING';
       this.currentStage = 'idle';

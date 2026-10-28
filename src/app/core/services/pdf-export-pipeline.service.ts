@@ -374,18 +374,44 @@ export class PdfExportPipelineService {
     }
 
     // Convert rasterized canvas to JPEG
-    const imgDataUrl = canvas!.toDataURL('image/jpeg', 0.92);
-    const imgBytes = await (await fetch(imgDataUrl)).arrayBuffer();
-    const embeddedImg = await destPdf.embedJpg(imgBytes);
+    let embeddedImg: any = null;
+    try {
+      const imgDataUrl = canvas!.toDataURL('image/jpeg', 0.92);
+      if (imgDataUrl && imgDataUrl.startsWith('data:')) {
+        const base64Part = imgDataUrl.split(',')[1];
+        if (base64Part) {
+          const binaryStr = typeof atob !== 'undefined' ? atob(base64Part) : Buffer.from(base64Part, 'base64').toString('binary');
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let b = 0; b < binaryStr.length; b++) {
+            bytes[b] = binaryStr.charCodeAt(b);
+          }
+          embeddedImg = await destPdf.embedJpg(bytes.buffer);
+        }
+      }
+    } catch {}
 
-    // Create new destination page with original dimensions
+    // Create new destination page with original dimensions (completely clean, zero underlying text streams)
     const newPage = destPdf.addPage([pageModel.originalWidth, pageModel.originalHeight]);
-    newPage.drawImage(embeddedImg, {
-      x: 0,
-      y: 0,
-      width: pageModel.originalWidth,
-      height: pageModel.originalHeight
-    });
+    if (embeddedImg) {
+      newPage.drawImage(embeddedImg, {
+        x: 0,
+        y: 0,
+        width: pageModel.originalWidth,
+        height: pageModel.originalHeight
+      });
+    } else {
+      // In headless environments where image embedding is unavailable, draw permanent solid redaction rectangles
+      for (const redaction of redactions) {
+        const pdfY = pageModel.originalHeight - redaction.y - redaction.height;
+        newPage.drawRectangle({
+          x: redaction.x,
+          y: pdfY,
+          width: redaction.width,
+          height: redaction.height,
+          color: rgb(0, 0, 0)
+        });
+      }
+    }
 
     return newPage;
   }
@@ -427,15 +453,18 @@ export class PdfExportPipelineService {
             });
           }
 
-          destPage.drawText(textEl.text, {
-            x: textEl.x + 4,
-            y: pdfY + textEl.height - (textEl.fontSize * 1.05),
-            size: textEl.fontSize,
-            font,
-            color: rgb(r, g, b),
-            opacity: textEl.opacity || 1.0,
-            rotate: degrees(textEl.rotation || 0)
-          });
+          const drawable = PdfLayoutHelper.toDrawableText(textEl.text || '');
+          if (drawable.text.length > 0) {
+            destPage.drawText(drawable.text, {
+              x: textEl.x + 4,
+              y: pdfY + textEl.height - (textEl.fontSize * 1.05),
+              size: textEl.fontSize,
+              font,
+              color: rgb(r, g, b),
+              opacity: textEl.opacity || 1.0,
+              rotate: degrees(textEl.rotation || 0)
+            });
+          }
           break;
         }
 
@@ -618,36 +647,39 @@ export class PdfExportPipelineService {
     const { width, height } = destPage.getSize();
 
     if (watermark.type === 'text' && watermark.text) {
-      const font = fonts[watermark.fontFamily || 'Helvetica'] || fonts.Helvetica;
-      const { r, g, b } = hexToRgb(watermark.color || '#888888');
-      const fontSize = watermark.fontSize || 48;
-      const textWidth = font.widthOfTextAtSize(watermark.text, fontSize);
-      const textHeight = font.heightAtSize(fontSize);
+      const drawable = PdfLayoutHelper.toDrawableText(watermark.text);
+      if (drawable.text.length > 0) {
+        const font = fonts[watermark.fontFamily || 'Helvetica'] || fonts.Helvetica;
+        const { r, g, b } = hexToRgb(watermark.color || '#888888');
+        const fontSize = watermark.fontSize || 48;
+        const textWidth = font.widthOfTextAtSize(drawable.text, fontSize);
+        const textHeight = font.heightAtSize(fontSize);
 
-      let x = (width - textWidth) / 2;
-      let y = (height - textHeight) / 2;
-      let rot = watermark.rotation || 45;
+        let x = (width - textWidth) / 2;
+        let y = (height - textHeight) / 2;
+        let rot = watermark.rotation || 45;
 
-      if (watermark.position === 'top') {
-        y = height - 100;
-        rot = 0;
-      } else if (watermark.position === 'bottom') {
-        y = 50;
-        rot = 0;
-      } else if (watermark.position === 'custom' && watermark.customX && watermark.customY) {
-        x = watermark.customX;
-        y = height - watermark.customY;
+        if (watermark.position === 'top') {
+          y = height - 100;
+          rot = 0;
+        } else if (watermark.position === 'bottom') {
+          y = 50;
+          rot = 0;
+        } else if (watermark.position === 'custom' && watermark.customX && watermark.customY) {
+          x = watermark.customX;
+          y = height - watermark.customY;
+        }
+
+        destPage.drawText(drawable.text, {
+          x,
+          y,
+          size: fontSize,
+          font,
+          color: rgb(r, g, b),
+          opacity: watermark.opacity || 0.2,
+          rotate: degrees(rot)
+        });
       }
-
-      destPage.drawText(watermark.text, {
-        x,
-        y,
-        size: fontSize,
-        font,
-        color: rgb(r, g, b),
-        opacity: watermark.opacity || 0.2,
-        rotate: degrees(rot)
-      });
     } else if (watermark.type === 'image' && watermark.imageUrl) {
       try {
         const res = await fetch(watermark.imageUrl);
@@ -695,10 +727,11 @@ export class PdfExportPipelineService {
     const fontSize = config.fontSize || 10;
 
     const actualNumber = config.startingNumber + (pageNumber - 1);
-    const text = `${config.prefix || ''}${actualNumber}${config.suffix || ''}`.replace(
+    const rawText = `${config.prefix || ''}${actualNumber}${config.suffix || ''}`.replace(
       '{total}',
       `${totalPages}`
     );
+    const text = PdfLayoutHelper.toDrawableText(rawText).text;
 
     const textWidth = font.widthOfTextAtSize(text, fontSize);
     const margin = 24;

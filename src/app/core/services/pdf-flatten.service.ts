@@ -305,6 +305,24 @@ export class PdfFlattenService {
       }
     }
 
+    // 3. Defensive Hardening: Strip executable scripts (/OpenAction, /AA, /JavaScript, /Launch)
+    try {
+      const catalog = pdfDoc.catalog;
+      if (catalog.has(PDFName.of('OpenAction'))) {
+        catalog.delete(PDFName.of('OpenAction'));
+      }
+      if (catalog.has(PDFName.of('AA'))) {
+        catalog.delete(PDFName.of('AA'));
+      }
+      const names = catalog.get(PDFName.of('Names'));
+      const namesDict = names ? pdfDoc.context.lookup(names) : undefined;
+      if (namesDict instanceof PDFDict && namesDict.has(PDFName.of('JavaScript'))) {
+        namesDict.delete(PDFName.of('JavaScript'));
+      }
+    } catch {
+      // Ignore
+    }
+
     const report: FlattenReport = {
       target,
       totalElements,
@@ -348,17 +366,25 @@ export class PdfFlattenService {
         if (blob) {
           const imgBytes = await blob.arrayBuffer();
           const embeddedImg = await newDoc.embedJpg(imgBytes);
-          const newPage = newDoc.addPage([page.view[2] || viewport.width / 2.5, page.view[3] || viewport.height / 2.5]);
+          const pageWidth = viewport.width / 2.5;
+          const pageHeight = viewport.height / 2.5;
+          const newPage = newDoc.addPage([pageWidth, pageHeight]);
           newPage.drawImage(embeddedImg, {
             x: 0,
             y: 0,
-            width: newPage.getWidth(),
-            height: newPage.getHeight()
+            width: pageWidth,
+            height: pageHeight
           });
         }
       }
 
       onProgress?.(30 + Math.round((i / numPages) * 60));
+    }
+
+    try {
+      await loadingTask.destroy();
+    } catch {
+      // ignore
     }
 
     return await newDoc.save({ useObjectStreams: false });

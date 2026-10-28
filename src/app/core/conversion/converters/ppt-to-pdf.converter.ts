@@ -41,6 +41,14 @@ export class PptToPdfConverter implements IConverter {
     if (!name.endsWith('.pptx')) {
       return { valid: false, error: 'Selected file is not a valid PowerPoint (.pptx) presentation.' };
     }
+    // Verify ZIP magic bytes to reject polyglots / disguised binaries
+    if (file.size >= 4) {
+      const header = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      const isZip = header[0] === 0x50 && header[1] === 0x4b && (header[2] === 0x03 || header[2] === 0x05 || header[2] === 0x07);
+      if (!isZip) {
+        return { valid: false, error: 'File is not a valid PowerPoint (.pptx) presentation (invalid file signature).' };
+      }
+    }
     return { valid: true };
   }
 

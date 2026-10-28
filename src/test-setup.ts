@@ -26,6 +26,30 @@ if (typeof (globalThis as any).DOMParser === 'undefined') {
   } catch {}
 }
 
+import { HeadlessCanvasContext2D } from './app/core/utilities/canvas-headless.util';
+
+// Polyfill HTMLCanvasElement.prototype.getContext for jsdom in Vitest to suppress jsdom "Not implemented" stderr noise
+if (typeof HTMLCanvasElement !== 'undefined') {
+  const isJsdom = typeof window !== 'undefined' && (!(window as any).chrome || window.navigator?.userAgent?.includes('jsdom'));
+  if (isJsdom) {
+    HTMLCanvasElement.prototype.getContext = function (type: string, ...args: any[]): any {
+      if (type === '2d' || !type) {
+        if (!(this as any)._headlessContext) {
+          (this as any)._headlessContext = new HeadlessCanvasContext2D(this.width || 300, this.height || 150, this);
+        }
+        return (this as any)._headlessContext;
+      }
+      return null;
+    };
+    HTMLCanvasElement.prototype.toDataURL = function (type = 'image/jpeg') {
+      if (type.includes('jpeg') || type.includes('jpg')) {
+        return 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+      }
+      return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    };
+  }
+}
+
 // Polyfill Iterator for pdfjs-dist v6 in Node 20
 if (typeof (globalThis as any).Iterator === 'undefined') {
   (globalThis as any).Iterator = class {};
