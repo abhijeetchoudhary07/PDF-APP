@@ -45,8 +45,10 @@ playwright-report/
 test-results/
 videos/
 scratch/
-screenshots/
-e2e-screenshots/
+/screenshots/
+/e2e-screenshots/
+!docs/screenshots/
+!docs/screenshots/**
 e2e/test-data/audit/
 e2e/test-data/conversion-audit/
 e2e/test-data/editor-audit/
