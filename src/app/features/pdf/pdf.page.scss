@@ -797,3 +797,14 @@
   }
 }
 
+@media (max-height: 520px) {
+  .config-card {
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+  }
+
+  .preset-chips {
+    margin-bottom: var(--space-2, 8px);
+  }
+}
+
+

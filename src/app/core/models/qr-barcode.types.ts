@@ -51,3 +51,46 @@ export interface QrGeneratorOptions {
 }
 
 export type BarcodeReportFormat = 'txt' | 'csv' | 'json';
+
+export type BarcodeType1D = 'CODE_128' | 'EAN_13' | 'CODE_39' | 'QR_CODE';
+
+export interface BarcodeBatchItem {
+  id: string;
+  format: BarcodeFormat;
+  payload: string;
+  timestamp: number;
+  displayTimestamp?: string;
+  duplicateCount?: number;
+}
+
+export type DeduplicationMode = 'cooldown' | 'session' | 'none';
+
+export interface BatchDeduplicationOptions {
+  mode: DeduplicationMode;
+  cooldownMs?: number; // default 3000ms
+}
+
+export interface Barcode1DOptions {
+  format: BarcodeType1D;
+  payload: string;
+  width?: number; // default 320
+  height?: number; // default 100
+  includeText?: boolean; // default true
+  lineColor?: string; // default #000000
+  backgroundColor?: string; // default #ffffff
+}
+
+export interface BulkBarcodeGenerationOptions {
+  format: BarcodeType1D;
+  payloads: string[];
+  gridType?: '12-up' | '24-up'; // 12-up (2x6) or 24-up (3x8) on A4
+  includeText?: boolean;
+}
+
+export interface BulkGenerationResult {
+  totalProcessed: number;
+  pdfBlob: Blob;
+  zipBlob?: Blob;
+  failedCount?: number;
+}
+

@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "id": "missing-maxkb",
+  "name": "Missing MaxKB Profile",
+  "photo": {
+    "width": 35,
+    "height": 45
+  }
+}

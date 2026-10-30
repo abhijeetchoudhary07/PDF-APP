@@ -728,3 +728,22 @@
   }
 }
 
+@media (max-height: 520px) {
+  .dropzone-card {
+    padding: 6px 12px;
+
+    .dropzone-icon-box {
+      display: none;
+    }
+
+    h3 {
+      font-size: 14px;
+      margin: 0 0 4px;
+    }
+
+    p {
+      display: none;
+    }
+  }
+}
+

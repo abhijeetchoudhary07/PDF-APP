@@ -1,0 +1,180 @@
+<!-- 1. OCR LANGUAGE MANAGER BOTTOM SHEET -->
+@if (isOpen) {
+  <div class="bottom-sheet-backdrop" (click)="closeSheet()" role="presentation">
+    <div
+      class="bottom-sheet-container"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="manager-title"
+      data-testid="ocr-language-manager-sheet"
+    >
+      <!-- Drag handle -->
+      <div class="drag-handle-bar" (click)="closeSheet()">
+        <div class="drag-pill"></div>
+      </div>
+
+      <!-- Sheet Header -->
+      <div class="sheet-header">
+        <div class="header-titles">
+          <h2 id="manager-title" class="sheet-title">
+            <app-icon name="download-cloud" size="md"></app-icon>
+            {{ 'ocr.manageLanguages' | translate }}
+          </h2>
+          <p class="sheet-subtitle">{{ 'ocr.downloadOnceHint' | translate }}</p>
+        </div>
+        <button
+          type="button"
+          class="close-button"
+          (click)="closeSheet()"
+          aria-label="Close language manager"
+          data-testid="close-sheet-btn"
+        >
+          &times;
+        </button>
+      </div>
+
+      <!-- Storage Info & Free Up Space Banner -->
+      <div class="storage-bar">
+        <div class="storage-info">
+          <span class="storage-label">{{ 'ocr.storageUsed' | translate }}:</span>
+          <span class="storage-value" data-testid="storage-used-value">{{ storageUsedMB }} MB</span>
+        </div>
+        <button
+          type="button"
+          class="free-space-btn"
+          data-testid="free-up-space-btn"
+          [disabled]="storageUsedMB === '0.0' || storageUsedMB === '0' || isClearing"
+          (click)="freeUpSpace()"
+        >
+          <app-icon name="trash" size="sm"></app-icon>
+          <span>{{ 'ocr.freeUpSpace' | translate }}</span>
+        </button>
+      </div>
+
+      <!-- Scrollable Languages List -->
+      <div class="languages-scroll-list" role="list">
+        @for (model of models; track trackByCode($index, model)) {
+          <div class="language-row" role="listitem" [attr.data-testid]="'lang-row-' + model.code">
+            <!-- Left Info -->
+            <div class="lang-meta">
+              <div class="name-line">
+                <span class="primary-name">{{ model.name }}</span>
+                <span class="native-name">({{ model.nativeName }})</span>
+                @if (model.isBundled) {
+                  <span class="bundled-chip">{{ 'ocr.bundledBadge' | translate }}</span>
+                }
+              </div>
+              <div class="sub-line">
+                <span class="script-badge">{{ model.scriptName }}</span>
+                <span class="dot-sep">•</span>
+                <span class="size-text">{{ model.fileSizeMB }} MB</span>
+              </div>
+            </div>
+
+            <!-- Right Actions & Status -->
+            <div class="lang-status-actions">
+              <!-- Status Badge -->
+              @if (model.isBundled || model.status === 'offline_ready') {
+                <app-badge variant="success" [attr.data-testid]="'badge-' + model.code">{{ 'ocr.offlineReady' | translate }}</app-badge>
+              } @else if (model.status === 'downloaded') {
+                <app-badge variant="success" [attr.data-testid]="'badge-' + model.code">{{ 'ocr.downloaded' | translate }}</app-badge>
+              } @else if (model.status === 'downloading' || isDownloadingMap[model.code]) {
+                <app-badge variant="warning" [attr.data-testid]="'badge-' + model.code">{{ 'ocr.downloading' | translate }}</app-badge>
+              } @else {
+                <app-badge variant="neutral" [attr.data-testid]="'badge-' + model.code">{{ 'ocr.downloadAvailable' | translate }}</app-badge>
+              }
+
+              <!-- 1-tap touch button (min 44px) -->
+              @if (!model.isBundled && model.status !== 'offline_ready') {
+                @if (model.status === 'downloading' || isDownloadingMap[model.code]) {
+                  <div class="circular-progress-wrap" aria-label="Downloading progress">
+                    <svg class="circular-progress" viewBox="0 0 36 36">
+                      <path
+                        class="circle-bg"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                      <path
+                        class="circle-fill"
+                        [attr.stroke-dasharray]="(model.downloadProgress || 25) + ', 100'"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                    </svg>
+                    <span class="progress-number">{{ model.downloadProgress || 0 }}%</span>
+                  </div>
+                } @else if (model.status === 'downloaded') {
+                  <div class="ready-check" title="Offline ready" [attr.data-testid]="'ready-check-' + model.code">
+                    <app-icon name="checkmark-circle" size="md"></app-icon>
+                  </div>
+                } @else {
+                  <button
+                    type="button"
+                    class="download-action-btn"
+                    (click)="startDownload(model)"
+                    [attr.aria-label]="'Download ' + model.name + ' model'"
+                    [attr.data-testid]="'download-btn-' + model.code"
+                  >
+                    <app-icon name="download-cloud" size="sm"></app-icon>
+                    <span>{{ 'ocr.downloadBtn' | translate }}</span>
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="sheet-footer">
+        <app-button variant="primary" size="md" (clicked)="closeSheet()" data-testid="footer-close-btn">
+          {{ 'common.close' | translate }}
+        </app-button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- 2. DOWNLOAD CONFIRMATION MODAL -->
+@if (showConfirmModal && confirmModel) {
+  <app-modal
+    [isOpen]="true"
+    [title]="'ocr.downloadConfirmTitle' | translate"
+    [subtitle]="confirmModel.name + ' (' + confirmModel.nativeName + ')'"
+    size="sm"
+    [hasFooter]="true"
+    (closed)="closeConfirmModal()"
+  >
+    <div class="confirm-modal-body" data-testid="download-confirm-modal">
+      <div class="confirm-icon-box">
+        <app-icon name="download-cloud" size="lg"></app-icon>
+      </div>
+      <p class="confirm-description">
+        {{ 'ocr.downloadConfirmDesc' | translate:{ size: confirmModel.fileSizeMB } }}
+      </p>
+      <div class="confirm-hint-card">
+        <app-icon name="information-circle" size="sm"></app-icon>
+        <span>{{ 'ocr.downloadOnceHint' | translate }}</span>
+      </div>
+    </div>
+
+    <div modal-footer class="confirm-modal-footer">
+      <app-button
+        variant="primary"
+        size="md"
+        (clicked)="confirmDownload()"
+        data-testid="confirm-download-btn"
+      >
+        <app-icon name="download-cloud" size="sm"></app-icon>
+        {{ 'ocr.downloadBtn' | translate }} ({{ confirmModel.fileSizeMB }} MB)
+      </app-button>
+      <app-button
+        variant="ghost"
+        size="md"
+        (clicked)="closeConfirmModal()"
+        data-testid="cancel-confirm-btn"
+      >
+        {{ 'common.cancel' | translate }}
+      </app-button>
+    </div>
+  </app-modal>
+}

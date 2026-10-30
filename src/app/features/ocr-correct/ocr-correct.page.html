@@ -1,0 +1,552 @@
+<app-header></app-header>
+
+<main class="ocr-correct-container">
+  <app-page-header
+    [title]="'ocrConfidence.title' | translate"
+    [subtitle]="'ocrConfidence.subtitle' | translate"
+    [badge]="'ocrConfidence.badge' | translate"
+  ></app-page-header>
+
+  <!-- STEP 1: FILE SELECTION -->
+  @if (currentStep === 'select') {
+    <section class="card select-card">
+      <app-file-dropzone
+        [title]="'ocrConfidence.dropzoneTitle' | translate"
+        [description]="'ocrConfidence.dropzoneDesc' | translate"
+        accept="application/pdf,image/jpeg,image/png,image/webp"
+        (fileSelected)="onFileSelected($event)"
+      ></app-file-dropzone>
+
+      <!-- Persistent Dictionary Quick Bar -->
+      <div class="dictionary-quick-bar">
+        <div class="dict-info">
+          <app-icon name="spellcheck" [size]="18"></app-icon>
+          <span class="dict-title">Correction Dictionary ({{ dictionaryRules.length }} rules active)</span>
+          <span class="dict-subtext">Automatically fixes recurring misreads like "rn" ➔ "m" and "vv" ➔ "w".</span>
+        </div>
+        <button type="button" class="manage-dict-btn" (click)="openDictionaryModal()">
+          Manage Rules
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- STEP 2: AUDITING PROGRESS STATE -->
+  @if (currentStep === 'auditing') {
+    <section class="card auditing-card" aria-live="polite">
+      <app-conversion-animation
+        [progress]="65"
+        stageText="Auditing word-level OCR confidence and applying dictionary..."
+        sourceFormat="OCR"
+        targetFormat="HEATMAP"
+      ></app-conversion-animation>
+    </section>
+  }
+
+  <!-- STEP 3: INTERACTIVE QUALITY AUDIT & HEATMAP VIEW -->
+  @if (currentStep === 'audit' && confidenceDoc) {
+    <!-- OVERALL METRICS & STATS BAR -->
+    <section class="audit-metrics-banner">
+      <div class="metrics-summary">
+        <div class="metric-item avg-score">
+          <span class="metric-value">{{ confidenceDoc.overallStats.averageConfidence }}%</span>
+          <span class="metric-label">Avg. Accuracy</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+          <span class="metric-value text-success">{{ confidenceDoc.overallStats.highCount }}</span>
+          <span class="metric-label">High (≥85%)</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-value text-amber">{{ confidenceDoc.overallStats.mediumCount }}</span>
+          <span class="metric-label">Review (60-84%)</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-value text-danger">{{ confidenceDoc.overallStats.lowCount }}</span>
+          <span class="metric-label">Low (<60%)</span>
+        </div>
+      </div>
+
+      <div class="metrics-actions">
+        <button type="button" class="dict-badge-btn" (click)="openDictionaryModal()" data-testid="btn-open-dictionary">
+          <app-icon name="spellcheck" [size]="16"></app-icon>
+          <span>Dictionary ({{ dictionaryRules.length }})</span>
+        </button>
+        <button type="button" class="change-file-pill" (click)="clearSelectedFile()">
+          ✕ Change File
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEWER TOOLBAR -->
+    <section class="viewer-toolbar-card">
+      <div class="toolbar-left">
+        <!-- Toggle Heatmap Switch -->
+        <label class="toggle-control" data-testid="toggle-heatmap">
+          <input
+            type="checkbox"
+            [checked]="showHeatmap"
+            (change)="showHeatmap = !showHeatmap"
+          />
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">{{ 'ocrConfidence.toggleHeatmap' | translate }}</span>
+        </label>
+
+        <!-- Tier Filter Pills -->
+        <div class="tier-filter-pills" role="radiogroup" aria-label="Confidence Tier Filter">
+          <button
+            type="button"
+            class="filter-pill"
+            [class.active]="tierFilter === 'all'"
+            (click)="tierFilter = 'all'"
+          >
+            All ({{ currentPage?.words?.length || 0 }})
+          </button>
+          <button
+            type="button"
+            class="filter-pill filter-high"
+            [class.active]="tierFilter === 'high'"
+            (click)="tierFilter = 'high'"
+          >
+            High ({{ currentPage?.stats?.highCount || 0 }})
+          </button>
+          <button
+            type="button"
+            class="filter-pill filter-medium"
+            [class.active]="tierFilter === 'medium'"
+            (click)="tierFilter = 'medium'"
+          >
+            Medium ({{ currentPage?.stats?.mediumCount || 0 }})
+          </button>
+          <button
+            type="button"
+            class="filter-pill filter-low"
+            [class.active]="tierFilter === 'low'"
+            (click)="tierFilter = 'low'"
+          >
+            Low ({{ currentPage?.stats?.lowCount || 0 }})
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-right">
+        <!-- Multi-page Controls -->
+        @if (confidenceDoc.totalPages > 1) {
+          <div class="pagination-controls">
+            <button
+              type="button"
+              class="page-nav-btn"
+              [disabled]="currentPageIndex === 0"
+              (click)="prevPage()"
+              aria-label="Previous Page"
+            >
+              ◀
+            </button>
+            <span class="page-indicator">
+              Page {{ currentPageIndex + 1 }} / {{ confidenceDoc.totalPages }}
+            </span>
+            <button
+              type="button"
+              class="page-nav-btn"
+              [disabled]="currentPageIndex === confidenceDoc.totalPages - 1"
+              (click)="nextPage()"
+              aria-label="Next Page"
+            >
+              ▶
+            </button>
+          </div>
+        }
+
+        <!-- Zoom Controls -->
+        <div class="zoom-controls">
+          <button type="button" class="zoom-btn" (click)="zoomOut()" aria-label="Zoom Out">
+            <app-icon name="zoom-out" [size]="14"></app-icon>
+          </button>
+          <span class="zoom-text">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+          <button type="button" class="zoom-btn" (click)="zoomIn()" aria-label="Zoom In">
+            <app-icon name="zoom-in" [size]="14"></app-icon>
+          </button>
+          <button type="button" class="zoom-btn" (click)="resetZoom()" aria-label="Reset Zoom">
+            <app-icon name="refresh" [size]="13"></app-icon>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOCUMENT PREVIEW WITH HEATMAP OVERLAY -->
+    <section class="heatmap-viewer-card">
+      <div #canvasContainer class="canvas-viewport" data-testid="canvas-viewport">
+        <div
+          class="canvas-wrapper"
+          [style.transform]="'scale(' + zoomLevel + ')'"
+          [style.transformOrigin]="'top center'"
+        >
+          @if (currentPage?.canvasDataUrl) {
+            <img
+              [src]="currentPage?.canvasDataUrl"
+              alt="Document scan preview"
+              class="document-page-img"
+            />
+          }
+
+          <!-- Colored Heatmap Bounding Box Overlays -->
+          @if (showHeatmap && currentPage) {
+            <div class="heatmap-overlay" data-testid="heatmap-overlay">
+              @for (word of filteredWords; track word.id) {
+                <div
+                  class="word-box"
+                  [ngClass]="'tier-' + word.tier"
+                  [class.active]="word.id === selectedWord?.id"
+                  [class.corrected]="word.isCorrected"
+                  [class.reviewed]="word.isReviewed"
+                  [ngStyle]="getWordBoxStyle(word)"
+                  (click)="openCorrectionDrawer(word)"
+                  [attr.title]="word.text + ' (' + word.confidence + '% ' + word.tier + ')'"
+                  tabindex="0"
+                  data-testid="word-heatmap-box"
+                >
+                  @if (word.tier !== 'high') {
+                    <span class="conf-tag">{{ word.confidence }}%</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- CAROUSEL OF LOW-CONFIDENCE WORDS -->
+    @if (lowConfidenceWords.length > 0) {
+      <section class="low-confidence-carousel-section" data-testid="low-confidence-carousel">
+        <div class="carousel-header">
+          <div class="carousel-title-group">
+            <span class="carousel-title">
+              <app-icon name="alert-circle" [size]="16"></app-icon>
+              {{ 'ocrConfidence.lowConfidenceCarouselTitle' | translate }}
+            </span>
+            <app-badge variant="warning">
+              {{ lowConfidenceWords.length }} to review
+            </app-badge>
+          </div>
+          <span class="carousel-counter">
+            {{ currentCarouselIndex + 1 }} of {{ lowConfidenceWords.length }}
+          </span>
+        </div>
+
+        @if (currentCarouselWord) {
+          <div class="carousel-card-container">
+            <button
+              type="button"
+              class="carousel-nav-btn prev"
+              [disabled]="currentCarouselIndex === 0"
+              (click)="prevCarouselWord()"
+              aria-label="Previous Low Confidence Word"
+            >
+              ‹
+            </button>
+
+            <div class="carousel-card" (click)="openCorrectionDrawer(currentCarouselWord)" data-testid="carousel-card">
+              <!-- Word Thumbnail Crop -->
+              @if (currentCarouselWord.cropDataUrl) {
+                <div class="card-crop-box">
+                  <img
+                    [src]="currentCarouselWord.cropDataUrl"
+                    alt="Scanned word snippet"
+                    class="card-crop-img"
+                  />
+                </div>
+              }
+
+              <div class="card-body">
+                <div class="word-readout">
+                  <span class="detected-word-text">{{ currentCarouselWord.text }}</span>
+                  <span
+                    class="score-pill"
+                    [class.low]="currentCarouselWord.tier === 'low'"
+                    [class.medium]="currentCarouselWord.tier === 'medium'"
+                  >
+                    {{ currentCarouselWord.confidence }}% confidence
+                  </span>
+                </div>
+
+                <div class="card-actions">
+                  <button
+                    type="button"
+                    class="accept-btn"
+                    (click)="acceptCarouselWord(currentCarouselWord, $event)"
+                    title="Accept this word as correct"
+                    data-testid="btn-carousel-accept"
+                  >
+                    <app-icon name="check" [size]="14"></app-icon>
+                    <span>{{ 'ocrConfidence.acceptWord' | translate }}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="edit-btn"
+                    (click)="openCorrectionDrawer(currentCarouselWord)"
+                    title="Correct this word"
+                    data-testid="btn-carousel-edit"
+                  >
+                    <app-icon name="spellcheck" [size]="14"></app-icon>
+                    <span>{{ 'ocrConfidence.editWord' | translate }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="carousel-nav-btn next"
+              [disabled]="currentCarouselIndex === lowConfidenceWords.length - 1"
+              (click)="nextCarouselWord()"
+              aria-label="Next Low Confidence Word"
+            >
+              ›
+            </button>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- STICKY BOTTOM ACTION BAR -->
+    <div class="sticky-bottom-action-bar">
+      <div class="action-bar-inner">
+        <app-button
+          variant="secondary"
+          size="lg"
+          (clicked)="shareCorrectedText()"
+          class="action-btn"
+        >
+          <app-icon name="share" [size]="16"></app-icon>
+          <span>Share</span>
+        </app-button>
+
+        <app-button
+          variant="primary"
+          size="lg"
+          (clicked)="saveCorrectedDocument()"
+          class="action-btn-primary"
+          data-testid="btn-save-corrected"
+        >
+          <app-icon name="download" [size]="16"></app-icon>
+          <span>{{ 'ocrConfidence.saveCorrected' | translate }}</span>
+        </app-button>
+      </div>
+    </div>
+  }
+
+  <!-- QUICK CORRECTION BOTTOM SHEET / DRAWER -->
+  @if (isCorrectionDrawerOpen && selectedWord) {
+    <div class="drawer-backdrop" (click)="closeCorrectionDrawer()">
+      <div class="quick-correction-drawer" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" data-testid="quick-correction-drawer">
+        <!-- Drawer Header -->
+        <div class="drawer-header">
+          <div class="drawer-title-group">
+            <span class="drawer-title">{{ 'ocrConfidence.quickCorrectionTitle' | translate }}</span>
+            <span class="confidence-badge" [ngClass]="'tier-' + selectedWord.tier">
+              {{ selectedWord.confidence }}% {{ selectedWord.tier }} confidence
+            </span>
+          </div>
+          <button type="button" class="drawer-close-btn" (click)="closeCorrectionDrawer()" aria-label="Close">
+            ✕
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          <!-- Magnified Original Scan Snippet -->
+          @if (selectedWord.cropDataUrl) {
+            <div class="magnified-crop-container">
+              <span class="crop-label">{{ 'ocrConfidence.originalScanSnippet' | translate }}</span>
+              <div class="crop-frame">
+                <img
+                  [src]="selectedWord.cropDataUrl"
+                  alt="Magnified original scan snippet"
+                  class="magnified-crop-img"
+                />
+              </div>
+            </div>
+          }
+
+          <!-- Editable Input Field -->
+          <div class="correction-field-group">
+            <label class="field-label" for="corrected-word-input">Corrected Text</label>
+            <div class="input-with-reocr">
+              <input
+                id="corrected-word-input"
+                type="text"
+                class="mobile-text-input"
+                [(ngModel)]="correctionInput"
+                placeholder="Enter corrected word..."
+                autocomplete="off"
+                data-testid="input-corrected-word"
+              />
+              <button
+                type="button"
+                class="re-ocr-btn"
+                [disabled]="isReOcring"
+                (click)="enhanceAndReOcr()"
+                title="Sharpen and re-scan this isolated region"
+                data-testid="btn-reocr-region"
+              >
+                @if (!isReOcring) {
+                  <app-icon name="refresh" [size]="14"></app-icon>
+                }
+                <span>{{ isReOcring ? 'Scanning...' : '3x Re-Scan' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Suggestion Chips -->
+          @if (selectedWord.suggestedReplacements && selectedWord.suggestedReplacements.length > 0) {
+            <div class="suggestion-chips-group">
+              <span class="chips-label">{{ 'ocrConfidence.suggestions' | translate }}:</span>
+              <div class="chips-list">
+                @for (candidate of selectedWord.suggestedReplacements; track candidate) {
+                  <button
+                    type="button"
+                    class="suggestion-chip"
+                    (click)="chooseSuggestion(candidate)"
+                  >
+                    {{ candidate }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Persistent Dictionary Toggle Switch -->
+          <div class="dictionary-toggle-row">
+            <label class="toggle-control">
+              <input
+                type="checkbox"
+                [(ngModel)]="addToDictionaryToggle"
+                data-testid="toggle-add-to-dictionary"
+              />
+              <span class="toggle-slider"></span>
+              <span class="toggle-label-bold">{{ 'ocrConfidence.addToDictionary' | translate }}</span>
+            </label>
+            <p class="dictionary-hint-text">
+              {{ 'ocrConfidence.dictionaryHint' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Drawer Action Buttons -->
+        <div class="drawer-footer">
+          <app-button
+            variant="secondary"
+            size="md"
+            (clicked)="applyCorrection(false)"
+            class="drawer-btn"
+            data-testid="btn-replace-here"
+          >
+            {{ 'ocrConfidence.replaceHere' | translate }}
+          </app-button>
+
+          <app-button
+            variant="primary"
+            size="md"
+            (clicked)="applyCorrection(true)"
+            class="drawer-btn"
+            data-testid="btn-replace-everywhere"
+          >
+            Replace Everywhere
+          </app-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- PERSISTENT DICTIONARY MANAGEMENT MODAL -->
+  @if (isDictionaryModalOpen) {
+    <app-modal
+      [isOpen]="true"
+      [title]="'ocrConfidence.dictionaryTab' | translate"
+      size="md"
+      [hasFooter]="false"
+      (closed)="closeDictionaryModal()"
+    >
+      <div class="dictionary-modal-content" data-testid="dictionary-modal-content">
+        <p class="dict-modal-desc">
+          Rules stored here are applied permanently to all OCR jobs across your device to automatically fix recurring character misreads.
+        </p>
+
+        <!-- Add Rule Form -->
+        <div class="add-rule-card">
+          <div class="rule-inputs-row">
+            <input
+              type="text"
+              class="rule-input"
+              [(ngModel)]="newRuleTarget"
+              placeholder="Misread (e.g. rn)"
+              aria-label="Misread word"
+              data-testid="input-new-rule-target"
+            />
+            <span class="arrow-glyph">➔</span>
+            <input
+              type="text"
+              class="rule-input"
+              [(ngModel)]="newRuleReplacement"
+              placeholder="Correction (e.g. m)"
+              aria-label="Replacement word"
+              data-testid="input-new-rule-replacement"
+            />
+            <app-button
+              variant="primary"
+              size="sm"
+              [disabled]="!newRuleTarget.trim() || !newRuleReplacement.trim()"
+              (clicked)="addRuleFromModal()"
+              data-testid="btn-add-rule"
+            >
+              Add
+            </app-button>
+          </div>
+
+          <div class="rule-options-row">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="newRuleMatchCase" />
+              <span>Match exact case</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="newRuleWholeWord" />
+              <span>Whole word only</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Rules List -->
+        <div class="rules-list-container">
+          <span class="rules-list-title">Active Rules ({{ dictionaryRules.length }})</span>
+          @if (dictionaryRules.length === 0) {
+            <p class="empty-rules">{{ 'ocrConfidence.dictionaryEmpty' | translate }}</p>
+          } @else {
+            <div class="rules-items-list">
+              @for (rule of dictionaryRules; track rule.id) {
+                <div class="rule-item-pill" data-testid="rule-item-pill">
+                  <span class="rule-target">{{ rule.target }}</span>
+                  <span class="rule-arrow">➔</span>
+                  <span class="rule-replacement">{{ rule.replacement }}</span>
+                  <button
+                    type="button"
+                    class="rule-delete-btn"
+                    (click)="deleteRuleFromModal(rule.id)"
+                    aria-label="Delete rule"
+                    data-testid="btn-delete-rule"
+                  >
+                    ✕
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </app-modal>
+  }
+
+  <app-related-tools [currentToolId]="'ocr-confidence'"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

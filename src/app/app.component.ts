@@ -8,7 +8,8 @@ import { ToastService } from './core/services/toast.service';
 import {
   AppToastContainerComponent,
   AppGlobalSearchModalComponent,
-  AppOnboardingModalComponent
+  AppOnboardingModalComponent,
+  AppSecurityLockOverlayComponent
 } from './shared/components/ui';
 
 @Component({
@@ -22,7 +23,8 @@ import {
     IonRouterOutlet,
     AppToastContainerComponent,
     AppGlobalSearchModalComponent,
-    AppOnboardingModalComponent
+    AppOnboardingModalComponent,
+    AppSecurityLockOverlayComponent
   ],
 })
 export class AppComponent implements OnDestroy {

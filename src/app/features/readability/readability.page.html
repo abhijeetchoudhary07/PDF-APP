@@ -1,0 +1,252 @@
+<div class="readability-container">
+  <!-- Top App Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <app-icon name="book-open" [size]="24" class="header-icon"></app-icon>
+      <h1 class="header-title">{{ 'readability.title' | translate }}</h1>
+    </div>
+    <div class="header-right" *ngIf="selectedFile">
+      <button class="btn-change-file" (click)="triggerFileInput()" [attr.aria-label]="'readability.changeFile' | translate">
+        <app-icon name="refresh" [size]="18"></app-icon>
+        <span class="btn-text">{{ 'readability.changeFile' | translate }}</span>
+      </button>
+    </div>
+  </header>
+
+  <input
+    #fileInput
+    type="file"
+    accept="application/pdf,text/*,.md,.txt,.docx"
+    style="display: none"
+    (change)="onFileSelected($event)"
+  />
+
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p class="loading-text">{{ statusMessage | translate }}</p>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" *ngIf="toastMessage">
+    <app-icon name="checkmark-circle" [size]="20" class="toast-icon"></app-icon>
+    <span>{{ toastMessage | translate }}</span>
+  </div>
+
+  <!-- Empty Dropzone State -->
+  <div class="empty-state" *ngIf="!report && !isLoading">
+    <div class="empty-card" (click)="triggerFileInput()">
+      <div class="empty-icon-circle">
+        <app-icon name="book-open" [size]="48"></app-icon>
+      </div>
+      <h2 class="empty-title">{{ 'readability.uploadPrompt' | translate }}</h2>
+      <p class="empty-subtitle">{{ 'readability.subtitle' | translate }}</p>
+
+      <div class="empty-actions">
+        <button class="btn-primary-choose">
+          <app-icon name="add" [size]="20"></app-icon>
+          <span>{{ 'readability.chooseFile' | translate }}</span>
+        </button>
+
+        <button class="btn-secondary-sample" (click)="loadSampleDocument(); $event.stopPropagation()">
+          <app-icon name="document-text" [size]="18"></app-icon>
+          <span>Try Sample Document</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Readability Dashboard -->
+  <main class="dashboard-scrollable" *ngIf="report && !isLoading">
+    <!-- 1. Executive Summary Mobile Card -->
+    <section class="summary-card">
+      <div class="summary-header">
+        <span class="section-label">{{ 'readability.executiveSummary' | translate }}</span>
+        <span class="file-name-tag" *ngIf="report.fileName">{{ report.fileName }}</span>
+      </div>
+
+      <div class="badge-row">
+        <!-- Big Reading Time Metric Badge -->
+        <div class="big-metric-badge">
+          <app-icon name="book-open" [size]="28" class="metric-icon"></app-icon>
+          <div class="metric-info">
+            <span class="metric-number">{{ report.overallTimes.readingTimeFormatted }}</span>
+            <span class="metric-label">{{ 'readability.readingTime' | translate }}</span>
+          </div>
+        </div>
+
+        <!-- Plain-Language Complexity Pill -->
+        <div
+          class="complexity-pill"
+          [class.pill-easy]="report.overallScores.complexityBand === 'easy'"
+          [class.pill-moderate]="report.overallScores.complexityBand === 'moderate'"
+          [class.pill-dense]="report.overallScores.complexityBand === 'dense'"
+        >
+          <span class="pill-dot"></span>
+          <span class="pill-text">{{ report.overallScores.complexityBandLabel }}</span>
+        </div>
+      </div>
+
+      <!-- Secondary Speaking Time & WPM notice -->
+      <div class="speaking-time-row">
+        <div class="speaking-badge">
+          <app-icon name="mic" [size]="18" class="speaking-icon"></app-icon>
+          <span>{{ 'readability.speakingTime' | translate }}: <strong>{{ report.overallTimes.speakingTimeFormatted }}</strong></span>
+        </div>
+        <p class="wpm-footnote">{{ 'readability.wpmNotice' | translate }}</p>
+      </div>
+
+      <!-- Document Statistics Metrics Grid -->
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-val">{{ report.overallStatistics.wordCount | number }}</span>
+          <span class="stat-lbl">{{ 'readability.words' | translate }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val">{{ report.overallStatistics.sentenceCount | number }}</span>
+          <span class="stat-lbl">{{ 'readability.sentences' | translate }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val">{{ report.overallStatistics.averageWordsPerSentence }}</span>
+          <span class="stat-lbl">{{ 'readability.avgSentenceLength' | translate }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val">{{ report.overallStatistics.complexWordCount | number }}</span>
+          <span class="stat-lbl">{{ 'readability.complexWords' | translate }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Readability Gauges Card -->
+    <section class="gauges-card">
+      <h2 class="card-heading">{{ 'readability.gaugesTitle' | translate }}</h2>
+
+      <div class="gauge-bars-list">
+        <!-- Flesch Reading Ease Bar -->
+        <div class="gauge-item">
+          <div class="gauge-header">
+            <span class="gauge-title">{{ 'readability.fleschEase' | translate }}</span>
+            <span class="gauge-score score-ease">{{ report.overallScores.fleschReadingEase }} / 100</span>
+          </div>
+          <div class="progress-track">
+            <div
+              class="progress-fill fill-ease"
+              [style.width.%]="getReadingEasePercent(report.overallScores.fleschReadingEase)"
+            ></div>
+          </div>
+          <div class="gauge-scale-legend">
+            <span>0 (Dense)</span>
+            <span>60 (Standard)</span>
+            <span>100 (Conversational)</span>
+          </div>
+        </div>
+
+        <!-- Flesch-Kincaid Grade Level Bar -->
+        <div class="gauge-item">
+          <div class="gauge-header">
+            <span class="gauge-title">{{ 'readability.gradeLevel' | translate }}</span>
+            <span class="gauge-score score-grade">Grade {{ report.overallScores.fleschKincaidGradeLevel }}</span>
+          </div>
+          <div class="progress-track">
+            <div
+              class="progress-fill fill-grade"
+              [style.width.%]="getGradeLevelPercent(report.overallScores.fleschKincaidGradeLevel)"
+            ></div>
+          </div>
+          <div class="gauge-scale-legend">
+            <span>Grade 1 (Primary)</span>
+            <span>Grade 8 (Middle)</span>
+            <span>Grade 16+ (Postgrad)</span>
+          </div>
+        </div>
+
+        <!-- Gunning Fog Index Bar -->
+        <div class="gauge-item">
+          <div class="gauge-header">
+            <span class="gauge-title">{{ 'readability.fogIndex' | translate }}</span>
+            <span class="gauge-score score-fog">Fog {{ report.overallScores.gunningFogIndex }}</span>
+          </div>
+          <div class="progress-track">
+            <div
+              class="progress-fill fill-fog"
+              [style.width.%]="getGradeLevelPercent(report.overallScores.gunningFogIndex)"
+            ></div>
+          </div>
+          <div class="gauge-scale-legend">
+            <span>6 (Easy)</span>
+            <span>12 (High School)</span>
+            <span>18+ (Specialist)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Educational Formula Explanations Accordion -->
+      <div class="formula-explanations">
+        <h3 class="explanations-header">{{ 'readability.formulaInfoTitle' | translate }}</h3>
+        <div
+          *ngFor="let item of report.formulaExplanations; let idx = index"
+          class="formula-card"
+          [class.is-expanded]="expandedFormulaIndex === idx"
+          (click)="toggleFormula(idx)"
+        >
+          <div class="formula-card-top">
+            <span class="formula-name">{{ item.name }}</span>
+            <span class="formula-range-tag">{{ item.range }}</span>
+          </div>
+          <p class="formula-math"><code>{{ item.description }}</code></p>
+          <p class="formula-desc" *ngIf="expandedFormulaIndex === idx">{{ item.interpretation }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Per-Section Breakdown Table / List -->
+    <section class="sections-card" *ngIf="report.sections.length > 0">
+      <div class="card-heading-row">
+        <h2 class="card-heading">{{ 'readability.sectionsTitle' | translate }}</h2>
+        <span class="sections-count-pill">{{ report.sections.length }}</span>
+      </div>
+
+      <div class="sections-card-list">
+        <div *ngFor="let sec of report.sections" class="section-item-card">
+          <div class="section-card-top">
+            <h4 class="section-title">{{ sec.title }}</h4>
+            <span
+              class="section-band-badge"
+              [class.band-easy]="sec.scores.complexityBand === 'easy'"
+              [class.band-moderate]="sec.scores.complexityBand === 'moderate'"
+              [class.band-dense]="sec.scores.complexityBand === 'dense'"
+            >
+              {{ sec.scores.complexityBandLabel }}
+            </span>
+          </div>
+
+          <div class="section-metrics-row">
+            <span class="sec-metric">
+              <app-icon name="book-open" [size]="14"></app-icon>
+              {{ sec.estimatedTimes.readingTimeFormatted }}
+            </span>
+            <span class="sec-metric">
+              <strong>{{ sec.statistics.wordCount }}</strong> words
+            </span>
+            <span class="sec-metric">
+              Ease: <strong>{{ sec.scores.fleschReadingEase }}</strong>
+            </span>
+            <span class="sec-metric">
+              Grade <strong>{{ sec.scores.fleschKincaidGradeLevel }}</strong>
+            </span>
+          </div>
+
+          <p class="section-excerpt" *ngIf="sec.textExcerpt">{{ sec.textExcerpt }}</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Sticky Bottom Action Bar with Safe Area Padding -->
+  <footer class="sticky-action-bar" *ngIf="report && !isLoading">
+    <button class="btn-primary-share" (click)="shareReport()" [attr.aria-label]="'readability.shareReport' | translate">
+      <app-icon name="share-social" [size]="20"></app-icon>
+      <span>{{ 'readability.shareReport' | translate }}</span>
+    </button>
+  </footer>
+</div>

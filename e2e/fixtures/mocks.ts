@@ -44,16 +44,26 @@ export async function setupCapacitorMocks(page: Page, options: { completeOnboard
           writeFile: async (opts: any) => ({ uri: 'file:///mock/storage/saved_file' }),
           readFile: async () => ({ data: mockJpgBase64 })
         },
+        Haptics: {
+          impact: async () => {},
+          notification: async () => {},
+          vibrate: async () => {},
+          selectionStart: async () => {},
+          selectionChanged: async () => {},
+          selectionEnd: async () => {}
+        },
         Preferences: {
           get: async ({ key }: { key: string }) => {
-            const val = localStorage.getItem(key);
+            const val = localStorage.getItem(key) || localStorage.getItem('CapacitorStorage.' + key);
             return { value: val };
           },
           set: async ({ key, value }: { key: string; value: string }) => {
             localStorage.setItem(key, value);
+            localStorage.setItem('CapacitorStorage.' + key, value);
           },
           remove: async ({ key }: { key: string }) => {
             localStorage.removeItem(key);
+            localStorage.removeItem('CapacitorStorage.' + key);
           }
         }
       }

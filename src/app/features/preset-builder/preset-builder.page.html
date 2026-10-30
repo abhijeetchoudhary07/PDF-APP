@@ -1,0 +1,390 @@
+<app-header [title]="'presetBuilder.title' | translate" [showBack]="true"></app-header>
+
+<main class="preset-builder-container">
+  <!-- State 1: Ingestion & Dropzone (when no result yet and not processing) -->
+  <section *ngIf="!extractionResult && !isProcessing" class="ingest-section">
+    <div class="hero-banner">
+      <div class="hero-icon-wrap">
+        <app-icon name="preset-builder" size="38" class="hero-icon"></app-icon>
+      </div>
+      <h1 class="hero-title">{{ 'presetBuilder.title' | translate }}</h1>
+      <p class="hero-desc">{{ 'presetBuilder.subtitle' | translate }}</p>
+      <app-badge variant="primary" class="hero-badge">
+        <app-icon name="preset-builder" size="14"></app-icon>
+        {{ 'presetBuilder.badge' | translate }}
+      </app-badge>
+    </div>
+
+    <!-- Error Alert Card (if any previous error occurred) -->
+    <div *ngIf="errorMessage" class="error-alert-card">
+      <app-icon name="alert-circle" size="20" class="error-icon"></app-icon>
+      <div class="error-text-wrap">
+        <div class="error-title">{{ 'presetBuilder.extractError' | translate }}</div>
+        <div class="error-desc">{{ errorMessage }}</div>
+      </div>
+      <button type="button" class="btn-dismiss" (click)="errorMessage = null" aria-label="Dismiss error">
+        <app-icon name="close" size="16"></app-icon>
+      </button>
+    </div>
+
+    <!-- Dropzone for Photo or PDF Guidelines -->
+    <app-file-dropzone
+      [title]="'presetBuilder.dropzoneTitle' | translate"
+      [description]="'presetBuilder.dropzoneSubtitle' | translate"
+      accept=".pdf,application/pdf,image/jpeg,image/png,image/webp,.jpg,.jpeg,.png"
+      [multiple]="false"
+      (fileSelected)="handleFileSelected($event)"
+      class="guideline-dropzone"
+    ></app-file-dropzone>
+
+    <!-- Paste Guideline Text Option -->
+    <div class="paste-guidelines-wrap">
+      <button
+        type="button"
+        class="toggle-paste-btn"
+        (click)="showTextPaste = !showTextPaste"
+      >
+        <app-icon [name]="showTextPaste ? 'chevron-up' : 'document-text'" size="16"></app-icon>
+        <span>{{ 'presetBuilder.pasteTextOption' | translate }}</span>
+      </button>
+
+      <div *ngIf="showTextPaste" class="paste-box-card">
+        <textarea
+          class="paste-textarea"
+          rows="4"
+          [(ngModel)]="manualTextInput"
+          [placeholder]="'presetBuilder.pasteTextPlaceholder' | translate"
+        ></textarea>
+        <button
+          type="button"
+          class="btn-parse-text"
+          [disabled]="!manualTextInput.trim()"
+          (click)="handleExtractFromText()"
+        >
+          <app-icon name="search" size="16"></app-icon>
+          <span>{{ 'presetBuilder.parseTextButton' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- State 2: Processing State -->
+  <section *ngIf="isProcessing" class="processing-state">
+    <div class="scanner-pulse">
+      <div class="pulse-ring ring-1"></div>
+      <div class="pulse-ring ring-2"></div>
+      <app-icon name="preset-builder" size="44" class="proc-icon"></app-icon>
+    </div>
+    <h2 class="proc-title">{{ 'presetBuilder.processing' | translate }}</h2>
+    <p class="proc-file">{{ fileName }}</p>
+  </section>
+
+  <!-- State 3: Split Mobile Review Card (Side-by-Side Review & Edit) -->
+  <section *ngIf="extractionResult && !isProcessing" class="review-section">
+    <!-- Document Pill Header -->
+    <div class="doc-header-pill">
+      <div class="doc-info">
+        <app-icon name="document" size="18" class="doc-icon"></app-icon>
+        <span class="doc-name">{{ fileName }}</span>
+      </div>
+      <button
+        type="button"
+        class="btn-change-doc"
+        (click)="resetAnalysis()"
+        aria-label="Change document"
+      >
+        <app-icon name="refresh" size="15"></app-icon>
+        <span>{{ 'presetBuilder.selectAnotherFile' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Success Confirmation Banner if already saved -->
+    <div *ngIf="saveSuccessNotice" class="save-success-banner">
+      <div class="banner-left">
+        <app-icon name="checkmark-circle" size="24" class="success-icon"></app-icon>
+        <div class="banner-text">
+          <strong>{{ 'presetBuilder.saveSuccess' | translate }}</strong>
+          <span>{{ form.profileName }}</span>
+        </div>
+      </div>
+      <button type="button" class="btn-view-presets" (click)="goToPresets()">
+        <span>{{ 'presetBuilder.viewAllPresets' | translate }}</span>
+        <app-icon name="arrow-forward" size="15"></app-icon>
+      </button>
+    </div>
+
+    <!-- SPLIT MOBILE REVIEW CARDS WRAPPER -->
+    <div class="split-review-grid">
+      <!-- TOP CARD: Scanned Instruction Snippet with Highlighted Extracted Numbers -->
+      <div class="snippet-review-card">
+        <div class="card-header-bar">
+          <div class="header-left">
+            <app-icon name="document-text" size="18" class="header-icon"></app-icon>
+            <h3 class="card-title">{{ 'presetBuilder.snippetTitle' | translate }}</h3>
+          </div>
+          <span class="tokens-badge" *ngIf="extractionResult.spec">
+            {{ extractionResult.spec.targetType | uppercase }}
+          </span>
+        </div>
+
+        <p class="snippet-subtitle">{{ 'presetBuilder.snippetSubtitle' | translate }}</p>
+
+        <!-- Formatted Snippet with Colored Highlight Marks -->
+        <div class="snippet-content">
+          <ng-container *ngFor="let seg of extractionResult.highlightedSegments">
+            <mark *ngIf="seg.isHighlighted" class="highlight-token" [attr.data-type]="seg.type">
+              {{ seg.text }}
+            </mark>
+            <span *ngIf="!seg.isHighlighted">{{ seg.text }}</span>
+          </ng-container>
+        </div>
+
+        <!-- Highlight Legend -->
+        <div class="legend-pills-row">
+          <span class="legend-pill pill-size">
+            <span class="dot"></span> {{ 'presetBuilder.maxKbLabel' | translate }}
+          </span>
+          <span class="legend-pill pill-dim">
+            <span class="dot"></span> {{ 'presetBuilder.dimensionsLabel' | translate }}
+          </span>
+          <span class="legend-pill pill-dpi">
+            <span class="dot"></span> {{ 'presetBuilder.dpiLabel' | translate }}
+          </span>
+          <span class="legend-pill pill-format">
+            <span class="dot"></span> {{ 'presetBuilder.formatLabel' | translate }}
+          </span>
+        </div>
+      </div>
+
+      <!-- BOTTOM CARD: Mobile Form with Clean Touch Inputs -->
+      <div class="form-review-card">
+        <div class="card-header-bar">
+          <div class="header-left">
+            <app-icon name="checkmark-circle" size="18" class="header-icon verified"></app-icon>
+            <h3 class="card-title">{{ 'presetBuilder.formTitle' | translate }}</h3>
+          </div>
+          <app-badge variant="success" size="sm">
+            {{ (extractionResult.spec?.confidence || 0.8) * 100 | number:'1.0-0' }}% Match
+          </app-badge>
+        </div>
+
+        <p class="form-notice">
+          <app-icon name="information-circle" size="14"></app-icon>
+          <span>{{ 'presetBuilder.editValuesNotice' | translate }}</span>
+        </p>
+
+        <form class="spec-form" (ngSubmit)="saveSpecificationProfile()">
+          <!-- Profile Name Input (Neutral numbers only) -->
+          <div class="form-group">
+            <label class="form-label" for="profileName">
+              {{ 'presetBuilder.profileNameLabel' | translate }}
+            </label>
+            <div class="input-touch-wrap">
+              <input
+                id="profileName"
+                type="text"
+                class="touch-input"
+                [(ngModel)]="form.profileName"
+                name="profileName"
+                required
+                [placeholder]="'presetBuilder.profileNameHint' | translate"
+              />
+            </div>
+          </div>
+
+          <!-- Target Type Segmented Selector -->
+          <div class="form-group">
+            <label class="form-label">{{ 'presetBuilder.targetTypeLabel' | translate }}</label>
+            <div class="type-segment-bar">
+              <button
+                type="button"
+                class="segment-btn"
+                [class.active]="form.targetType === 'photo'"
+                (click)="setTargetType('photo')"
+              >
+                <app-icon name="image" size="15"></app-icon>
+                <span>{{ 'presetBuilder.targetPhoto' | translate }}</span>
+              </button>
+              <button
+                type="button"
+                class="segment-btn"
+                [class.active]="form.targetType === 'signature'"
+                (click)="setTargetType('signature')"
+              >
+                <app-icon name="pen-tool" size="15"></app-icon>
+                <span>{{ 'presetBuilder.targetSignature' | translate }}</span>
+              </button>
+              <button
+                type="button"
+                class="segment-btn"
+                [class.active]="form.targetType === 'pdf'"
+                (click)="setTargetType('pdf')"
+              >
+                <app-icon name="document" size="15"></app-icon>
+                <span>{{ 'presetBuilder.targetPdf' | translate }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dimensions Row: Width, Height, Unit -->
+          <div *ngIf="form.targetType !== 'pdf'" class="form-row-dimensions">
+            <div class="form-group flex-1">
+              <label class="form-label" for="dimWidth">{{ 'presetBuilder.widthLabel' | translate }}</label>
+              <div class="input-touch-wrap">
+                <input
+                  id="dimWidth"
+                  type="number"
+                  step="any"
+                  class="touch-input"
+                  [(ngModel)]="form.width"
+                  (ngModelChange)="updateProposedName()"
+                  name="width"
+                  placeholder="200"
+                />
+              </div>
+            </div>
+
+            <div class="dim-multiplier">×</div>
+
+            <div class="form-group flex-1">
+              <label class="form-label" for="dimHeight">{{ 'presetBuilder.heightLabel' | translate }}</label>
+              <div class="input-touch-wrap">
+                <input
+                  id="dimHeight"
+                  type="number"
+                  step="any"
+                  class="touch-input"
+                  [(ngModel)]="form.height"
+                  (ngModelChange)="updateProposedName()"
+                  name="height"
+                  placeholder="230"
+                />
+              </div>
+            </div>
+
+            <div class="form-group unit-select-group">
+              <label class="form-label" for="dimUnit">{{ 'presetBuilder.unitLabel' | translate }}</label>
+              <select
+                id="dimUnit"
+                class="touch-select"
+                [(ngModel)]="form.unit"
+                (ngModelChange)="updateProposedName()"
+                name="unit"
+              >
+                <option value="px">px</option>
+                <option value="mm">mm</option>
+                <option value="cm">cm</option>
+                <option value="in">in</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Physical Unit Conversion Hint (mm/cm/in to px) -->
+          <div *ngIf="form.targetType !== 'pdf' && form.unit !== 'px' && convertedWidthPx && convertedHeightPx" class="unit-conversion-hint">
+            <app-icon name="information-circle" size="14"></app-icon>
+            <span>≈ {{ convertedWidthPx }} × {{ convertedHeightPx }} px (at {{ form.dpi || 300 }} DPI)</span>
+          </div>
+
+          <!-- File Size Row: Min KB, Max KB -->
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label" for="minKb">{{ 'presetBuilder.minKbLabel' | translate }}</label>
+              <div class="input-touch-wrap">
+                <input
+                  id="minKb"
+                  type="number"
+                  class="touch-input"
+                  [(ngModel)]="form.minKb"
+                  (ngModelChange)="updateProposedName()"
+                  name="minKb"
+                  placeholder="20"
+                />
+                <span class="input-suffix">KB</span>
+              </div>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label" for="maxKb">{{ 'presetBuilder.maxKbLabel' | translate }}</label>
+              <div class="input-touch-wrap">
+                <input
+                  id="maxKb"
+                  type="number"
+                  class="touch-input"
+                  [(ngModel)]="form.maxKb"
+                  (ngModelChange)="updateProposedName()"
+                  name="maxKb"
+                  placeholder="50"
+                  required
+                />
+                <span class="input-suffix">KB</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Format, DPI, and Aspect Ratio Row -->
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label" for="format">{{ 'presetBuilder.formatLabel' | translate }}</label>
+              <select
+                id="format"
+                class="touch-select"
+                [(ngModel)]="form.format"
+                (ngModelChange)="updateProposedName()"
+                name="format"
+              >
+                <option value="JPEG">JPEG</option>
+                <option value="JPG">JPG</option>
+                <option value="PNG">PNG</option>
+                <option value="PDF">PDF</option>
+              </select>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label" for="dpi">{{ 'presetBuilder.dpiLabel' | translate }}</label>
+              <div class="input-touch-wrap">
+                <input
+                  id="dpi"
+                  type="number"
+                  class="touch-input"
+                  [(ngModel)]="form.dpi"
+                  name="dpi"
+                  placeholder="200"
+                />
+                <span class="input-suffix">DPI</span>
+              </div>
+            </div>
+
+            <div *ngIf="form.targetType !== 'pdf'" class="form-group flex-1">
+              <label class="form-label" for="aspectRatio">{{ 'presetBuilder.aspectRatioLabel' | translate }}</label>
+              <div class="input-touch-wrap">
+                <input
+                  id="aspectRatio"
+                  type="text"
+                  class="touch-input"
+                  [(ngModel)]="form.aspectRatio"
+                  name="aspectRatio"
+                  placeholder="3.5:4.5"
+                />
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Sticky Bottom Action Bar with Safe-Area Padding -->
+<footer *ngIf="extractionResult && !isProcessing" class="preset-builder-sticky-bar">
+  <div class="action-buttons-wrap">
+    <button
+      type="button"
+      class="btn-save-profile"
+      [disabled]="isSaving || !form.profileName"
+      (click)="saveSpecificationProfile()"
+    >
+      <app-icon [name]="isSaving ? 'sync' : 'save'" size="20" [class.spin]="isSaving"></app-icon>
+      <span>{{ 'presetBuilder.saveButton' | translate }}</span>
+    </button>
+  </div>
+</footer>

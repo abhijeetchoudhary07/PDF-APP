@@ -1,0 +1,329 @@
+<div class="forms-data-container">
+  <!-- Top App Navigation / Header -->
+  <header class="data-header-bar">
+    <div class="header-left">
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="triggerPdfInput(pdfFileInput)"
+        [attr.aria-label]="'formsData.changePdf' | translate">
+        <app-icon name="document" [size]="22"></app-icon>
+      </button>
+      <div class="header-title-box">
+        <h1 class="header-title">{{ 'formsData.title' | translate }}</h1>
+        @if (pdfBytes) {
+          <span class="header-filename">{{ fileName }}</span>
+        }
+      </div>
+    </div>
+    <div class="header-right">
+      <app-badge variant="edit" size="sm">FDF • XFDF • CSV • JSON</app-badge>
+    </div>
+  </header>
+
+  <!-- Hidden File Inputs -->
+  <input
+    #pdfFileInput
+    type="file"
+    accept="application/pdf"
+    class="visually-hidden"
+    data-testid="pdf-file-input"
+    (change)="onPdfSelected($event)" />
+
+  <input
+    #dataFileInput
+    type="file"
+    accept=".json,.csv,.xfdf,.fdf"
+    class="visually-hidden"
+    data-testid="data-file-input"
+    (change)="onDataFileSelected($event)" />
+
+  <!-- Scrollable Main Viewport -->
+  <main class="data-main-scroll">
+    <!-- Empty State: No PDF Selected -->
+    @if (!pdfBytes) {
+      <div class="empty-state-card" data-testid="empty-state-card">
+        <div class="empty-icon-circle">
+          <app-icon name="form-data" [size]="48"></app-icon>
+        </div>
+        <h2 class="empty-title">{{ 'formsData.selectPdf' | translate }}</h2>
+        <p class="empty-desc">{{ 'formsData.selectPdfHint' | translate }}</p>
+        <app-button
+          variant="primary"
+          size="lg"
+          [block]="true"
+          data-testid="empty-select-pdf-btn"
+          (clicked)="triggerPdfInput(pdfFileInput)">
+          <app-icon name="document" [size]="20" class="btn-icon"></app-icon>
+          <span>{{ 'formsData.selectPdf' | translate }}</span>
+        </app-button>
+      </div>
+    }
+
+    <!-- Active PDF Workspace -->
+    @if (pdfBytes) {
+      <!-- Top Document Summary Card -->
+      <section class="doc-summary-card" data-testid="doc-summary-card">
+        <div class="doc-summary-top">
+          <div class="doc-summary-meta">
+            <span class="summary-label">{{ 'formsData.documentSummary' | translate }}</span>
+            <strong class="doc-display-name" data-testid="doc-display-name">{{ fileName }}</strong>
+          </div>
+          <button
+            type="button"
+            class="change-doc-btn"
+            data-testid="change-doc-btn"
+            (click)="triggerPdfInput(pdfFileInput)"
+            [attr.aria-label]="'formsData.changePdf' | translate">
+            <app-icon name="refresh" [size]="16"></app-icon>
+            <span>{{ 'formsData.changePdf' | translate }}</span>
+          </button>
+        </div>
+
+        <div class="summary-stats-grid">
+          <div class="stat-box" data-testid="stat-total-fields">
+            <span class="stat-num">{{ totalFieldsCount }}</span>
+            <span class="stat-label">{{ 'formsData.totalFields' | translate }}</span>
+          </div>
+          <div class="stat-box stat-filled" data-testid="stat-filled-fields">
+            <span class="stat-num">{{ filledFieldsCount }}</span>
+            <span class="stat-label">{{ 'formsData.filledCount' | translate }}</span>
+          </div>
+          <div class="stat-box stat-blank" data-testid="stat-blank-fields">
+            <span class="stat-num">{{ blankFieldsCount }}</span>
+            <span class="stat-label">{{ 'formsData.blankCount' | translate }}</span>
+          </div>
+        </div>
+
+        @if (totalFieldsCount === 0) {
+          <div class="zero-fields-alert" data-testid="zero-fields-alert">
+            <app-icon name="alert-circle" [size]="18"></app-icon>
+            <span>{{ 'formsData.noFieldsFound' | translate }}</span>
+          </div>
+        }
+      </section>
+
+      <!-- Segmented Control Pills: Export | Import -->
+      <div class="segmented-control-wrapper">
+        <div class="segmented-control" role="tablist">
+          <button
+            type="button"
+            class="segment-pill"
+            role="tab"
+            data-testid="tab-export"
+            [attr.aria-selected]="activeTab === 'export'"
+            [class.active]="activeTab === 'export'"
+            (click)="setTab('export')">
+            <app-icon name="download" [size]="18"></app-icon>
+            <span>{{ 'formsData.exportTab' | translate }}</span>
+          </button>
+          <button
+            type="button"
+            class="segment-pill"
+            role="tab"
+            data-testid="tab-import"
+            [attr.aria-selected]="activeTab === 'import'"
+            [class.active]="activeTab === 'import'"
+            (click)="setTab('import')">
+            <app-icon name="cloud-upload" [size]="18"></app-icon>
+            <span>{{ 'formsData.importTab' | translate }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 1: EXPORT VIEW -->
+      @if (activeTab === 'export') {
+        <section class="export-view-section" data-testid="export-view-section">
+          <p class="section-hint">{{ 'formsData.exportSubtitle' | translate }}</p>
+
+          <div class="format-cards-grid">
+            @for (card of formatCards; track card.format) {
+              <div class="format-card" [attr.data-testid]="'format-card-' + card.format">
+                <div class="format-card-header">
+                  <div class="format-title-group">
+                    <span class="format-code">{{ card.format.toUpperCase() }}</span>
+                    <app-badge [variant]="card.badgeVariant" size="sm">
+                      {{ card.badgeKey | translate }}
+                    </app-badge>
+                  </div>
+                  @if (exportResults[card.format]) {
+                    <span class="size-estimate">
+                      {{ 'formsData.sizeEstimate' | translate:{ size: exportResults[card.format]?.sizeBytes || 0 } }}
+                    </span>
+                  }
+                </div>
+
+                <p class="format-desc">{{ card.descKey | translate }}</p>
+
+                <div class="format-actions">
+                  <button
+                    type="button"
+                    class="format-action-btn btn-secondary"
+                    [attr.data-testid]="'copy-btn-' + card.format"
+                    (click)="copyExportToClipboard(card.format)"
+                    [disabled]="!exportResults[card.format]">
+                    <app-icon name="copy" [size]="16"></app-icon>
+                    <span>{{ 'formsData.copyClipboard' | translate }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="format-action-btn btn-primary"
+                    [attr.data-testid]="'share-btn-' + card.format"
+                    (click)="shareOrSaveExport(card.format)"
+                    [disabled]="!exportResults[card.format]">
+                    <app-icon name="share-social" [size]="16"></app-icon>
+                    <span>{{ 'formsData.shareOrSave' | translate }}</span>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- TAB 2: IMPORT VIEW -->
+      @if (activeTab === 'import') {
+        <section class="import-view-section" data-testid="import-view-section">
+          <p class="section-hint">{{ 'formsData.importSubtitle' | translate }}</p>
+
+          <!-- Large Dashed Drop Zone (min height 140px) -->
+          <div
+            class="import-drop-zone"
+            data-testid="import-drop-zone"
+            (click)="triggerDataFileInput(dataFileInput)"
+            (drop)="onDataFileDrop($event)"
+            (dragover)="onDragOver($event)"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="'formsData.dropZoneTitle' | translate">
+            <div class="drop-icon-box">
+              <app-icon name="cloud-upload" [size]="36"></app-icon>
+            </div>
+            <strong class="drop-zone-title">{{ 'formsData.dropZoneTitle' | translate }}</strong>
+            <span class="drop-zone-hint">{{ 'formsData.dropZoneHint' | translate }}</span>
+            <div class="drop-badges">
+              <span class="file-chip">.json</span>
+              <span class="file-chip">.csv</span>
+              <span class="file-chip">.xfdf</span>
+              <span class="file-chip">.fdf</span>
+            </div>
+          </div>
+        </section>
+      }
+    }
+  </main>
+
+  <!-- Instant Import Preview Bottom Sheet -->
+  @if (showPreviewSheet && previewReport) {
+    <div class="sheet-backdrop" data-testid="sheet-backdrop" (click)="closePreviewSheet()"></div>
+    <aside class="preview-bottom-sheet" data-testid="preview-bottom-sheet">
+      <!-- Sheet Drag Handle -->
+      <div class="sheet-handle-bar">
+        <div class="sheet-pill-handle"></div>
+      </div>
+
+      <!-- Sheet Header -->
+      <div class="sheet-header">
+        <div class="sheet-title-group">
+          <h2 class="sheet-title" data-testid="sheet-title">{{ 'formsData.previewSheetTitle' | translate }}</h2>
+          <span class="sheet-subtitle" data-testid="sheet-subtitle">
+            {{ importedFileName }}
+          </span>
+        </div>
+        <button
+          type="button"
+          class="icon-btn-sm"
+          data-testid="close-sheet-btn"
+          (click)="closePreviewSheet()"
+          [attr.aria-label]="'common.close' | translate">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <!-- Sheet Scroll Content -->
+      <div class="sheet-body-scroll">
+        <!-- Matched Fields Section -->
+        <div class="sheet-section" data-testid="matched-section">
+          <div class="section-header-row">
+            <h3 class="section-title">
+              {{ 'formsData.matchedSection' | translate:{ count: previewReport.matchedCount } }}
+            </h3>
+            <span class="included-counter" data-testid="included-counter">
+              {{ getIncludedCount() }} / {{ previewReport.matchedCount }} {{ 'formsData.includeInImport' | translate }}
+            </span>
+          </div>
+
+          @if (previewReport.matchedFields.length === 0) {
+            <p class="no-matches-notice" data-testid="no-matches-notice">
+              {{ 'formsData.noMatchesWarning' | translate }}
+            </p>
+          }
+
+          <div class="matches-list" data-testid="matches-list">
+            @for (match of previewReport.matchedFields; track match.name) {
+              <div class="match-item-card" [class.excluded]="!match.included" [attr.data-testid]="'match-item-' + match.name">
+                <label class="match-toggle-label">
+                  <input
+                    type="checkbox"
+                    class="match-checkbox"
+                    [attr.data-testid]="'match-checkbox-' + match.name"
+                    [checked]="match.included"
+                    (change)="toggleFieldInclusion(match)" />
+                  <div class="match-details">
+                    <div class="match-name-row">
+                      <strong class="match-field-name">{{ match.name }}</strong>
+                      <app-badge variant="success" size="sm">{{ match.type }}</app-badge>
+                    </div>
+                    <div class="match-values-row">
+                      <span class="orig-val">
+                        {{ 'formsData.originalVal' | translate:{ value: match.originalValue ?? '—' } }}
+                      </span>
+                      <app-icon name="arrow-forward" [size]="14" class="val-arrow"></app-icon>
+                      <strong class="new-val">
+                        {{ 'formsData.newVal' | translate:{ value: match.newValue ?? '—' } }}
+                      </strong>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Unmatched Fields Warning Section -->
+        @if (previewReport.unmatchedFields.length > 0) {
+          <div class="sheet-section unmatched-section" data-testid="unmatched-section">
+            <h3 class="section-title text-amber">
+              {{ 'formsData.unmatchedSection' | translate:{ count: previewReport.unmatchedFields.length } }}
+            </h3>
+            <div class="unmatched-chips-wrap">
+              @for (unmatched of previewReport.unmatchedFields; track unmatched.name) {
+                <div class="unmatched-chip" [attr.data-testid]="'unmatched-chip-' + unmatched.name">
+                  <app-icon name="warning" [size]="14"></app-icon>
+                  <span class="unmatched-name">{{ unmatched.name }}:</span>
+                  <span class="unmatched-val">{{ unmatched.value }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Sticky Bottom Action Bar with Safe-Area Padding -->
+      <footer class="sheet-bottom-bar">
+        <app-button
+          variant="primary"
+          size="lg"
+          [block]="true"
+          data-testid="apply-import-btn"
+          [disabled]="isApplyingImport || getIncludedCount() === 0"
+          (clicked)="applyImportData()">
+          <app-icon name="checkmark-circle" [size]="20" class="btn-icon"></app-icon>
+          <span>
+            {{ isApplyingImport ? ('formsData.applyingData' | translate) : ('formsData.applyBtn' | translate) }}
+          </span>
+        </app-button>
+      </footer>
+    </aside>
+  }
+</div>

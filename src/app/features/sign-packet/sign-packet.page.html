@@ -1,0 +1,613 @@
+<div class="packet-container">
+  <!-- Hidden File Input for PDF Upload -->
+  <input
+    #fileInput
+    type="file"
+    accept="application/pdf"
+    class="visually-hidden"
+    aria-label="Upload PDF file"
+    (change)="onFileSelected($event)"
+  />
+
+  <!-- Top Navigation Header -->
+  <header class="packet-header-bar">
+    <div class="header-left">
+      <button
+        type="button"
+        class="icon-btn back-btn"
+        aria-label="Go back"
+        (click)="navigateBack()"
+      >
+        <app-icon name="arrow-back"></app-icon>
+      </button>
+      <div class="title-meta">
+        <h1 class="screen-title">{{ 'signingPacket.title' | translate }}</h1>
+        <span class="file-name-pill" [attr.aria-label]="fileName">{{ fileName }}</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button
+        type="button"
+        class="icon-btn"
+        aria-label="Select PDF Document"
+        (click)="triggerFileInput(fileInput)"
+      >
+        <app-icon name="folder-open"></app-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mode Switcher Segment Tabs -->
+  <nav class="mode-nav-tabs" aria-label="Workflow Mode Selection">
+    <button
+      type="button"
+      class="nav-tab-btn"
+      data-testid="designer-mode-tab"
+      [class.active]="activeMode === 'designer'"
+      (click)="activeMode = 'designer'"
+    >
+      <app-icon name="create-outline"></app-icon>
+      <span>{{ 'signingPacket.designerMode' | translate }}</span>
+    </button>
+
+    <button
+      type="button"
+      class="nav-tab-btn"
+      data-testid="signer-mode-tab"
+      [class.active]="activeMode === 'signer'"
+      (click)="activeMode = 'signer'"
+    >
+      <app-icon name="checkmark-circle"></app-icon>
+      <span>{{ 'signingPacket.signerMode' | translate }}</span>
+      @if (statusReport?.isPacket && statusReport?.pendingSigners) {
+        <span class="tab-badge">{{ statusReport?.pendingSigners }}</span>
+      }
+    </button>
+  </nav>
+
+  <!-- Scrollable Main Viewport -->
+  <main class="packet-viewport" tabindex="-1">
+    <!-- ============================================== -->
+    <!-- 1. PACKET DESIGNER MODE                        -->
+    <!-- ============================================== -->
+    @if (activeMode === 'designer') {
+      <div class="designer-content">
+        <!-- Packet Title & Workflow Settings Card -->
+        <section class="config-card">
+          <label class="field-label" for="packetTitleInput">
+            {{ 'signingPacket.packetTitleLabel' | translate }}
+          </label>
+          <input
+            id="packetTitleInput"
+            type="text"
+            class="app-input"
+            [(ngModel)]="packetTitle"
+            placeholder="e.g. Non-Disclosure Agreement"
+          />
+
+          <div class="mode-selector-group">
+            <span class="field-label">{{ 'signingPacket.workflowModeLabel' | translate }}</span>
+            <div class="radio-pill-group" role="radiogroup" aria-label="Signing Order Mode">
+              <button
+                type="button"
+                class="radio-pill"
+                role="radio"
+                [attr.aria-checked]="workflowMode === 'sequential'"
+                [class.selected]="workflowMode === 'sequential'"
+                (click)="setWorkflowMode('sequential')"
+              >
+                <app-icon name="git-branch"></app-icon>
+                <span>Sequential</span>
+              </button>
+              <button
+                type="button"
+                class="radio-pill"
+                role="radio"
+                [attr.aria-checked]="workflowMode === 'parallel'"
+                [class.selected]="workflowMode === 'parallel'"
+                (click)="setWorkflowMode('parallel')"
+              >
+                <app-icon name="swap-horizontal"></app-icon>
+                <span>Parallel</span>
+              </button>
+            </div>
+            <p class="mode-hint-text">
+              @if (workflowMode === 'sequential') {
+                {{ 'signingPacket.modeSequential' | translate }}
+              } @else {
+                {{ 'signingPacket.modeParallel' | translate }}
+              }
+            </p>
+          </div>
+        </section>
+
+        <!-- Detected Form Fields Overview -->
+        <section class="fields-detected-card">
+          <div class="card-header-row">
+            <h2 class="section-title">AcroForm Fields in PDF</h2>
+            <span class="field-count-pill">{{ detectedFieldIds.length }} detected</span>
+          </div>
+          @if (detectedFieldIds.length === 0) {
+            <p class="empty-hint-text">
+              {{ 'signingPacket.noFieldsInPdf' | translate }}
+            </p>
+          } @else {
+            <div class="chips-wrap">
+              @for (fid of detectedFieldIds; track fid) {
+                <span class="field-chip">{{ fid }}</span>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- Signers Vertical Timeline -->
+        <section class="timeline-section">
+          <div class="timeline-header-row">
+            <h2 class="section-title">{{ 'signingPacket.signersHeader' | translate }}</h2>
+            <button
+              type="button"
+              class="add-signer-btn"
+              data-testid="add-signer-btn"
+              (click)="openAddSignerModal()"
+            >
+              <app-icon name="add"></app-icon>
+              <span>{{ 'signingPacket.addSignerBtn' | translate }}</span>
+            </button>
+          </div>
+
+          @if (signers.length === 0) {
+            <div class="empty-signers-card">
+              <p>{{ 'signingPacket.noSignersPrompt' | translate }}</p>
+            </div>
+          }
+
+          <div class="timeline-list">
+            @for (signer of signers; track signer.id; let idx = $index; let first = $first; let last = $last) {
+              <div class="timeline-item">
+                <!-- Avatar Step Bubble -->
+                <div class="step-avatar-col">
+                  <div class="step-avatar" [class.signed]="signer.status === 'signed'">
+                    @if (signer.status === 'signed') {
+                      <app-icon name="checkmark"></app-icon>
+                    } @else {
+                      <span>{{ signer.orderIndex }}</span>
+                    }
+                  </div>
+                  @if (!last) {
+                    <div class="timeline-connector-line"></div>
+                  }
+                </div>
+
+                <!-- Signer Information Card -->
+                <div class="signer-card">
+                  <div class="signer-card-top">
+                    <div class="signer-meta">
+                      <span class="signer-name">{{ signer.name }}</span>
+                      @if (signer.role) {
+                        <span class="signer-role">{{ signer.role }}</span>
+                      }
+                      <span class="signer-contact">{{ signer.emailOrPhone }}</span>
+                    </div>
+
+                    <div class="signer-actions">
+                      @if (workflowMode === 'sequential') {
+                        <button
+                          type="button"
+                          class="action-mini-btn"
+                          data-testid="move-signer-up-btn"
+                          aria-label="Move Up"
+                          [disabled]="first"
+                          (click)="moveSigner(idx, 'up')"
+                        >
+                          <app-icon name="arrow-up"></app-icon>
+                        </button>
+                        <button
+                          type="button"
+                          class="action-mini-btn"
+                          data-testid="move-signer-down-btn"
+                          aria-label="Move Down"
+                          [disabled]="last"
+                          (click)="moveSigner(idx, 'down')"
+                        >
+                          <app-icon name="arrow-down"></app-icon>
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="action-mini-btn edit-btn"
+                        aria-label="Edit Signer"
+                        (click)="openEditSignerModal(idx)"
+                      >
+                        <app-icon name="create-outline"></app-icon>
+                      </button>
+                      <button
+                        type="button"
+                        class="action-mini-btn delete-btn"
+                        aria-label="Delete Signer"
+                        (click)="deleteSigner(idx)"
+                      >
+                        <app-icon name="trash"></app-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="assigned-fields-row">
+                    <span class="assigned-label">{{ 'signingPacket.assignFieldsLabel' | translate }}:</span>
+                    @if (signer.assignedFieldIds.length === 0) {
+                      <span class="none-text">None assigned</span>
+                    } @else {
+                      <div class="chips-wrap-inline">
+                        @for (f of signer.assignedFieldIds; track f) {
+                          <span class="assigned-chip">{{ f }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+
+      <!-- Sticky Designer Bottom Bar -->
+      <footer class="packet-sticky-bar">
+        <button
+          type="button"
+          class="primary-action-btn"
+          data-testid="create-packet-btn"
+          [disabled]="signers.length === 0 || isLoadingDoc"
+          (click)="generatePacket()"
+        >
+          <app-icon name="save"></app-icon>
+          <span>{{ 'signingPacket.createPacketBtn' | translate }}</span>
+        </button>
+      </footer>
+    }
+
+    <!-- ============================================== -->
+    <!-- 2. SIGNER EXECUTION MODE                       -->
+    <!-- ============================================== -->
+    @if (activeMode === 'signer') {
+      <div class="signer-content">
+        <!-- Tamper Alert Banner (Critical Warning) -->
+        @if (statusReport?.isTampered) {
+          <div class="tamper-banner" role="alert">
+            <app-icon name="alert-circle"></app-icon>
+            <div class="tamper-text">
+              <strong>{{ 'signingPacket.tamperAlert' | translate }}</strong>
+              <p>{{ statusReport?.tamperReason }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- All Parties Completed Banner -->
+        @if (statusReport?.isCompleted) {
+          <div class="completed-banner" role="status">
+            <app-icon name="checkmark-circle"></app-icon>
+            <div class="completed-text">
+              <h3>{{ 'signingPacket.allSignedBanner' | translate }}</h3>
+              <p>All signers have signed and sealed this document cryptographically.</p>
+            </div>
+          </div>
+        }
+
+        <!-- Active Signer Execution Banner -->
+        @if (!statusReport?.isCompleted && !statusReport?.isTampered) {
+          <div class="execution-banner">
+            <div class="banner-avatar">
+              <span>{{ getActiveSigner()?.orderIndex || 1 }}</span>
+            </div>
+            <div class="banner-info">
+              <span class="banner-title">
+                {{ 'signingPacket.currentSignerBanner' | translate:{
+                    name: getActiveSigner()?.name || '',
+                    order: getActiveSigner()?.orderIndex || 1,
+                    total: signers.length
+                  } }}
+              </span>
+              <span class="banner-role">{{ getActiveSigner()?.role || getActiveSigner()?.emailOrPhone }}</span>
+            </div>
+          </div>
+        }
+
+        <!-- Parallel Signer Profile Switcher (When Parallel Mode) -->
+        @if (workflowMode === 'parallel' && !statusReport?.isCompleted) {
+          <section class="parallel-picker-card">
+            <span class="field-label">{{ 'signingPacket.selectSignerToExecute' | translate }}</span>
+            <div class="signer-pill-row">
+              @for (s of signers; track s.id) {
+                <button
+                  type="button"
+                  class="signer-select-pill"
+                  [class.active]="s.id === activeSignerId"
+                  (click)="selectActiveSigner(s.id)"
+                >
+                  <span>{{ s.name }}</span>
+                  <span class="status-indicator" [class.signed]="s.status === 'signed'">
+                    {{ s.status === 'signed' ? '✓' : '•' }}
+                  </span>
+                </button>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- Assigned Fields Input Section -->
+        <section class="assigned-fields-card">
+          <div class="card-header-row">
+            <h2 class="section-title">{{ 'signingPacket.signAssignedFields' | translate }}</h2>
+            <span class="status-summary">
+              {{ 'signingPacket.outstandingFields' | translate:{ count: statusReport?.outstandingFieldIds?.length || 0 } }}
+            </span>
+          </div>
+
+          @if (!getActiveSigner() || getActiveSigner()?.assignedFieldIds?.length === 0) {
+            <p class="empty-hint-text">No fields assigned to this signer.</p>
+          }
+
+          <div class="fields-exec-list">
+            @for (fid of getActiveSigner()?.assignedFieldIds; track fid) {
+              <div class="field-exec-item">
+                <div class="field-item-top">
+                  <span class="field-name-tag">{{ fid }}</span>
+                  <span class="field-status-tag" [class.filled]="!!fieldData[fid]?.value || !!fieldData[fid]?.signatureDataUrl">
+                    {{ (fieldData[fid]?.value || fieldData[fid]?.signatureDataUrl) ? ('signingPacket.fieldSigned' | translate) : ('signingPacket.fieldPending' | translate) }}
+                  </span>
+                </div>
+
+                <!-- Text / Value Input -->
+                <div class="input-action-row">
+                  <input
+                    type="text"
+                    class="app-input"
+                    [(ngModel)]="fieldData[fid].value"
+                    placeholder="Enter value or sign"
+                  />
+
+                  <!-- Signature Pad Trigger Button -->
+                  <button
+                    type="button"
+                    class="signature-trigger-btn"
+                    aria-label="Draw Signature"
+                    (click)="openSignaturePad(fid)"
+                  >
+                    <app-icon name="create-outline"></app-icon>
+                    <span>{{ 'signingPacket.tapToSign' | translate }}</span>
+                  </button>
+                </div>
+
+                <!-- Signature Image Preview if captured -->
+                @if (fieldData[fid]?.signatureDataUrl) {
+                  <div class="sig-preview-box">
+                    <img [src]="fieldData[fid].signatureDataUrl" alt="Signer Graphic Preview" />
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Cryptographic Audit Trail Section -->
+        @if (statusReport?.manifest?.auditTrail) {
+          <section class="audit-trail-card">
+            <h2 class="section-title">{{ 'signingPacket.auditTrailTitle' | translate }}</h2>
+            <div class="audit-list">
+              @for (entry of statusReport?.manifest?.auditTrail; track entry.timestamp) {
+                <div class="audit-item">
+                  <div class="audit-badge" [attr.data-action]="entry.action">
+                    <app-icon name="fingerprint"></app-icon>
+                  </div>
+                  <div class="audit-info">
+                    <div class="audit-top">
+                      <span class="audit-signer">{{ entry.signerName }}</span>
+                      <span class="audit-action-tag">{{ entry.action }}</span>
+                    </div>
+                    <span class="audit-time">{{ entry.timestamp | date:'medium' }}</span>
+                    @if (entry.details) {
+                      <p class="audit-detail">{{ entry.details }}</p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
+      </div>
+
+      <!-- Sticky Signer Execution Bottom Bar -->
+      <footer class="packet-sticky-bar">
+        @if (statusReport?.isCompleted) {
+          <div class="btn-group-row">
+            <button
+              type="button"
+              class="primary-action-btn share-btn"
+              data-testid="share-packet-btn"
+              (click)="shareCurrentPacket()"
+            >
+              <app-icon name="share-social"></app-icon>
+              <span>{{ 'signingPacket.sharePacketBtn' | translate }}</span>
+            </button>
+            <button
+              type="button"
+              class="secondary-action-btn download-btn"
+              data-testid="download-packet-btn"
+              (click)="downloadCurrentPacket()"
+            >
+              <app-icon name="download"></app-icon>
+              <span>{{ 'signingPacket.downloadPacketBtn' | translate }}</span>
+            </button>
+          </div>
+        } @else {
+          <button
+            type="button"
+            class="primary-action-btn sign-btn"
+            data-testid="sign-now-btn"
+            [disabled]="!canCurrentSignerSign() || isExecutingSign"
+            (click)="executeSignPass()"
+          >
+            <app-icon name="checkmark-done"></app-icon>
+            <span>
+              {{ isExecutingSign ? ('signingPacket.signingProgress' | translate) : ('signingPacket.completeAndShareBtn' | translate) }}
+            </span>
+          </button>
+        }
+      </footer>
+    }
+  </main>
+
+  <!-- ============================================== -->
+  <!-- 3. ADD / EDIT SIGNER BOTTOM SHEET MODAL        -->
+  <!-- ============================================== -->
+  @if (showSignerModal) {
+    <div class="modal-backdrop" (click)="showSignerModal = false">
+      <div class="modal-sheet" (click)="$event.stopPropagation()">
+        <header class="sheet-header">
+          <h3>
+            {{ editingSignerIndex >= 0 ? ('signingPacket.editSignerTitle' | translate) : ('signingPacket.newSignerTitle' | translate) }}
+          </h3>
+          <button
+            type="button"
+            class="icon-btn close-btn"
+            aria-label="Close"
+            (click)="showSignerModal = false"
+          >
+            <app-icon name="close"></app-icon>
+          </button>
+        </header>
+
+        <div class="sheet-body">
+          <div class="form-group">
+            <label class="field-label" for="signerNameInput">
+              {{ 'signingPacket.signerNameLabel' | translate }} *
+            </label>
+            <input
+              id="signerNameInput"
+              type="text"
+              class="app-input"
+              [(ngModel)]="signerForm.name"
+              placeholder="e.g. Alice Walker"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="signerContactInput">
+              {{ 'signingPacket.signerContactLabel' | translate }}
+            </label>
+            <input
+              id="signerContactInput"
+              type="text"
+              class="app-input"
+              [(ngModel)]="signerForm.emailOrPhone"
+              placeholder="e.g. alice@example.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="signerRoleInput">
+              {{ 'signingPacket.signerRoleLabel' | translate }}
+            </label>
+            <input
+              id="signerRoleInput"
+              type="text"
+              class="app-input"
+              [(ngModel)]="signerForm.role"
+              placeholder="e.g. Chief Executive Officer"
+            />
+          </div>
+
+          <div class="form-group">
+            <span class="field-label">{{ 'signingPacket.assignFieldsLabel' | translate }}</span>
+            @if (detectedFieldIds.length === 0) {
+              <p class="empty-hint-text">{{ 'signingPacket.noFieldsInPdf' | translate }}</p>
+            } @else {
+              <div class="fields-checklist">
+                @for (fid of detectedFieldIds; track fid) {
+                  <label class="checkbox-field-row">
+                    <input
+                      type="checkbox"
+                      [checked]="signerForm.assignedFields.has(fid)"
+                      (change)="toggleAssignedField(fid)"
+                    />
+                    <span class="field-name-label">{{ fid }}</span>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <footer class="sheet-footer">
+          <button
+            type="button"
+            class="secondary-action-btn"
+            (click)="showSignerModal = false"
+          >
+            {{ 'signingPacket.cancelBtn' | translate }}
+          </button>
+          <button
+            type="button"
+            class="primary-action-btn"
+            data-testid="save-signer-modal-btn"
+            (click)="saveSigner()"
+          >
+            {{ 'signingPacket.saveSignerBtn' | translate }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- ============================================== -->
+  <!-- 4. SIGNATURE PAD MODAL OVERLAY                 -->
+  <!-- ============================================== -->
+  @if (showSignaturePad) {
+    <div class="modal-backdrop" (click)="closeSignaturePad()">
+      <div class="sig-pad-sheet" (click)="$event.stopPropagation()">
+        <header class="sheet-header">
+          <h3>Draw Signature Graphic</h3>
+          <button
+            type="button"
+            class="icon-btn close-btn"
+            aria-label="Close Signature Pad"
+            (click)="closeSignaturePad()"
+          >
+            <app-icon name="close"></app-icon>
+          </button>
+        </header>
+
+        <div class="canvas-wrap">
+          <canvas
+            #sigCanvas
+            class="touch-canvas"
+            (mousedown)="startDrawing($event)"
+            (mousemove)="drawMove($event)"
+            (mouseup)="endDrawing()"
+            (mouseleave)="endDrawing()"
+            (touchstart)="startDrawing($event)"
+            (touchmove)="drawMove($event)"
+            (touchend)="endDrawing()"
+          ></canvas>
+        </div>
+
+        <footer class="sig-sheet-footer">
+          <button
+            type="button"
+            class="secondary-action-btn"
+            (click)="clearSignatureCanvas()"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            class="primary-action-btn"
+            (click)="saveSignaturePad()"
+          >
+            Apply Signature
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

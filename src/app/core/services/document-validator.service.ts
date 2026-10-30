@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import exifr from 'exifr';
 import { PresetService, Preset, PresetRequirement } from './preset.service';
+import { PresetBuilderService } from './preset-builder.service';
 import { ImageService } from './image.service';
 import { CompressionService } from './compression.service';
 import { PdfService } from './pdf.service';
@@ -118,18 +119,23 @@ export class DocumentValidatorService {
 
     // 3. Dimension Rules (Width & Height)
     if (req.width && req.height) {
-      const dimsPassed = dims.width === req.width && dims.height === req.height;
+      const unit = req.unit || 'px';
+      const dpi = req.dpi || 300;
+      const expectedW = req.widthPx ?? (unit !== 'px' ? PresetBuilderService.convertToPixelsStatic(req.width, unit, dpi) : req.width);
+      const expectedH = req.heightPx ?? (unit !== 'px' ? PresetBuilderService.convertToPixelsStatic(req.height, unit, dpi) : req.height);
+      const dimsPassed = dims.width === expectedW && dims.height === expectedH;
+      const expectedLabel = unit !== 'px' ? `${req.width} × ${req.height} ${unit} (${expectedW} × ${expectedH} px)` : `${expectedW} × ${expectedH} px`;
       rules.push({
         id: 'photo_dimensions',
         name: 'Pixel Dimensions',
-        description: `Dimensions must be exactly ${req.width} × ${req.height} px`,
+        description: `Dimensions must be exactly ${expectedLabel}`,
         severity: 'error',
         actualValue: `${dims.width} × ${dims.height} px`,
-        expectedValue: `${req.width} × ${req.height} px`,
+        expectedValue: expectedLabel,
         passed: dimsPassed,
-        suggestedFix: dimsPassed ? undefined : `Resize to ${req.width} × ${req.height} px`,
+        suggestedFix: dimsPassed ? undefined : `Resize to ${expectedLabel}`,
         fixAction: dimsPassed ? undefined : 'resize',
-        fixParams: { width: req.width, height: req.height }
+        fixParams: { width: expectedW, height: expectedH }
       });
     }
 
@@ -287,18 +293,23 @@ export class DocumentValidatorService {
 
     // 3. Dimension Rules
     if (req.width && req.height) {
-      const dimsPassed = dims.width === req.width && dims.height === req.height;
+      const unit = req.unit || 'px';
+      const dpi = req.dpi || 300;
+      const expectedW = req.widthPx ?? (unit !== 'px' ? PresetBuilderService.convertToPixelsStatic(req.width, unit, dpi) : req.width);
+      const expectedH = req.heightPx ?? (unit !== 'px' ? PresetBuilderService.convertToPixelsStatic(req.height, unit, dpi) : req.height);
+      const dimsPassed = dims.width === expectedW && dims.height === expectedH;
+      const expectedLabel = unit !== 'px' ? `${req.width} × ${req.height} ${unit} (${expectedW} × ${expectedH} px)` : `${expectedW} × ${expectedH} px`;
       rules.push({
         id: 'sig_dimensions',
         name: 'Pixel Dimensions',
-        description: `Dimensions must be ${req.width} × ${req.height} px`,
+        description: `Dimensions must be ${expectedLabel}`,
         severity: 'error',
         actualValue: `${dims.width} × ${dims.height} px`,
-        expectedValue: `${req.width} × ${req.height} px`,
+        expectedValue: expectedLabel,
         passed: dimsPassed,
-        suggestedFix: dimsPassed ? undefined : `Resize to ${req.width} × ${req.height} px`,
+        suggestedFix: dimsPassed ? undefined : `Resize to ${expectedLabel}`,
         fixAction: dimsPassed ? undefined : 'resize',
-        fixParams: { width: req.width, height: req.height }
+        fixParams: { width: expectedW, height: expectedH }
       });
     }
 

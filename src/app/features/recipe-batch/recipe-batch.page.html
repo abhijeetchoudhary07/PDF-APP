@@ -1,0 +1,346 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      <app-page-header
+        [title]="'recipeBatch.title' | translate"
+        [subtitle]="'recipeBatch.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('recipeEditor.title' | translate), url: '/features/recipes/editor' }, { label: ('recipeBatch.title' | translate) }]"
+        badge="BATCH"
+        badgeVariant="batch"
+        backUrl="/features/recipes/editor">
+      </app-page-header>
+
+      <div class="recipe-batch-content">
+        <!-- 1. Starter Recipes Showcase (Horizontal Swipeable Cards) -->
+        <section class="starter-showcase-section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">{{ 'recipeBatch.starterRecipesTitle' | translate }}</h2>
+              <p class="section-subtitle">{{ 'recipeBatch.starterRecipesSubtitle' | translate }}</p>
+            </div>
+            <app-badge variant="neutral" size="sm">3 BUILT-IN</app-badge>
+          </div>
+
+          <div class="starter-carousel-wrapper">
+            <div class="starter-cards-track">
+              @for (starter of starterRecipes; track starter.id) {
+                <div
+                  class="starter-card"
+                  [class.is-active]="selectedRecipe?.id === starter.id"
+                  (click)="selectStarter(starter)">
+                  <div class="starter-card-top">
+                    <div class="starter-icon-bubble">
+                      <app-icon [name]="starter.icon || 'speedometer-outline'"></app-icon>
+                    </div>
+                    <app-badge variant="batch" size="sm">{{ starter.badge }}</app-badge>
+                  </div>
+
+                  <h3 class="starter-name">{{ starter.name }}</h3>
+                  <p class="starter-desc">{{ starter.description }}</p>
+
+                  <div class="starter-steps-preview">
+                    @for (step of starter.steps; track step.stepId; let idx = $index) {
+                      <span class="step-pill">
+                        <span class="step-idx">{{ idx + 1 }}</span>
+                        {{ step.label }}
+                      </span>
+                    }
+                  </div>
+
+                  <div class="starter-action">
+                    <app-button
+                      [variant]="selectedRecipe?.id === starter.id ? 'primary' : 'secondary'"
+                      size="sm"
+                      [block]="true"
+                      (clicked)="selectStarter(starter)">
+                      <app-icon name="play-outline"></app-icon>
+                      {{ selectedRecipe?.id === starter.id ? ('Selected') : ('recipeBatch.runOnFilesBtn' | translate) }}
+                    </app-button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Recipe Selector (Switch between Starter & Custom Recipes) -->
+        <div class="recipe-selector-card">
+          <div class="selector-header">
+            <app-icon name="recipe-pipeline" class="selector-icon"></app-icon>
+            <div>
+              <label class="selector-label" for="recipe-select">{{ 'recipeBatch.selectRecipeLabel' | translate }}</label>
+              <p class="selector-sub">{{ selectedRecipe?.name }} ({{ selectedRecipe?.steps?.length || 0 }} steps)</p>
+            </div>
+          </div>
+
+          <div class="select-wrapper">
+            <select
+              id="recipe-select"
+              class="recipe-dropdown"
+              [value]="selectedRecipe?.id"
+              [disabled]="isRunning"
+              (change)="onRecipeDropdownChange($any($event.target).value)">
+              <optgroup [label]="'recipeBatch.starterRecipesTitle' | translate">
+                @for (starter of starterRecipes; track starter.id) {
+                  <option [value]="starter.id">{{ starter.name }}</option>
+                }
+              </optgroup>
+              @if (customRecipes.length > 0) {
+                <optgroup [label]="'recipeBatch.customRecipesTitle' | translate">
+                  @for (custom of customRecipes; track custom.id) {
+                    <option [value]="custom.id">{{ custom.name }}</option>
+                  }
+                </optgroup>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- 3. Quota Pre-Check Notice Banner -->
+        @if (quotaNotice) {
+          <div class="quota-banner" [class.quota-warning]="!canProceedQuota">
+            <app-icon [name]="canProceedQuota ? 'information-circle-outline' : 'warning-outline'" class="quota-icon"></app-icon>
+            <div class="quota-text">
+              <span class="quota-msg">{{ quotaNotice }}</span>
+              @if (!canProceedQuota) {
+                <span class="quota-sub">{{ 'recipeBatch.quotaExhaustedAlert' | translate }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- 4. Multi-File Dropzone -->
+        @if (!isRunning && queueItems.length === 0) {
+          <div class="dropzone-section">
+            <app-file-dropzone
+              [title]="'recipeBatch.uploadPrompt' | translate"
+              [description]="'Select 1 or more PDF files to batch run pipeline'"
+              [multiple]="true"
+              accept="application/pdf"
+              icon="cloud-upload-outline"
+              (filesSelected)="onFilesAdded($event)"
+              (fileSelected)="onSingleFileAdded($event)">
+            </app-file-dropzone>
+          </div>
+        }
+
+        <!-- 5. Dual Progress Indicator (Running State) -->
+        @if (isRunning && progress) {
+          <div class="progress-dashboard-card">
+            <div class="dashboard-header">
+              <div class="pulse-indicator"></div>
+              <div>
+                <h3 class="progress-title">{{ 'recipeBatch.batchProgressTitle' | translate }}</h3>
+                <p class="progress-detail">
+                  {{ 'recipeBatch.processingFile' | translate:{
+                    current: progress.currentFileIndex + 1,
+                    total: progress.totalFiles,
+                    stepIndex: progress.activeFileStepIndex + 1,
+                    totalSteps: progress.activeFileTotalSteps,
+                    stepLabel: progress.activeFileStepLabel
+                  } }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Overall Progress -->
+            <div class="bar-group">
+              <div class="bar-label-row">
+                <span class="bar-name">Batch Overall</span>
+                <span class="bar-percent">{{ progress.overallProgressPercent }}%</span>
+              </div>
+              <app-progress [value]="progress.overallProgressPercent" [showPercentage]="false" variant="primary"></app-progress>
+            </div>
+
+            <!-- Current File Step Progress -->
+            <div class="bar-group">
+              <div class="bar-label-row">
+                <span class="bar-name">{{ progress.activeFileName }}</span>
+                <span class="bar-percent">{{ progress.fileProgressPercent }}%</span>
+              </div>
+              <app-progress [value]="progress.fileProgressPercent" [showPercentage]="false" variant="success"></app-progress>
+            </div>
+          </div>
+        }
+
+        <!-- 6. Batch Queue List -->
+        @if (queueItems.length > 0) {
+          <div class="queue-card">
+            <div class="queue-header">
+              <div class="queue-title-group">
+                <h3 class="queue-title">
+                  {{ 'recipeBatch.queueTitle' | translate:{ count: queueItems.length } }}
+                </h3>
+              </div>
+              @if (!isRunning) {
+                <div class="queue-actions">
+                  <app-button
+                    variant="ghost"
+                    size="sm"
+                    (clicked)="clearQueue()">
+                    <app-icon name="trash-outline"></app-icon>
+                    Clear Queue
+                  </app-button>
+                </div>
+              }
+            </div>
+
+            <div class="queue-list">
+              @for (item of queueItems; track item.fileId; let idx = $index) {
+                <div class="queue-item" [class.item-processing]="item.status === 'processing'">
+                  <div class="item-left">
+                    <span class="item-idx">{{ idx + 1 }}</span>
+                    <div class="item-meta">
+                      <span class="item-name" [title]="item.fileName">{{ item.fileName }}</span>
+                      <span class="item-size">{{ (item.fileSize / 1024) | number:'1.0-1' }} KB</span>
+                      @if (item.currentStepLabel && item.status === 'processing') {
+                        <span class="item-step-info">
+                          Step {{ (item.currentStepIndex || 0) + 1 }}/{{ item.totalSteps }}: {{ item.currentStepLabel }}
+                        </span>
+                      }
+                      @if (item.error) {
+                        <span class="item-error-msg">{{ item.error }}</span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="item-right">
+                    <app-badge
+                      [variant]="getStatusBadgeVariant(item.status)"
+                      size="sm">
+                      {{ item.status | uppercase }}
+                    </app-badge>
+
+                    @if (!isRunning && item.status === 'queued') {
+                      <button
+                        type="button"
+                        class="remove-item-btn"
+                        (click)="removeFile(idx)"
+                        aria-label="Remove file">
+                        <app-icon name="close-circle-outline"></app-icon>
+                      </button>
+                    }
+
+                    @if (item.status === 'completed' && item.outputFile) {
+                      <app-button
+                        variant="ghost"
+                        size="sm"
+                        (clicked)="downloadSingle(item)">
+                        <app-icon name="download-outline"></app-icon>
+                        {{ 'recipeBatch.saveSingleBtn' | translate }}
+                      </app-button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- 7. Summary Card & Result Export -->
+        @if (isCompleted && batchResult) {
+          <div class="summary-bottom-card">
+            <div class="summary-header">
+              <app-icon name="checkmark-done-circle-outline" class="summary-icon"></app-icon>
+              <div>
+                <h3 class="summary-title">{{ 'recipeBatch.summaryTitle' | translate }}</h3>
+                <p class="summary-meta">Completed in {{ (batchResult.totalExecutionTimeMs / 1000) | number:'1.1-1' }}s</p>
+              </div>
+            </div>
+
+            <!-- Score / Count Badges -->
+            <div class="summary-metrics">
+              <div class="metric-item metric-success">
+                <span class="metric-val">{{ batchResult.completedCount }}</span>
+                <span class="metric-lbl">{{ 'recipeBatch.successCountLabel' | translate }}</span>
+              </div>
+              <div class="metric-item metric-fail">
+                <span class="metric-val">{{ batchResult.failedCount }}</span>
+                <span class="metric-lbl">{{ 'recipeBatch.failureCountLabel' | translate }}</span>
+              </div>
+              <div class="metric-item metric-skipped">
+                <span class="metric-val">{{ batchResult.skippedQuotaCount }}</span>
+                <span class="metric-lbl">{{ 'recipeBatch.skippedCountLabel' | translate }}</span>
+              </div>
+            </div>
+
+            <!-- Zip Download Button -->
+            @if (batchResult.completedCount > 0) {
+              <div class="summary-actions">
+                <app-button
+                  variant="primary"
+                  size="lg"
+                  [block]="true"
+                  [loading]="isPackagingZip"
+                  (clicked)="downloadAllZip()">
+                  <app-icon name="download-outline"></app-icon>
+                  {{ 'recipeBatch.saveAllZipBtn' | translate }}
+                </app-button>
+              </div>
+            }
+
+            <!-- Collapsible Execution Log -->
+            <div class="log-section">
+              <button
+                type="button"
+                class="log-toggle-btn"
+                (click)="toggleExecutionLog()">
+                <app-icon [name]="showExecutionLog ? 'chevron-up-outline' : 'chevron-down-outline'"></app-icon>
+                <span>{{ 'recipeBatch.executionLogTitle' | translate }} ({{ batchResult.executionLog.length }})</span>
+              </button>
+
+              @if (showExecutionLog) {
+                <div class="execution-log-box">
+                  @for (logLine of batchResult.executionLog; track $index) {
+                    <div class="log-line" [class.log-fail]="logLine.includes('FAIL') || logLine.includes('ERROR')">
+                      {{ logLine }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- 8. Sticky Bottom Action Bar -->
+      <div class="batch-action-bar">
+        @if (!isRunning && queueItems.length > 0 && !isCompleted) {
+          <app-button
+            variant="primary"
+            size="lg"
+            [block]="true"
+            [disabled]="!canProceedQuota"
+            (clicked)="startBatch()">
+            <app-icon name="play-outline"></app-icon>
+            {{ 'recipeBatch.startBatchBtn' | translate:{ count: queueItems.length } }}
+          </app-button>
+        }
+
+        @if (isRunning) {
+          <app-button
+            variant="danger"
+            size="lg"
+            [block]="true"
+            (clicked)="cancelBatch()">
+            <app-icon name="stop-circle-outline"></app-icon>
+            {{ 'recipeBatch.cancelBatchBtn' | translate }}
+          </app-button>
+        }
+
+        @if (isCompleted) {
+          <app-button
+            variant="secondary"
+            size="lg"
+            [block]="true"
+            (clicked)="clearQueue()">
+            <app-icon name="refresh-outline"></app-icon>
+            Process Another Batch
+          </app-button>
+        }
+      </div>
+    </div>
+  </main>
+</div>

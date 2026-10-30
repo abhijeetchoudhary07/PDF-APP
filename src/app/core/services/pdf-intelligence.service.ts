@@ -48,8 +48,8 @@ export class PdfIntelligenceService {
   public remoteProvider: RemoteAIProvider;
 
   constructor() {
-    const localProvider = inject(LocalIntelligenceProvider);
-    const remoteProvider = inject(RemoteAIProvider);
+    const localProvider = inject(LocalIntelligenceProvider, { optional: true });
+    const remoteProvider = inject(RemoteAIProvider, { optional: true });
 
     this.localProvider = localProvider || new LocalIntelligenceProvider();
     this.remoteProvider = remoteProvider || new RemoteAIProvider();
@@ -540,7 +540,7 @@ export class PdfIntelligenceService {
     return 'English (Latin)';
   }
 
-  private wrapText(text: string, maxCharsPerLine: number): string[] {
+  protected wrapText(text: string, maxCharsPerLine: number): string[] {
     const words = text.split(/\s+/);
     const lines: string[] = [];
     let currentLine = '';

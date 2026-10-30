@@ -1,0 +1,361 @@
+<div class="redact-verify-page">
+  <app-header [title]="'redactVerify.title' | translate"></app-header>
+
+  <main class="page-content">
+    <!-- HERO / TITLE -->
+    <header class="section-hero">
+      <div class="hero-badge">
+        <app-icon name="verified-stamp" [size]="20" class="hero-icon"></app-icon>
+        <span>{{ 'redactVerify.auditSummaryTitle' | translate }}</span>
+      </div>
+      <h1 class="hero-title">{{ 'redactVerify.title' | translate }}</h1>
+      <p class="hero-subtitle">{{ 'redactVerify.subtitle' | translate }}</p>
+    </header>
+
+    <!-- DROPZONE (When no file selected) -->
+    @if (!currentFile) {
+      <div class="dropzone-section">
+        <app-file-dropzone
+          accept="application/pdf"
+          [title]="'redactVerify.dropzoneTitle' | translate"
+          [description]="'redactVerify.dropzoneDesc' | translate"
+          (fileSelected)="handleFileSelected($event)">
+        </app-file-dropzone>
+      </div>
+    }
+
+    <!-- MAIN DASHBOARD (When file is loaded) -->
+    @if (currentFile && currentPdfBytes) {
+      <div class="dashboard-container">
+        
+        <!-- FILE STATUS SUMMARY CARD -->
+        <section class="card file-summary-card">
+          <div class="file-info-col">
+            <div class="file-icon-box">
+              <app-icon name="document-text" [size]="24"></app-icon>
+            </div>
+            <div class="file-text-meta">
+              <h3 class="file-name" [title]="fileName">{{ fileName }}</h3>
+              <p class="file-specs">
+                {{ totalPages }} {{ 'tools.pageCount' | translate : { count: totalPages } }} &bull;
+                {{ (fileSize / 1024) | number:'1.0-1' }} KB
+              </p>
+            </div>
+          </div>
+
+          <!-- CLAIM INTEGRITY STATUS BADGE -->
+          <div class="claim-badge-container">
+            @if (auditReport?.is100PercentPurged) {
+              <div class="badge-purged" data-testid="claim-purged">
+                <app-icon name="checkmark-circle" [size]="16"></app-icon>
+                <span>{{ 'redactVerify.permanentlyRemoved' | translate }}</span>
+              </div>
+            } @else if ((auditReport?.failedCount ?? 0) > 0) {
+              <div class="badge-leaked" data-testid="claim-leaked">
+                <app-icon name="alert-circle" [size]="16"></app-icon>
+                <span>{{ 'redactVerify.leakageDetected' | translate }}</span>
+              </div>
+            } @else {
+              <div class="badge-risk" data-testid="claim-risk">
+                <app-icon name="warning" [size]="16"></app-icon>
+                <span>{{ 'redactVerify.residualRiskBadge' | translate }}</span>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- AUDIT SUMMARY & TARGETS CARD -->
+        <section class="card audit-card">
+          <div class="card-header-row">
+            <div class="header-left">
+              <app-icon name="shield-checkmark" [size]="22" class="audit-shield-icon"></app-icon>
+              <div>
+                <h2 class="card-title">{{ 'redactVerify.auditSummaryTitle' | translate }}</h2>
+                <p class="card-subtitle">
+                  {{ 'redactVerify.fullyVerifiedBadge' | translate }}: {{ auditReport?.verifiedCount ?? 0 }} / {{ auditReport?.totalAudited ?? 0 }}
+                </p>
+              </div>
+            </div>
+
+            <button
+              class="refresh-audit-btn"
+              [disabled]="isAuditing"
+              (click)="runAudit()"
+              title="Re-run Forensic Audit">
+              <app-icon name="refresh" [size]="18" [class.spinning]="isAuditing"></app-icon>
+            </button>
+          </div>
+
+          <!-- AUDIT METRICS PILLS -->
+          <div class="metrics-grid">
+            <div class="metric-pill metric-verified">
+              <span class="metric-num">{{ auditReport?.verifiedCount ?? 0 }}</span>
+              <span class="metric-label">{{ 'redactVerify.statusVerified' | translate }}</span>
+            </div>
+            <div class="metric-pill metric-risk">
+              <span class="metric-num">{{ auditReport?.residualRiskCount ?? 0 }}</span>
+              <span class="metric-label">{{ 'redactVerify.statusResidualRisk' | translate }}</span>
+            </div>
+            <div class="metric-pill metric-failed">
+              <span class="metric-num">{{ auditReport?.failedCount ?? 0 }}</span>
+              <span class="metric-label">{{ 'redactVerify.statusFailed' | translate }}</span>
+            </div>
+          </div>
+
+          <!-- ADD SNIPPET INPUT -->
+          <div class="add-snippet-row">
+            <input
+              type="text"
+              class="snippet-input"
+              [(ngModel)]="newSnippetText"
+              [placeholder]="'redactVerify.snippetPlaceholder' | translate"
+              (keyup.enter)="addTargetSnippet()" />
+            <button
+              class="add-snippet-btn"
+              [disabled]="!newSnippetText.trim()"
+              (click)="addTargetSnippet()">
+              <app-icon name="add" [size]="18"></app-icon>
+              <span>{{ 'common.add' | translate }}</span>
+            </button>
+          </div>
+
+          <!-- REDACTIONS LIST -->
+          <div class="redactions-list">
+            @if (auditReport?.items?.length === 0) {
+              <div class="empty-targets">
+                <app-icon name="information-circle" [size]="24" class="empty-icon"></app-icon>
+                <p>{{ 'redactVerify.noRedactionsFound' | translate }}</p>
+              </div>
+            }
+
+            @for (item of auditReport?.items; track item.id) {
+              <div
+                class="audit-item-row"
+                [class.item-verified]="item.status === 'verified'"
+                [class.item-risk]="item.status === 'residual_risk'"
+                [class.item-failed]="item.status === 'failed'">
+                
+                <div class="item-main">
+                  <div class="item-meta">
+                    <span class="page-tag">{{ 'tools.pageCount' | translate : { count: item.pageNumber } }}</span>
+                    <span class="masked-code">{{ item.maskedText }}</span>
+                    @if (item.detectedSuperficialOverlay) {
+                      <span class="overlay-warning-badge">Superficial Overlay Detected</span>
+                    }
+                  </div>
+
+                  <!-- STATUS BADGE -->
+                  <div class="item-status-col">
+                    @if (item.status === 'verified') {
+                      <span class="status-pill pill-verified">
+                        <app-icon name="checkmark-circle" [size]="14"></app-icon>
+                        {{ 'redactVerify.statusVerified' | translate }}
+                      </span>
+                    } @else if (item.status === 'residual_risk') {
+                      <span class="status-pill pill-risk">
+                        <app-icon name="warning" [size]="14"></app-icon>
+                        {{ 'redactVerify.statusResidualRisk' | translate }}
+                      </span>
+                    } @else {
+                      <span class="status-pill pill-failed">
+                        <app-icon name="alert-circle" [size]="14"></app-icon>
+                        {{ 'redactVerify.statusFailed' | translate }}
+                      </span>
+                    }
+
+                    <button
+                      class="remove-item-btn"
+                      (click)="removeTarget(item.id)"
+                      title="Remove Target">
+                      <app-icon name="close" [size]="14"></app-icon>
+                    </button>
+                  </div>
+                </div>
+
+                @if (item.failureReason) {
+                  <p class="failure-reason-text">
+                    {{ item.failureReason }}
+                  </p>
+                }
+
+                <!-- ONE-TAP REMEDIATION (When not verified) -->
+                @if (item.status !== 'verified') {
+                  <div class="remediation-block">
+                    <button
+                      class="remediate-action-btn"
+                      [disabled]="isRemediating && remediatingTargetId === item.id"
+                      (click)="remediateWithRasterization(item)">
+                      @if (isRemediating && remediatingTargetId === item.id) {
+                        <app-icon name="refresh" [size]="16" class="spinning"></app-icon>
+                        <span>{{ 'redactVerify.rasterizing' | translate }}</span>
+                      } @else {
+                        <app-icon name="sparkles" [size]="16"></app-icon>
+                        <span>{{ 'redactVerify.rasterizeAction' | translate }}</span>
+                      }
+                    </button>
+                    <p class="rasterize-notice">
+                      {{ 'redactVerify.rasterizeNotice' | translate }}
+                    </p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- COMPARISON PREVIEW CARD -->
+        <section class="card comparison-card">
+          <div class="card-header-row">
+            <h2 class="card-title">{{ 'redactVerify.comparisonTitle' | translate }}</h2>
+
+            <!-- VIEW SELECTOR -->
+            <div class="segmented-control">
+              <button
+                class="segment-btn"
+                [class.active]="comparisonView === 'redacted'"
+                (click)="toggleComparisonView('redacted')">
+                {{ 'redactVerify.redactedView' | translate }}
+              </button>
+              <button
+                class="segment-btn"
+                [class.active]="comparisonView === 'original'"
+                (click)="toggleComparisonView('original')">
+                {{ 'redactVerify.originalView' | translate }}
+              </button>
+              <button
+                class="segment-btn"
+                [class.active]="comparisonView === 'split'"
+                (click)="toggleComparisonView('split')">
+                {{ 'redactVerify.splitView' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- PREVIEW DISPLAY -->
+          <div class="preview-stage-wrapper">
+            <div
+              class="preview-sheet"
+              [style.transform]="'scale(' + zoomLevel + ')'"
+              (click)="toggleTapZoom()"
+              [title]="zoomLevel > 1.05 ? 'Tap to reset zoom' : 'Tap to zoom 150%'">
+              
+              @if (comparisonView === 'split') {
+                <div class="split-preview-grid">
+                  <!-- LEFT: ORIGINAL VIEW -->
+                  <div class="preview-page-mockup">
+                    <div class="mockup-header-bar">
+                      <span class="mockup-dot red"></span>
+                      <span class="mockup-title">{{ 'redactVerify.originalView' | translate }}</span>
+                    </div>
+                    <div class="mockup-document-body">
+                      <div class="mockup-text-line title"></div>
+                      <div class="mockup-text-line"></div>
+                      <div class="mockup-text-line"></div>
+                      @for (item of auditReport?.items; track item.id) {
+                        <div class="mockup-original-box">
+                          <span class="unmasked-label">{{ item.targetText }}</span>
+                        </div>
+                      }
+                      <div class="mockup-text-line short"></div>
+                      <div class="mockup-text-line"></div>
+                    </div>
+                  </div>
+
+                  <!-- RIGHT: REDACTED OUTPUT -->
+                  <div class="preview-page-mockup">
+                    <div class="mockup-header-bar">
+                      <span class="mockup-dot green"></span>
+                      <span class="mockup-title">{{ 'redactVerify.redactedView' | translate }}</span>
+                    </div>
+                    <div class="mockup-document-body">
+                      <div class="mockup-text-line title"></div>
+                      <div class="mockup-text-line"></div>
+                      <div class="mockup-text-line"></div>
+                      @for (item of auditReport?.items; track item.id) {
+                        <div class="mockup-blackout-box">
+                          <span class="blackout-label">{{ item.status === 'verified' ? 'PERMANENTLY RASTERIZED' : 'SUPERFICIAL MASK' }}</span>
+                        </div>
+                      }
+                      <div class="mockup-text-line short"></div>
+                      <div class="mockup-text-line"></div>
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="preview-page-mockup">
+                  <div class="mockup-header-bar">
+                    <span class="mockup-dot red"></span>
+                    <span class="mockup-dot yellow"></span>
+                    <span class="mockup-dot green"></span>
+                    <span class="mockup-title">{{ comparisonView === 'redacted' ? ('redactVerify.redactedView' | translate) : ('redactVerify.originalView' | translate) }}</span>
+                  </div>
+
+                  <div class="mockup-document-body">
+                    <div class="mockup-text-line title"></div>
+                    <div class="mockup-text-line"></div>
+                    <div class="mockup-text-line"></div>
+
+                    <!-- TARGETS HIGHLIGHT / BLACKOUT -->
+                    @for (item of auditReport?.items; track item.id) {
+                      @if (comparisonView === 'redacted') {
+                        <div class="mockup-blackout-box">
+                          <span class="blackout-label">{{ item.status === 'verified' ? 'PERMANENTLY RASTERIZED' : 'SUPERFICIAL MASK' }}</span>
+                        </div>
+                      } @else {
+                        <div class="mockup-original-box">
+                          <span class="unmasked-label">{{ item.targetText }}</span>
+                        </div>
+                      }
+                    }
+
+                    <div class="mockup-text-line short"></div>
+                    <div class="mockup-text-line"></div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- ZOOM CONTROLS -->
+            <div class="zoom-toolbar">
+              <button class="zoom-btn" (click)="setZoom(-0.15)">
+                <app-icon name="remove" [size]="16"></app-icon>
+              </button>
+              <span class="zoom-pct">{{ (zoomLevel * 100) | number:'1.0-0' }}%</span>
+              <button class="zoom-btn" (click)="setZoom(0.15)">
+                <app-icon name="add" [size]="16"></app-icon>
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    }
+  </main>
+
+  <!-- STICKY BOTTOM ACTION BAR -->
+  @if (currentFile && currentPdfBytes) {
+    <footer class="sticky-action-bar">
+      <div class="action-bar-inner">
+        <button
+          class="btn-reset"
+          (click)="resetWorkflow()">
+          <app-icon name="close-circle" [size]="18"></app-icon>
+          <span>{{ 'common.cancel' | translate }}</span>
+        </button>
+
+        <button
+          class="btn-approve"
+          [disabled]="isSaving"
+          (click)="approveAndSavePdf()">
+          @if (isSaving) {
+            <app-icon name="refresh" [size]="20" class="spinning"></app-icon>
+            <span>Saving...</span>
+          } @else {
+            <app-icon name="shield-checkmark" [size]="20"></app-icon>
+            <span>{{ 'redactVerify.approveAndSave' | translate }}</span>
+          }
+        </button>
+      </div>
+    </footer>
+  }
+</div>

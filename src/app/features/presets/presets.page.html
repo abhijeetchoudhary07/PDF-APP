@@ -13,6 +13,27 @@
 
         <div actions class="header-action-group">
           <app-button
+            variant="secondary"
+            size="sm"
+            (clicked)="goToBatchCheck()">
+            <app-icon name="batch-check" class="btn-icon"></app-icon>
+            {{ 'presetBatchCheck.title' | translate }}
+          </app-button>
+          <app-button
+            variant="secondary"
+            size="sm"
+            (clicked)="goToProfileManager()">
+            <app-icon name="profile-json" class="btn-icon"></app-icon>
+            {{ 'profileTransfer.title' | translate }}
+          </app-button>
+          <app-button
+            variant="secondary"
+            size="sm"
+            (clicked)="goToPresetBuilder()">
+            <app-icon name="preset-builder" class="btn-icon"></app-icon>
+            {{ 'presetBuilder.title' | translate }}
+          </app-button>
+          <app-button
             variant="primary"
             size="sm"
             (clicked)="openCreateModal()">

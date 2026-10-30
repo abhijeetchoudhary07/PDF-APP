@@ -77,6 +77,18 @@ export class PresetsPage implements OnInit {
     });
   }
 
+  goToPresetBuilder() {
+    this.navCtrl.navigateForward('/features/presets/builder');
+  }
+
+  goToProfileManager() {
+    this.navCtrl.navigateForward('/features/presets/manage');
+  }
+
+  goToBatchCheck() {
+    this.navCtrl.navigateForward('/features/presets/batch-check');
+  }
+
   getEmptyPreset(): Preset {
     return {
       id: '',

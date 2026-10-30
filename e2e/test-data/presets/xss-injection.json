@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "id": "xss-profile",
+  "name": "Photo <script>alert('XSS')</script>Safe",
+  "category": "<img src=x onerror=alert(1)>Custom Presets",
+  "photo": {
+    "maxKb": 50,
+    "format": "JPEG<script>evil()</script>"
+  }
+}

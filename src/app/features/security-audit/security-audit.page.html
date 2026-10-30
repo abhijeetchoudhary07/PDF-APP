@@ -1,0 +1,282 @@
+<app-header [title]="'hiddenAudit.title' | translate" [showBack]="true"></app-header>
+
+<main class="audit-container">
+  <!-- State 1: File Selection Dropzone -->
+  <section *ngIf="!report && !isScanning" class="dropzone-section">
+    <div class="hero-banner">
+      <div class="hero-icon-wrap">
+        <app-icon name="forensic-scan" size="36" class="hero-icon"></app-icon>
+      </div>
+      <h1 class="hero-title">{{ 'hiddenAudit.title' | translate }}</h1>
+      <p class="hero-desc">{{ 'hiddenAudit.subtitle' | translate }}</p>
+      <app-badge variant="primary" class="hero-badge">
+        <app-icon name="shield" size="14"></app-icon>
+        {{ 'hiddenAudit.badge' | translate }}
+      </app-badge>
+    </div>
+
+    <app-file-dropzone
+      [title]="'hiddenAudit.dropzoneTitle' | translate"
+      [description]="'hiddenAudit.dropzoneDesc' | translate"
+      accept=".pdf,application/pdf"
+      [multiple]="false"
+      (fileSelected)="handleFileSelected($event)"
+      class="audit-dropzone"
+    ></app-file-dropzone>
+  </section>
+
+  <!-- State 2: Scanning Progress -->
+  <section *ngIf="isScanning" class="scanning-state">
+    <div class="scanner-pulse">
+      <div class="pulse-ring ring-1"></div>
+      <div class="pulse-ring ring-2"></div>
+      <app-icon name="forensic-scan" size="44" class="scanning-icon"></app-icon>
+    </div>
+    <h2 class="scanning-title">{{ 'hiddenAudit.scanning' | translate }}</h2>
+    <p class="scanning-file">{{ fileName }}</p>
+  </section>
+
+  <!-- State 3: Audit Report Dashboard -->
+  <section *ngIf="report && !isScanning" class="report-section" data-testid="report-section">
+    <!-- Document Header Pill -->
+    <div class="doc-header-card">
+      <div class="doc-info">
+        <div class="doc-title-row">
+          <app-icon name="document" size="18" class="doc-icon"></app-icon>
+          <span class="doc-name" data-testid="doc-name" [title]="report.fileName">{{ report.fileName }}</span>
+        </div>
+        <div class="doc-meta-row">
+          <span>{{ (report.fileSizeBytes / 1024) | number:'1.0-1' }} KB</span>
+          <span class="dot-separator">•</span>
+          <span>{{ 'hiddenAudit.pagesScanned' | translate:{ count: report.pageCount } }}</span>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="btn-reset"
+        data-testid="btn-reset-audit"
+        (click)="resetAudit()"
+        aria-label="Scan another document"
+      >
+        <app-icon name="refresh" size="16"></app-icon>
+        <span>Change</span>
+      </button>
+    </div>
+
+    <!-- Health Gauge Dashboard -->
+    <div class="health-gauge-card" data-testid="health-gauge-card" [class]="'risk-' + report.riskLevel">
+      <div class="gauge-display">
+        <svg class="gauge-svg" viewBox="0 0 100 100">
+          <circle
+            class="gauge-bg"
+            cx="50"
+            cy="50"
+            r="40"
+          ></circle>
+          <circle
+            class="gauge-meter"
+            cx="50"
+            cy="50"
+            r="40"
+            [style.stroke]="getRiskMeterColor(report.riskLevel)"
+            [style.stroke-dashoffset]="getRiskScoreOffset()"
+          ></circle>
+        </svg>
+        <div class="gauge-center-content">
+          <app-icon
+            *ngIf="report.riskLevel === 'low'"
+            name="checkmark-circle"
+            size="28"
+            class="gauge-center-icon risk-low"
+          ></app-icon>
+          <app-icon
+            *ngIf="report.riskLevel === 'moderate'"
+            name="alert"
+            size="28"
+            class="gauge-center-icon risk-mod"
+          ></app-icon>
+          <app-icon
+            *ngIf="report.riskLevel === 'high'"
+            name="shield"
+            size="28"
+            class="gauge-center-icon risk-high"
+          ></app-icon>
+          <span class="gauge-score">{{ report.riskScore }}%</span>
+        </div>
+      </div>
+
+      <div class="gauge-details">
+        <div class="risk-badge-row">
+          <span class="risk-pill" data-testid="risk-pill" [class]="'pill-' + report.riskLevel">
+            {{ (report.riskLevel === 'high' ? 'hiddenAudit.riskHigh' : (report.riskLevel === 'moderate' ? 'hiddenAudit.riskModerate' : 'hiddenAudit.riskLow')) | translate }}
+          </span>
+          <span *ngIf="report.totalFindings === 0" class="clean-pill" data-testid="clean-pill">
+            <app-icon name="checkmark" size="12"></app-icon>
+            {{ 'hiddenAudit.cleanDocBadge' | translate }}
+          </span>
+        </div>
+
+        <p class="risk-summary-text">
+          {{ (report.riskLevel === 'high' ? 'hiddenAudit.riskHighSub' : (report.riskLevel === 'moderate' ? 'hiddenAudit.riskModerateSub' : 'hiddenAudit.riskCleanSub')) | translate }}
+        </p>
+
+        <div class="findings-breakdown-row">
+          <span class="breakdown-badge total">
+            {{ 'hiddenAudit.totalFindings' | translate:{ count: report.totalFindings } }}
+          </span>
+          <span *ngIf="report.highSeverityCount > 0" class="breakdown-badge high">
+            {{ report.highSeverityCount }} {{ 'hiddenAudit.severityHigh' | translate }}
+          </span>
+          <span *ngIf="report.warningSeverityCount > 0" class="breakdown-badge warning">
+            {{ report.warningSeverityCount }} {{ 'hiddenAudit.severityWarning' | translate }}
+          </span>
+          <span *ngIf="report.infoSeverityCount > 0" class="breakdown-badge info">
+            {{ report.infoSeverityCount }} {{ 'hiddenAudit.severityInfo' | translate }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export Success Notice -->
+    <div *ngIf="savedReportUrl" class="saved-report-card" data-testid="saved-report-card">
+      <div class="saved-info">
+        <app-icon name="checkmark-circle" size="20" class="saved-check"></app-icon>
+        <span class="saved-text">{{ 'hiddenAudit.reportExportSuccess' | translate }}</span>
+      </div>
+      <button type="button" class="btn-share" data-testid="btn-share-report" (click)="shareReport()">
+        <app-icon name="share-social" size="16"></app-icon>
+        <span>Share</span>
+      </button>
+    </div>
+
+    <!-- 5 Expandable Category Cards -->
+    <div class="categories-container" data-testid="categories-container">
+      <div
+        *ngFor="let cat of categoryOrder"
+        class="category-card"
+        data-testid="category-card"
+        [attr.data-category]="cat"
+        [class.has-findings]="(report.categories[cat]?.count ?? 0) > 0"
+        [class.expanded]="isCategoryExpanded(cat)"
+      >
+        <!-- Category Header (Interactive Accordion) -->
+        <button
+          type="button"
+          class="category-header-btn"
+          data-testid="category-header-btn"
+          (click)="toggleCategory(cat)"
+          [attr.aria-expanded]="isCategoryExpanded(cat)"
+        >
+          <div class="cat-left">
+            <div class="cat-icon-wrap" [class.alert]="(report.categories[cat]?.count ?? 0) > 0">
+              <app-icon [name]="report.categories[cat].icon" size="20"></app-icon>
+            </div>
+            <div class="cat-title-block">
+              <h3 class="cat-title">{{ report.categories[cat].titleKey | translate }}</h3>
+              <p class="cat-desc">{{ report.categories[cat].descKey | translate }}</p>
+            </div>
+          </div>
+
+          <div class="cat-right">
+            <span
+              class="cat-count-badge"
+              [class.clean]="report.categories[cat].count === 0"
+              [class.flagged]="report.categories[cat].count > 0"
+            >
+              <app-icon *ngIf="report.categories[cat].count === 0" name="checkmark" size="12"></app-icon>
+              {{ report.categories[cat].count }}
+            </span>
+            <app-icon
+              [name]="isCategoryExpanded(cat) ? 'chevron-up' : 'chevron-down'"
+              size="18"
+              class="cat-chevron"
+            ></app-icon>
+          </div>
+        </button>
+
+        <!-- Category Content (Findings List) -->
+        <div *ngIf="isCategoryExpanded(cat)" class="category-content">
+          <!-- Clean State within category -->
+          <div *ngIf="report.categories[cat].count === 0" class="category-clean-state">
+            <app-icon name="checkmark-circle" size="16" class="clean-icon"></app-icon>
+            <span>{{ 'hiddenAudit.noFindingsInCategory' | translate }}</span>
+          </div>
+
+          <!-- Findings List -->
+          <div *ngIf="report.categories[cat].count > 0" class="findings-list">
+            <div
+              *ngFor="let finding of report.categories[cat].findings"
+              class="finding-item"
+              [class]="'severity-' + finding.severity"
+            >
+              <div class="finding-top-row">
+                <div class="finding-badges">
+                  <span class="finding-page-chip">
+                    {{ 'hiddenAudit.pageLabel' | translate:{ page: finding.pageNumber } }}
+                  </span>
+                  <span class="finding-severity-tag" [class]="'sev-' + finding.severity">
+                    {{ (finding.severity === 'high' ? 'hiddenAudit.severityHigh' : (finding.severity === 'warning' ? 'hiddenAudit.severityWarning' : 'hiddenAudit.severityInfo')) | translate }}
+                  </span>
+                </div>
+                <h4 class="finding-title">{{ finding.title }}</h4>
+              </div>
+
+              <p class="finding-desc">{{ finding.description }}</p>
+
+              <!-- Text Snippet Preview -->
+              <div *ngIf="finding.snippetText" class="finding-snippet-box">
+                <span class="snippet-label">Detected String:</span>
+                <code class="snippet-code">"{{ finding.snippetText }}"</code>
+              </div>
+
+              <!-- Coordinate Bounds -->
+              <div *ngIf="finding.coordinates" class="finding-coords-tag">
+                <app-icon name="expand" size="12"></app-icon>
+                <span>X: {{ finding.coordinates.x | number:'1.0-1' }}, Y: {{ finding.coordinates.y | number:'1.0-1' }}</span>
+              </div>
+
+              <!-- Remediation Handoff Pill Button -->
+              <div *ngIf="finding.recommendedTool" class="finding-remediation-row">
+                <button
+                  type="button"
+                  class="btn-remediate-pill"
+                  (click)="remediateWithTool(finding.recommendedTool.route)"
+                >
+                  <app-icon name="shield" size="12"></app-icon>
+                  <span>{{ finding.recommendedTool.labelKey | translate }}</span>
+                  <app-icon name="chevron-forward" size="12"></app-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Sticky Bottom Action Bar -->
+<footer *ngIf="report && !isScanning" class="audit-sticky-action-bar">
+  <div class="action-buttons-wrap">
+    <button
+      type="button"
+      class="btn-action export-btn"
+      data-testid="btn-export-pdf"
+      [disabled]="isExporting"
+      (click)="exportAuditReportPdf()"
+    >
+      <app-icon [name]="isExporting ? 'sync' : 'download'" size="18" [class.spin]="isExporting"></app-icon>
+      <span>{{ (isExporting ? 'hiddenAudit.exportingReport' : 'hiddenAudit.exportPdfReport') | translate }}</span>
+    </button>
+
+    <button
+      type="button"
+      class="btn-action sanitize-btn"
+      data-testid="btn-sanitize-now"
+      (click)="sanitizeDocumentNow()"
+    >
+      <app-icon name="shield" size="18"></app-icon>
+      <span>{{ 'hiddenAudit.remediateSanitize' | translate }}</span>
+    </button>
+  </div>
+</footer>

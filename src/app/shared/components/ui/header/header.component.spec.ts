@@ -105,4 +105,51 @@ describe('AppHeaderComponent', () => {
     backBtn.click();
     expect(goBackSpy).toHaveBeenCalled();
   });
+
+  it('should render dedicated mobile options rail with all navigation options', () => {
+    const railWrapper = fixture.nativeElement.querySelector('.header-rail-wrapper');
+    expect(railWrapper).toBeTruthy();
+
+    const rail = fixture.nativeElement.querySelector('.header-nav-rail');
+    expect(rail).toBeTruthy();
+
+    // Verify all navigation options are present in the rail
+    const railItems = rail.querySelectorAll('.rail-item');
+    expect(railItems.length).toBeGreaterThanOrEqual(7);
+
+    // Tools dropdown trigger button
+    const toolsBtn = rail.querySelector('.tools-dropdown-btn');
+    expect(toolsBtn).toBeTruthy();
+
+    // Direct link routes in rail
+    const links = Array.from(rail.querySelectorAll('a.rail-item')).map((a: any) => a.getAttribute('routerLink') || a.getAttribute('href'));
+    expect(links).toContain('/features/pdf');
+    expect(links).toContain('/features/photo');
+    expect(links).toContain('/features/signature');
+    expect(links).toContain('/features/presets');
+    expect(links).toContain('/features/history');
+    expect(links).toContain('/features/premium');
+  });
+
+  it('should toggle tools menu when tools button in rail is clicked', () => {
+    expect(component.toolsMenuOpen).toBe(false);
+
+    const rail = fixture.nativeElement.querySelector('.header-nav-rail');
+    const toolsBtn = rail.querySelector('.tools-dropdown-btn');
+    expect(toolsBtn).toBeTruthy();
+
+    toolsBtn.click();
+    fixture.detectChanges();
+    expect(component.toolsMenuOpen).toBe(true);
+
+    toolsBtn.click();
+    fixture.detectChanges();
+    expect(component.toolsMenuOpen).toBe(false);
+  });
+
+  it('should call scrollActiveRailItemIntoView on route navigation', () => {
+    const scrollSpy = vi.spyOn(component, 'scrollActiveRailItemIntoView');
+    component.scrollActiveRailItemIntoView();
+    expect(scrollSpy).toHaveBeenCalled();
+  });
 });

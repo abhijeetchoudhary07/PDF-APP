@@ -1,0 +1,222 @@
+<div class="structured-extract-container">
+  <!-- Top App Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <app-icon name="structured-extract" [size]="24" class="header-icon"></app-icon>
+      <h1 class="header-title">{{ 'structuredExtract.title' | translate }}</h1>
+    </div>
+    <div class="header-right" *ngIf="selectedFile">
+      <button class="btn-change-file" (click)="triggerFileInput()" [attr.aria-label]="'structuredExtract.changeFile' | translate">
+        <app-icon name="refresh" [size]="18"></app-icon>
+        <span class="btn-text">{{ 'structuredExtract.changeFile' | translate }}</span>
+      </button>
+    </div>
+  </header>
+
+  <input
+    #fileInput
+    type="file"
+    accept="application/pdf,image/*"
+    style="display: none"
+    (change)="onFileSelected($event)"
+  />
+
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p class="loading-text">{{ statusMessage | translate }}</p>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" *ngIf="toastMessage">
+    <app-icon name="checkmark-circle" [size]="20" class="toast-icon"></app-icon>
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- Empty / Dropzone State -->
+  <div class="empty-state" *ngIf="!selectedFile && !isLoading">
+    <div class="empty-card" (click)="triggerFileInput()">
+      <div class="empty-icon-circle">
+        <app-icon name="structured-extract" [size]="48"></app-icon>
+      </div>
+      <h2 class="empty-title">{{ 'structuredExtract.uploadPrompt' | translate }}</h2>
+      <p class="empty-subtitle">{{ 'structuredExtract.subtitle' | translate }}</p>
+      <button class="btn-primary-choose">
+        <app-icon name="add" [size]="20"></app-icon>
+        <span>{{ 'structuredExtract.chooseFile' | translate }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Viewer & Inspector Layout -->
+  <div class="main-layout" *ngIf="selectedFile && !isLoading">
+    <!-- Canvas & Bounding Box Viewport -->
+    <div
+      #viewportContainer
+      class="canvas-viewport"
+      (touchstart)="onTouchStart($event)"
+      (touchmove)="onTouchMove($event)"
+      (touchend)="onTouchEnd()"
+      (mousedown)="onMouseDown($event)"
+      (mousemove)="onMouseMove($event)"
+      (mouseup)="onMouseUp()"
+      (mouseleave)="onMouseUp()"
+    >
+      <div
+        class="canvas-transform-wrapper"
+        [style.transform]="'translate(' + panX + 'px, ' + panY + 'px) scale(' + zoomScale + ')'"
+      >
+        <canvas #documentCanvas class="doc-canvas"></canvas>
+
+        <!-- Bounding Box Overlays -->
+        <ng-container *ngIf="extractionResult">
+          <div
+            *ngFor="let field of extractionResult.fields"
+            [class.hidden-box]="!field.boundingBox || field.isAbsent"
+          >
+            <div
+              *ngIf="field.boundingBox && !field.isAbsent"
+              class="bounding-box-tag"
+              [class.is-selected]="selectedField?.key === field.key"
+              [class.high-confidence]="field.confidence >= 80"
+              [class.low-confidence]="field.confidence < 80"
+              [style.left.px]="field.boundingBox.x"
+              [style.top.px]="field.boundingBox.y"
+              [style.width.px]="field.boundingBox.width"
+              [style.height.px]="field.boundingBox.height"
+              (click)="focusField(field); $event.stopPropagation()"
+            >
+              <span class="box-label">{{ field.label }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Zoom Indicator & Reset Controls -->
+      <div class="viewport-controls">
+        <span class="zoom-badge">{{ (zoomScale * 100) | number:'1.0-0' }}%</span>
+        <button
+          *ngIf="zoomScale > 1.0"
+          class="btn-reset-zoom"
+          (click)="resetZoom()"
+          title="Reset Zoom"
+        >
+          <app-icon name="refresh" [size]="16"></app-icon>
+        </button>
+      </div>
+
+      <div class="gesture-hint">
+        <span>{{ 'structuredExtract.pinchToZoom' | translate }}</span>
+      </div>
+    </div>
+
+    <!-- Slide-Up Bottom Sheet Field Inspector -->
+    <aside
+      class="bottom-sheet-drawer"
+      [class.sheet-collapsed]="bottomSheetBreakpoint === 0"
+      [class.sheet-half]="bottomSheetBreakpoint === 0.45"
+      [class.sheet-full]="bottomSheetBreakpoint === 0.85"
+      [style.bottom.px]="virtualKeyboardHeight"
+      [style.max-height.px]="maxSheetHeight"
+    >
+      <!-- Sheet Drag / Toggle Handle -->
+      <div class="sheet-handle-bar" (click)="toggleBottomSheet()">
+        <div class="sheet-handle-pill"></div>
+      </div>
+
+      <!-- Sheet Header & Document Category -->
+      <div class="sheet-header" *ngIf="extractionResult">
+        <div class="header-info">
+          <span class="sheet-title">{{ 'structuredExtract.fieldInspector' | translate }}</span>
+          <span class="category-pill" [attr.data-category]="extractionResult.documentCategory">
+            {{ extractionResult.categoryLabel }}
+          </span>
+        </div>
+        <div class="breakpoint-actions">
+          <button
+            class="btn-bp"
+            [class.active]="bottomSheetBreakpoint === 0.45"
+            (click)="setBreakpoint(0.45)"
+            title="Half Sheet"
+          >45%</button>
+          <button
+            class="btn-bp"
+            [class.active]="bottomSheetBreakpoint === 0.85"
+            (click)="setBreakpoint(0.85)"
+            title="Full Sheet"
+          >85%</button>
+        </div>
+      </div>
+
+      <!-- Extracted Fields List -->
+      <div class="sheet-content" *ngIf="extractionResult">
+        <div class="fields-list">
+          <div
+            *ngFor="let field of extractionResult.fields"
+            class="field-card"
+            [class.is-active]="selectedField?.key === field.key"
+            [class.is-low-conf]="field.confidence < 80 && !field.isAbsent"
+            [class.is-absent]="field.isAbsent"
+            (click)="focusField(field)"
+          >
+            <div class="field-card-top">
+              <span class="field-card-label">{{ field.label }}</span>
+              <div class="field-badges">
+                <span
+                  *ngIf="field.isAbsent"
+                  class="badge-status badge-absent"
+                >
+                  {{ 'structuredExtract.absent' | translate }}
+                </span>
+                <span
+                  *ngIf="!field.isAbsent && field.confidence >= 80"
+                  class="badge-status badge-high"
+                >
+                  {{ field.confidence }}%
+                </span>
+                <span
+                  *ngIf="!field.isAbsent && field.confidence < 80"
+                  class="badge-status badge-low"
+                >
+                  {{ 'structuredExtract.lowConfidence' | translate }} ({{ field.confidence }}%)
+                </span>
+              </div>
+            </div>
+
+            <div class="field-card-input-wrap">
+              <input
+                type="text"
+                class="field-input"
+                [value]="field.value ?? ''"
+                [placeholder]="field.isAbsent ? ('structuredExtract.absent' | translate) : ''"
+                (input)="onFieldValueChange(field, $any($event.target).value)"
+                (focus)="onInputFocus($event, field)"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky Bottom Action Bar inside env(safe-area-inset-bottom) -->
+      <footer class="sticky-action-bar">
+        <button
+          class="btn-action btn-export-csv"
+          (click)="exportCsv()"
+          [attr.aria-label]="'structuredExtract.exportCsv' | translate"
+        >
+          <app-icon name="document-text" [size]="18"></app-icon>
+          <span>{{ 'structuredExtract.exportCsv' | translate }}</span>
+        </button>
+
+        <button
+          class="btn-action btn-export-json"
+          (click)="exportJson()"
+          [attr.aria-label]="'structuredExtract.exportJson' | translate"
+        >
+          <app-icon name="code" [size]="18"></app-icon>
+          <span>{{ 'structuredExtract.exportJson' | translate }}</span>
+        </button>
+      </footer>
+    </aside>
+  </div>
+</div>

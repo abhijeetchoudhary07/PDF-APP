@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "id": "custom-spec-photo-test",
+  "name": "Photo 35x45mm 50KB",
+  "category": "My Custom Presets",
+  "photo": {
+    "minKb": 20,
+    "maxKb": 50,
+    "width": 35,
+    "height": 45,
+    "unit": "mm",
+    "widthPx": 413,
+    "heightPx": 531,
+    "format": "JPEG",
+    "dpi": 300
+  }
+}

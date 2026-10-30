@@ -13,7 +13,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 const USE_PROD_BUILD = process.env['E2E_TARGET'] === 'prod';
 
-const PORT = USE_PROD_BUILD ? 4173 : 4200;
+const PORT = process.env['PORT'] ? Number(process.env['PORT']) : (USE_PROD_BUILD ? 4173 : 4205);
 const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -67,7 +67,7 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: USE_PROD_BUILD ? 'npm run build && npm run serve:www' : 'npm start',
+    command: USE_PROD_BUILD ? 'npm run build && npm run serve:www' : `npm start -- --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: !process.env['CI'],
     // A cold production build is slower to start than a dev server.

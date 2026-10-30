@@ -242,6 +242,114 @@ async function generateAll() {
     console.log('Created pdf-bomb.pdf:', bytes.length, 'bytes');
   }
 
+  // 10. Security Fixture: Fake Redacted PDF (Naive black rectangle overlaid on raw text)
+  {
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595.28, 841.89]);
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await doc.embedFont(StandardFonts.HelveticaBold);
+    page.drawText('CONFIDENTIAL-SSN-9988', { x: 50, y: 750, size: 14, font: boldFont });
+    page.drawRectangle({ x: 45, y: 745, width: 250, height: 25, color: rgb(0, 0, 0) });
+    page.drawText('PATIENT HEALTH RECORD - VERIFIED 2026', { x: 50, y: 650, size: 12, font });
+    const bytes = await doc.save({ useObjectStreams: false });
+    fs.writeFileSync(path.join(OUT_DIR, 'fake-redacted.pdf'), bytes);
+    console.log('Created fake-redacted.pdf:', bytes.length, 'bytes');
+  }
+
+  // 11. Security Fixture: Properly Redacted PDF (Clean stream with opaque blackout)
+  {
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595.28, 841.89]);
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    page.drawRectangle({ x: 45, y: 745, width: 250, height: 25, color: rgb(0, 0, 0) });
+    page.drawText('PATIENT HEALTH RECORD - VERIFIED 2026', { x: 50, y: 650, size: 12, font });
+    const bytes = await doc.save({ useObjectStreams: false });
+    fs.writeFileSync(path.join(OUT_DIR, 'properly-redacted.pdf'), bytes);
+    console.log('Created properly-redacted.pdf:', bytes.length, 'bytes');
+  }
+
+  // 12. Security Fixture: Contract with Sensitive Patterns (Emails, Phones, PAN, Aadhaar, Credit Card)
+  {
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595.28, 841.89]);
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await doc.embedFont(StandardFonts.HelveticaBold);
+
+    page.drawText('STANDARD CONSULTING & NDA CONTRACT 2026', { x: 50, y: 780, size: 15, font: boldFont });
+    page.drawText('This contract contains confidential personally identifiable information (PII).', { x: 50, y: 750, size: 10, font });
+
+    page.drawText('Section 1 - Contractor Identity Details', { x: 50, y: 710, size: 12, font: boldFont });
+    page.drawText('Primary Email: contractor.jane@service-corp.com (Official Account)', { x: 50, y: 680, size: 11, font });
+    page.drawText('Helpline Mobile: +91 98765 43210 (Direct Line)', { x: 50, y: 650, size: 11, font });
+    page.drawText('Indian Tax Identity: ABCDE1234F (Income Tax Department)', { x: 50, y: 620, size: 11, font });
+    page.drawText('Aadhaar National UID: 9876 5432 1098 (Unique Identification)', { x: 50, y: 590, size: 11, font });
+
+    page.drawText('Section 2 - Corporate Billing Account', { x: 50, y: 540, size: 12, font: boldFont });
+    page.drawText('Corporate Card: 4532 0151 1283 0366 (Visa Cardholder)', { x: 50, y: 510, size: 11, font });
+    page.drawText('Contract Execution Date: 29/10/2026', { x: 50, y: 480, size: 11, font });
+
+    const bytes = await doc.save({ useObjectStreams: false });
+    fs.writeFileSync(path.join(OUT_DIR, 'contract-sensitive.pdf'), bytes);
+    console.log('Created contract-sensitive.pdf:', bytes.length, 'bytes');
+  }
+
+  // 13. Security Fixture: Suspect Document with Structural Concealment (N7)
+  {
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595.28, 841.89]);
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await doc.embedFont(StandardFonts.HelveticaBold);
+    const context = doc.context;
+
+    // Normal visible content
+    page.drawText('CORPORATE FINANCIAL AUDIT REPORT 2026', { x: 50, y: 780, size: 15, font: boldFont });
+    page.drawText('Status: Certified Public Statement · General Distribution Copy', { x: 50, y: 750, size: 10, font });
+    page.drawText('Light Grey Watermark', { x: 150, y: 450, size: 28, font: boldFont, color: rgb(0.88, 0.88, 0.88) });
+
+    // 1. Off-page text (x: 850 is beyond 595.28 width)
+    page.drawText('OFF-PAGE-SECRET-EXFILTRATION-8821', { x: 850, y: 700, size: 12, font });
+
+    // 2. Invisible white-on-white text
+    page.drawText('HIDDEN-WHITE-ON-WHITE-TOKEN-X77', { x: 50, y: 350, size: 11, font, color: rgb(1, 1, 1) });
+
+    // 3. Hidden OCG Layer
+    const ocgDict = context.obj({
+      Type: 'OCG',
+      Name: PDFString.of('Confidential Redlines Layer')
+    });
+    const ocgRef = context.register(ocgDict);
+    const dDict = context.obj({
+      BaseState: PDFName.of('ON'),
+      OFF: context.obj([ocgRef])
+    });
+    const ocPropsDict = context.obj({
+      OCGs: context.obj([ocgRef]),
+      D: dDict
+    });
+    doc.catalog.set(PDFName.of('OCProperties'), context.register(ocPropsDict));
+
+    // 4. Off-page annotation
+    const annotDict = context.obj({
+      Type: 'Annot',
+      Subtype: 'Text',
+      Rect: context.obj([650, 400, 700, 450]),
+      Contents: PDFString.of('Secret Off-Page Annotation Note')
+    });
+    page.node.set(PDFName.of('Annots'), context.obj([context.register(annotDict)]));
+
+    // 5. OpenAction JavaScript trigger
+    const actionDict = context.obj({
+      Type: 'Action',
+      S: 'JavaScript',
+      JS: PDFString.of('app.alert("Forensic Alert");')
+    });
+    doc.catalog.set(PDFName.of('OpenAction'), context.register(actionDict));
+
+    const bytes = await doc.save({ useObjectStreams: false });
+    fs.writeFileSync(path.join(OUT_DIR, 'hidden-content-suspect.pdf'), bytes);
+    console.log('Created hidden-content-suspect.pdf:', bytes.length, 'bytes');
+  }
+
   console.log('All audit test fixtures generated successfully!');
 }
 

@@ -176,6 +176,26 @@ import { AppBreadcrumbsComponent, BreadcrumbItem } from '../breadcrumbs/breadcru
         width: 100%;
       }
     }
+
+    @media (max-height: 520px) {
+      .page-header-wrapper {
+        margin-bottom: 0 !important;
+      }
+      .page-header {
+        padding: 0 !important;
+        flex-wrap: nowrap !important;
+      }
+      .page-subtitle,
+      .breadcrumbs {
+        display: none !important;
+      }
+      .page-title {
+        font-size: 14px !important;
+      }
+      .header-actions {
+        width: auto !important;
+      }
+    }
   `]
 })
 export class AppPageHeaderComponent {

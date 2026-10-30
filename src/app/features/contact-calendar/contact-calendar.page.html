@@ -1,0 +1,337 @@
+<div class="contact-calendar-container">
+  <!-- Top App Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <app-icon name="contact-calendar" [size]="24" class="header-icon"></app-icon>
+      <h1 class="header-title">{{ 'contactCalendar.title' | translate }}</h1>
+    </div>
+    <div class="header-right" *ngIf="selectedFile">
+      <button class="btn-change-file" (click)="triggerFileInput()" [attr.aria-label]="'contactCalendar.changeFile' | translate">
+        <app-icon name="refresh" [size]="18"></app-icon>
+        <span class="btn-text">{{ 'contactCalendar.changeFile' | translate }}</span>
+      </button>
+    </div>
+  </header>
+
+  <input
+    #fileInput
+    type="file"
+    accept="application/pdf,image/*"
+    style="display: none"
+    (change)="onFileSelected($event)"
+  />
+
+  <!-- Mode Switcher -->
+  <div class="mode-switcher-wrap" *ngIf="selectedFile && !isLoading">
+    <div class="mode-segmented-control">
+      <button
+        class="mode-btn mode-btn-contact"
+        [class.is-active]="activeMode === 'contact'"
+        (click)="setMode('contact')"
+      >
+        <app-icon name="person" [size]="18"></app-icon>
+        <span>{{ 'contactCalendar.modeContact' | translate }}</span>
+      </button>
+      <button
+        class="mode-btn mode-btn-calendar"
+        [class.is-active]="activeMode === 'calendar'"
+        (click)="setMode('calendar')"
+      >
+        <app-icon name="calendar" [size]="18"></app-icon>
+        <span>{{ 'contactCalendar.modeCalendar' | translate }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p class="loading-text">{{ statusMessage | translate }}</p>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" *ngIf="toastMessage">
+    <app-icon name="checkmark-circle" [size]="20" class="toast-icon"></app-icon>
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- Empty / Dropzone State -->
+  <div class="empty-state" *ngIf="!selectedFile && !isLoading">
+    <div class="empty-card" (click)="triggerFileInput()">
+      <div class="empty-icon-circle">
+        <app-icon name="contact-calendar" [size]="48"></app-icon>
+      </div>
+      <h2 class="empty-title">{{ 'contactCalendar.uploadPrompt' | translate }}</h2>
+      <p class="empty-subtitle">{{ 'contactCalendar.subtitle' | translate }}</p>
+      <button class="btn-primary-choose">
+        <app-icon name="add" [size]="20"></app-icon>
+        <span>{{ 'contactCalendar.chooseFile' | translate }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Dual-Card Mobile Review Layout -->
+  <div class="dual-card-layout" *ngIf="selectedFile && !isLoading">
+    <!-- Top Preview Card -->
+    <div class="card source-preview-card">
+      <div class="card-header-bar">
+        <span class="card-title">{{ selectedFile.name }}</span>
+      </div>
+      <div class="preview-viewport">
+        <img
+          *ngIf="previewUrl"
+          [src]="previewUrl"
+          alt="Document Preview"
+          class="preview-img"
+        />
+        <canvas #previewCanvas class="preview-canvas" [style.display]="previewUrl ? 'none' : 'block'"></canvas>
+      </div>
+    </div>
+
+    <!-- Ambiguous Date Disambiguation Banner -->
+    <div class="ambiguous-date-banner" *ngIf="ambiguousDates.length > 0">
+      <div class="banner-top">
+        <app-icon name="warning" [size]="20" class="warn-icon"></app-icon>
+        <span class="banner-title">{{ 'contactCalendar.ambiguousDateTitle' | translate }}</span>
+      </div>
+      <div *ngFor="let info of ambiguousDates" class="ambiguity-item">
+        <p class="ambiguity-prompt">{{ info.questionPrompt }}</p>
+        <div class="option-chips">
+          <button
+            class="chip-btn"
+            [class.selected]="info.resolvedDate === info.optionA.isoDate"
+            (click)="resolveAmbiguousDate(info, info.optionA.isoDate)"
+          >
+            {{ info.optionA.displayDate }} ({{ info.optionA.formatName }})
+          </button>
+          <button
+            class="chip-btn"
+            [class.selected]="info.resolvedDate === info.optionB.isoDate"
+            (click)="resolveAmbiguousDate(info, info.optionB.isoDate)"
+          >
+            {{ info.optionB.displayDate }} ({{ info.optionB.formatName }})
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Fields Review Card -->
+    <div class="card fields-review-card">
+      <!-- Contact Fields Review -->
+      <div class="fields-content" *ngIf="activeMode === 'contact' && extractedContact">
+        <h3 class="section-title">{{ 'contactCalendar.contactDetails' | translate }}</h3>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'contactCalendar.fullName' | translate }}</label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="extractedContact.fullName"
+            placeholder="e.g. John Doe"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.jobTitle' | translate }}</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="extractedContact.jobTitle"
+              placeholder="e.g. Managing Director"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.organization' | translate }}</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="extractedContact.organization"
+              placeholder="e.g. Acme Corp"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.mobilePhone' | translate }}</label>
+            <input
+              type="tel"
+              class="form-input"
+              [(ngModel)]="extractedContact.mobilePhone"
+              placeholder="+91 98765 43210"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.workPhone' | translate }}</label>
+            <input
+              type="tel"
+              class="form-input"
+              [(ngModel)]="extractedContact.workPhone"
+              placeholder="+91 11 2345 6789"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.email' | translate }}</label>
+            <input
+              type="email"
+              class="form-input"
+              [(ngModel)]="extractedContact.email"
+              placeholder="john@example.com"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.websiteUrl' | translate }}</label>
+            <input
+              type="url"
+              class="form-input"
+              [(ngModel)]="extractedContact.websiteUrl"
+              placeholder="https://example.com"
+            />
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="extractedContact.address">
+          <label class="form-label">{{ 'contactCalendar.address' | translate }}</label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="extractedContact.address.fullAddress"
+            placeholder="Street, City, PIN"
+          />
+        </div>
+      </div>
+
+      <!-- Calendar Event Fields Review -->
+      <div class="fields-content" *ngIf="activeMode === 'calendar' && extractedEvent">
+        <h3 class="section-title">{{ 'contactCalendar.eventDetails' | translate }}</h3>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'contactCalendar.eventTitle' | translate }}</label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="extractedEvent.title"
+            placeholder="e.g. Project Sync Meeting"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.startDate' | translate }}</label>
+            <input
+              type="date"
+              class="form-input"
+              [(ngModel)]="extractedEvent.startDate"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.startTime' | translate }}</label>
+            <input
+              type="time"
+              class="form-input"
+              [(ngModel)]="extractedEvent.startTime"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.endDate' | translate }}</label>
+            <input
+              type="date"
+              class="form-input"
+              [(ngModel)]="extractedEvent.endDate"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ 'contactCalendar.endTime' | translate }}</label>
+            <input
+              type="time"
+              class="form-input"
+              [(ngModel)]="extractedEvent.endTime"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'contactCalendar.location' | translate }}</label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="extractedEvent.location"
+            placeholder="e.g. Conference Room A or Online"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'contactCalendar.meetingLink' | translate }}</label>
+          <input
+            type="url"
+            class="form-input"
+            [(ngModel)]="extractedEvent.meetingLink"
+            placeholder="https://zoom.us/j/... or https://meet.google.com/..."
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'contactCalendar.description' | translate }}</label>
+          <textarea
+            class="form-textarea"
+            rows="3"
+            [(ngModel)]="extractedEvent.description"
+            placeholder="Notes or agenda"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky Bottom Action Bar -->
+  <footer class="sticky-action-bar" *ngIf="selectedFile && !isLoading">
+    <!-- Contact Actions -->
+    <ng-container *ngIf="activeMode === 'contact'">
+      <button
+        class="btn-action btn-save-vcf"
+        (click)="saveContact()"
+        [attr.aria-label]="'contactCalendar.saveVcf' | translate"
+      >
+        <app-icon name="download" [size]="18"></app-icon>
+        <span>{{ 'contactCalendar.saveVcf' | translate }}</span>
+      </button>
+
+      <button
+        class="btn-action btn-open-contacts"
+        (click)="openInContacts()"
+        [attr.aria-label]="'contactCalendar.openInContacts' | translate"
+      >
+        <app-icon name="person" [size]="18"></app-icon>
+        <span>{{ 'contactCalendar.openInContacts' | translate }}</span>
+      </button>
+    </ng-container>
+
+    <!-- Calendar Event Actions -->
+    <ng-container *ngIf="activeMode === 'calendar'">
+      <button
+        class="btn-action btn-save-ics"
+        (click)="saveEvent()"
+        [attr.aria-label]="'contactCalendar.saveIcs' | translate"
+      >
+        <app-icon name="download" [size]="18"></app-icon>
+        <span>{{ 'contactCalendar.saveIcs' | translate }}</span>
+      </button>
+
+      <button
+        class="btn-action btn-add-calendar"
+        (click)="addToCalendar()"
+        [attr.aria-label]="'contactCalendar.addToCalendar' | translate"
+      >
+        <app-icon name="calendar" [size]="18"></app-icon>
+        <span>{{ 'contactCalendar.addToCalendar' | translate }}</span>
+      </button>
+    </ng-container>
+  </footer>
+</div>

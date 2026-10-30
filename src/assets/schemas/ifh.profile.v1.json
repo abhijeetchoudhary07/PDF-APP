@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://indianformhelper.com/schemas/ifh.profile.v1.json",
+  "title": "IFH Specification Profile Schema v1.0",
+  "description": "Standardized schema for Indian Form Helper Specification Profiles",
+  "type": "object",
+  "required": ["version", "id", "name", "category"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["1.0"],
+      "description": "Schema version, must be '1.0'"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for the specification profile"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable profile name"
+    },
+    "category": {
+      "type": "string",
+      "description": "Group or category name for organization"
+    },
+    "isCustom": {
+      "type": "boolean",
+      "default": true
+    },
+    "dpi": {
+      "type": "number",
+      "minimum": 1
+    },
+    "unit": {
+      "type": "string",
+      "enum": ["px", "mm", "cm", "in"]
+    },
+    "targetType": {
+      "type": "string",
+      "enum": ["photo", "signature", "pdf"]
+    },
+    "createdAt": {
+      "type": "number"
+    },
+    "photo": {
+      "$ref": "#/definitions/presetRequirement"
+    },
+    "signature": {
+      "$ref": "#/definitions/presetRequirement"
+    },
+    "pdf": {
+      "$ref": "#/definitions/presetRequirement"
+    }
+  },
+  "definitions": {
+    "presetRequirement": {
+      "type": "object",
+      "properties": {
+        "minKb": { "type": "number", "minimum": 0 },
+        "maxKb": { "type": "number", "minimum": 1 },
+        "width": { "type": "number", "minimum": 1 },
+        "height": { "type": "number", "minimum": 1 },
+        "widthPx": { "type": "number", "minimum": 1 },
+        "heightPx": { "type": "number", "minimum": 1 },
+        "unit": { "type": "string", "enum": ["px", "mm", "cm", "in"] },
+        "aspectRatio": { "type": "string" },
+        "dpi": { "type": "number", "minimum": 1 },
+        "format": { "type": "string" },
+        "backgroundGuidance": { "type": "string" },
+        "verifiedSource": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,326 @@
+<div class="entity-extract-container">
+  <!-- Top App Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <app-icon name="clause-search" [size]="24" class="header-icon"></app-icon>
+      <h1 class="header-title">{{ 'entityClause.title' | translate }}</h1>
+    </div>
+    <div class="header-right" *ngIf="selectedFile">
+      <button class="btn-change-file" (click)="triggerFileInput()" [attr.aria-label]="'entityClause.changeFile' | translate">
+        <app-icon name="refresh" [size]="18"></app-icon>
+        <span class="btn-text">{{ 'entityClause.changeFile' | translate }}</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Strict Honesty Gate: Prominent Disclaimer Banner -->
+  <div class="honesty-disclaimer-banner" role="alert">
+    <app-icon name="alert-circle" [size]="18" class="disclaimer-icon"></app-icon>
+    <span class="disclaimer-text">Information extraction only. This tool finds text patterns and does not provide legal advice.</span>
+  </div>
+
+  <input
+    #fileInput
+    type="file"
+    accept="application/pdf,image/*"
+    style="display: none"
+    (change)="onFileSelected($event)"
+  />
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p class="loading-text">{{ statusMessage | translate }}</p>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" *ngIf="toastMessage">
+    <app-icon name="checkmark-circle" [size]="20" class="toast-icon"></app-icon>
+    <span>{{ toastMessage }}</span>
+  </div>
+
+  <!-- Empty / Dropzone State -->
+  <div class="empty-state" *ngIf="!selectedFile && !isLoading">
+    <div class="empty-card" (click)="triggerFileInput()">
+      <div class="empty-icon-circle">
+        <app-icon name="clause-search" [size]="48"></app-icon>
+      </div>
+      <h2 class="empty-title">{{ 'entityClause.uploadPrompt' | translate }}</h2>
+      <p class="empty-subtitle">{{ 'entityClause.subtitle' | translate }}</p>
+      <button class="btn-primary-choose">
+        <app-icon name="add" [size]="20"></app-icon>
+        <span>{{ 'entityClause.chooseFile' | translate }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Viewer & Inspector Layout -->
+  <div class="main-layout" *ngIf="selectedFile && !isLoading">
+    <!-- Canvas & Bounding Box Viewport -->
+    <div
+      #viewportContainer
+      class="canvas-viewport"
+      (touchstart)="onTouchStart($event)"
+      (touchmove)="onTouchMove($event)"
+      (touchend)="onTouchEnd()"
+      (mousedown)="onMouseDown($event)"
+      (mousemove)="onMouseMove($event)"
+      (mouseup)="onMouseUp()"
+      (mouseleave)="onMouseUp()"
+    >
+      <div
+        class="canvas-transform-wrapper"
+        [style.transform]="'translate(' + panX + 'px, ' + panY + 'px) scale(' + zoomScale + ')'"
+      >
+        <canvas #documentCanvas class="doc-canvas"></canvas>
+
+        <!-- Bounding Box Overlays -->
+        <ng-container *ngIf="extractionResult">
+          <div
+            *ngFor="let item of currentPageItems"
+            class="bounding-box-anchor"
+            [class.is-selected]="selectedItem?.id === item.id"
+            [class.box-amount]="isEntity(item) && item.type === 'amount'"
+            [class.box-date]="isEntity(item) && item.type === 'date'"
+            [class.box-deadline]="isEntity(item) && item.type === 'deadline'"
+            [class.box-party]="isEntity(item) && item.type === 'party'"
+            [class.box-reference]="isEntity(item) && item.type === 'reference'"
+            [class.box-clause]="isClause(item)"
+            [style.left.px]="item.boundingBox.x * renderScale"
+            [style.top.px]="item.boundingBox.y * renderScale"
+            [style.width.px]="item.boundingBox.width * renderScale"
+            [style.height.px]="item.boundingBox.height * renderScale"
+            (click)="selectItem(item); $event.stopPropagation()"
+          >
+            <span class="box-tag-label">
+              {{ isEntity(item) ? item.label : item.categoryLabel }}
+            </span>
+          </div>
+
+          <!-- Detail Popover on Canvas -->
+          <div
+            class="item-popover"
+            *ngIf="showPopover && selectedItem && selectedItem.pageNumber === currentPage"
+            [style.left.px]="popoverCoords.x"
+            [style.top.px]="popoverCoords.y"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="popover-header">
+              <span class="popover-badge" [class.badge-clause]="isClause(selectedItem)">
+                {{ isEntity(selectedItem) ? selectedItem.label : selectedItem.categoryLabel }}
+              </span>
+              <button class="btn-close-popover" (click)="closePopover()">
+                <app-icon name="close" [size]="14"></app-icon>
+              </button>
+            </div>
+            <div class="popover-body">
+              <div class="popover-value">
+                {{ isEntity(selectedItem) ? selectedItem.value : selectedItem.text }}
+              </div>
+              <div class="popover-meta">
+                <span class="meta-anchor">
+                  Page {{ selectedItem.pageNumber }} ({{ selectedItem.boundingBox.x }}pt, {{ selectedItem.boundingBox.y }}pt)
+                </span>
+                <span class="meta-confidence">{{ selectedItem.confidence }}%</span>
+              </div>
+              <div class="popover-markers" *ngIf="isClause(selectedItem) && selectedItem.modalMarkers.length > 0">
+                <span class="marker-chip" *ngFor="let m of selectedItem.modalMarkers">{{ m }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Multi-page Navigator -->
+      <div class="page-nav-bar" *ngIf="totalPages > 1">
+        <button
+          class="btn-nav"
+          [disabled]="currentPage <= 1"
+          (click)="setPage(currentPage - 1)"
+          title="Previous Page"
+        >
+          <app-icon name="chevron-back" [size]="18"></app-icon>
+        </button>
+        <span class="page-info">
+          {{ 'entityClause.pageNav' | translate:{ current: currentPage, total: totalPages } }}
+        </span>
+        <button
+          class="btn-nav"
+          [disabled]="currentPage >= totalPages"
+          (click)="setPage(currentPage + 1)"
+          title="Next Page"
+        >
+          <app-icon name="chevron-forward" [size]="18"></app-icon>
+        </button>
+      </div>
+
+      <!-- Zoom Controls -->
+      <div class="viewport-controls">
+        <span class="zoom-badge">{{ (zoomScale * 100) | number:'1.0-0' }}%</span>
+        <button class="btn-zoom" (click)="zoomIn()" [title]="'entityClause.zoomIn' | translate">
+          <app-icon name="zoom-in" [size]="16"></app-icon>
+        </button>
+        <button class="btn-zoom" (click)="zoomOut()" [title]="'entityClause.zoomOut' | translate">
+          <app-icon name="zoom-out" [size]="16"></app-icon>
+        </button>
+        <button *ngIf="zoomScale !== 1.0" class="btn-zoom" (click)="resetZoom()" [title]="'entityClause.resetZoom' | translate">
+          <app-icon name="refresh" [size]="14"></app-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet Drawer -->
+    <aside
+      class="bottom-sheet-drawer"
+      [class.sheet-collapsed]="bottomSheetBreakpoint === 0"
+      [class.sheet-half]="bottomSheetBreakpoint === 0.45"
+      [class.sheet-full]="bottomSheetBreakpoint === 0.85"
+    >
+      <!-- Sheet Drag Handle -->
+      <div class="sheet-handle-bar" (click)="toggleBottomSheet()">
+        <div class="sheet-handle-pill"></div>
+      </div>
+
+      <!-- Segmented Tab Bar -->
+      <nav class="segmented-tabs" *ngIf="extractionResult">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'amounts'"
+          (click)="setActiveTab('amounts')"
+        >
+          <span>{{ 'entityClause.tabAmounts' | translate }}</span>
+          <span class="tab-count">{{ extractionResult.summary.amountsCount }}</span>
+        </button>
+
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'datesDeadlines'"
+          (click)="setActiveTab('datesDeadlines')"
+        >
+          <span>{{ 'entityClause.tabDatesDeadlines' | translate }}</span>
+          <span class="tab-count">{{ extractionResult.summary.datesDeadlinesCount }}</span>
+        </button>
+
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'parties'"
+          (click)="setActiveTab('parties')"
+        >
+          <span>{{ 'entityClause.tabParties' | translate }}</span>
+          <span class="tab-count">{{ extractionResult.summary.partiesCount }}</span>
+        </button>
+
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'clauses'"
+          (click)="setActiveTab('clauses')"
+        >
+          <span>{{ 'entityClause.tabClauses' | translate }}</span>
+          <span class="tab-count">{{ extractionResult.summary.clausesCount }}</span>
+        </button>
+      </nav>
+
+      <!-- Scrollable Card List -->
+      <div class="sheet-scroll-content">
+        <div class="items-list" *ngIf="currentTabItems.length > 0; else noItemsTpl">
+          <div
+            *ngFor="let item of currentTabItems"
+            class="item-card"
+            [class.is-active]="selectedItem?.id === item.id"
+            (click)="jumpToItem(item)"
+          >
+            <div class="item-card-header">
+              <span class="item-label-badge" [class.badge-clause]="isClause(item)">
+                {{ isEntity(item) ? item.label : item.categoryLabel }}
+              </span>
+              <div class="item-meta-badges">
+                <span class="badge-page">Page {{ item.pageNumber }}</span>
+                <span class="badge-confidence">{{ item.confidence }}%</span>
+              </div>
+            </div>
+
+            <div class="item-card-body">
+              <p class="item-text-passage">
+                {{ isEntity(item) ? item.value : item.text }}
+              </p>
+              <div class="item-context-hint" *ngIf="isEntity(item) && item.contextSentence && item.contextSentence !== item.value">
+                {{ item.contextSentence }}
+              </div>
+              <div class="item-markers" *ngIf="isClause(item) && item.modalMarkers.length > 0">
+                <span class="marker-pill" *ngFor="let marker of item.modalMarkers">
+                  {{ marker }}
+                </span>
+              </div>
+            </div>
+
+            <div class="item-card-footer">
+              <span class="anchor-coords">
+                Anchor: ({{ item.boundingBox.x }}pt, {{ item.boundingBox.y }}pt)
+              </span>
+              <span class="jump-action-hint">Tap to jump &rarr;</span>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noItemsTpl>
+          <div class="empty-tab-state">
+            <app-icon name="document-text" [size]="32" class="empty-tab-icon"></app-icon>
+            <p>{{ 'entityClause.noItems' | translate }}</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Sticky Bottom Action Bar with safe-area padding -->
+      <footer class="sticky-action-bar">
+        <button
+          class="btn-primary-export"
+          (click)="showExportModal = true"
+          [attr.aria-label]="'entityClause.exportAction' | translate"
+        >
+          <app-icon name="document-text" [size]="20"></app-icon>
+          <span>{{ 'entityClause.exportAction' | translate }}</span>
+        </button>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- Export Modal / Action Sheet -->
+  <div class="export-modal-backdrop" *ngIf="showExportModal" (click)="showExportModal = false">
+    <div class="export-modal-card" (click)="$event.stopPropagation()">
+      <div class="export-modal-header">
+        <h3 class="modal-title">{{ 'entityClause.exportAction' | translate }}</h3>
+        <button class="btn-close-modal" (click)="showExportModal = false">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+      <p class="modal-disclaimer">
+        ℹ️ {{ DISCLAIMER }}
+      </p>
+      <div class="export-options-grid">
+        <button class="export-option-btn" (click)="exportCsv()">
+          <app-icon name="document-text" [size]="24" class="option-icon"></app-icon>
+          <div class="option-text">
+            <strong>{{ 'entityClause.exportCsv' | translate }}</strong>
+            <small>Spreadsheet with page anchors & categories</small>
+          </div>
+        </button>
+
+        <button class="export-option-btn" (click)="exportJson()">
+          <app-icon name="code" [size]="24" class="option-icon"></app-icon>
+          <div class="option-text">
+            <strong>{{ 'entityClause.exportJson' | translate }}</strong>
+            <small>Structured JSON data with full coordinate boxes</small>
+          </div>
+        </button>
+
+        <button class="export-option-btn" (click)="printSummaryReport()">
+          <app-icon name="report-card" [size]="24" class="option-icon"></app-icon>
+          <div class="option-text">
+            <strong>{{ 'entityClause.exportReport' | translate }}</strong>
+            <small>Formatted print-ready HTML summary</small>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

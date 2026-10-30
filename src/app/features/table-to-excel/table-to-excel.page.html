@@ -1,0 +1,379 @@
+<div class="table-to-excel-page">
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-inner">
+      <button
+        type="button"
+        class="nav-btn back-btn"
+        (click)="navigateBack()"
+        aria-label="Back to PDF Tools"
+      >
+        <app-icon name="arrow-back" [size]="20"></app-icon>
+      </button>
+
+      <div class="header-title-group">
+        <div class="badge-pill">
+          <app-icon name="table-excel" [size]="14"></app-icon>
+          <span>{{ t.badge || 'Table Recognition & Grid Editor' }}</span>
+        </div>
+        <h1 class="header-title">{{ t.title || 'Table OCR → Excel' }}</h1>
+      </div>
+
+      <div class="header-actions">
+        <button
+          *ngIf="currentStep === 'editor' || currentStep === 'boundary'"
+          type="button"
+          class="nav-btn icon-btn"
+          (click)="resetWorkflow()"
+          title="Change Document"
+          aria-label="Change Document"
+        >
+          <app-icon name="refresh" [size]="18"></app-icon>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="page-content">
+
+    <!-- STEP 1: Select File Dropzone -->
+    <section *ngIf="currentStep === 'select'" class="step-card select-step" data-testid="select-step">
+      <div class="dropzone-container">
+        <label class="dropzone-box" for="table-file-input" data-testid="dropzone-box">
+          <input
+            id="table-file-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            (change)="onFileSelected($any($event.target).files[0])"
+            class="visually-hidden"
+            data-testid="table-file-input"
+          />
+          <div class="dropzone-icon-circle">
+            <app-icon name="table-excel" [size]="40"></app-icon>
+          </div>
+          <h2 class="dropzone-title">{{ t.dropzoneTitle || 'Select or Drop Document / Photo with Table' }}</h2>
+          <p class="dropzone-subtitle">
+            {{ t.dropzoneDesc || 'Upload a scan, invoice, bill, receipt, or PDF page containing a table.' }}
+          </p>
+          <span class="btn-primary-styled">
+            <app-icon name="cloud-upload" [size]="18"></app-icon>
+            <span>Browse Document</span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <!-- STEP 2: Table Boundary Selector (4 Draggable Corner Pins) -->
+    <section *ngIf="currentStep === 'boundary'" class="step-card boundary-step" data-testid="boundary-step">
+      <div class="instruction-banner">
+        <app-icon name="crop" [size]="18"></app-icon>
+        <span>{{ t.adjustBoundaryHint || 'Drag the 4 corner handles to tightly frame the table area, then tap Detect & OCR.' }}</span>
+      </div>
+
+      <!-- Interactive Boundary Viewer -->
+      <div class="boundary-canvas-wrapper" #cropBoundaryContainerRef>
+        <img
+          *ngIf="previewUrl"
+          [src]="previewUrl"
+          alt="Scanned Document"
+          class="boundary-source-img"
+        />
+
+        <!-- Translucent Highlight Area Overlay -->
+        <svg class="boundary-overlay-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polygon
+            [attr.points]="boundaryPolygonPoints"
+            class="boundary-tint-polygon"
+          />
+        </svg>
+
+        <!-- 4 Draggable Corner Pins (>=44px touch targets) -->
+        <!-- Top-Left Pin -->
+        <div
+          class="corner-handle top-left"
+          [style.left.%]="getCornerDisplayPercent('topLeft').x"
+          [style.top.%]="getCornerDisplayPercent('topLeft').y"
+          (pointerdown)="onPinPointerDown('topLeft', $event)"
+          (pointermove)="onPinPointerMove($event)"
+          (pointerup)="onPinPointerUp($event)"
+          (pointercancel)="onPinPointerUp($event)"
+          aria-label="Top Left Corner Pin"
+          role="slider"
+          data-testid="corner-pin-top-left"
+        >
+          <div class="pin-ring"></div>
+        </div>
+
+        <!-- Top-Right Pin -->
+        <div
+          class="corner-handle top-right"
+          [style.left.%]="getCornerDisplayPercent('topRight').x"
+          [style.top.%]="getCornerDisplayPercent('topRight').y"
+          (pointerdown)="onPinPointerDown('topRight', $event)"
+          (pointermove)="onPinPointerMove($event)"
+          (pointerup)="onPinPointerUp($event)"
+          (pointercancel)="onPinPointerUp($event)"
+          aria-label="Top Right Corner Pin"
+          role="slider"
+          data-testid="corner-pin-top-right"
+        >
+          <div class="pin-ring"></div>
+        </div>
+
+        <!-- Bottom-Right Pin -->
+        <div
+          class="corner-handle bottom-right"
+          [style.left.%]="getCornerDisplayPercent('bottomRight').x"
+          [style.top.%]="getCornerDisplayPercent('bottomRight').y"
+          (pointerdown)="onPinPointerDown('bottomRight', $event)"
+          (pointermove)="onPinPointerMove($event)"
+          (pointerup)="onPinPointerUp($event)"
+          (pointercancel)="onPinPointerUp($event)"
+          aria-label="Bottom Right Corner Pin"
+          role="slider"
+          data-testid="corner-pin-bottom-right"
+        >
+          <div class="pin-ring"></div>
+        </div>
+
+        <!-- Bottom-Left Pin -->
+        <div
+          class="corner-handle bottom-left"
+          [style.left.%]="getCornerDisplayPercent('bottomLeft').x"
+          [style.top.%]="getCornerDisplayPercent('bottomLeft').y"
+          (pointerdown)="onPinPointerDown('bottomLeft', $event)"
+          (pointermove)="onPinPointerMove($event)"
+          (pointerup)="onPinPointerUp($event)"
+          (pointercancel)="onPinPointerUp($event)"
+          aria-label="Bottom Left Corner Pin"
+          role="slider"
+          data-testid="corner-pin-bottom-left"
+        >
+          <div class="pin-ring"></div>
+        </div>
+      </div>
+
+      <!-- Action Button for Boundary Phase -->
+      <div class="boundary-bottom-actions">
+        <button
+          type="button"
+          class="btn-primary-lg"
+          (click)="detectAndOcrTable()"
+          data-testid="btn-detect-ocr"
+        >
+          <app-icon name="table-excel" [size]="20"></app-icon>
+          <span>{{ t.detectAndOcr || 'Detect & OCR Table' }}</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 3: Detecting & Processing Spinner -->
+    <section *ngIf="currentStep === 'detecting'" class="step-card detecting-step" data-testid="detecting-step">
+      <div class="spinner-container">
+        <div class="pulsing-radar"></div>
+        <h3 class="detecting-title">{{ t.detecting || 'Detecting tabular layout & recognizing cells...' }}</h3>
+        <p class="detecting-desc">
+          Segmenting ruled grid lines, parsing whitespace column gutters, and running localized text recognition.
+        </p>
+      </div>
+    </section>
+
+    <!-- STEP 4: Mobile Interactive Spreadsheet Editor -->
+    <section *ngIf="currentStep === 'editor'" class="step-card editor-step" data-testid="editor-step">
+      
+      <!-- Top View Mode Switcher -->
+      <div class="tab-mode-switcher">
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="activeViewTab === 'grid'"
+          (click)="activeViewTab = 'grid'"
+          data-testid="tab-grid"
+        >
+          <app-icon name="grid" [size]="16"></app-icon>
+          <span>{{ t.previewTab || 'Spreadsheet Grid' }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="activeViewTab === 'scan'"
+          (click)="activeViewTab = 'scan'"
+          data-testid="tab-scan"
+        >
+          <app-icon name="image" [size]="16"></app-icon>
+          <span>{{ t.sourceTab || 'Original Scan' }}</span>
+        </button>
+      </div>
+
+      <!-- Status Summary Strip -->
+      <div class="status-summary-strip">
+        <div class="summary-left">
+          <span class="structure-badge" [class.ruled]="tableResult?.structure?.method === 'ruled'" data-testid="structure-badge">
+            {{ tableResult?.structure?.method === 'ruled' ? (t.ruledDetected || 'Ruled Table') : (t.borderlessDetected || 'Borderless Table') }}
+          </span>
+          <span class="dimensions-text" data-testid="dimensions-text">
+            {{ matrix.length }} Rows × {{ matrix[0]?.length || 0 }} Columns
+          </span>
+        </div>
+
+        <div class="grid-actions-toolbar" *ngIf="activeViewTab === 'grid'">
+          <button type="button" class="tool-btn" (click)="addRow()" title="Add Row" data-testid="btn-add-row">
+            <app-icon name="add" [size]="14"></app-icon>
+            <span>Row</span>
+          </button>
+          <button type="button" class="tool-btn danger" (click)="deleteRow()" title="Delete Row" data-testid="btn-delete-row">
+            <app-icon name="trash" [size]="14"></app-icon>
+            <span>Row</span>
+          </button>
+          <button type="button" class="tool-btn" (click)="addColumn()" title="Add Column" data-testid="btn-add-col">
+            <app-icon name="add" [size]="14"></app-icon>
+            <span>Col</span>
+          </button>
+          <button type="button" class="tool-btn danger" (click)="deleteColumn()" title="Delete Column" data-testid="btn-delete-col">
+            <app-icon name="trash" [size]="14"></app-icon>
+            <span>Col</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB A: Fluid Mobile Interactive Spreadsheet Grid -->
+      <div *ngIf="activeViewTab === 'grid'" class="spreadsheet-container">
+        <div class="table-scroll-viewport">
+          <table class="mobile-excel-grid" data-testid="mobile-excel-grid">
+            <thead>
+              <tr>
+                <th class="corner-header-cell">#</th>
+                <th
+                  *ngFor="let col of matrix[0]; let cIdx = index"
+                  class="col-header-cell"
+                >
+                  {{ getColumnLabel(cIdx) }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of matrix; let rIdx = index">
+                <td class="row-header-cell">{{ rIdx + 1 }}</td>
+                <td
+                  *ngFor="let cellVal of row; let cIdx = index"
+                  class="data-grid-cell"
+                  [class.is-selected]="selectedCellCoord?.row === rIdx && selectedCellCoord?.col === cIdx"
+                  (click)="selectCell(rIdx, cIdx)"
+                  data-testid="data-grid-cell"
+                >
+                  <span class="cell-text-span">{{ cellVal || ' ' }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB B: Original Scan Viewer with Zoom Controls -->
+      <div *ngIf="activeViewTab === 'scan'" class="scan-viewer-container">
+        <div class="scan-zoom-toolbar">
+          <button type="button" class="zoom-btn" (click)="zoomOut()" aria-label="Zoom Out">
+            <app-icon name="zoom-out" [size]="18"></app-icon>
+          </button>
+          <span class="zoom-level-text">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+          <button type="button" class="zoom-btn" (click)="zoomIn()" aria-label="Zoom In">
+            <app-icon name="zoom-in" [size]="18"></app-icon>
+          </button>
+          <button type="button" class="zoom-btn reset" (click)="resetZoom()" aria-label="Reset Zoom">
+            <app-icon name="refresh" [size]="16"></app-icon>
+          </button>
+        </div>
+
+        <div class="scan-canvas-container">
+          <img
+            *ngIf="previewUrl"
+            [src]="previewUrl"
+            alt="Original Scan"
+            class="scan-zoomable-image"
+            [style.transform]="'scale(' + zoomLevel + ')'"
+          />
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Sticky Bottom Action Bar -->
+  <footer *ngIf="currentStep === 'editor'" class="sticky-export-bar">
+    <div class="export-bar-inner">
+      <button
+        type="button"
+        class="export-btn btn-excel"
+        [disabled]="isExporting || matrix.length === 0"
+        (click)="exportExcel()"
+        data-testid="btn-export-excel"
+      >
+        <app-icon name="table-excel" [size]="18"></app-icon>
+        <span>{{ t.exportXlsx || 'Export to Excel (.xlsx)' }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="export-btn btn-csv"
+        [disabled]="isExporting || matrix.length === 0"
+        (click)="exportCsv()"
+        data-testid="btn-export-csv"
+      >
+        <app-icon name="document-text" [size]="18"></app-icon>
+        <span>{{ t.exportCsv || 'Export to CSV' }}</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- Quick Cell Editor Bottom Sheet -->
+  <div
+    *ngIf="isCellDrawerOpen && selectedCellCoord"
+    class="cell-editor-backdrop"
+    (click)="closeCellDrawer()"
+    data-testid="cell-editor-backdrop"
+  >
+    <div class="cell-editor-sheet" (click)="$event.stopPropagation()" data-testid="cell-editor-sheet">
+      <div class="sheet-drag-handle"></div>
+
+      <div class="sheet-header">
+        <div class="sheet-title-group">
+          <span class="coord-pill">
+            Row {{ selectedCellCoord.row + 1 }}, Col {{ getColumnLabel(selectedCellCoord.col) }}
+          </span>
+          <span class="datatype-tag" [attr.data-type]="getSelectedCellType()">
+            {{ getSelectedCellType() | uppercase }}
+          </span>
+        </div>
+        <button type="button" class="sheet-close-btn" (click)="closeCellDrawer()">
+          <app-icon name="close" [size]="18"></app-icon>
+        </button>
+      </div>
+
+      <div class="sheet-body">
+        <label for="cell-editor-input" class="visually-hidden">Cell Content</label>
+        <input
+          id="cell-editor-input"
+          type="text"
+          [(ngModel)]="cellInput"
+          class="cell-text-input"
+          [placeholder]="t.cellValuePlaceholder || 'Cell value...'"
+          (keydown.enter)="applyCellEdit()"
+          data-testid="cell-editor-input"
+          autofocus
+        />
+
+        <div class="sheet-actions">
+          <button type="button" class="btn-clear" (click)="clearCellInput()" data-testid="btn-clear-cell">
+            <app-icon name="trash" [size]="16"></app-icon>
+            <span>{{ t.clear || 'Clear' }}</span>
+          </button>
+          <button type="button" class="btn-apply" (click)="applyCellEdit()" data-testid="btn-apply-cell">
+            <app-icon name="checkmark" [size]="16"></app-icon>
+            <span>{{ t.apply || 'Apply' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

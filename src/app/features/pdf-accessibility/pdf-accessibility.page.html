@@ -1,0 +1,282 @@
+<div class="accessibility-page-container">
+  <!-- Top Tool Header -->
+  <header class="tool-top-bar">
+    <div class="title-wrap">
+      <h1 class="tool-title">{{ 'pdfAccessibility.title' | translate }}</h1>
+      <p class="tool-subtitle">{{ 'pdfAccessibility.subtitle' | translate }}</p>
+    </div>
+    <div class="header-actions">
+      <input #fileInput type="file" accept="application/pdf" (change)="onFileSelected($event)" style="display: none" />
+      <button type="button" class="action-btn secondary" (click)="triggerFileInput()" [disabled]="isLoading">
+        <app-icon name="upload" size="sm"></app-icon>
+        <span>{{ 'pdfAccessibility.chooseFile' | translate }}</span>
+      </button>
+      <button type="button" class="action-btn outline" (click)="loadSampleDocument()" [disabled]="isLoading">
+        <app-icon name="file-text" size="sm"></app-icon>
+        <span>{{ 'pdfAccessibility.loadSample' | translate }}</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Strict Honesty Notice -->
+  <div class="honesty-banner">
+    <app-icon name="info" size="sm" class="honesty-icon"></app-icon>
+    <div class="honesty-text">
+      <strong>{{ 'pdfAccessibility.honestyTitle' | translate }}</strong>
+      <span>{{ 'pdfAccessibility.honestyStatement' | translate }}</span>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>{{ loadingMessage || ('common.loading' | translate) }}</p>
+    </div>
+  }
+
+  <!-- Main Workspace -->
+  @if (!isLoading && selectedFile && currentPageData) {
+    <div class="workspace-grid">
+      <!-- Left Column: PDF Canvas Preview -->
+      <section class="preview-panel">
+        <div class="page-nav-bar">
+          <button type="button" class="nav-page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage <= 1">
+            <app-icon name="chevron-left" size="sm"></app-icon>
+          </button>
+          <span class="page-indicator">{{ 'common.page' | translate }} {{ currentPage }} / {{ totalPages }}</span>
+          <button type="button" class="nav-page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages">
+            <app-icon name="chevron-right" size="sm"></app-icon>
+          </button>
+        </div>
+
+        <div class="canvas-viewport">
+          <canvas #pdfCanvas class="rendered-canvas"></canvas>
+        </div>
+      </section>
+
+      <!-- Right Column: 3-Step Accessibility Inspector -->
+      <section class="inspector-panel">
+        <!-- 3-Step Mobile Tabs -->
+        <div class="step-stepper" role="tablist">
+          <button
+            type="button"
+            class="step-pill"
+            [class.active]="activeStep === 1"
+            (click)="activeStep = 1"
+          >
+            <span class="step-num">1</span>
+            <span class="step-label">{{ 'pdfAccessibility.step1Structure' | translate }}</span>
+          </button>
+          <button
+            type="button"
+            class="step-pill"
+            [class.active]="activeStep === 2"
+            (click)="activeStep = 2"
+          >
+            <span class="step-num">2</span>
+            <span class="step-label">{{ 'pdfAccessibility.step2Images' | translate }} ({{ currentImages.length }})</span>
+          </button>
+          <button
+            type="button"
+            class="step-pill"
+            [class.active]="activeStep === 3"
+            (click)="activeStep = 3"
+          >
+            <span class="step-num">3</span>
+            <span class="step-label">{{ 'pdfAccessibility.step3ReadingOrder' | translate }}</span>
+          </button>
+        </div>
+
+        <!-- Step 1 Content: Logical Structure Tags -->
+        @if (activeStep === 1) {
+          <div class="step-content">
+            <h3 class="panel-heading">{{ 'pdfAccessibility.step1Heading' | translate }}</h3>
+            <div class="blocks-list">
+              @for (block of currentBlocks; track block.id) {
+                <div
+                  class="block-card"
+                  [class.selected]="selectedBlockId === block.id"
+                  (click)="selectBlock(block)"
+                >
+                  <div class="block-card-header">
+                    <span class="tag-badge" [style.backgroundColor]="getTagColor(block.tag)">
+                      {{ block.tag }}
+                    </span>
+                    <span class="confidence-badge" [class.unconfident]="block.confidence < 0.8">
+                      {{ (block.confidence * 100).toFixed(0) }}%
+                    </span>
+                  </div>
+                  <p class="block-preview-text">{{ block.text }}</p>
+
+                  <div class="tag-selector-row">
+                    @for (tagOpt of availableTags; track tagOpt.tag) {
+                      <button
+                        type="button"
+                        class="tag-chip"
+                        [class.active]="block.tag === tagOpt.tag"
+                        (click)="updateBlockTag(block, tagOpt.tag); $event.stopPropagation()"
+                      >
+                        {{ tagOpt.tag }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Step 2 Content: Image Alt-Text Engine -->
+        @if (activeStep === 2) {
+          <div class="step-content">
+            <h3 class="panel-heading">{{ 'pdfAccessibility.step2Heading' | translate }}</h3>
+            @if (currentImages.length === 0) {
+              <div class="empty-state">
+                <app-icon name="image" size="md"></app-icon>
+                <p>{{ 'pdfAccessibility.noImagesOnPage' | translate }}</p>
+              </div>
+            } @else {
+              <div class="images-list">
+                @for (img of currentImages; track img.id) {
+                  <div
+                    class="image-card"
+                    [class.selected]="selectedImageId === img.id"
+                    (click)="selectImage(img)"
+                  >
+                    <div class="image-card-header">
+                      <span class="image-name">{{ img.name }}</span>
+                      <button
+                        type="button"
+                        class="chip-toggle"
+                        [class.active]="img.isDecorative"
+                        (click)="toggleImageDecorative(img); $event.stopPropagation()"
+                      >
+                        {{ (img.isDecorative ? 'pdfAccessibility.decorative' : 'pdfAccessibility.informative') | translate }}
+                      </button>
+                    </div>
+
+                    @if (!img.isDecorative) {
+                      <div class="alt-input-group">
+                        <label>{{ 'pdfAccessibility.altLabel' | translate }}</label>
+                        <textarea
+                          rows="2"
+                          [(ngModel)]="img.altText"
+                          [placeholder]="'pdfAccessibility.altPlaceholder' | translate"
+                        ></textarea>
+                        <button
+                          type="button"
+                          class="action-btn outline sm"
+                          (click)="suggestOcrForImage(img)"
+                        >
+                          <app-icon name="wand" size="sm"></app-icon>
+                          <span>{{ 'pdfAccessibility.suggestOcr' | translate }}</span>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Step 3 Content: Visual Reading Order Reordering -->
+        @if (activeStep === 3) {
+          <div class="step-content">
+            <h3 class="panel-heading">{{ 'pdfAccessibility.step3Heading' | translate }}</h3>
+            <div class="order-list">
+              @for (block of currentBlocks; track block.id; let idx = $index) {
+                <div
+                  class="order-item"
+                  [class.artifact]="block.isArtifact"
+                  draggable="true"
+                  (dragstart)="onDragStart($event, idx)"
+                  (dragover)="onDragOver($event, idx)"
+                  (drop)="onDrop($event, idx)"
+                >
+                  <span class="order-index">#{{ block.orderIndex }}</span>
+                  <div class="order-content">
+                    <span class="tag-badge sm" [style.backgroundColor]="getTagColor(block.tag)">
+                      {{ block.tag }}
+                    </span>
+                    <span class="order-text">{{ block.text }}</span>
+                  </div>
+                  <div class="reorder-actions">
+                    <button
+                      type="button"
+                      class="order-btn"
+                      [disabled]="idx === 0"
+                      (click)="moveBlockUp(idx)"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      class="order-btn"
+                      [disabled]="idx === currentBlocks.length - 1"
+                      (click)="moveBlockDown(idx)"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </section>
+    </div>
+  }
+
+  <!-- Empty Start State -->
+  @if (!isLoading && !selectedFile) {
+    <div class="empty-upload-card" (click)="triggerFileInput()">
+      <app-icon name="file-text" size="lg" class="empty-icon"></app-icon>
+      <h2>{{ 'pdfAccessibility.dropTitle' | translate }}</h2>
+      <p>{{ 'pdfAccessibility.dropSubtitle' | translate }}</p>
+      <button type="button" class="action-btn primary lg" (click)="triggerFileInput(); $event.stopPropagation()">
+        {{ 'pdfAccessibility.selectPdfBtn' | translate }}
+      </button>
+    </div>
+  }
+
+  <!-- Floating Audio Read-Aloud Preview -->
+  @if (selectedFile && currentPageData) {
+    <div class="floating-audio-bar" [class.playing]="isPlayingAudio">
+      <button
+        type="button"
+        class="audio-play-btn"
+        (click)="toggleAudioPreview()"
+        [attr.aria-label]="(isPlayingAudio ? 'pdfAccessibility.stopAudio' : 'pdfAccessibility.listenWithReader') | translate"
+      >
+        <app-icon [name]="isPlayingAudio ? 'stop-circle' : 'volume-2'" size="md"></app-icon>
+        <span>{{ (isPlayingAudio ? 'pdfAccessibility.stopAudio' : 'pdfAccessibility.listenWithReader') | translate }}</span>
+      </button>
+    </div>
+  }
+
+  <!-- Sticky Bottom Action Bar -->
+  @if (selectedFile && currentPageData) {
+    <footer class="sticky-mobile-bottom-bar action-dock">
+      <div class="dock-inner">
+        <button
+          type="button"
+          class="action-btn primary lg save-btn"
+          (click)="saveTaggedPdf()"
+          [disabled]="isSaving"
+        >
+          <app-icon name="download" size="sm"></app-icon>
+          <span>{{ (isSaving ? 'pdfAccessibility.saving' : 'pdfAccessibility.saveTaggedPdf') | translate }}</span>
+        </button>
+      </div>
+    </footer>
+  }
+
+  <!-- Toast Notification -->
+  @if (toastMessage) {
+    <div class="accessibility-toast" role="alert">
+      {{ toastMessage | translate }}
+    </div>
+  }
+</div>

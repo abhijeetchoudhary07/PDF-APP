@@ -17,14 +17,19 @@ import {
   OCR_SUPPORTED_LANGUAGES,
   OcrProgressEvent,
   OcrDocumentResult,
-  OcrPageResult
+  OcrPageResult,
+  OcrModelMetadata,
+  ScriptDetectionResult
 } from '../../core/models/ocr.models';
+import { OcrModelManagerService } from '../../core/services/ocr-model-manager.service';
+import { ScriptDetectionService } from '../../core/services/script-detection.service';
 import {
   AppHeaderComponent,
   AppFooterComponent,
   AppPageHeaderComponent,
   AppButtonComponent,
   AppBadgeComponent,
+  AppIconComponent,
   AppTabsComponent,
   AppRelatedToolsComponent,
   FileDropzoneComponent,
@@ -33,6 +38,8 @@ import {
   AutoScrollDirective,
   TranslatePipe
 } from '../../shared/components/ui';
+import { OcrLanguageManagerComponent } from './components/ocr-language-manager/ocr-language-manager.component';
+import { OcrLanguageSelectorComponent } from './components/ocr-language-selector/ocr-language-selector.component';
 
 export type OcrWorkflowStep = 'select' | 'detect' | 'configure' | 'processing' | 'result';
 
@@ -50,11 +57,14 @@ export type OcrWorkflowStep = 'select' | 'detect' | 'configure' | 'processing' |
     AppPageHeaderComponent,
     AppButtonComponent,
     AppBadgeComponent,
+    AppIconComponent,
     AppRelatedToolsComponent,
     FileDropzoneComponent,
     AppConversionAnimationComponent,
     AutoScrollDirective,
-    TranslatePipe
+    TranslatePipe,
+    OcrLanguageManagerComponent,
+    OcrLanguageSelectorComponent
   ],
   providers: [DecimalPipe]
 })
@@ -62,6 +72,8 @@ export class PdfOcrPage implements OnInit, OnDestroy {
   private fileService = inject(FileService);
   private validationService = inject(ValidationService);
   private ocrService = inject(OcrService);
+  private modelManager = inject(OcrModelManagerService);
+  private scriptDetectionService = inject(ScriptDetectionService);
   private storageService = inject(StorageService);
   private shareService = inject(ShareService);
   private historyService = inject(HistoryService);
@@ -74,6 +86,12 @@ export class PdfOcrPage implements OnInit, OnDestroy {
   currentStep: OcrWorkflowStep = 'select';
   selectedFile?: File;
   previewUrl?: string;
+
+  // Language Manager State
+  isLanguageManagerOpen = false;
+  showDownloadConfirmModal = false;
+  pendingDownloadModel?: OcrModelMetadata;
+  cachedLanguageCodes = new Set<string>(['eng']);
 
   // Detection state
   isDetecting = false;
@@ -98,8 +116,17 @@ export class PdfOcrPage implements OnInit, OnDestroy {
 
   // Configuration state
   availableLanguages: OcrLanguageOption[] = OCR_SUPPORTED_LANGUAGES;
-  selectedLanguage: OcrSupportedLanguage = 'eng';
-  selectedSecondaryLang: OcrSupportedLanguage | 'none' = 'none';
+  selectedLanguage: string = 'eng';
+  selectedSecondaryLang: string = 'none';
+  isLanguageSelectorOpen = false;
+
+  // Script & Language Detection state
+  scriptDetectionResult?: ScriptDetectionResult;
+  showSmartDetectionBanner = false;
+  showLowConfidenceSheet = false;
+  detectedScriptDisplay = '';
+  detectedLanguageDisplay = '';
+  detectionConfidence = 0;
 
   pageSelectionMode: 'all' | 'custom' | 'scanned_only' = 'all';
   selectedPageNumbers: number[] = [];
@@ -130,12 +157,211 @@ export class PdfOcrPage implements OnInit, OnDestroy {
     }
   }
 
-  ngOnInit(): void {
+  navigateToHandwriting(): void {
+    this.router.navigate(['/features/ocr/handwriting']);
+  }
+
+  async ngOnInit(): Promise<void> {
+    await this.refreshCachedLanguages();
     // Check if a document was passed from Document Scanner or other features
     const bridgedDoc = this.documentBridgeService.getOcrTarget();
     if (bridgedDoc && bridgedDoc.file) {
       this.onFileSelected(bridgedDoc.file);
     }
+  }
+
+  async refreshCachedLanguages(): Promise<void> {
+    const list = this.modelManager.getAllModels();
+    for (const m of list) {
+      const cached = await this.modelManager.isModelCached(m.code);
+      if (cached) {
+        this.cachedLanguageCodes.add(m.code);
+      } else {
+        this.cachedLanguageCodes.delete(m.code);
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  openLanguageManager(): void {
+    this.isLanguageManagerOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeLanguageManager(): void {
+    this.isLanguageManagerOpen = false;
+    this.refreshCachedLanguages();
+    this.cdr.detectChanges();
+  }
+
+  openLanguageSelector(): void {
+    this.isLanguageSelectorOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeLanguageSelector(): void {
+    this.isLanguageSelectorOpen = false;
+    this.refreshCachedLanguages();
+    this.cdr.detectChanges();
+  }
+
+  getSelectedLanguagesList(): string[] {
+    if (this.selectedSecondaryLang !== 'none' && this.selectedSecondaryLang !== this.selectedLanguage) {
+      return [this.selectedLanguage, this.selectedSecondaryLang];
+    }
+    return [this.selectedLanguage];
+  }
+
+  async onLanguagesConfirmed(languages: string[]): Promise<void> {
+    if (!languages || languages.length === 0) return;
+    this.selectedLanguage = languages[0];
+    this.selectedSecondaryLang = languages[1] || 'none';
+
+    // Persist user preference for detected script
+    if (this.scriptDetectionResult && this.scriptDetectionResult.detectedScript !== 'unknown') {
+      await this.scriptDetectionService.saveScriptPreference(
+        this.scriptDetectionResult.detectedScript,
+        this.selectedLanguage
+      );
+      const langMeta = this.modelManager.getModel(this.selectedLanguage);
+      if (langMeta) {
+        this.detectedLanguageDisplay = `${langMeta.name} (${langMeta.nativeName})`;
+      }
+      this.showSmartDetectionBanner = true;
+      this.showLowConfidenceSheet = false;
+    }
+    this.cdr.detectChanges();
+
+    // Check if any selected language requires download
+    for (const code of languages) {
+      if (code !== 'eng' && !this.cachedLanguageCodes.has(code)) {
+        const cached = await this.modelManager.isModelCached(code);
+        if (cached) {
+          this.cachedLanguageCodes.add(code);
+        } else {
+          const meta = this.modelManager.getModel(code);
+          if (meta) {
+            this.pendingDownloadModel = meta;
+            this.showDownloadConfirmModal = true;
+            this.cdr.detectChanges();
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  async onLanguagePillClicked(code: string): Promise<void> {
+    this.selectedLanguage = code;
+    this.cdr.detectChanges();
+  }
+
+  promptModelDownload(event: Event, code: string): void {
+    event.stopPropagation();
+    const meta = this.modelManager.getModel(code);
+    if (meta && !meta.isBundled && meta.status !== 'offline_ready') {
+      this.pendingDownloadModel = meta;
+      this.showDownloadConfirmModal = true;
+      this.cdr.detectChanges();
+    }
+  }
+
+  onModelDownloaded(code: string): void {
+    this.cachedLanguageCodes.add(code);
+    if (this.pendingDownloadModel && this.pendingDownloadModel.code === code) {
+      this.selectedLanguage = code as OcrSupportedLanguage;
+    }
+    this.refreshCachedLanguages();
+    this.cdr.detectChanges();
+  }
+
+  getTopSuggestions(): string[] {
+    if (!this.scriptDetectionResult) return [];
+    const suggestions: string[] = [];
+    if (this.scriptDetectionResult.suggestedLanguage) {
+      suggestions.push(this.scriptDetectionResult.suggestedLanguage);
+    }
+    if (
+      this.scriptDetectionResult.alternativeSuggestions &&
+      this.scriptDetectionResult.alternativeSuggestions.length > 0
+    ) {
+      for (const alt of this.scriptDetectionResult.alternativeSuggestions) {
+        if (!suggestions.includes(alt)) {
+          suggestions.push(alt);
+        }
+        if (suggestions.length >= 2) break;
+      }
+    }
+    return suggestions;
+  }
+
+  getLanguageOption(code: string): OcrModelMetadata | undefined {
+    return this.modelManager.getModel(code);
+  }
+
+  dismissLowConfidenceSheet(): void {
+    this.showLowConfidenceSheet = false;
+  }
+
+  onChangeDetectedScript(): void {
+    this.openLanguageSelector();
+  }
+
+  async onSelectSuggestion(langCode: string): Promise<void> {
+    this.selectedLanguage = langCode;
+    this.showLowConfidenceSheet = false;
+
+    if (this.scriptDetectionResult && this.scriptDetectionResult.detectedScript !== 'unknown') {
+      await this.scriptDetectionService.saveScriptPreference(
+        this.scriptDetectionResult.detectedScript,
+        langCode
+      );
+    }
+
+    const langMeta = this.modelManager.getModel(langCode);
+    if (langMeta) {
+      this.detectedLanguageDisplay = `${langMeta.name} (${langMeta.nativeName})`;
+    }
+    this.showSmartDetectionBanner = true;
+    this.cdr.detectChanges();
+
+    await this.onLanguagePillClicked(langCode);
+  }
+
+  async runScriptDetection(file: File, hasText: boolean, textSample: string): Promise<void> {
+    try {
+      let result: ScriptDetectionResult;
+      if (hasText && textSample && textSample.trim().length > 10) {
+        result = await this.scriptDetectionService.detectScriptFromText(textSample);
+      } else {
+        result = await this.scriptDetectionService.detectScriptFromFile(file);
+      }
+      this.applyDetectionResult(result);
+    } catch {
+      // Gracefully continue with defaults
+    }
+  }
+
+  applyDetectionResult(result: ScriptDetectionResult): void {
+    this.scriptDetectionResult = result;
+    this.detectionConfidence = result.confidence;
+
+    const scriptKey = `ocr.script_${result.detectedScript}`;
+    const localizedScript = this.translationService.translate(scriptKey);
+    this.detectedScriptDisplay = localizedScript !== scriptKey ? localizedScript : result.scriptName;
+
+    const langMeta = this.modelManager.getModel(result.suggestedLanguage);
+    this.detectedLanguageDisplay = langMeta ? `${langMeta.name} (${langMeta.nativeName})` : result.suggestedLanguage;
+
+    if (result.isConfident) {
+      this.selectedLanguage = result.suggestedLanguage;
+      this.showSmartDetectionBanner = true;
+      this.showLowConfidenceSheet = false;
+    } else {
+      this.showSmartDetectionBanner = false;
+      this.showLowConfidenceSheet = true;
+    }
+    this.cdr.detectChanges();
   }
 
   ngOnDestroy(): void {
@@ -185,6 +411,7 @@ export class PdfOcrPage implements OnInit, OnDestroy {
       this.totalPages = 1;
       this.selectedPageNumbers = [1];
       this.currentStep = 'configure';
+      await this.runScriptDetection(file, false, '');
     }
     this.cdr.detectChanges();
   }
@@ -216,6 +443,9 @@ export class PdfOcrPage implements OnInit, OnDestroy {
       }
 
       this.currentStep = 'detect';
+
+      // Pre-pass: Automatic Script & Language Detection
+      await this.runScriptDetection(file, this.hasSelectableText, this.textSample);
     } catch {
       // A run that has been superseded says nothing and changes nothing.
       if (run !== this.detectionRun) return;
@@ -243,6 +473,9 @@ export class PdfOcrPage implements OnInit, OnDestroy {
       this.textSample = '';
       this.totalPages = 0;
       this.selectedPageNumbers = [];
+      this.scriptDetectionResult = undefined;
+      this.showSmartDetectionBanner = false;
+      this.showLowConfidenceSheet = false;
       this.currentStep = 'select';
     } finally {
       // A superseded run must not clear the spinner the current one put up.
@@ -322,17 +555,17 @@ export class PdfOcrPage implements OnInit, OnDestroy {
   async startOcr(): Promise<void> {
     if (!this.selectedFile) return;
 
+    const languages: string[] = [this.selectedLanguage];
+    if (this.selectedSecondaryLang !== 'none' && this.selectedSecondaryLang !== this.selectedLanguage) {
+      languages.push(this.selectedSecondaryLang);
+    }
+
     this.isProcessing = true;
     this.currentStep = 'processing';
     this.progressValue = 0.05;
     this.progressPercent = 5;
-    this.progressMessage = 'Initializing local OCR engine...';
+    this.progressMessage = this.modelManager.getLoadingMessage(languages);
     this.cdr.detectChanges();
-
-    const languages: OcrSupportedLanguage[] = [this.selectedLanguage];
-    if (this.selectedSecondaryLang !== 'none' && this.selectedSecondaryLang !== this.selectedLanguage) {
-      languages.push(this.selectedSecondaryLang);
-    }
 
     try {
       this.ocrOperationId = `ocr_${Date.now()}`;
@@ -472,6 +705,12 @@ export class PdfOcrPage implements OnInit, OnDestroy {
     this.hasSelectableText = false;
     this.textSample = '';
     this.totalPages = 0;
+    this.scriptDetectionResult = undefined;
+    this.showSmartDetectionBanner = false;
+    this.showLowConfidenceSheet = false;
+    this.detectionConfidence = 0;
+    this.detectedScriptDisplay = '';
+    this.detectedLanguageDisplay = '';
     this.currentStep = 'select';
     this.cdr.detectChanges();
   }

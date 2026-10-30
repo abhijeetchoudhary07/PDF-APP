@@ -1,0 +1,521 @@
+<app-header></app-header>
+
+<main class="ocr-handwriting-container">
+  <app-page-header
+    [title]="'handwritingOcr.title' | translate"
+    [subtitle]="'handwritingOcr.subtitle' | translate"
+    [badge]="'handwritingOcr.badge' | translate"
+  ></app-page-header>
+
+  <!-- Segmented Control Mode Switcher: Printed Document | Handwritten Notes -->
+  <div class="ocr-mode-switcher-container" role="region" aria-label="OCR Mode Selection">
+    <div class="ocr-mode-segmented-control" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        class="ocr-mode-tab"
+        aria-selected="false"
+        (click)="navigateToPrinted()"
+        data-testid="mode-tab-printed"
+      >
+        <app-icon name="file-text" [size]="16"></app-icon>
+        <span>{{ 'handwritingOcr.printedMode' | translate }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="ocr-mode-tab active"
+        aria-selected="true"
+        data-testid="mode-tab-handwriting"
+      >
+        <app-icon name="pen-tool" [size]="16"></app-icon>
+        <span>{{ 'handwritingOcr.handwrittenMode' | translate }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Upfront Expectation Management Banner -->
+  @if (!hasAcknowledgedExpectations && currentStep === 'select') {
+    <div class="expectation-banner" role="alert" data-testid="expectation-banner">
+      <div class="banner-content">
+        <div class="banner-icon-box">
+          <app-icon name="pen-tool" [size]="22"></app-icon>
+        </div>
+        <div class="banner-text">
+          <h3 class="banner-title">{{ 'handwritingOcr.expectationTitle' | translate }}</h3>
+          <p class="banner-desc">{{ 'handwritingOcr.expectationDesc' | translate }}</p>
+        </div>
+      </div>
+      <div class="banner-action">
+        <button
+          type="button"
+          class="acknowledge-btn"
+          (click)="acknowledgeAndContinue()"
+          data-testid="btn-acknowledge-banner"
+        >
+          <app-icon name="check" [size]="16"></app-icon>
+          <span>{{ 'handwritingOcr.gotItContinue' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- STEP 1: SELECT FILE & CONFIGURE -->
+  @if (currentStep === 'select') {
+    <section class="handwriting-card select-card">
+      @if (!selectedFile) {
+        <app-file-dropzone
+          [title]="'handwritingOcr.dropzoneTitle' | translate"
+          [description]="'handwritingOcr.dropzoneDesc' | translate"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          (fileSelected)="onFileSelected($event)"
+        ></app-file-dropzone>
+      } @else {
+        <div class="selected-file-preview-card">
+          <div class="file-preview-header">
+            <div class="file-meta">
+              <span class="file-icon-box">✍️</span>
+              <div class="file-details">
+                <span class="file-name">{{ selectedFile.name }}</span>
+                <span class="file-size">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="change-file-btn"
+              (click)="clearSelectedFile()"
+              aria-label="Remove and choose another file"
+            >
+              ✕ Change
+            </button>
+          </div>
+
+          @if (previewUrl) {
+            <div class="file-thumbnail-container">
+              <img [src]="previewUrl" alt="Handwriting Preview" class="thumbnail-img" />
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Handwriting OCR Configuration -->
+      <div class="config-section">
+        <div class="config-grid">
+          <!-- Language Selection -->
+          <div class="config-group">
+            <label class="config-label" for="hw-language-select">Recognition Script / Language</label>
+            <div class="select-wrapper">
+              <select
+                id="hw-language-select"
+                class="config-select"
+                [(ngModel)]="selectedLanguage"
+              >
+                @for (lang of availableLanguages; track lang.code) {
+                  <option [value]="lang.code">
+                    {{ lang.name }} ({{ lang.nativeName }})
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <!-- Page Segmentation Mode Tuning -->
+          <div class="config-group">
+            <label class="config-label">Text Layout & Density</label>
+            <div class="psm-segmented-control" role="radiogroup" aria-label="Layout density">
+              <button
+                type="button"
+                class="psm-pill"
+                [class.active]="psmMode === 6"
+                (click)="psmMode = 6"
+                role="radio"
+                [attr.aria-checked]="psmMode === 6"
+              >
+                Uniform Block (PSM 6)
+              </button>
+              <button
+                type="button"
+                class="psm-pill"
+                [class.active]="psmMode === 11"
+                (click)="psmMode = 11"
+                role="radio"
+                [attr.aria-checked]="psmMode === 11"
+              >
+                Sparse Text / Forms (PSM 11)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pipeline Feature Highlights -->
+        <div class="pipeline-features-chips">
+          <span class="feature-chip">
+            <app-icon name="check" [size]="14"></app-icon>
+            Sauvola Adaptive Binarization
+          </span>
+          <span class="feature-chip">
+            <app-icon name="check" [size]="14"></app-icon>
+            Morphological Stroke Reconnection
+          </span>
+          <span class="feature-chip">
+            <app-icon name="check" [size]="14"></app-icon>
+            Automatic Deskewing
+          </span>
+          <span class="feature-chip">
+            <app-icon name="check" [size]="14"></app-icon>
+            Side-by-Side Verification
+          </span>
+        </div>
+
+        <!-- Action Button -->
+        <div class="start-action-row">
+          <app-button
+            variant="primary"
+            size="lg"
+            [disabled]="!selectedFile"
+            (clicked)="startHandwritingOcr()"
+            data-testid="btn-start-ocr"
+          >
+            <app-icon name="pen-tool" [size]="16"></app-icon>
+            <span>Start Handwriting Recognition</span>
+          </app-button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- STEP 2: PROCESSING STATE -->
+  @if (currentStep === 'processing') {
+    <section class="handwriting-card processing-card" aria-live="polite">
+      <app-conversion-animation
+        [progress]="processingStage === 'sauvola' ? 25 : processingStage === 'deskewing' ? 55 : 85"
+        [stageText]="processingStageText"
+        sourceFormat="IMAGE"
+        targetFormat="TXT"
+      ></app-conversion-animation>
+
+      <div class="processing-stages-list">
+        <div class="stage-step" [class.done]="processingStage !== 'sauvola'" [class.active]="processingStage === 'sauvola'">
+          <span class="step-indicator">1</span>
+          <span>Adaptive Binarization (Sauvola)</span>
+        </div>
+        <div class="stage-step" [class.done]="processingStage === 'recognizing'" [class.active]="processingStage === 'deskewing'">
+          <span class="step-indicator">2</span>
+          <span>Stroke Reconnection & Deskew</span>
+        </div>
+        <div class="stage-step" [class.active]="processingStage === 'recognizing'">
+          <span class="step-indicator">3</span>
+          <span>Tesseract Engine Recognition</span>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- STEP 3: SPLIT-VIEW VERIFICATION SCREEN -->
+  @if (currentStep === 'result' && ocrResult) {
+    <section class="split-verification-layout">
+      <!-- TOP HALF: INTERACTIVE ZOOMABLE IMAGE VIEWER -->
+      <div class="image-viewer-panel">
+        <div class="panel-toolbar">
+          <div class="toolbar-left">
+            <span class="panel-title">
+              <app-icon name="eye" [size]="16"></app-icon>
+              {{ 'handwritingOcr.splitOriginalTitle' | translate }}
+            </span>
+            <div class="filter-switch">
+              <button
+                type="button"
+                class="filter-pill"
+                [class.active]="imageFilterMode === 'original'"
+                (click)="imageFilterMode = 'original'"
+              >
+                Original
+              </button>
+              <button
+                type="button"
+                class="filter-pill"
+                [class.active]="imageFilterMode === 'sauvola'"
+                (click)="imageFilterMode = 'sauvola'"
+              >
+                Sauvola Filter
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-right zoom-controls">
+            <button
+              type="button"
+              class="zoom-btn"
+              (click)="zoomOut()"
+              [title]="'handwritingOcr.zoomOut' | translate"
+              aria-label="Zoom Out"
+            >
+              <app-icon name="zoom-out" [size]="16"></app-icon>
+            </button>
+            <span class="zoom-indicator">{{ (imageZoom * 100).toFixed(0) }}%</span>
+            <button
+              type="button"
+              class="zoom-btn"
+              (click)="zoomIn()"
+              [title]="'handwritingOcr.zoomIn' | translate"
+              aria-label="Zoom In"
+            >
+              <app-icon name="zoom-in" [size]="16"></app-icon>
+            </button>
+            <button
+              type="button"
+              class="zoom-btn reset-btn"
+              (click)="resetZoom()"
+              [title]="'handwritingOcr.resetZoom' | translate"
+              aria-label="Reset Zoom"
+            >
+              <app-icon name="refresh" [size]="14"></app-icon>
+            </button>
+          </div>
+        </div>
+
+        <div #imageScrollContainer class="image-viewport" data-testid="image-viewport">
+          <div
+            class="image-canvas-wrapper"
+            [style.transform]="'scale(' + imageZoom + ')'"
+            [style.transformOrigin]="'top center'"
+          >
+            <img
+              #displayedImage
+              [src]="imageFilterMode === 'sauvola' ? ocrResult.processedImageUrl : ocrResult.originalImageUrl"
+              alt="Original handwriting scan"
+              class="handwriting-scan-img"
+            />
+
+            <!-- Bounding Box Overlays -->
+            <div class="bounding-overlay">
+              @for (line of ocrResult.lines; track line.id) {
+                <div
+                  class="bbox-highlight"
+                  [class.active]="line.id === activeLineId"
+                  [ngStyle]="getBboxStyle(line)"
+                  (click)="setActiveLine(line)"
+                  [attr.aria-label]="'Line: ' + line.text"
+                  tabindex="0"
+                >
+                  <span class="line-badge">#{{ $index + 1 }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-hint-bar">
+          <app-icon name="information-circle" [size]="14"></app-icon>
+          <span>{{ 'handwritingOcr.activeLineHint' | translate }}</span>
+        </div>
+      </div>
+
+      <!-- BOTTOM HALF: EDITABLE TEXT AREA & LINE VERIFICATION -->
+      <div class="text-verification-panel">
+        <div class="panel-toolbar">
+          <div class="metrics-left">
+            <app-badge variant="neutral">
+              {{ 'handwritingOcr.wordCount' | translate:{ count: getWordCount() } }}
+            </app-badge>
+            <app-badge variant="neutral">
+              {{ 'handwritingOcr.lineCount' | translate:{ count: ocrResult.lines.length } }}
+            </app-badge>
+            <app-badge [variant]="ocrResult.averageConfidence >= 75 ? 'success' : 'primary'">
+              {{ ocrResult.averageConfidence }}% {{ 'handwritingOcr.confidenceScore' | translate }}
+            </app-badge>
+          </div>
+
+          <div class="actions-right">
+            <app-button
+              variant="secondary"
+              size="sm"
+              (clicked)="copyText()"
+              data-testid="btn-copy-text"
+            >
+              <app-icon name="copy" [size]="14"></app-icon>
+              <span>{{ 'handwritingOcr.copyText' | translate }}</span>
+            </app-button>
+          </div>
+        </div>
+
+        <!-- Verification View Tabs -->
+        <div class="result-view-tabs" role="tablist">
+          <button
+            type="button"
+            class="tab-pill"
+            [class.active]="activeResultTab === 'split'"
+            (click)="activeResultTab = 'split'"
+            role="tab"
+            [attr.aria-selected]="activeResultTab === 'split'"
+          >
+            Full Text Editor
+          </button>
+          <button
+            type="button"
+            class="tab-pill"
+            [class.active]="activeResultTab === 'lines'"
+            (click)="activeResultTab = 'lines'"
+            role="tab"
+            [attr.aria-selected]="activeResultTab === 'lines'"
+          >
+            Line-by-Line Inspection ({{ ocrResult.lines.length }})
+          </button>
+        </div>
+
+        <div class="panel-content-body">
+          <!-- Full Text Editor Tab -->
+          @if (activeResultTab === 'split') {
+            <div class="editor-container">
+              <textarea
+                class="recognized-textarea"
+                [(ngModel)]="editableFullText"
+                (ngModelChange)="onFullTextEdited()"
+                placeholder="Recognized handwriting text..."
+                rows="10"
+                aria-label="Editable recognized text"
+                data-testid="recognized-textarea"
+              ></textarea>
+            </div>
+          }
+
+          <!-- Line-by-Line Inspection Tab -->
+          @if (activeResultTab === 'lines') {
+            <div class="lines-inspection-list">
+              @for (line of ocrResult.lines; track line.id) {
+                <div
+                  class="line-card"
+                  [class.active]="line.id === activeLineId"
+                  (click)="setActiveLine(line)"
+                  data-testid="line-card"
+                >
+                  <div class="line-card-header">
+                    <div class="line-title-group">
+                      <span class="line-number-pill">Line {{ $index + 1 }}</span>
+                      <span class="line-confidence" [class.high]="line.confidence >= 75" [class.low]="line.confidence < 75">
+                        {{ line.confidence }}% confidence
+                      </span>
+                    </div>
+                    <span class="line-word-count">{{ line.wordCount }} words</span>
+                  </div>
+
+                  <!-- Original Handwritten Stroke Snippet -->
+                  @if (line.cropDataUrl) {
+                    <div class="line-crop-preview">
+                      <img [src]="line.cropDataUrl" alt="Original handwriting stroke snippet" class="stroke-snippet-img" />
+                    </div>
+                  }
+
+                  <!-- Editable Line Text Input -->
+                  <div class="line-input-wrapper">
+                    <input
+                      type="text"
+                      class="line-input"
+                      [value]="line.text"
+                      (input)="onLineTextEdited(line, $event)"
+                      (focus)="setActiveLine(line)"
+                      aria-label="Line text"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- STICKY BOTTOM ACTION BAR -->
+    <div class="sticky-bottom-action-bar">
+      <div class="action-bar-inner">
+        <app-button
+          variant="secondary"
+          size="lg"
+          (clicked)="resetScan()"
+          class="reset-btn"
+        >
+          <app-icon name="refresh" [size]="16"></app-icon>
+          <span>New Scan</span>
+        </app-button>
+
+        <app-button
+          variant="secondary"
+          size="lg"
+          (clicked)="shareRecognizedText()"
+          class="thumb-btn"
+          data-testid="btn-share"
+        >
+          <app-icon name="share" [size]="16"></app-icon>
+          <span>{{ 'handwritingOcr.shareText' | translate }}</span>
+        </app-button>
+
+        <app-button
+          variant="primary"
+          size="lg"
+          (clicked)="exportTextAndScans()"
+          class="thumb-btn"
+          data-testid="btn-export"
+        >
+          <app-icon name="download" [size]="16"></app-icon>
+          <span>{{ 'handwritingOcr.exportBundle' | translate }}</span>
+        </app-button>
+      </div>
+    </div>
+  }
+
+  <!-- UPFRONT EXPECTATION MODAL / BOTTOM SHEET -->
+  @if (showExpectationModal) {
+    <app-modal
+      [isOpen]="true"
+      [title]="'handwritingOcr.expectationTitle' | translate"
+      size="md"
+      [hasFooter]="true"
+      (closed)="dismissExpectationModal()"
+    >
+      <div class="expectation-modal-body">
+        <div class="modal-icon-badge">
+          <app-icon name="pen-tool" [size]="32"></app-icon>
+        </div>
+
+        <h3 class="modal-expectation-heading">
+          {{ 'handwritingOcr.expectationTitle' | translate }}
+        </h3>
+
+        <p class="modal-expectation-text">
+          {{ 'handwritingOcr.expectationDesc' | translate }}
+        </p>
+
+        <div class="modal-tips-list">
+          <div class="tip-item">
+            <span class="tip-bullet">✓</span>
+            <span>Best on clear, separated or print-style handwriting</span>
+          </div>
+          <div class="tip-item">
+            <span class="tip-bullet">✓</span>
+            <span>High contrast ink on clean, unruled paper works fastest</span>
+          </div>
+          <div class="tip-item">
+            <span class="tip-bullet">✓</span>
+            <span>Side-by-side verification allows instant human review & correction</span>
+          </div>
+        </div>
+      </div>
+
+      <div modal-footer class="expectation-modal-footer">
+        <app-button
+          variant="primary"
+          size="lg"
+          (clicked)="acknowledgeAndContinue()"
+          data-testid="btn-modal-got-it"
+        >
+          <app-icon name="check" [size]="16"></app-icon>
+          <span>{{ 'handwritingOcr.gotItContinue' | translate }}</span>
+        </app-button>
+      </div>
+    </app-modal>
+  }
+
+  <app-related-tools [currentToolId]="'ocr-handwriting'"></app-related-tools>
+</main>
+
+<app-footer></app-footer>

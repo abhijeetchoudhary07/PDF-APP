@@ -19,6 +19,20 @@
 .mode-tabs-container {
   width: 100%;
   margin-bottom: var(--space-5, 20px);
+
+  @media (max-height: 520px) {
+    margin-bottom: 2px !important;
+  }
+}
+
+@media (max-height: 520px) {
+  .organizer-dropzone-wrapper {
+    margin: 0 !important;
+  }
+  .organizer-dropzone {
+    margin: 4px 0 !important;
+    padding: 12px 16px !important;
+  }
 }
 
 .workspace-container {
@@ -634,7 +648,7 @@
   margin-bottom: var(--space-6, 24px);
 
   @media (max-width: 600px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(130px, 20vw, 180px)), 1fr));
     gap: var(--space-2, 8px);
   }
 
@@ -643,7 +657,7 @@
     gap: 8px;
 
     @media (max-width: 600px) {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, clamp(90px, 15vw, 120px)), 1fr));
       gap: 6px;
     }
 
@@ -2618,7 +2632,7 @@
  * only on a coarse pointer or a phone-width viewport, so the dense desktop
  * ribbon is unchanged.
  */
-@media (pointer: coarse), (max-width: 768px) {
+@media (pointer: coarse), (max-width: 960px) {
   .organizer-smart-bar {
     .smart-ribbon .ribbon-chip {
       min-height: var(--control-h-md, 44px);

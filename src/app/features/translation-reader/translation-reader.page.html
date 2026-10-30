@@ -1,0 +1,380 @@
+<div class="translation-reader-container" [class.portrait]="isPortrait" [class.landscape]="!isPortrait">
+  <input
+    #fileInput
+    type="file"
+    accept="application/pdf"
+    style="display: none"
+    (change)="onFileSelected($event)"
+  />
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <app-icon name="split-view" class="header-icon"></app-icon>
+      <div class="header-titles">
+        <h1 class="header-title">{{ 'translationReader.title' | translate }}</h1>
+        <span class="header-subtitle" *ngIf="session">{{ session.fileName }}</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button
+        *ngIf="session"
+        type="button"
+        class="btn-change-file"
+        (click)="triggerFileInput()"
+      >
+        <app-icon name="swap-horizontal" class="btn-icon"></app-icon>
+        <span>{{ 'translationReader.changePdf' | translate }}</span>
+      </button>
+
+      <button
+        *ngIf="session"
+        type="button"
+        class="btn-summary"
+        [class.active]="showSummaryModal"
+        (click)="toggleSummaryModal()"
+      >
+        <app-icon name="document-text" class="btn-icon"></app-icon>
+        <span>{{ 'translationReader.executiveSummary' | translate }}</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Layout Fidelity Contract Banner -->
+  <aside class="layout-fidelity-banner" role="note">
+    <app-icon name="information-circle" class="banner-icon"></app-icon>
+    <div class="banner-text">
+      <strong>{{ 'translationReader.layoutContractTitle' | translate }}:</strong>
+      {{ 'translationReader.layoutContractDesc' | translate }}
+    </div>
+    <div class="expansion-pill" *ngIf="session?.expansionSummary">
+      +{{ Math.round((session!.expansionSummary.averageExpansionRate - 1) * 100) }}% {{ 'translationReader.expansionLabel' | translate }}
+    </div>
+  </aside>
+
+  <!-- Top Language Selector Bar (Quick-switch Pill Chips) -->
+  <nav class="language-selector-bar" aria-label="Language selector">
+    <div class="lang-selector-inner">
+      <div class="source-lang-pill">
+        <span class="lang-meta-label">{{ 'translationReader.sourceLang' | translate }}:</span>
+        <span class="lang-pill-badge">{{ session?.sourceLanguage || 'English' }}</span>
+      </div>
+
+      <div class="lang-arrow" aria-hidden="true">
+        <app-icon name="arrow-forward" class="arrow-glyph"></app-icon>
+      </div>
+
+      <div class="target-lang-group" role="radiogroup" [attr.aria-label]="'translationReader.targetLang' | translate">
+        @for (lang of targetLanguages; track lang.code) {
+          <button
+            type="button"
+            class="lang-pill-chip"
+            [class.active]="selectedLanguage === lang.code"
+            [attr.aria-checked]="selectedLanguage === lang.code"
+            role="radio"
+            (click)="changeLanguage(lang.code)"
+          >
+            <span class="native-name">{{ lang.nativeName }}</span>
+            <span class="eng-name">({{ lang.label }})</span>
+          </button>
+        }
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main View Area -->
+  <main class="main-content-area">
+    <!-- Empty / Upload State -->
+    @if (!session && !isLoading) {
+      <div class="upload-empty-state">
+        <div class="empty-card">
+          <div class="empty-icon-wrap">
+            <app-icon name="split-view" class="empty-icon"></app-icon>
+          </div>
+
+          <h2 class="empty-title">{{ 'translationReader.title' | translate }}</h2>
+          <p class="empty-desc">{{ 'translationReader.uploadPrompt' | translate }}</p>
+
+          <div class="empty-actions">
+            <button type="button" class="btn-primary-upload" (click)="triggerFileInput()">
+              <app-icon name="cloud-upload" class="btn-icon"></app-icon>
+              <span>{{ 'translationReader.selectPdf' | translate }}</span>
+            </button>
+
+            <button type="button" class="btn-sample-load" (click)="loadSampleDocument()">
+              <app-icon name="sparkles" class="btn-icon"></app-icon>
+              <span>{{ 'translationReader.loadSample' | translate }}</span>
+            </button>
+          </div>
+
+          <div class="features-checklist">
+            <div class="feature-item">
+              <app-icon name="checkmark-circle" class="check-icon"></app-icon>
+              <span>Synchronized Scroll-Lock across unequal text heights</span>
+            </div>
+            <div class="feature-item">
+              <app-icon name="checkmark-circle" class="check-icon"></app-icon>
+              <span>Preserves original layout fidelity against 30-40% Indic expansion</span>
+            </div>
+            <div class="feature-item">
+              <app-icon name="checkmark-circle" class="check-icon"></app-icon>
+              <span>One-tap export to formatted PDF and Microsoft Word (.docx)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Dual Pane Reader Area -->
+    @if (session) {
+      <div class="reader-workspace">
+        <!-- Controls Bar: Page Navigation & Scroll-Lock Toggle -->
+        <div class="reader-toolbar">
+          <div class="page-stepper">
+            <button
+              type="button"
+              class="stepper-btn"
+              [disabled]="currentPageIndex === 0"
+              (click)="prevPage()"
+              [title]="'translationReader.prevPage' | translate"
+            >
+              <app-icon name="chevron-back" class="stepper-icon"></app-icon>
+            </button>
+
+            <span class="page-indicator">
+              Page <strong>{{ currentPageIndex + 1 }}</strong> of <strong>{{ session.pageCount }}</strong>
+            </span>
+
+            <button
+              type="button"
+              class="stepper-btn"
+              [disabled]="currentPageIndex >= session.pageCount - 1"
+              (click)="nextPage()"
+              [title]="'translationReader.nextPage' | translate"
+            >
+              <app-icon name="chevron-forward" class="stepper-icon"></app-icon>
+            </button>
+          </div>
+
+          <div class="toolbar-center">
+            <button
+              type="button"
+              class="scroll-lock-pill"
+              [class.locked]="isScrollLockEnabled"
+              (click)="toggleScrollLock()"
+            >
+              <app-icon [name]="isScrollLockEnabled ? 'lock-closed' : 'lock-open'" class="lock-icon"></app-icon>
+              <span>{{ (isScrollLockEnabled ? 'translationReader.scrollLockOn' : 'translationReader.scrollLockOff') | translate }}</span>
+            </button>
+          </div>
+
+          <div class="toolbar-right">
+            <span class="sync-hint" *ngIf="isScrollLockEnabled">
+              {{ 'translationReader.syncScrollNotice' | translate }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Split Panes Container -->
+        <div
+          #splitContainer
+          class="split-panes-wrapper"
+          [style.--split-ratio.%]="splitRatio"
+        >
+          <!-- Left / Top Pane: Original Document Canvas -->
+          <section
+            #originalPane
+            class="pane original-pane"
+            (scroll)="onOriginalPaneScroll($event)"
+            aria-label="Original document canvas view"
+          >
+            <div class="pane-header-sticky">
+              <app-icon name="document" class="pane-icon"></app-icon>
+              <span class="pane-title">{{ 'translationReader.originalDoc' | translate }}</span>
+              <span class="pane-badge">Source: {{ session.sourceLanguage }}</span>
+            </div>
+
+            <div class="pane-scroll-content">
+              @for (page of session.pages; track page.pageNumber; let idx = $index) {
+                <article
+                  class="page-card original-page-card"
+                  [class.active-page]="idx === currentPageIndex"
+                  [attr.data-page-index]="idx"
+                >
+                  <div class="page-card-header">
+                    <span class="page-number-tag">Page {{ page.pageNumber }}</span>
+                    <span class="char-count-tag">{{ page.charCountOriginal }} chars</span>
+                  </div>
+
+                  <div class="canvas-wrapper">
+                    <canvas [id]="'pdf-canvas-p' + page.pageNumber"></canvas>
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+
+          <!-- Draggable Touch Divider Handle -->
+          <div
+            class="touch-divider"
+            role="separator"
+            tabindex="0"
+            [attr.aria-orientation]="isPortrait ? 'horizontal' : 'vertical'"
+            [attr.aria-valuenow]="splitRatio"
+            [title]="'translationReader.dragToResize' | translate"
+            (pointerdown)="onDividerPointerDown($event)"
+            (touchstart)="onTouchStart($event)"
+          >
+            <div class="divider-handle-bar">
+              <span class="gripper-dot"></span>
+              <span class="gripper-dot"></span>
+              <span class="gripper-dot"></span>
+            </div>
+          </div>
+
+          <!-- Right / Bottom Pane: Translated Text -->
+          <section
+            #translatedPane
+            class="pane translated-pane"
+            (scroll)="onTranslatedPaneScroll($event)"
+            aria-label="Translated document text view"
+          >
+            <div class="pane-header-sticky">
+              <app-icon name="globe-outline" class="pane-icon"></app-icon>
+              <span class="pane-title">{{ 'translationReader.translatedText' | translate }}</span>
+              <span class="pane-badge target-badge">{{ session.targetLanguage.toUpperCase() }}</span>
+            </div>
+
+            <div class="pane-scroll-content">
+              @for (page of session.pages; track page.pageNumber; let idx = $index) {
+                <article
+                  class="page-card translated-page-card"
+                  [class.active-page]="idx === currentPageIndex"
+                  [attr.data-page-index]="idx"
+                >
+                  <div class="page-card-header">
+                    <div class="header-left-tags">
+                      <span class="page-number-tag translated-tag">Page {{ page.pageNumber }}</span>
+                      <span class="target-chip">{{ session.targetLanguage.toUpperCase() }}</span>
+                    </div>
+
+                    <div class="header-right-tags">
+                      <span class="expansion-tag" *ngIf="page.expansionRatio > 1">
+                        +{{ Math.round((page.expansionRatio - 1) * 100) }}% expansion
+                      </span>
+                      <span class="char-count-tag">{{ page.charCountTranslated }} chars</span>
+                    </div>
+                  </div>
+
+                  <div class="translated-body">
+                    @if (page.translatedParagraphs.length === 0) {
+                      <p class="no-text-notice">{{ 'translationReader.noText' | translate }}</p>
+                    }
+
+                    @for (para of page.translatedParagraphs; track $index) {
+                      <p class="translated-paragraph">{{ para }}</p>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+        </div>
+      </div>
+    }
+  </main>
+
+  <!-- Executive Summary Modal / Sheet -->
+  @if (showSummaryModal && session) {
+    <div class="summary-modal-backdrop" (click)="toggleSummaryModal()">
+      <div class="summary-modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <app-icon name="document-text" class="modal-icon"></app-icon>
+            <h3 class="modal-title">{{ 'translationReader.executiveSummary' | translate }}</h3>
+          </div>
+          <button type="button" class="btn-close-modal" (click)="toggleSummaryModal()">
+            <app-icon name="close" class="close-icon"></app-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="summary-box">
+            <h4 class="summary-label">Executive Overview:</h4>
+            <p class="summary-text">{{ session.executiveSummary }}</p>
+          </div>
+
+          @if (session.keyPoints && session.keyPoints.length > 0) {
+            <div class="keypoints-box">
+              <h4 class="summary-label">Key Takeaways & Clauses:</h4>
+              <ul class="keypoints-list">
+                @for (kp of session.keyPoints; track $index) {
+                  <li>{{ kp }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <div class="metrics-row" *ngIf="session.expansionSummary">
+            <div class="metric-chip">
+              <span class="label">Original Chars:</span>
+              <span class="val">{{ session.expansionSummary.originalTotalChars }}</span>
+            </div>
+            <div class="metric-chip">
+              <span class="label">Translated Chars:</span>
+              <span class="val">{{ session.expansionSummary.translatedTotalChars }}</span>
+            </div>
+            <div class="metric-chip highlight">
+              <span class="label">Expansion Factor:</span>
+              <span class="val">{{ session.expansionSummary.averageExpansionRate }}x</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-done" (click)="toggleSummaryModal()">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Sticky Bottom Action Bar with Dual Thumb Buttons -->
+  <footer class="sticky-action-bar" *ngIf="session">
+    <div class="action-bar-inner">
+      <button
+        type="button"
+        class="action-thumb-btn btn-export-pdf"
+        [disabled]="isExporting"
+        (click)="exportPdf()"
+      >
+        <app-icon name="document-text" class="btn-glyph"></app-icon>
+        <span class="btn-label">{{ 'translationReader.exportPdf' | translate }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="action-thumb-btn btn-export-docx"
+        [disabled]="isExporting"
+        (click)="exportDocx()"
+      >
+        <app-icon name="download" class="btn-glyph"></app-icon>
+        <span class="btn-label">{{ 'translationReader.exportDocx' | translate }}</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div class="toast-toast" *ngIf="toastMessage">
+    <app-icon name="checkmark-circle" class="toast-icon"></app-icon>
+    <span>{{ toastMessage | translate }}</span>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">{{ loadingMessage | translate }}</p>
+  </div>
+</div>

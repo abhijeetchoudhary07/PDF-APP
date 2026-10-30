@@ -97,11 +97,13 @@ PDF TOOLKIT
 • Compare two versions and see exactly what changed
 • Add headers, footers and page numbers
 • Remove hidden metadata before you send a file to anyone
+• Edit and correct PDF metadata — synchronize Info dictionary and XMP streams with full Unicode support
+• Verified redaction audit — prove sensitive data is permanently purged, with 300 DPI raster fallback
 
 SCANNING AND TEXT
 • Scan documents with the camera — corners detected, perspective corrected
-• Extract text with OCR in English, Hindi, Marathi, Bengali and Punjabi
-• Produce a searchable PDF with an invisible text layer
+• Extract text with OCR across 18 languages: English (bundled offline out-of-the-box), 13 Indic scripts (Hindi, Marathi, Bengali, Tamil, Telugu, Kannada, Malayalam, Gujarati, Odia, Assamese, Urdu, Sanskrit, Nepali), and major international languages (Spanish, French, Arabic, Chinese Simplified) with bilingual multi-select passes and high-accuracy Indic models
+• Produce a searchable PDF with an invisible text layer, including RTL support for Urdu and Arabic
 • Pull out text, images, tables and attachments
 • Read and generate QR codes and barcodes
 

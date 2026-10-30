@@ -47,6 +47,18 @@ if (typeof HTMLCanvasElement !== 'undefined') {
       }
       return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
     };
+    HTMLCanvasElement.prototype.toBlob = function (callback: (blob: Blob | null) => void, type = 'image/png') {
+      const dataUrl = this.toDataURL(type);
+      const parts = dataUrl.split(',');
+      const bstr = atob(parts[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: parts[0].match(/:(.*?);/)?.[1] || type });
+      callback(blob);
+    };
   }
 }
 
@@ -81,6 +93,29 @@ if (typeof Uint8Array !== 'undefined' && !(Uint8Array.prototype as any).toHex) {
     return Array.from(this)
       .map((b: any) => b.toString(16).padStart(2, '0'))
       .join('');
+  };
+}
+
+// Polyfill Map.prototype.getOrInsertComputed for pdfjs-dist v6
+if (typeof Map !== 'undefined' && !(Map.prototype as any).getOrInsertComputed) {
+  (Map.prototype as any).getOrInsertComputed = function (key: any, callbackFn: (key: any) => any) {
+    if (this.has(key)) {
+      return this.get(key);
+    }
+    const value = callbackFn(key);
+    this.set(key, value);
+    return value;
+  };
+}
+
+// Polyfill Math.sumPrecise for pdfjs-dist v6 in environments prior to ES2024 / Node 22 full rollout
+if (typeof Math !== 'undefined' && !(Math as any).sumPrecise) {
+  (Math as any).sumPrecise = function (items: Iterable<number>): number {
+    let sum = 0;
+    for (const n of items) {
+      sum += Number(n);
+    }
+    return sum;
   };
 }
 
@@ -168,6 +203,57 @@ try {
  * Call this at the start of a component spec's `beforeEach`, before
  * `TestBed.configureTestingModule`, which reads component definitions eagerly.
  */
+// Support Node.js worker_threads and tesseract.js under jsdom (where window.location causes local paths to be prepended with http://)
+if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+  try {
+    const workerThreads = require('node:worker_threads');
+    const OriginalWorker = workerThreads.Worker;
+    if (OriginalWorker && !(OriginalWorker as any)._isPatchedForJsdom) {
+      const PatchedWorker = function (this: any, filename: any, options: any) {
+        let target = filename;
+        if (typeof target === 'string' && /^https?:\/\//.test(target)) {
+          try {
+            const u = new URL(target);
+            target = decodeURIComponent(u.pathname);
+          } catch {}
+        }
+        return new OriginalWorker(target, options);
+      };
+      PatchedWorker.prototype = OriginalWorker.prototype;
+      (PatchedWorker as any)._isPatchedForJsdom = true;
+      workerThreads.Worker = PatchedWorker;
+    }
+  } catch {}
+
+  try {
+    const resolvePathsPath = require.resolve('tesseract.js/src/utils/resolvePaths');
+    const originalResolvePaths = require(resolvePathsPath);
+    if (!(require.cache[resolvePathsPath] as any)?._isPatchedForJsdom) {
+      const patchedResolvePaths = function (options: any) {
+        const res = originalResolvePaths(options);
+        if (res.langPath && typeof res.langPath === 'string' && /^https?:\/\/localhost/.test(res.langPath)) {
+          try {
+            res.langPath = decodeURIComponent(new URL(res.langPath).pathname);
+          } catch {}
+        }
+        if (res.workerPath && typeof res.workerPath === 'string' && /^https?:\/\/localhost/.test(res.workerPath)) {
+          try {
+            res.workerPath = decodeURIComponent(new URL(res.workerPath).pathname);
+          } catch {}
+        }
+        if (res.corePath && typeof res.corePath === 'string' && /^https?:\/\/localhost/.test(res.corePath)) {
+          try {
+            res.corePath = decodeURIComponent(new URL(res.corePath).pathname);
+          } catch {}
+        }
+        return res;
+      };
+      (patchedResolvePaths as any)._isPatchedForJsdom = true;
+      require.cache[resolvePathsPath]!.exports = patchedResolvePaths;
+    }
+  } catch {}
+}
+
 export async function resolveAngularResources(): Promise<void> {
   await resolveComponentResources(async (url: string) => {
     const file = resourceIndex.get(basename(url));

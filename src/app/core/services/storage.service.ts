@@ -17,6 +17,20 @@ export class StorageService {
   private readonly router = inject(Router);
 
   /**
+   * Pre-flight query for batch tools (e.g. mail-merge) to check remaining free quota.
+   */
+  async getQuotaStatus(): Promise<{ remaining: number | null; isUnlimited: boolean; limit: number; canStart: boolean }> {
+    const remaining = await this.quota.remaining();
+    const canStart = await this.quota.canStart();
+    return {
+      remaining,
+      isUnlimited: this.quota.isUnlimited,
+      limit: this.quota.limit,
+      canStart
+    };
+  }
+
+  /**
    * Writes a finished file to the device, and meters it.
    *
    * This is the one place every tool's output passes through, which makes it

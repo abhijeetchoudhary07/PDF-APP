@@ -1,0 +1,441 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      <app-page-header
+        [title]="'recipeEditor.title' | translate"
+        [subtitle]="'recipeEditor.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('recipeEditor.title' | translate) }]"
+        badge="PIPELINE"
+        badgeVariant="batch"
+        backUrl="/home">
+      </app-page-header>
+
+      <div class="recipe-editor-content">
+        <!-- Recipe Selector & Top Actions Card -->
+        <div class="recipe-meta-card">
+          <div class="meta-header">
+            @if (savedRecipes.length > 0) {
+              <div class="recipe-select-box">
+                <label for="recipe-picker" class="field-label">Switch Saved Recipe</label>
+                <select
+                  id="recipe-picker"
+                  class="recipe-dropdown"
+                  [value]="recipe.id"
+                  (change)="onSelectRecipe($any($event.target).value)">
+                  <option [value]="recipe.id">{{ recipe.name }} (Current)</option>
+                  @for (r of savedRecipes; track r.id) {
+                    @if (r.id !== recipe.id) {
+                      <option [value]="r.id">{{ r.name }}</option>
+                    }
+                  }
+                </select>
+              </div>
+            }
+
+            <div class="recipe-toolbar-actions">
+              <app-button variant="secondary" size="sm" (clicked)="newRecipe()">
+                <app-icon name="add"></app-icon>
+                New
+              </app-button>
+              <app-button variant="secondary" size="sm" (clicked)="duplicateCurrentRecipe()">
+                <app-icon name="copy"></app-icon>
+                Duplicate
+              </app-button>
+              <app-button variant="secondary" size="sm" (clicked)="exportJson()">
+                <app-icon name="share-social"></app-icon>
+                JSON
+              </app-button>
+              <app-button variant="secondary" size="sm" (clicked)="openImportModal()">
+                <app-icon name="download"></app-icon>
+                Import
+              </app-button>
+              @if (savedRecipes.some(r => r.id === recipe.id)) {
+                <app-button variant="secondary" size="sm" (clicked)="deleteCurrentRecipe()">
+                  <app-icon name="trash"></app-icon>
+                </app-button>
+              }
+            </div>
+          </div>
+
+          <!-- Recipe Name & Description Inputs -->
+          <div class="recipe-inputs-grid">
+            <div class="input-group">
+              <label for="recipe-name" class="field-label">{{ 'recipeEditor.recipeNameLabel' | translate }}</label>
+              <input
+                id="recipe-name"
+                type="text"
+                class="text-input"
+                [(ngModel)]="recipe.name"
+                [placeholder]="'recipeEditor.recipeNamePlaceholder' | translate" />
+            </div>
+
+            <div class="input-group">
+              <label for="recipe-desc" class="field-label">{{ 'recipeEditor.recipeDescLabel' | translate }}</label>
+              <input
+                id="recipe-desc"
+                type="text"
+                class="text-input"
+                [(ngModel)]="recipe.description"
+                [placeholder]="'recipeEditor.recipeDescPlaceholder' | translate" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Mobile Pipeline Builder -->
+        <div class="pipeline-section">
+          <div class="pipeline-section-header">
+            <div class="title-with-badge">
+              <h2 class="section-title">{{ 'recipeEditor.pipelineFlowTitle' | translate }}</h2>
+              <app-badge [variant]="recipe.steps.length >= 10 ? 'warning' : 'neutral'">{{ recipe.steps.length }}/10 Steps</app-badge>
+            </div>
+            <app-button variant="secondary" size="sm" [disabled]="recipe.steps.length >= 10" (clicked)="openAddToolModal()">
+              <app-icon name="add-circle"></app-icon>
+              {{ 'recipeEditor.addStepBtn' | translate }}
+            </app-button>
+          </div>
+
+          <!-- Empty State -->
+          @if (recipe.steps.length === 0) {
+            <div class="empty-pipeline-card">
+              <div class="empty-icon-circle">
+                <app-icon name="recipe-pipeline"></app-icon>
+              </div>
+              <h3 class="empty-title">{{ 'recipeEditor.noStepsTitle' | translate }}</h3>
+              <p class="empty-desc">{{ 'recipeEditor.noStepsDesc' | translate }}</p>
+              <app-button variant="primary" size="md" (clicked)="openAddToolModal()">
+                <app-icon name="add"></app-icon>
+                {{ 'recipeEditor.addStepBtn' | translate }}
+              </app-button>
+            </div>
+          }
+
+          <!-- Vertical Pipeline Steps Flow with HTML5 Drag & Drop -->
+          @if (recipe.steps.length > 0) {
+            <div class="pipeline-steps-stack">
+              @for (step of recipe.steps; track step.stepId; let idx = $index) {
+                <div
+                  class="pipeline-step-card"
+                  [class.dragging]="draggedStepIndex === idx"
+                  [class.drag-over]="dragOverIndex === idx"
+                  draggable="true"
+                  (dragstart)="onDragStart($event, idx)"
+                  (dragover)="onDragOver($event, idx)"
+                  (dragleave)="onDragLeave($event, idx)"
+                  (drop)="onDrop($event, idx)"
+                  (dragend)="onDragEnd()"
+                  (click)="openStepConfig(step)">
+                  <!-- Step Top Header -->
+                  <div class="step-card-header">
+                    <div class="step-meta-left">
+                      <div class="drag-handle" title="Drag to reorder" (click)="$event.stopPropagation()">
+                        <app-icon name="menu"></app-icon>
+                      </div>
+                      <span class="step-number-pill">Step {{ idx + 1 }}</span>
+                      <span class="step-category-tag">{{ getToolCategory(step.toolId) }}</span>
+                    </div>
+
+                    <div class="step-actions" (click)="$event.stopPropagation()">
+                      <button
+                        class="step-control-btn"
+                        [disabled]="idx === 0"
+                        (click)="moveStepUp(idx)"
+                        aria-label="Move step up">
+                        <app-icon name="arrow-up"></app-icon>
+                      </button>
+                      <button
+                        class="step-control-btn"
+                        [disabled]="idx === recipe.steps.length - 1"
+                        (click)="moveStepDown(idx)"
+                        aria-label="Move step down">
+                        <app-icon name="arrow-down"></app-icon>
+                      </button>
+                      <button
+                        class="step-control-btn config-btn"
+                        (click)="openStepConfig(step)"
+                        aria-label="Configure parameters">
+                        <app-icon name="construct"></app-icon>
+                      </button>
+                      <button
+                        class="step-control-btn delete-btn"
+                        (click)="removeStep(idx)"
+                        aria-label="Remove step">
+                        <app-icon name="trash"></app-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Step Content Body -->
+                  <div class="step-card-body">
+                    <div class="step-tool-icon-box">
+                      <app-icon [name]="getToolIcon(step.toolId)"></app-icon>
+                    </div>
+                    <div class="step-info-col">
+                      <h4 class="step-tool-title">{{ step.label }}</h4>
+                      <!-- Dynamic Parameters Summary Chips -->
+                      <div class="step-params-preview">
+                        @for (paramKey of getParamKeys(step); track paramKey) {
+                          <span class="param-chip">
+                            <strong>{{ paramKey }}:</strong> {{ step.parameters[paramKey] }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Downward Arrow Pipeline Connector -->
+                @if (idx < recipe.steps.length - 1) {
+                  <div class="pipeline-connector-box">
+                    <div class="connector-line"></div>
+                    <div class="connector-badge">
+                      <app-icon name="arrow-down"></app-icon>
+                    </div>
+                    <div class="connector-line"></div>
+                  </div>
+                }
+              }
+
+              <!-- Add Step Dashed Button at Bottom -->
+              <button class="add-step-dashed-card" [disabled]="recipe.steps.length >= 10" (click)="openAddToolModal()">
+                <app-icon name="add-circle" class="dashed-icon"></app-icon>
+                <span>{{ recipe.steps.length >= 10 ? 'Maximum 10 Steps Reached' : ('recipeEditor.addStepBtn' | translate) }}</span>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Sticky Bottom Action Bar -->
+  <footer class="sticky-action-bar">
+    <div class="action-bar-container">
+      <app-button
+        variant="secondary"
+        size="md"
+        [disabled]="recipe.steps.length === 0"
+        (clicked)="openTestRunModal()">
+        <app-icon name="play"></app-icon>
+        {{ 'recipeEditor.testRunBtn' | translate }}
+      </app-button>
+
+      <app-button
+        variant="primary"
+        size="md"
+        [disabled]="recipe.steps.length === 0"
+        (clicked)="saveRecipe()">
+        <app-icon name="save"></app-icon>
+        {{ 'recipeEditor.saveRecipeBtn' | translate }}
+      </app-button>
+    </div>
+  </footer>
+
+  <!-- Modal 1: Choose Tool to Add Step -->
+  <app-modal
+    [isOpen]="showAddToolModal"
+    [title]="'recipeEditor.addStepModalTitle' | translate"
+    (closed)="closeAddToolModal()">
+    <div class="tool-picker-grid">
+      @for (tool of availableTools; track tool.toolId) {
+        <div class="tool-picker-card" (click)="addStepFromTool(tool)">
+          <div class="picker-icon-box">
+            <app-icon [name]="tool.icon"></app-icon>
+          </div>
+          <div class="picker-info">
+            <div class="picker-top">
+              <span class="picker-title">{{ tool.name }}</span>
+              <span class="picker-category">{{ tool.category }}</span>
+            </div>
+            <p class="picker-desc">{{ tool.description }}</p>
+          </div>
+          <app-icon name="chevron-forward" class="picker-arrow"></app-icon>
+        </div>
+      }
+    </div>
+  </app-modal>
+
+  <!-- Modal 2: Step Parameter Inspector -->
+  <app-modal
+    [isOpen]="showConfigModal"
+    [title]="'recipeEditor.editStepModalTitle' | translate"
+    (closed)="closeStepConfig()">
+    @if (activeEditingStep && activeEditingToolDef) {
+      <div class="inspector-form">
+        <div class="inspector-header-info">
+          <div class="inspector-icon">
+            <app-icon [name]="activeEditingToolDef.icon"></app-icon>
+          </div>
+          <div>
+            <h3 class="inspector-title">{{ activeEditingToolDef.name }}</h3>
+            <p class="inspector-desc">{{ activeEditingToolDef.description }}</p>
+          </div>
+        </div>
+
+        <div class="inspector-fields">
+          @for (field of activeEditingToolDef.parameterSchema; track field.key) {
+            <div class="inspector-field-row">
+              <label [for]="'param-' + field.key" class="field-label">
+                {{ field.label }}
+                @if (field.required) { <span class="required-star">*</span> }
+              </label>
+
+              <!-- Number Input -->
+              @if (field.type === 'number') {
+                <input
+                  [id]="'param-' + field.key"
+                  type="number"
+                  class="text-input"
+                  [min]="field.min !== undefined ? field.min : null"
+                  [max]="field.max !== undefined ? field.max : null"
+                  [(ngModel)]="activeEditingStep.parameters[field.key]" />
+              }
+
+              <!-- Text Input -->
+              @if (field.type === 'text') {
+                <input
+                  [id]="'param-' + field.key"
+                  type="text"
+                  class="text-input"
+                  [(ngModel)]="activeEditingStep.parameters[field.key]" />
+              }
+
+              <!-- Select Dropdown -->
+              @if (field.type === 'select') {
+                <select
+                  [id]="'param-' + field.key"
+                  class="select-input"
+                  [(ngModel)]="activeEditingStep.parameters[field.key]">
+                  @for (opt of field.options; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              }
+
+              <!-- Boolean Checkbox -->
+              @if (field.type === 'boolean') {
+                <div class="checkbox-wrapper">
+                  <input
+                    [id]="'param-' + field.key"
+                    type="checkbox"
+                    class="checkbox-input"
+                    [(ngModel)]="activeEditingStep.parameters[field.key]" />
+                  <span class="checkbox-label">Enable {{ field.label }}</span>
+                </div>
+              }
+
+              @if (field.helperText) {
+                <span class="field-helper">{{ field.helperText }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="inspector-footer">
+          <app-button variant="primary" size="md" (clicked)="closeStepConfig()">
+            {{ 'recipeEditor.closeModal' | translate }}
+          </app-button>
+        </div>
+      </div>
+    }
+  </app-modal>
+
+  <!-- Modal 3: Test Run Pipeline Modal -->
+  <app-modal
+    [isOpen]="showTestRunModal"
+    [title]="'recipeEditor.testRunModalTitle' | translate"
+    (closed)="closeTestRunModal()">
+    <div class="test-run-modal-content">
+      <p class="test-run-prompt">{{ 'recipeEditor.testUploadPrompt' | translate }}</p>
+
+      <!-- Dropzone for Test PDF -->
+      <app-file-dropzone
+        title="Upload Test PDF"
+        description="Select any PDF document to test the pipeline"
+        accept="application/pdf"
+        icon="document-text"
+        (fileSelected)="onTestFileSelected($event)">
+      </app-file-dropzone>
+
+      @if (testPdfFile) {
+        <div class="test-selected-file">
+          <app-icon name="document-text" class="file-icon"></app-icon>
+          <div class="file-details">
+            <span class="file-name">{{ testPdfFile.name }}</span>
+            <span class="file-size">{{ testPdfFile.size / 1024 | number:'1.0-0' }} KB</span>
+          </div>
+        </div>
+      }
+
+      <!-- Live Execution Progress -->
+      @if (isTestRunning && testRunProgress) {
+        <div class="test-progress-box">
+          <div class="progress-title-row">
+            <app-icon name="sync" class="spin-icon"></app-icon>
+            <span>
+              {{ 'recipeEditor.runningStep' | translate:{ current: testRunProgress.stepIndex + 1, total: testRunProgress.totalSteps, label: testRunProgress.label } }}
+            </span>
+          </div>
+          <app-progress [value]="testRunProgress.stepProgress" [showPercentage]="true"></app-progress>
+        </div>
+      }
+
+      <!-- Test Run Result -->
+      @if (testRunResult) {
+        <div class="test-result-box" [class.success]="testRunResult.success" [class.failed]="!testRunResult.success">
+          @if (testRunResult.success) {
+            <div class="result-status-row">
+              <app-icon name="checkmark-circle" class="text-success"></app-icon>
+              <span>{{ 'recipeEditor.testRunSuccess' | translate:{ total: testRunResult.completedSteps } }}</span>
+            </div>
+            <div class="result-actions">
+              <app-button variant="primary" size="sm" (clicked)="downloadTestOutput()">
+                <app-icon name="download"></app-icon>
+                {{ 'recipeEditor.downloadResultBtn' | translate }}
+              </app-button>
+            </div>
+          } @else {
+            <div class="result-status-row">
+              <app-icon name="close-circle" class="text-danger"></app-icon>
+              <span>{{ 'recipeEditor.testRunFailed' | translate:{ step: (testRunResult.failingStepIndex || 0) + 1, error: testRunResult.error } }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="test-modal-footer">
+        <app-button
+          variant="primary"
+          size="md"
+          [disabled]="!testPdfFile || isTestRunning"
+          [loading]="isTestRunning"
+          (clicked)="runTestPipeline()">
+          <app-icon name="play"></app-icon>
+          {{ 'recipeEditor.runTestPipelineBtn' | translate }}
+        </app-button>
+      </div>
+    </div>
+  </app-modal>
+
+  <!-- Modal 4: Import JSON Modal -->
+  <app-modal
+    [isOpen]="showImportModal"
+    [title]="'recipeEditor.importJsonBtn' | translate"
+    (closed)="closeImportModal()">
+    <div class="import-modal-content">
+      <p class="import-prompt">Paste recipe JSON text below to import into your local recipes:</p>
+      <textarea
+        class="import-textarea"
+        rows="8"
+        [(ngModel)]="jsonImportText"
+        placeholder='{"schemaVersion": "1.0", "recipe": { "name": "...", "steps": [...] }}'></textarea>
+
+      <div class="import-modal-footer">
+        <app-button variant="primary" size="md" [disabled]="!jsonImportText.trim()" (clicked)="confirmImport()">
+          {{ 'recipeEditor.importJsonBtn' | translate }}
+        </app-button>
+      </div>
+    </div>
+  </app-modal>
+</div>

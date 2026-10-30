@@ -165,7 +165,7 @@ import { SupportedLanguage, LanguageOption } from '../../../../core/i18n/i18n.ty
       transform: rotate(180deg);
     }
 
-    @media (max-width: 600px) {
+    @media (pointer: coarse), (max-width: 960px) {
       .lang-trigger-btn {
         /*
          * The touch floor, not 38px. This control sits in the header beside

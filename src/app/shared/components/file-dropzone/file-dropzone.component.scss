@@ -273,3 +273,29 @@
     transform: rotate(360deg);
   }
 }
+
+@media (max-height: 520px) {
+  .dropzone-box {
+    padding: 4px 12px;
+  }
+
+  .dropzone-content {
+    .icon-circle {
+      display: none;
+    }
+
+    .title {
+      font-size: var(--font-base, 14px);
+      margin: 0 0 4px;
+    }
+
+    .description {
+      display: none;
+    }
+
+    .offline-note {
+      display: none;
+    }
+  }
+}
+

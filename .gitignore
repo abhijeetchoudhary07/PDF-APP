@@ -54,6 +54,10 @@ e2e/test-data/conversion-audit/
 e2e/test-data/editor-audit/
 e2e/test-data/scanner-audit/
 
+# Tesseract raw / uncompressed training data
+*.traineddata
+!*.traineddata.gz
+
 
 
 # --- Android / Capacitor ---------------------------------------------------

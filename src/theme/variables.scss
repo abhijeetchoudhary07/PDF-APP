@@ -376,7 +376,7 @@
 }
 
 /* Touch & Mobile Floor: Ensure accessibility guidelines (>=44px touch targets) on mobile/coarse pointer */
-@media (pointer: coarse), (max-width: 768px) {
+@media (pointer: coarse), (max-width: 960px) {
   :root {
     --control-h-sm: max(clamp(32px, 30px + 0.6vw, 36px), var(--min-touch-target, 44px));
     --control-h-md: max(clamp(40px, 38px + 0.8vw, 44px), var(--min-touch-target, 44px));

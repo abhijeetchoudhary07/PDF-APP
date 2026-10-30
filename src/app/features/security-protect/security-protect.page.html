@@ -1,0 +1,434 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="tool-page-container">
+      <app-page-header
+        [title]="'securityProtect.title' | translate"
+        [subtitle]="'securityProtect.subtitle' | translate"
+        [breadcrumbs]="[{ label: 'PDF Tools Hub', url: '/features/pdf' }, { label: 'Protect PDF' }]"
+        badge="AES-256"
+        badgeVariant="security"
+        backUrl="/features/pdf">
+      </app-page-header>
+
+      <!-- ZERO-KNOWLEDGE SECURITY BANNER -->
+      <div class="security-banner">
+        <div class="banner-header">
+          <app-icon name="shield-lock" class="banner-icon"></app-icon>
+          <strong>Zero-Knowledge Client-Side Security</strong>
+        </div>
+        <p>
+          All encryption processes run 100% offline using hardware-accelerated WebCrypto on your device.
+          Passwords and document contents never leave your device memory.
+        </p>
+      </div>
+
+      <!-- FILE UPLOAD STATE -->
+      @if (!loadedFile) {
+        <div class="upload-container">
+          <app-file-dropzone
+            accept="application/pdf"
+            icon="shield-lock"
+            [title]="'securityProtect.dropzoneTitle' | translate"
+            [description]="'securityProtect.dropzoneDesc' | translate"
+            (fileSelected)="onFileSelected($event)">
+          </app-file-dropzone>
+        </div>
+      }
+
+      <!-- CONFIGURATION WORKFLOW -->
+      @if (loadedFile && workflowState !== 'SUCCESS') {
+        <div class="security-dashboard-content">
+
+          <!-- 1. TOP CARD: FILE INFO & STATUS -->
+          <div class="dashboard-card file-status-card">
+            <div class="file-status-header">
+              <div class="file-badge-icon">
+                <app-icon name="document-text" class="file-icon"></app-icon>
+              </div>
+              <div class="file-meta">
+                <h4 class="file-name" [title]="loadedFile.name">{{ loadedFile.name }}</h4>
+                <div class="file-details">
+                  <span>{{ (loadedFile.size / 1024) | number:'1.0-1' }} KB</span>
+                  <span class="dot-separator">•</span>
+                  <span>{{ pageCount }} {{ pageCount === 1 ? 'page' : 'pages' }}</span>
+                </div>
+              </div>
+              <button class="replace-btn" (click)="selectPdf()" [attr.aria-label]="'common.chooseAnother' | translate">
+                <app-icon name="swap-horizontal"></app-icon>
+                <span>Change</span>
+              </button>
+            </div>
+
+            <!-- Current Protection Pill -->
+            <div class="current-status-row">
+              <span class="status-label">{{ 'securityProtect.protectionStatus' | translate }}:</span>
+              @if (securityStatus?.isEncrypted || securityStatus?.requiresUserPassword) {
+                <span class="status-pill protected">
+                  <app-icon name="lock-closed"></app-icon>
+                  {{ 'securityProtect.statusProtected' | translate }}
+                </span>
+              } @else {
+                <span class="status-pill unprotected">
+                  <app-icon name="lock-open"></app-icon>
+                  {{ 'securityProtect.statusUnprotected' | translate }}
+                </span>
+              }
+            </div>
+
+            @if (securityStatus?.isEncrypted && securityStatus?.requiresUserPassword) {
+              <div class="current-password-box">
+                <label class="field-label" for="current-password">
+                  Existing Document Password
+                  <span class="required-star">*</span>
+                </label>
+                <div class="input-with-actions">
+                  <app-icon name="key" class="input-prefix-icon"></app-icon>
+                  <input
+                    id="current-password"
+                    [type]="showSourcePassword ? 'text' : 'password'"
+                    [(ngModel)]="sourcePassword"
+                    placeholder="Enter existing password to re-protect"
+                    class="mobile-text-input"
+                    autocomplete="off" />
+                  <button
+                    type="button"
+                    class="eye-toggle-btn"
+                    (click)="showSourcePassword = !showSourcePassword"
+                    [attr.aria-label]="showSourcePassword ? ('securityProtect.hidePassword' | translate) : ('securityProtect.showPassword' | translate)">
+                    <app-icon [name]="showSourcePassword ? 'eye-off' : 'eye'"></app-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- 2. ENCRYPTION STANDARD SELECTOR (Segmented Pill Bar) -->
+          <div class="dashboard-card standard-selector-card">
+            <div class="card-title-row">
+              <app-icon name="shield" class="section-icon"></app-icon>
+              <h3>{{ 'securityProtect.encryptionStandard' | translate }}</h3>
+            </div>
+
+            <div class="segmented-pill-bar" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                class="pill-tab"
+                [class.active]="encryptionStandard === 'aes-256'"
+                (click)="setStandard('aes-256')">
+                <span class="pill-label">{{ 'securityProtect.aes256Option' | translate }}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                class="pill-tab"
+                [class.active]="encryptionStandard === 'aes-128'"
+                (click)="setStandard('aes-128')">
+                <span class="pill-label">{{ 'securityProtect.aes128Option' | translate }}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                class="pill-tab"
+                [class.active]="encryptionStandard === 'rc4-128'"
+                (click)="setStandard('rc4-128')">
+                <span class="pill-label">{{ 'securityProtect.legacyRc4Option' | translate }}</span>
+              </button>
+            </div>
+
+            <p class="standard-desc">
+              @if (encryptionStandard === 'aes-256') {
+                {{ 'securityProtect.aes256Desc' | translate }}
+              } @else if (encryptionStandard === 'aes-128') {
+                {{ 'securityProtect.aes128Desc' | translate }}
+              } @else {
+                {{ 'securityProtect.legacyRc4Desc' | translate }}
+              }
+            </p>
+          </div>
+
+          <!-- 3. PASSWORD INPUT CARDS -->
+          <div class="dashboard-card passwords-card">
+            <div class="card-title-row">
+              <app-icon name="key" class="section-icon"></app-icon>
+              <h3>{{ 'securityProtect.passwordsTitle' | translate }}</h3>
+            </div>
+
+            <!-- User Password (Open Password) -->
+            <div class="password-field-group">
+              <label class="field-label" for="user-password">
+                {{ 'securityProtect.userPasswordLabel' | translate }}
+                <span class="required-star">*</span>
+              </label>
+
+              <div class="input-with-actions">
+                <app-icon name="lock-closed" class="input-prefix-icon"></app-icon>
+                <input
+                  id="user-password"
+                  [type]="showUserPassword ? 'text' : 'password'"
+                  [(ngModel)]="userPassword"
+                  [placeholder]="'securityProtect.userPasswordPlaceholder' | translate"
+                  class="mobile-text-input"
+                  autocomplete="new-password" />
+                <button
+                  type="button"
+                  class="eye-toggle-btn"
+                  (click)="showUserPassword = !showUserPassword"
+                  [attr.aria-label]="showUserPassword ? ('securityProtect.hidePassword' | translate) : ('securityProtect.showPassword' | translate)">
+                  <app-icon [name]="showUserPassword ? 'eye-off' : 'eye'"></app-icon>
+                </button>
+              </div>
+
+              <!-- Password Strength Meter & Passphrase Generator (N2) -->
+              <app-password-strength-meter
+                [password]="userPassword"
+                [ownerPassword]="ownerPassword"
+                (passphraseGenerated)="onPassphraseGenerated($event)">
+              </app-password-strength-meter>
+
+              <div class="confirm-input-wrap">
+                <app-icon name="checkmark-circle" class="input-prefix-icon"></app-icon>
+                <input
+                  [type]="showUserPassword ? 'text' : 'password'"
+                  [(ngModel)]="confirmUserPassword"
+                  [placeholder]="'securityProtect.confirmPasswordPlaceholder' | translate"
+                  class="mobile-text-input"
+                  autocomplete="new-password" />
+              </div>
+
+              @if (confirmUserPassword && userPassword !== confirmUserPassword) {
+                <div class="input-error-msg">
+                  <app-icon name="alert-circle"></app-icon>
+                  <span>{{ 'securityProtect.passwordMismatch' | translate }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Advanced Owner Password Accordion -->
+            <div class="owner-accordion-header" (click)="showAdvancedOwner = !showAdvancedOwner">
+              <div class="accordion-left">
+                <app-icon name="shield-checkmark" class="accordion-icon"></app-icon>
+                <span>{{ 'securityProtect.ownerPasswordLabel' | translate }}</span>
+              </div>
+              <app-icon [name]="showAdvancedOwner ? 'chevron-up' : 'chevron-down'"></app-icon>
+            </div>
+
+            @if (showAdvancedOwner) {
+              <div class="owner-accordion-body">
+                <p class="field-hint">
+                  {{ 'securityProtect.ownerPasswordHelp' | translate }}
+                </p>
+
+                <div class="input-with-actions">
+                  <app-icon name="key" class="input-prefix-icon"></app-icon>
+                  <input
+                    [type]="showOwnerPassword ? 'text' : 'password'"
+                    [(ngModel)]="ownerPassword"
+                    [placeholder]="'securityProtect.ownerPasswordPlaceholder' | translate"
+                    class="mobile-text-input"
+                    autocomplete="new-password" />
+                  <button
+                    type="button"
+                    class="eye-toggle-btn"
+                    (click)="showOwnerPassword = !showOwnerPassword"
+                    [attr.aria-label]="showOwnerPassword ? ('securityProtect.hidePassword' | translate) : ('securityProtect.showPassword' | translate)">
+                    <app-icon [name]="showOwnerPassword ? 'eye-off' : 'eye'"></app-icon>
+                  </button>
+                </div>
+
+                <div class="confirm-input-wrap">
+                  <app-icon name="checkmark-circle" class="input-prefix-icon"></app-icon>
+                  <input
+                    [type]="showOwnerPassword ? 'text' : 'password'"
+                    [(ngModel)]="confirmOwnerPassword"
+                    [placeholder]="'securityProtect.confirmPasswordPlaceholder' | translate"
+                    class="mobile-text-input"
+                    autocomplete="new-password" />
+                </div>
+
+                @if (confirmOwnerPassword && ownerPassword !== confirmOwnerPassword) {
+                  <div class="input-error-msg">
+                    <app-icon name="alert-circle"></app-icon>
+                    <span>{{ 'securityProtect.passwordMismatch' | translate }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- 4. PERMISSIONS CHECKLIST (Thumb-friendly switch cards >=44px) -->
+          <div class="dashboard-card permissions-card">
+            <div class="card-title-row">
+              <app-icon name="checkmark-circle" class="section-icon"></app-icon>
+              <div>
+                <h3>{{ 'securityProtect.permissionsTitle' | translate }}</h3>
+                <p class="subtitle-text">{{ 'securityProtect.permissionsSubtitle' | translate }}</p>
+              </div>
+            </div>
+
+            <div class="permissions-list">
+              <!-- Printing -->
+              <div class="permission-row touch-row">
+                <div class="perm-info">
+                  <span class="perm-title">{{ 'securityProtect.allowPrinting' | translate }}</span>
+                  <span class="perm-desc">{{ 'securityProtect.allowPrintingDesc' | translate }}</span>
+                </div>
+                <div class="perm-control">
+                  <select
+                    [ngModel]="permissions.allowPrinting"
+                    (ngModelChange)="togglePrinting($event)"
+                    class="mobile-select-dropdown">
+                    <option value="high-resolution">{{ 'securityProtect.printingHigh' | translate }}</option>
+                    <option value="low-resolution">{{ 'securityProtect.printingLow' | translate }}</option>
+                    <option value="none">{{ 'securityProtect.printingNone' | translate }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Content Copying -->
+              <div class="permission-row touch-row" (click)="toggleCopying()">
+                <div class="perm-info">
+                  <span class="perm-title">{{ 'securityProtect.allowCopying' | translate }}</span>
+                  <span class="perm-desc">{{ 'securityProtect.allowCopyingDesc' | translate }}</span>
+                </div>
+                <div class="perm-control" (click)="$event.stopPropagation()">
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      [checked]="permissions.allowCopying"
+                      (change)="toggleCopying()" />
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Editing / Modifying -->
+              <div class="permission-row touch-row" (click)="toggleModifying()">
+                <div class="perm-info">
+                  <span class="perm-title">{{ 'securityProtect.allowModifying' | translate }}</span>
+                  <span class="perm-desc">{{ 'securityProtect.allowModifyingDesc' | translate }}</span>
+                </div>
+                <div class="perm-control" (click)="$event.stopPropagation()">
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      [checked]="permissions.allowModifying"
+                      (change)="toggleModifying()" />
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Forms -->
+              <div class="permission-row touch-row" (click)="toggleForms()">
+                <div class="perm-info">
+                  <span class="perm-title">{{ 'securityProtect.allowForms' | translate }}</span>
+                  <span class="perm-desc">{{ 'securityProtect.allowFormsDesc' | translate }}</span>
+                </div>
+                <div class="perm-control" (click)="$event.stopPropagation()">
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      [checked]="permissions.allowFillingForms"
+                      (change)="toggleForms()" />
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Notes & Comments -->
+              <div class="permission-row touch-row" (click)="toggleAnnotations()">
+                <div class="perm-info">
+                  <span class="perm-title">{{ 'securityProtect.allowAnnotations' | translate }}</span>
+                  <span class="perm-desc">{{ 'securityProtect.allowAnnotationsDesc' | translate }}</span>
+                </div>
+                <div class="perm-control" (click)="$event.stopPropagation()">
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      [checked]="permissions.allowAnnotating"
+                      (change)="toggleAnnotations()" />
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Document Assembly -->
+              <div class="permission-row touch-row" (click)="toggleAssembly()">
+                <div class="perm-info">
+                  <span class="perm-title">{{ 'securityProtect.allowAssembly' | translate }}</span>
+                  <span class="perm-desc">{{ 'securityProtect.allowAssemblyDesc' | translate }}</span>
+                </div>
+                <div class="perm-control" (click)="$event.stopPropagation()">
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      [checked]="permissions.allowDocumentAssembly"
+                      (change)="toggleAssembly()" />
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PROGRESS INDICATOR -->
+          @if (workflowState === 'PROCESSING') {
+            <div class="progress-card">
+              <app-progress
+                [indeterminate]="true"
+                variant="primary"
+                [label]="'securityProtect.encryptingProgress' | translate:{ standard: encryptionStandard.toUpperCase() }">
+              </app-progress>
+            </div>
+          }
+
+          <!-- ERROR ALERT -->
+          @if (workflowState === 'ERROR') {
+            <div class="error-banner">
+              <app-icon name="alert-circle" class="error-icon"></app-icon>
+              <span>{{ errorMessage }}</span>
+              <app-button size="sm" variant="outline" (clicked)="executeProtect()">Try Again</app-button>
+            </div>
+          }
+
+          <!-- PADDING FOR STICKY ACTION BAR -->
+          <div class="sticky-bar-spacer"></div>
+        </div>
+
+        <!-- 5. STICKY BOTTOM ACTION BAR (Thumb Friendly) -->
+        <aside class="sticky-action-bar" aria-label="Action Bar">
+          <div class="sticky-action-bar-inner">
+            <button
+              type="button"
+              class="primary-thumb-button"
+              [disabled]="!canExecute"
+              (click)="executeProtect()">
+              <app-icon name="shield-lock" class="btn-icon"></app-icon>
+              <span>
+                {{ isEncrypting ? ('common.processing' | translate) : ('securityProtect.encryptAndSaveBtn' | translate) }}
+              </span>
+            </button>
+          </div>
+        </aside>
+      }
+
+      <!-- SUCCESS RESULT VIEW -->
+      @if (workflowState === 'SUCCESS' && resultFile) {
+        <div class="result-view-container">
+          <app-result-preview
+            [title]="'securityProtect.successTitle' | translate"
+            [subtitle]="'securityProtect.successSubtitle' | translate"
+            [file]="resultFile"
+            (shared)="shareResult()"
+            (resetRequested)="resetConfig()">
+          </app-result-preview>
+        </div>
+      }
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+</div>

@@ -2,70 +2,73 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Preferences } from '@capacitor/preferences';
+import {
+  CUSTOM_PRESETS_KEY,
+  PresetRequirement,
+  Preset
+} from '../models/preset.types';
 
-const CUSTOM_PRESETS_KEY = 'IFH_CUSTOM_PRESETS';
-
-export interface PresetRequirement {
-  minKb?: number;
-  maxKb?: number;
-  width?: number;
-  height?: number;
-  aspectRatio?: string;
-  format?: string;
-  backgroundGuidance?: string;
-  verifiedSource?: string;
-}
-
-export interface Preset {
-  id: string;
-  name: string;
-  category: string;
-  isCustom?: boolean;
-  photo?: PresetRequirement;
-  signature?: PresetRequirement;
-  pdf?: PresetRequirement;
-}
+export { CUSTOM_PRESETS_KEY, PresetRequirement, Preset };
 
 @Injectable({
   providedIn: 'root'
 })
 export class PresetService {
-  private http = inject(HttpClient);
-
+  protected http = inject(HttpClient, { optional: true });
 
   async getPhotoPresets(): Promise<Preset[]> {
+    if (!this.http) return [];
     return firstValueFrom(this.http.get<Preset[]>('assets/presets/photo-presets.json'));
   }
 
   async getSignaturePresets(): Promise<Preset[]> {
+    if (!this.http) return [];
     return firstValueFrom(this.http.get<Preset[]>('assets/presets/signature-presets.json'));
   }
 
   async getPdfPresets(): Promise<Preset[]> {
+    if (!this.http) return [];
     return firstValueFrom(this.http.get<Preset[]>('assets/presets/pdf-presets.json'));
   }
 
   async getCustomPresets(): Promise<Preset[]> {
-    const { value } = await Preferences.get({ key: CUSTOM_PRESETS_KEY });
-    if (value) return JSON.parse(value);
+    try {
+      const { value } = await Preferences.get({ key: CUSTOM_PRESETS_KEY });
+      if (value) {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+    } catch (err) {
+      console.warn('Failed to parse custom presets from storage', err);
+    }
     return [];
   }
 
   async saveCustomPreset(preset: Preset): Promise<void> {
-    const presets = await this.getCustomPresets();
-    const index = presets.findIndex(p => p.id === preset.id);
-    if (index !== -1) {
-      presets[index] = preset;
-    } else {
-      presets.push(preset);
+    try {
+      const presets = await this.getCustomPresets();
+      const index = presets.findIndex(p => p.id === preset.id);
+      if (index !== -1) {
+        presets[index] = preset;
+      } else {
+        presets.push(preset);
+      }
+      await Preferences.set({ key: CUSTOM_PRESETS_KEY, value: JSON.stringify(presets) });
+    } catch (err: any) {
+      console.error('Failed to write custom preset to storage', err);
+      throw new Error(`Storage write error: ${err?.message || 'Unable to save preset'}`);
     }
-    await Preferences.set({ key: CUSTOM_PRESETS_KEY, value: JSON.stringify(presets) });
   }
 
   async deleteCustomPreset(id: string): Promise<void> {
-    let presets = await this.getCustomPresets();
-    presets = presets.filter(p => p.id !== id);
-    await Preferences.set({ key: CUSTOM_PRESETS_KEY, value: JSON.stringify(presets) });
+    try {
+      let presets = await this.getCustomPresets();
+      presets = presets.filter(p => p.id !== id);
+      await Preferences.set({ key: CUSTOM_PRESETS_KEY, value: JSON.stringify(presets) });
+    } catch (err: any) {
+      console.error('Failed to delete custom preset from storage', err);
+      throw new Error(`Storage write error: ${err?.message || 'Unable to delete preset'}`);
+    }
   }
 
   async getAllGroupedPresets(): Promise<{ category: string, presets: Preset[] }[]> {

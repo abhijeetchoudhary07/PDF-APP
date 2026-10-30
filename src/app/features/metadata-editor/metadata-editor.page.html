@@ -1,0 +1,358 @@
+<div class="metadata-editor-page">
+  <app-header [title]="'metadataEditor.title' | translate"></app-header>
+
+  <main class="page-content">
+    <!-- HERO / TITLE -->
+    <header class="section-hero">
+      <div class="hero-badge">
+        <app-icon name="metadata-edit" [size]="20" class="hero-icon"></app-icon>
+        <span>{{ 'metadataEditor.badge' | translate }}</span>
+      </div>
+      <h1 class="hero-title">{{ 'metadataEditor.title' | translate }}</h1>
+      <p class="hero-subtitle">{{ 'metadataEditor.subtitle' | translate }}</p>
+    </header>
+
+    <!-- DROPZONE (When no file selected) -->
+    @if (!currentFile) {
+      <div class="dropzone-section">
+        <app-file-dropzone
+          accept="application/pdf"
+          [title]="'metadataEditor.dropzoneTitle' | translate"
+          [description]="'metadataEditor.dropzoneDesc' | translate"
+          (fileSelected)="handleFileSelected($event)">
+        </app-file-dropzone>
+      </div>
+    }
+
+    <!-- MAIN FORM (When file loaded) -->
+    @if (currentFile && currentPdfBytes) {
+      <div class="editor-container">
+
+        <!-- FILE SUMMARY CARD -->
+        <section class="card file-summary-card">
+          <div class="file-info-col">
+            <div class="file-icon-box">
+              <app-icon name="document-text" [size]="24"></app-icon>
+            </div>
+            <div class="file-text-meta">
+              <h3 class="file-name" [title]="fileName">{{ fileName }}</h3>
+              <p class="file-specs">
+                {{ totalPages }} {{ 'tools.pageCount' | translate : { count: totalPages } }} &bull;
+                {{ (fileSize / 1024) | number:'1.0-1' }} KB
+              </p>
+            </div>
+          </div>
+
+          <div class="xmp-sync-badge" title="Info dictionary and XMP stream are both updated">
+            <app-icon name="checkmark-circle" [size]="16"></app-icon>
+            <span>{{ 'metadataEditor.xmpSynchronized' | translate }}</span>
+          </div>
+        </section>
+
+        <!-- QUICK ACTIONS BAR -->
+        <div class="quick-actions-bar">
+          <button
+            type="button"
+            class="quick-pill-btn"
+            data-testid="btn-copy-original"
+            (click)="copyFromOriginal()"
+            title="Restore original values">
+            <app-icon name="arrow-undo" [size]="16"></app-icon>
+            <span>{{ 'metadataEditor.copyFromOriginal' | translate }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="quick-pill-btn text-danger"
+            data-testid="btn-clear-all"
+            (click)="clearAllFields()"
+            title="Clear all fields">
+            <app-icon name="trash" [size]="16"></app-icon>
+            <span>{{ 'metadataEditor.clearAll' | translate }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="quick-pill-btn compare-pill"
+            data-testid="btn-compare"
+            (click)="openComparisonDrawer()">
+            <app-icon name="swap-horizontal" [size]="16"></app-icon>
+            <span>{{ 'metadataEditor.compareButton' | translate }}</span>
+            @if (modifiedCount > 0) {
+              <span class="modified-count-badge" data-testid="modified-count-badge">{{ modifiedCount }}</span>
+            }
+          </button>
+        </div>
+
+        <!-- MOBILE FORM CARDS -->
+        <div class="form-cards-grid">
+
+          <!-- 1. TITLE CARD -->
+          <div class="card field-card">
+            <div class="field-header">
+              <label for="meta-title" class="field-label">{{ 'metadataEditor.fieldTitle' | translate }}</label>
+              <span class="field-sublabel">{{ 'metadataEditor.fieldTitleDesc' | translate }}</span>
+            </div>
+            <div class="input-wrap">
+              <input
+                id="meta-title"
+                data-testid="meta-title-input"
+                type="text"
+                class="meta-input"
+                [(ngModel)]="formData.title"
+                placeholder="e.g. Annual Financial Statement 2026" />
+            </div>
+          </div>
+
+          <!-- 2. AUTHOR CARD -->
+          <div class="card field-card">
+            <div class="field-header">
+              <label for="meta-author" class="field-label">{{ 'metadataEditor.fieldAuthor' | translate }}</label>
+              <span class="field-sublabel">{{ 'metadataEditor.fieldAuthorDesc' | translate }}</span>
+            </div>
+            <div class="input-wrap">
+              <input
+                id="meta-author"
+                data-testid="meta-author-input"
+                type="text"
+                class="meta-input"
+                [(ngModel)]="formData.author"
+                placeholder="e.g. Department of Finance or John Doe" />
+            </div>
+          </div>
+
+          <!-- 3. SUBJECT CARD -->
+          <div class="card field-card">
+            <div class="field-header">
+              <label for="meta-subject" class="field-label">{{ 'metadataEditor.fieldSubject' | translate }}</label>
+              <span class="field-sublabel">{{ 'metadataEditor.fieldSubjectDesc' | translate }}</span>
+            </div>
+            <div class="input-wrap">
+              <textarea
+                id="meta-subject"
+                data-testid="meta-subject-input"
+                class="meta-textarea"
+                rows="2"
+                [(ngModel)]="formData.subject"
+                placeholder="e.g. Official audited financial statement for fiscal year 2026"></textarea>
+            </div>
+          </div>
+
+          <!-- 4. KEYWORDS CARD (With Tag Chips Input) -->
+          <div class="card field-card">
+            <div class="field-header">
+              <label for="meta-keyword-input" class="field-label">{{ 'metadataEditor.fieldKeywords' | translate }}</label>
+              <span class="field-sublabel">{{ 'metadataEditor.fieldKeywordsDesc' | translate }}</span>
+            </div>
+
+            <!-- CHIPS LIST -->
+            <div class="keywords-chips-wrap">
+              @for (kw of formData.keywords; track kw; let i = $index) {
+                <span class="keyword-chip" data-testid="keyword-chip">
+                  <span class="chip-text">{{ kw }}</span>
+                  <button
+                    type="button"
+                    class="chip-remove-btn"
+                    data-testid="remove-keyword-btn"
+                    (click)="removeKeyword(i)"
+                    [attr.aria-label]="'Remove ' + kw">
+                    <app-icon name="close" [size]="14"></app-icon>
+                  </button>
+                </span>
+              }
+            </div>
+
+            <!-- KEYWORD INPUT ROW -->
+            <div class="add-keyword-row">
+              <input
+                id="meta-keyword-input"
+                data-testid="meta-keyword-input"
+                type="text"
+                class="meta-input keyword-input"
+                [(ngModel)]="newKeywordInput"
+                (keydown)="onKeywordKeydown($event)"
+                [placeholder]="'metadataEditor.fieldKeywordsPlaceholder' | translate" />
+              <button
+                type="button"
+                class="add-kw-btn"
+                data-testid="add-keyword-btn"
+                [disabled]="!newKeywordInput.trim()"
+                (click)="addKeyword()">
+                <app-icon name="add" [size]="18"></app-icon>
+                <span>{{ 'metadataEditor.addKeyword' | translate }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 5. CREATOR (APPLICATION) CARD -->
+          <div class="card field-card">
+            <div class="field-header">
+              <label for="meta-creator" class="field-label">{{ 'metadataEditor.fieldCreator' | translate }}</label>
+              <span class="field-sublabel">{{ 'metadataEditor.fieldCreatorDesc' | translate }}</span>
+            </div>
+            <div class="input-wrap">
+              <input
+                id="meta-creator"
+                data-testid="meta-creator-input"
+                type="text"
+                class="meta-input"
+                [(ngModel)]="formData.creator"
+                placeholder="e.g. Microsoft Word or Adobe InDesign" />
+            </div>
+          </div>
+
+          <!-- 6. PRODUCER (PDF ENGINE) CARD -->
+          <div class="card field-card">
+            <div class="field-header">
+              <label for="meta-producer" class="field-label">{{ 'metadataEditor.fieldProducer' | translate }}</label>
+              <span class="field-sublabel">{{ 'metadataEditor.fieldProducerDesc' | translate }}</span>
+            </div>
+            <div class="input-wrap">
+              <input
+                id="meta-producer"
+                data-testid="meta-producer-input"
+                type="text"
+                class="meta-input"
+                [(ngModel)]="formData.producer"
+                placeholder="e.g. pdf-lib or Acrobat Distiller" />
+            </div>
+          </div>
+
+          <!-- 7. CREATION DATE CARD -->
+          <div class="card field-card">
+            <div class="field-header-row">
+              <div class="field-header">
+                <label for="meta-creation-date" class="field-label">{{ 'metadataEditor.fieldCreationDate' | translate }}</label>
+              </div>
+              <button
+                type="button"
+                class="time-pill-btn"
+                data-testid="btn-now-creation"
+                (click)="setCurrentCreationDate()">
+                <app-icon name="refresh" [size]="14"></app-icon>
+                <span>{{ 'metadataEditor.nowButton' | translate }}</span>
+              </button>
+            </div>
+            <div class="input-wrap">
+              <input
+                id="meta-creation-date"
+                data-testid="meta-creation-date"
+                type="datetime-local"
+                class="meta-input"
+                [(ngModel)]="formData.creationDate" />
+            </div>
+          </div>
+
+          <!-- 8. MODIFICATION DATE CARD -->
+          <div class="card field-card">
+            <div class="field-header-row">
+              <div class="field-header">
+                <label for="meta-mod-date" class="field-label">{{ 'metadataEditor.fieldModificationDate' | translate }}</label>
+              </div>
+              <button
+                type="button"
+                class="time-pill-btn"
+                data-testid="btn-now-mod"
+                (click)="setCurrentModificationDate()">
+                <app-icon name="refresh" [size]="14"></app-icon>
+                <span>{{ 'metadataEditor.nowButton' | translate }}</span>
+              </button>
+            </div>
+            <div class="input-wrap">
+              <input
+                id="meta-mod-date"
+                data-testid="meta-mod-date"
+                type="datetime-local"
+                class="meta-input"
+                [(ngModel)]="formData.modificationDate" />
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    }
+  </main>
+
+  <!-- SIDE-BY-SIDE COMPARISON DRAWER (SLIDE-UP BOTTOM SHEET) -->
+  @if (isComparisonDrawerOpen) {
+    <div class="drawer-backdrop" (click)="closeComparisonDrawer()"></div>
+    <div class="comparison-drawer-sheet" data-testid="comparison-drawer">
+      <div class="drawer-header">
+        <div class="drawer-title-col">
+          <h2 class="drawer-title">{{ 'metadataEditor.compareDrawerTitle' | translate }}</h2>
+          <p class="drawer-subtitle">
+            {{ 'metadataEditor.modifiedCount' | translate : { count: modifiedCount } }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="drawer-close-btn"
+          data-testid="drawer-close-btn"
+          (click)="closeComparisonDrawer()"
+          aria-label="Close comparison">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        @if (comparisonItems.length === 0) {
+          <p class="empty-comparison">{{ 'metadataEditor.noChanges' | translate }}</p>
+        }
+
+        @for (item of comparisonItems; track item.fieldKey) {
+          <div class="comparison-row" data-testid="comparison-row" [class.is-modified]="item.isModified">
+            <div class="row-header">
+              <span class="field-name">{{ item.labelKey | translate }}</span>
+              <span class="diff-tag" [class.tag-modified]="item.isModified" [class.tag-same]="!item.isModified">
+                {{ item.isModified ? 'Modified' : 'Unchanged' }}
+              </span>
+            </div>
+
+            <div class="diff-columns">
+              <div class="diff-col orig-col">
+                <span class="col-tag">{{ 'metadataEditor.originalLabel' | translate }}</span>
+                <span class="col-value" data-testid="orig-val">{{ item.originalValue || '(empty)' }}</span>
+              </div>
+              <div class="diff-col upd-col">
+                <span class="col-tag">{{ 'metadataEditor.updatedLabel' | translate }}</span>
+                <span class="col-value" data-testid="upd-val">{{ item.updatedValue || '(empty)' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- STICKY BOTTOM ACTION BAR -->
+  @if (currentFile && currentPdfBytes) {
+    <footer class="sticky-action-bar">
+      <div class="action-bar-inner">
+        <button
+          type="button"
+          class="btn-reset"
+          data-testid="btn-reset"
+          (click)="resetWorkflow()">
+          <app-icon name="close-circle" [size]="18"></app-icon>
+          <span>{{ 'common.cancel' | translate }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn-save"
+          data-testid="btn-save-meta"
+          [disabled]="isSaving"
+          (click)="saveUpdatedDocument()">
+          @if (isSaving) {
+            <app-icon name="refresh" [size]="20" class="spinning"></app-icon>
+            <span>{{ 'metadataEditor.saving' | translate }}</span>
+          } @else {
+            <app-icon name="save" [size]="20"></app-icon>
+            <span>{{ 'metadataEditor.saveButton' | translate }}</span>
+          }
+        </button>
+      </div>
+    </footer>
+  }
+</div>

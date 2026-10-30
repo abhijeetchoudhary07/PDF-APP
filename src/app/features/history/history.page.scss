@@ -224,3 +224,87 @@
   flex-direction: column;
   gap: var(--space-3);
 }
+
+/* Vault Locked Card Barrier */
+.vault-locked-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--color-surface, #1e293b);
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-xl, 16px);
+  margin: 32px auto;
+  max-width: 420px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+  .vault-icon-circle {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--color-primary, #6366f1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .vault-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text, #f8fafc);
+    margin: 0 0 8px;
+  }
+
+  .vault-desc {
+    font-size: 14px;
+    color: var(--color-text-secondary, #94a3b8);
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+
+  .vault-unlock-actions {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pin-entry-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .vault-pin-input {
+    width: 120px;
+    height: 44px;
+    text-align: center;
+    font-size: 22px;
+    letter-spacing: 6px;
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid var(--color-border, #475569);
+    background: var(--color-background, #0f172a);
+    color: var(--color-text, #f8fafc);
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary, #6366f1);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+    }
+  }
+
+  .vault-error-text {
+    color: #ef4444;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 12px 0 0;
+  }
+}

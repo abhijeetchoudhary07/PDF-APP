@@ -1,0 +1,554 @@
+<div class="forms-build-container">
+  <!-- Top App Header -->
+  <header class="app-header-bar">
+    <div class="header-left">
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="pickPdf()"
+        [attr.aria-label]="'formsBuild.openPdf' | translate">
+        <app-icon name="folder-open" [size]="22"></app-icon>
+      </button>
+      <div class="header-title-box">
+        <h1 class="header-title">{{ 'formsBuild.title' | translate }}</h1>
+        @if (pdfBytes) {
+          <span class="header-filename">{{ fileName }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- Zoom & Page Controls -->
+    @if (pdfBytes) {
+      <div class="header-right">
+        <div class="pagination-pill">
+          <button
+            type="button"
+            class="page-nav-btn"
+            [disabled]="currentPage <= 1"
+            (click)="prevPage()"
+            [attr.aria-label]="'formsBuild.prevPage' | translate">
+            <app-icon name="chevron-back" [size]="18"></app-icon>
+          </button>
+          <span class="page-num">{{ currentPage }}/{{ totalPages }}</span>
+          <button
+            type="button"
+            class="page-nav-btn"
+            [disabled]="currentPage >= totalPages"
+            (click)="nextPage()"
+            [attr.aria-label]="'formsBuild.nextPage' | translate">
+            <app-icon name="chevron-forward" [size]="18"></app-icon>
+          </button>
+        </div>
+
+        <div class="zoom-controls">
+          <button
+            type="button"
+            class="icon-btn-sm"
+            (click)="zoomOut()"
+            [disabled]="zoomScale <= minZoom"
+            [attr.aria-label]="'formsBuild.zoomOut' | translate">
+            <app-icon name="minus" [size]="18"></app-icon>
+          </button>
+          <span class="zoom-indicator">{{ (zoomScale * 100) | number:'1.0-0' }}%</span>
+          <button
+            type="button"
+            class="icon-btn-sm"
+            (click)="zoomIn()"
+            [disabled]="zoomScale >= maxZoom"
+            [attr.aria-label]="'formsBuild.zoomIn' | translate">
+            <app-icon name="plus" [size]="18"></app-icon>
+          </button>
+        </div>
+      </div>
+    }
+  </header>
+
+  <!-- Placement Mode Banner -->
+  @if (activeToolType) {
+    <div class="placement-banner">
+      <div class="banner-content">
+        <app-icon name="locate" [size]="20" class="banner-icon"></app-icon>
+        <span>{{ 'formsBuild.placementModeHint' | translate }}</span>
+      </div>
+      <button
+        type="button"
+        class="banner-cancel-btn"
+        (click)="cancelPlacement()"
+        [attr.aria-label]="'formsBuild.cancelPlacement' | translate">
+        <app-icon name="close" [size]="18"></app-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Empty Upload State -->
+  @if (!pdfBytes) {
+    <div class="empty-state">
+      <div class="empty-card">
+        <div class="empty-icon-circle">
+          <app-icon name="form-builder" [size]="48"></app-icon>
+        </div>
+        <h2>{{ 'formsBuild.openPdf' | translate }}</h2>
+        <p>{{ 'formsBuild.openPdfHint' | translate }}</p>
+        <button
+          type="button"
+          class="action-btn-primary"
+          (click)="pickPdf()"
+          [attr.aria-label]="'formsBuild.openPdf' | translate">
+          <app-icon name="folder-open" [size]="20"></app-icon>
+          <span>{{ 'formsBuild.openPdf' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Mobile Canvas Viewport -->
+  @if (pdfBytes) {
+    <div
+      class="viewport-scroll-container"
+      #viewportContainer
+      (touchstart)="onViewportTouchStart($event)"
+      (touchmove)="onViewportTouchMove($event)">
+
+      <div
+        class="canvas-page-wrapper"
+        [style.width.px]="renderedWidth"
+        [style.height.px]="renderedHeight">
+
+        <!-- Underlying PDF Canvas -->
+        <canvas #pdfCanvas class="pdf-canvas"></canvas>
+
+        <!-- Transparent Interactive Overlay -->
+        <div
+          class="page-overlay"
+          #pageOverlay
+          data-testid="pdf-page-overlay"
+          [style.width.px]="renderedWidth"
+          [style.height.px]="renderedHeight"
+          (click)="onCanvasClick($event)"
+          (touchend)="onCanvasTouchEnd($event)">
+
+          <!-- Rendered Fields on this Page -->
+          @for (field of currentPageFields; track field.id) {
+            <div
+              class="field-box"
+              [class.is-selected]="selectedFieldId === field.id && !isPreviewMode"
+              [class.preview-mode]="isPreviewMode"
+              [attr.data-testid]="'field-box-' + field.name"
+              [attr.data-field-type]="field.type"
+              [style.left.px]="field.canvasCoordinates?.x || 0"
+              [style.top.px]="field.canvasCoordinates?.y || 0"
+              [style.width.px]="field.canvasCoordinates?.width || 120"
+              [style.height.px]="field.canvasCoordinates?.height || 32"
+              (click)="onFieldClick($event, field)"
+              (mousedown)="onFieldMouseDown($event, field)"
+              (touchstart)="onFieldTouchStart($event, field)"
+              (touchmove)="onFieldTouchMove($event, field)"
+              (touchend)="onFieldTouchEnd($event, field)">
+
+              <!-- Type Badge & Name in Builder Mode -->
+              @if (!isPreviewMode) {
+                <div class="field-badge">
+                  <span class="badge-type">{{ field.type }}</span>
+                  <span class="badge-name">{{ field.name }}</span>
+                  @if (field.isRequired) {
+                    <span class="badge-req">*</span>
+                  }
+                </div>
+              }
+
+              <!-- Field Content / Preview Widget -->
+              <div class="field-content-preview">
+                @switch (field.type) {
+                  @case ('text') {
+                    @if (isPreviewMode) {
+                      <input
+                        type="text"
+                        class="preview-input"
+                        [(ngModel)]="previewValues[field.id]"
+                        [readonly]="field.isReadOnly"
+                        [attr.maxlength]="field.maxLength || null"
+                        [placeholder]="field.label || field.name" />
+                    } @else {
+                      <span class="builder-field-text">
+                        {{ field.defaultValue || field.label || field.name }}
+                      </span>
+                    }
+                  }
+
+                  @case ('checkbox') {
+                    <label class="preview-checkbox-label">
+                      @if (isPreviewMode) {
+                        <input
+                          type="checkbox"
+                          class="preview-checkbox"
+                          [disabled]="!!field.isReadOnly"
+                          [(ngModel)]="previewValues[field.id]" />
+                      } @else {
+                        <span class="builder-cb-mark"></span>
+                      }
+                    </label>
+                  }
+
+                  @case ('radio') {
+                    <div class="preview-radio-group">
+                      @for (opt of (field.options || ['Option 1']); track opt) {
+                        <label class="radio-option">
+                          @if (isPreviewMode) {
+                            <input
+                              type="radio"
+                              [name]="field.id"
+                              [value]="opt"
+                              [disabled]="!!field.isReadOnly"
+                              [(ngModel)]="previewValues[field.id]" />
+                          } @else {
+                            <input
+                              type="radio"
+                              [name]="field.id"
+                              [value]="opt"
+                              disabled />
+                          }
+                          <span>{{ opt }}</span>
+                        </label>
+                      }
+                    </div>
+                  }
+
+                  @case ('dropdown') {
+                    @if (isPreviewMode) {
+                      <select
+                        class="preview-select"
+                        [(ngModel)]="previewValues[field.id]"
+                        [disabled]="!!field.isReadOnly">
+                        @for (opt of (field.options || []); track opt) {
+                          <option [value]="opt">{{ opt }}</option>
+                        }
+                      </select>
+                    } @else {
+                      <div class="builder-dropdown-placeholder">
+                        <span>{{ field.defaultValue || (field.options ? field.options[0] : 'Dropdown') }}</span>
+                        <app-icon name="chevron-down" [size]="16"></app-icon>
+                      </div>
+                    }
+                  }
+
+                  @case ('listbox') {
+                    <div class="builder-listbox-placeholder">
+                      @for (opt of (field.options || ['Option 1', 'Option 2']); track opt) {
+                        <div class="listbox-item">
+                          {{ opt }}
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @case ('date') {
+                    @if (isPreviewMode) {
+                      <input
+                        type="date"
+                        class="preview-date-input"
+                        [(ngModel)]="previewValues[field.id]"
+                        [readonly]="field.isReadOnly" />
+                    } @else {
+                      <span class="builder-field-text date-text">
+                        <app-icon name="calendar" [size]="14"></app-icon>
+                        {{ field.defaultValue || 'YYYY-MM-DD' }}
+                      </span>
+                    }
+                  }
+
+                  @case ('signature') {
+                    <div class="builder-sig-placeholder">
+                      <app-icon name="pencil" [size]="18"></app-icon>
+                      <span>{{ field.label || 'Digital Signature' }}</span>
+                    </div>
+                  }
+                }
+              </div>
+
+              <!-- 4 Corner Resize Handles (Min 44x44px touch target) -->
+              @if (selectedFieldId === field.id && !isPreviewMode) {
+                <div
+                  class="resize-handle handle-tl"
+                  (mousedown)="onResizeHandleMouseDown($event, 'tl')"
+                  (touchstart)="onResizeHandleTouchStart($event, 'tl')"
+                  (touchmove)="onResizeHandleTouchMove($event)"
+                  (touchend)="onResizeHandleTouchEnd($event)"></div>
+                <div
+                  class="resize-handle handle-tr"
+                  (mousedown)="onResizeHandleMouseDown($event, 'tr')"
+                  (touchstart)="onResizeHandleTouchStart($event, 'tr')"
+                  (touchmove)="onResizeHandleTouchMove($event)"
+                  (touchend)="onResizeHandleTouchEnd($event)"></div>
+                <div
+                  class="resize-handle handle-br"
+                  (mousedown)="onResizeHandleMouseDown($event, 'br')"
+                  (touchstart)="onResizeHandleTouchStart($event, 'br')"
+                  (touchmove)="onResizeHandleTouchMove($event)"
+                  (touchend)="onResizeHandleTouchEnd($event)"></div>
+                <div
+                  class="resize-handle handle-bl"
+                  (mousedown)="onResizeHandleMouseDown($event, 'bl')"
+                  (touchstart)="onResizeHandleTouchStart($event, 'bl')"
+                  (touchmove)="onResizeHandleTouchMove($event)"
+                  (touchend)="onResizeHandleTouchEnd($event)"></div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Bottom Thumb-Zone Tool Rail -->
+  @if (pdfBytes && !isPreviewMode) {
+    <div class="thumb-tool-rail" data-testid="thumb-tool-rail">
+      <div class="tool-rail-scroll">
+        @for (tool of availableTools; track tool.type) {
+          <button
+            type="button"
+            class="tool-card"
+            [class.is-active]="activeToolType === tool.type"
+            [attr.data-testid]="'tool-card-' + tool.type"
+            (click)="toggleTool(tool.type)"
+            [attr.aria-label]="tool.labelKey | translate">
+            <div class="tool-card-icon">
+              <app-icon [name]="tool.icon" [size]="22"></app-icon>
+            </div>
+            <span class="tool-card-label">{{ tool.labelKey | translate }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Sticky Bottom Action Bar -->
+  @if (pdfBytes) {
+    <div class="sticky-action-bar" data-testid="sticky-action-bar">
+      <button
+        type="button"
+        class="action-thumb-btn secondary"
+        data-testid="preview-mode-toggle"
+        (click)="togglePreviewMode()"
+        [attr.aria-label]="(isPreviewMode ? 'formsBuild.exitPreview' : 'formsBuild.previewMode') | translate">
+        <app-icon [name]="isPreviewMode ? 'create-outline' : 'eye-outline'" [size]="20"></app-icon>
+        <span>{{ (isPreviewMode ? 'formsBuild.exitPreview' : 'formsBuild.previewMode') | translate }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="action-thumb-btn primary"
+        data-testid="save-form-pdf-btn"
+        [disabled]="isSaving"
+        (click)="saveFormPdf()"
+        [attr.aria-label]="'formsBuild.savePdf' | translate">
+        <app-icon name="download-outline" [size]="20"></app-icon>
+        <span>{{ (isSaving ? 'formsBuild.savingPdf' : 'formsBuild.savePdf') | translate }}</span>
+      </button>
+    </div>
+  }
+
+  <!-- Bottom Sheet Field Inspector Drawer -->
+  @if (selectedField && sheetBreakpoint > 0) {
+    <div
+      class="bottom-sheet-drawer"
+      data-testid="bottom-sheet-inspector"
+      [style.height]="(sheetBreakpoint * 100) + 'dvh'"
+      [style.bottom.px]="virtualKeyboardHeight">
+
+      <!-- Drawer Handle / Drag Indicator -->
+      <div class="drawer-drag-header" (click)="sheetBreakpoint === 0.45 ? expandSheet() : closeSheet()">
+        <div class="drag-bar"></div>
+        <div class="drawer-header-row">
+          <div class="drawer-title-group">
+            <h3>{{ 'formsBuild.fieldInspector' | translate }}</h3>
+            <span class="drawer-badge" data-testid="inspector-badge-type">{{ selectedField.type }}</span>
+          </div>
+          <button
+            type="button"
+            class="icon-btn-sm"
+            data-testid="inspector-close-btn"
+            (click)="closeSheet()"
+            [attr.aria-label]="'formsBuild.closeInspector' | translate">
+            <app-icon name="close" [size]="20"></app-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Inspector Content Form -->
+      <div class="drawer-body">
+        <!-- Field Name -->
+        <div class="form-row">
+          <label class="form-label" for="fb-name">{{ 'formsBuild.fieldName' | translate }}</label>
+          <input
+            id="fb-name"
+            type="text"
+            data-testid="inspector-field-name"
+            class="text-input"
+            [(ngModel)]="selectedField.name" />
+        </div>
+
+        <!-- Field Label -->
+        <div class="form-row">
+          <label class="form-label" for="fb-label">{{ 'formsBuild.fieldLabel' | translate }}</label>
+          <input
+            id="fb-label"
+            type="text"
+            data-testid="inspector-field-label"
+            class="text-input"
+            [(ngModel)]="selectedField.label" />
+        </div>
+
+        <!-- Switches: Required & ReadOnly -->
+        <div class="switch-row">
+          <label class="toggle-control" data-testid="inspector-field-required-toggle">
+            <input
+              type="checkbox"
+              data-testid="inspector-field-required"
+              class="toggle-input"
+              [(ngModel)]="selectedField.isRequired" />
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">{{ 'formsBuild.required' | translate }}</span>
+          </label>
+
+          <label class="toggle-control" data-testid="inspector-field-readonly-toggle">
+            <input
+              type="checkbox"
+              data-testid="inspector-field-readonly"
+              class="toggle-input"
+              [(ngModel)]="selectedField.isReadOnly" />
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">{{ 'formsBuild.readOnly' | translate }}</span>
+          </label>
+        </div>
+
+        <!-- Multiline Switch for Text Fields -->
+        @if (selectedField.type === 'text') {
+          <div class="switch-row">
+            <label class="toggle-control">
+              <input
+                type="checkbox"
+                data-testid="inspector-field-multiline"
+                class="toggle-input"
+                [(ngModel)]="selectedField.isMultiline" />
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">{{ 'formsBuild.multiline' | translate }}</span>
+            </label>
+          </div>
+        }
+
+        <!-- Multiselect Switch for Listbox -->
+        @if (selectedField.type === 'listbox') {
+          <div class="switch-row">
+            <label class="toggle-control">
+              <input
+                type="checkbox"
+                data-testid="inspector-field-multiselect"
+                class="toggle-input"
+                [(ngModel)]="selectedField.multiselect" />
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">{{ 'formsBuild.multiselect' | translate }}</span>
+            </label>
+          </div>
+        }
+
+        <!-- Default Value (Specialized for Date) -->
+        @if (selectedField.type === 'date') {
+          <div class="form-row">
+            <label class="form-label" for="fb-def-date">{{ 'formsBuild.defaultValue' | translate }}</label>
+            <input
+              id="fb-def-date"
+              type="date"
+              data-testid="inspector-field-default-date"
+              class="text-input"
+              [(ngModel)]="selectedField.defaultValue" />
+          </div>
+        }
+
+        @if (selectedField.type === 'text') {
+          <div class="form-row">
+            <label class="form-label" for="fb-def-text">{{ 'formsBuild.defaultValue' | translate }}</label>
+            <input
+              id="fb-def-text"
+              type="text"
+              data-testid="inspector-field-default-text"
+              class="text-input"
+              [(ngModel)]="selectedField.defaultValue" />
+          </div>
+        }
+
+        <!-- Options for Dropdown / Radio / Listbox -->
+        @if (selectedField.type === 'dropdown' || selectedField.type === 'radio' || selectedField.type === 'listbox') {
+          <div class="form-row">
+            <label class="form-label" for="fb-options">{{ 'formsBuild.optionsList' | translate }}</label>
+            <input
+              id="fb-options"
+              type="text"
+              data-testid="inspector-field-options"
+              class="text-input"
+              [(ngModel)]="optionsString"
+              (ngModelChange)="onOptionsStringChange()" />
+          </div>
+        }
+
+        <!-- Max Length & Tab Order -->
+        <div class="form-columns-2">
+          @if (selectedField.type === 'text' || selectedField.type === 'date') {
+            <div class="form-row">
+              <label class="form-label" for="fb-maxlen">{{ 'formsBuild.maxLength' | translate }}</label>
+              <input
+                id="fb-maxlen"
+                type="number"
+                data-testid="inspector-field-maxlen"
+                class="text-input"
+                [(ngModel)]="selectedField.maxLength"
+                min="1" />
+            </div>
+          }
+
+          <div class="form-row">
+            <label class="form-label" for="fb-taborder">{{ 'formsBuild.tabOrder' | translate }}</label>
+            <input
+              id="fb-taborder"
+              type="number"
+              data-testid="inspector-field-taborder"
+              class="text-input"
+              [(ngModel)]="selectedField.tabOrder"
+              min="1" />
+          </div>
+        </div>
+
+        <!-- Tooltip -->
+        <div class="form-row">
+          <label class="form-label" for="fb-tooltip">{{ 'formsBuild.tooltip' | translate }}</label>
+          <input
+            id="fb-tooltip"
+            type="text"
+            data-testid="inspector-field-tooltip"
+            class="text-input"
+            [(ngModel)]="selectedField.tooltip" />
+        </div>
+
+        <!-- Delete Button (Min 44px hit target) -->
+        <div class="drawer-actions">
+          <button
+            type="button"
+            class="delete-field-btn"
+            data-testid="inspector-delete-btn"
+            (click)="deleteSelectedField()"
+            [attr.aria-label]="'formsBuild.deleteField' | translate">
+            <app-icon name="trash" [size]="18"></app-icon>
+            <span>{{ 'formsBuild.deleteField' | translate }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Hidden Native File Input -->
+  <input
+    #fileInput
+    type="file"
+    accept="application/pdf"
+    style="display: none"
+    (change)="onFileInputChange($event)" />
+</div>

@@ -19,7 +19,26 @@ export class ToastService {
   private toasts: ToastMessage[] = [];
   public toasts$ = new BehaviorSubject<ToastMessage[]>([]);
 
-  show(type: ToastType, message: string, title?: string, duration: number = 3500): string {
+  show(
+    typeOrMessage: ToastType | string,
+    messageOrType?: string | ToastType,
+    title?: string,
+    duration: number = 3500
+  ): string {
+    const validTypes: ToastType[] = ['success', 'warning', 'error', 'info'];
+    let type: ToastType = 'info';
+    let message = '';
+
+    if (validTypes.includes(typeOrMessage as ToastType)) {
+      type = typeOrMessage as ToastType;
+      message = (messageOrType as string) || '';
+    } else if (messageOrType && validTypes.includes(messageOrType as ToastType)) {
+      type = messageOrType as ToastType;
+      message = typeOrMessage as string;
+    } else {
+      message = typeOrMessage as string;
+    }
+
     // Avoid spamming exact same message within 2 seconds
     const existing = this.toasts.find(t => t.message === message && Date.now() - t.timestamp < 2000);
     if (existing) {

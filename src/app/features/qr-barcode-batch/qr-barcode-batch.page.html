@@ -1,0 +1,366 @@
+<div class="batch-page-container">
+  <!-- Top Navigation & Tab Bar -->
+  <header class="page-header">
+    <div class="header-top">
+      <div class="title-group">
+        <h1 class="page-title">{{ 'barcodeBatch.title' | translate }}</h1>
+        <p class="page-subtitle">{{ 'barcodeBatch.subtitle' | translate }}</p>
+      </div>
+    </div>
+
+    <!-- Segmented Tab Navigation -->
+    <div class="tab-pills-container" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        class="tab-pill tab-pill-batch"
+        [class.active]="activeTab === 'batchScan'"
+        [attr.aria-selected]="activeTab === 'batchScan'"
+        (click)="switchTab('batchScan')">
+        <app-icon name="barcode-scanner" [size]="18"></app-icon>
+        <span>{{ 'barcodeBatch.tabBatchScan' | translate }}</span>
+        <span *ngIf="scannedItems.length > 0" class="tab-badge">{{ scannedItems.length }}</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="tab-pill tab-pill-gen"
+        [class.active]="activeTab === 'generator1D'"
+        [attr.aria-selected]="activeTab === 'generator1D'"
+        (click)="switchTab('generator1D')">
+        <app-icon name="file-text" [size]="18"></app-icon>
+        <span>{{ 'barcodeBatch.tab1DGenerator' | translate }}</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================================================================= -->
+  <!-- TAB 1: CONTINUOUS BATCH SCANNER                                         -->
+  <!-- ======================================================================= -->
+  <div *ngIf="activeTab === 'batchScan'" class="batch-scan-view">
+    <!-- Camera Viewfinder Stage -->
+    <div class="viewfinder-stage">
+      <video
+        #videoElement
+        class="camera-stream"
+        [class.active]="isCameraActive"
+        playsinline
+        muted
+        autoplay>
+      </video>
+
+      <!-- Fallback / Inactive State Banner -->
+      <div *ngIf="!isCameraActive" class="viewfinder-placeholder">
+        <div class="placeholder-content">
+          <app-icon name="camera" [size]="48" class="camera-icon"></app-icon>
+          <h3>Continuous Viewfinder</h3>
+          <p *ngIf="cameraError" class="camera-error">{{ cameraError }}</p>
+          <p *ngIf="!cameraError">Camera stays live continuously to capture multiple items.</p>
+          <button type="button" class="btn-primary start-cam-btn" (click)="startCamera()">
+            <app-icon name="camera" [size]="18"></app-icon>
+            Start Continuous Camera
+          </button>
+        </div>
+      </div>
+
+      <!-- Glowing Scan Reticle Overlay -->
+      <div class="reticle-overlay" *ngIf="isCameraActive">
+        <div class="reticle-box" [class.captured]="isLaserPulsing">
+          <div class="corner corner-tl"></div>
+          <div class="corner corner-tr"></div>
+          <div class="corner corner-bl"></div>
+          <div class="corner corner-br"></div>
+          <div class="laser-beam" [class.pulse]="isLaserPulsing"></div>
+        </div>
+      </div>
+
+      <!-- Top Floating Live Count Badge -->
+      <div class="floating-top-bar">
+        <div class="live-count-badge">
+          <span class="live-dot"></span>
+          <span>{{ 'barcodeBatch.scannedCount' | translate:{ count: scannedItems.length } }}</span>
+        </div>
+
+        <button
+          *ngIf="isCameraActive"
+          type="button"
+          class="stop-cam-btn"
+          (click)="stopCamera()"
+          aria-label="Stop Camera">
+          Pause Camera
+        </button>
+      </div>
+
+      <!-- Deduplication Mode Selector Chips -->
+      <div class="dedup-chips-bar">
+        <span class="dedup-label">{{ 'barcodeBatch.dedupMode' | translate }}:</span>
+        <div class="chips-group">
+          <button
+            type="button"
+            class="chip-btn chip-dedup-cooldown"
+            [class.active]="dedupMode === 'cooldown'"
+            (click)="setDedupMode('cooldown')">
+            {{ 'barcodeBatch.dedupCooldown' | translate }}
+          </button>
+          <button
+            type="button"
+            class="chip-btn chip-dedup-session"
+            [class.active]="dedupMode === 'session'"
+            (click)="setDedupMode('session')">
+            {{ 'barcodeBatch.dedupSession' | translate }}
+          </button>
+          <button
+            type="button"
+            class="chip-btn chip-dedup-none"
+            [class.active]="dedupMode === 'none'"
+            (click)="setDedupMode('none')">
+            {{ 'barcodeBatch.dedupNone' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide-Up Bottom Sheet Drawer -->
+    <div class="bottom-sheet-drawer" [class.expanded]="drawerExpanded">
+      <div class="drawer-handle" (click)="toggleDrawer()">
+        <div class="handle-bar"></div>
+        <div class="drawer-header-content">
+          <div class="drawer-title-row">
+            <span class="drawer-title">Running Batch List ({{ scannedItems.length }})</span>
+            <button
+              *ngIf="scannedItems.length > 0"
+              type="button"
+              class="btn-text-clear"
+              (click)="clearAllScanned()">
+              {{ 'barcodeBatch.clearAll' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-body">
+        <div *ngIf="scannedItems.length === 0" class="empty-list-placeholder">
+          <app-icon name="barcode-scanner" [size]="32" class="empty-icon"></app-icon>
+          <p>{{ 'barcodeBatch.emptyScans' | translate }}</p>
+        </div>
+
+        <div *ngIf="scannedItems.length > 0" class="scanned-items-list">
+          <div
+            *ngFor="let item of scannedItems; let i = index"
+            class="scanned-item-card">
+            <div class="item-left">
+              <span class="format-tag">{{ item.format }}</span>
+              <span class="payload-text">{{ item.payload }}</span>
+            </div>
+            <div class="item-right">
+              <span class="item-time">{{ item.timestamp | date:'HH:mm:ss' }}</span>
+              <button
+                type="button"
+                class="btn-delete"
+                (click)="deleteScannedItem(i, $event)"
+                aria-label="Delete code">
+                <app-icon name="trash" [size]="16"></app-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sticky Bottom Action Bar -->
+    <footer class="sticky-action-bar">
+      <div class="action-buttons-grid">
+        <button
+          type="button"
+          class="btn-action export-csv-btn"
+          [disabled]="scannedItems.length === 0"
+          (click)="exportBatchCsv()">
+          <app-icon name="download" [size]="18"></app-icon>
+          <span>{{ 'barcodeBatch.exportCsv' | translate }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn-action export-txt-btn"
+          [disabled]="scannedItems.length === 0"
+          (click)="exportBatchTxt()">
+          <app-icon name="file-text" [size]="18"></app-icon>
+          <span>{{ 'barcodeBatch.exportTxt' | translate }}</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- TAB 2: 1D & BULK BARCODE GENERATOR                                     -->
+  <!-- ======================================================================= -->
+  <div *ngIf="activeTab === 'generator1D'" class="generator-view">
+    <div class="generator-scroll-area">
+      <!-- Mode Toggle: Single vs Bulk -->
+      <div class="mode-switch-card">
+        <div class="mode-switch-header">
+          <span class="mode-label">{{ 'barcodeBatch.bulkModeToggle' | translate }}</span>
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              [checked]="isBulkMode"
+              (change)="toggleBulkMode(!isBulkMode)">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Format Picker Pills -->
+      <div class="format-picker-card">
+        <label class="card-label">Barcode Format</label>
+        <div class="format-pills">
+          <button
+            *ngFor="let fmt of availableFormats"
+            type="button"
+            class="format-pill"
+            [class.format-pill-code128]="fmt.id === 'CODE_128'"
+            [class.format-pill-ean13]="fmt.id === 'EAN_13'"
+            [class.format-pill-code39]="fmt.id === 'CODE_39'"
+            [class.format-pill-qr]="fmt.id === 'QR_CODE'"
+            [class.selected]="selectedFormat === fmt.id"
+            (click)="selectFormat(fmt.id)">
+            {{ fmt.labelKey | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- SINGLE BARCODE GENERATION -->
+      <div *ngIf="!isBulkMode" class="single-gen-section">
+        <div class="input-card">
+          <label class="card-label">{{ 'barcodeBatch.payloadLabel' | translate }}</label>
+          <input
+            type="text"
+            class="payload-input"
+            [ngModel]="generatorPayload"
+            (ngModelChange)="onPayloadInput($event)"
+            [placeholder]="'barcodeBatch.payloadPlaceholder' | translate"
+            autocomplete="off"
+            spellcheck="false">
+
+          <div *ngIf="generatorError" class="validation-error-banner">
+            <app-icon name="alert-circle" [size]="18"></app-icon>
+            <span>{{ generatorError | translate }}</span>
+          </div>
+        </div>
+
+        <!-- Live Scalable Preview Card -->
+        <div class="preview-card">
+          <div class="preview-header">
+            <span class="preview-title">Vector Preview (SVG)</span>
+            <span class="preview-format-badge">{{ selectedFormat }}</span>
+          </div>
+
+          <div class="preview-display">
+            <div
+              *ngIf="previewSvgSafe && !generatorError"
+              class="svg-container"
+              [innerHTML]="previewSvgSafe">
+            </div>
+            <div *ngIf="generatorError || !previewSvgSafe" class="preview-empty">
+              <span>Preview unavailable for invalid payload</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BULK CSV GENERATION -->
+      <div *ngIf="isBulkMode" class="bulk-gen-section">
+        <div class="bulk-input-card">
+          <div class="bulk-header-row">
+            <label class="card-label">{{ 'barcodeBatch.bulkPrompt' | translate }}</label>
+            <button type="button" class="btn-upload-csv" (click)="triggerBulkCsvUpload()">
+              <app-icon name="upload" [size]="16"></app-icon>
+              Upload CSV
+            </button>
+          </div>
+
+          <textarea
+            class="bulk-textarea"
+            [(ngModel)]="bulkPayloadsText"
+            rows="5"
+            [placeholder]="'barcodeBatch.bulkPlaceholder' | translate">
+          </textarea>
+          <div class="bulk-count-hint">
+            Detected: <strong>{{ parseBulkPayloads().length }}</strong> barcode payload(s)
+          </div>
+        </div>
+
+        <!-- Label Sheet Grid Selector -->
+        <div class="grid-selector-card">
+          <label class="card-label">{{ 'barcodeBatch.gridType' | translate }}</label>
+          <div class="grid-pills">
+            <button
+              type="button"
+              class="grid-pill grid-pill-24"
+              [class.active]="bulkGridType === '24-up'"
+              (click)="bulkGridType = '24-up'">
+              {{ 'barcodeBatch.grid24Up' | translate }}
+            </button>
+            <button
+              type="button"
+              class="grid-pill grid-pill-12"
+              [class.active]="bulkGridType === '12-up'"
+              (click)="bulkGridType = '12-up'">
+              {{ 'barcodeBatch.grid12Up' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sticky Bottom Action Bar for Generator -->
+    <footer class="sticky-action-bar">
+      <div *ngIf="isBulkMode" class="action-buttons-grid">
+        <button
+          type="button"
+          class="btn-action primary-btn btn-gen-labels"
+          [disabled]="isProcessingBulk || parseBulkPayloads().length === 0"
+          (click)="generateBulkLabelSheet()">
+          <app-icon name="file-text" [size]="18"></app-icon>
+          <span>{{ 'barcodeBatch.generateLabelSheet' | translate }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn-action secondary-btn btn-dl-zip"
+          [disabled]="isProcessingBulk || parseBulkPayloads().length === 0"
+          (click)="downloadBulkZip()">
+          <app-icon name="download" [size]="18"></app-icon>
+          <span>{{ 'barcodeBatch.downloadZip' | translate }}</span>
+        </button>
+      </div>
+
+      <div *ngIf="!isBulkMode" class="action-buttons-grid single-action">
+        <button
+          type="button"
+          class="btn-action primary-btn btn-gen-labels"
+          [disabled]="!!generatorError || !generatorPayload"
+          (click)="generateBulkLabelSheet()">
+          <app-icon name="file-text" [size]="18"></app-icon>
+          <span>{{ 'barcodeBatch.generateLabelSheet' | translate }}</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Hidden Elements for Processing -->
+  <canvas #scanCanvas class="hidden-canvas"></canvas>
+  <input
+    #bulkCsvInput
+    type="file"
+    accept=".csv,.txt"
+    class="hidden-file-input"
+    (change)="onBulkCsvSelected($event)">
+
+  <!-- Floating Toast Notification -->
+  <div *ngIf="toastMessage" class="toast-notification">
+    <app-icon name="check" [size]="16" class="toast-icon"></app-icon>
+    <span>{{ toastMessage | translate }}</span>
+  </div>
+</div>

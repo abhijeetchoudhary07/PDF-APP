@@ -1,0 +1,254 @@
+<div class="organize-container">
+  <!-- Top App Header / Bar -->
+  <header class="organize-header">
+    <div class="header-titles">
+      <h1 class="header-title">
+        <app-icon name="smart-tag" class="header-icon"></app-icon>
+        {{ 'autoOrganize.title' | translate }}
+      </h1>
+      <p class="header-subtitle">{{ 'autoOrganize.subtitle' | translate }}</p>
+    </div>
+
+    <!-- Quick Action Pills -->
+    <div class="top-action-bar">
+      <div class="action-pills-left">
+        <button
+          type="button"
+          class="pill-btn approve-all-pill"
+          (click)="approveAll()"
+          [disabled]="proposals.length === 0"
+          aria-label="Approve All Proposals"
+        >
+          <app-icon name="checkmark"></app-icon>
+          {{ 'autoOrganize.approveAll' | translate }}
+        </button>
+
+        <button
+          type="button"
+          class="pill-btn reject-all-pill"
+          (click)="rejectAll()"
+          [disabled]="proposals.length === 0"
+          aria-label="Reject All Proposals"
+        >
+          <app-icon name="close"></app-icon>
+          {{ 'autoOrganize.rejectAll' | translate }}
+        </button>
+      </div>
+
+      <div class="action-pills-right">
+        <button
+          type="button"
+          class="pill-btn vault-scan-pill"
+          (click)="scanVault()"
+          [disabled]="isLoading"
+        >
+          <app-icon name="refresh"></app-icon>
+          {{ 'autoOrganize.scanVault' | translate }}
+        </button>
+
+        <label class="pill-btn add-files-pill">
+          <app-icon name="add"></app-icon>
+          <span>{{ 'autoOrganize.addFiles' | translate }}</span>
+          <input
+            #fileInput
+            type="file"
+            multiple
+            accept="application/pdf,image/*"
+            (change)="onFilesSelected($event)"
+            class="hidden-file-input"
+          />
+        </label>
+      </div>
+    </div>
+
+    <!-- Summary Count Badge -->
+    <div class="summary-bar" *ngIf="proposals.length > 0">
+      <span class="status-summary-badge">
+        {{ 'autoOrganize.approvedCountBadge' | translate: { approved: approvedCount, total: proposals.length } }}
+      </span>
+      <span class="swipe-hint-inline">
+        {{ 'autoOrganize.swipeHint' | translate }}
+      </span>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>{{ 'autoOrganize.applying' | translate }}</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!isLoading && proposals.length === 0">
+    <div class="empty-icon-wrap">
+      <app-icon name="smart-tag" class="empty-icon"></app-icon>
+    </div>
+    <h2>{{ 'autoOrganize.emptyTitle' | translate }}</h2>
+    <p>{{ 'autoOrganize.emptyDesc' | translate }}</p>
+    <div class="empty-actions">
+      <button type="button" class="btn btn-primary" (click)="scanVault()">
+        <app-icon name="refresh"></app-icon>
+        {{ 'autoOrganize.scanVault' | translate }}
+      </button>
+      <label class="btn btn-secondary">
+        <app-icon name="add"></app-icon>
+        <span>{{ 'autoOrganize.addFiles' | translate }}</span>
+        <input
+          type="file"
+          multiple
+          accept="application/pdf,image/*"
+          (change)="onFilesSelected($event)"
+          class="hidden-file-input"
+        />
+      </label>
+    </div>
+  </div>
+
+  <!-- Batch Review Card List -->
+  <main class="cards-list" *ngIf="!isLoading && proposals.length > 0">
+    <article
+      *ngFor="let proposal of proposals; trackBy: trackById"
+      class="review-card"
+      [class.card-approved]="proposal.approvalStatus === 'approved'"
+      [class.card-rejected]="proposal.approvalStatus === 'rejected'"
+      (touchstart)="onTouchStart($event)"
+      (touchend)="onTouchEnd($event, proposal)"
+    >
+      <!-- Card Top: Category Chip & Confidence & Approval Status -->
+      <div class="card-header">
+        <div class="category-chip" [style.backgroundColor]="getCategoryColor(proposal.classification.category) + '22'" [style.borderColor]="getCategoryColor(proposal.classification.category)">
+          <span class="category-dot" [style.backgroundColor]="getCategoryColor(proposal.classification.category)"></span>
+          <strong [style.color]="getCategoryColor(proposal.classification.category)">{{ proposal.classification.category }}</strong>
+          <span class="confidence-text">({{ proposal.classification.confidence }}%)</span>
+        </div>
+
+        <div class="status-badge" [class.badge-pending]="proposal.approvalStatus === 'pending'" [class.badge-approved]="proposal.approvalStatus === 'approved'" [class.badge-rejected]="proposal.approvalStatus === 'rejected'">
+          <ng-container [ngSwitch]="proposal.approvalStatus">
+            <span *ngSwitchCase="'approved'">
+              <app-icon name="checkmark-circle"></app-icon>
+              {{ 'autoOrganize.statusApproved' | translate }}
+            </span>
+            <span *ngSwitchCase="'rejected'">
+              <app-icon name="close-circle"></app-icon>
+              {{ 'autoOrganize.statusRejected' | translate }}
+            </span>
+            <span *ngSwitchDefault>
+              <app-icon name="refresh"></app-icon>
+              {{ 'autoOrganize.statusPending' | translate }}
+            </span>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Original Document Information -->
+      <div class="original-meta">
+        <span class="doc-icon">
+          <app-icon name="document-text"></app-icon>
+        </span>
+        <div class="doc-info">
+          <span class="doc-original-name" [title]="proposal.originalFileName">
+            {{ 'autoOrganize.originalName' | translate: { name: proposal.originalFileName } }}
+          </span>
+          <span class="doc-size-badge">{{ formatSize(proposal.fileSizeBytes) }} · {{ proposal.pageCount }} pg</span>
+        </div>
+      </div>
+
+      <!-- Proposed Filename (Editable) -->
+      <div class="field-block proposed-name-block">
+        <label [for]="'name-' + proposal.id" class="field-label">
+          <app-icon name="pen-tool"></app-icon>
+          {{ 'autoOrganize.proposedFilename' | translate }}
+        </label>
+        <div class="input-with-icon">
+          <input
+            [id]="'name-' + proposal.id"
+            type="text"
+            class="filename-input"
+            [(ngModel)]="proposal.proposedFileName"
+            placeholder="Document_Name_YYYY-MM-DD.pdf"
+          />
+        </div>
+      </div>
+
+      <!-- Semantic Tags with removal and inline add -->
+      <div class="field-block tags-block">
+        <label class="field-label">
+          <app-icon name="smart-tag"></app-icon>
+          {{ 'autoOrganize.tagsLabel' | translate }}
+        </label>
+        <div class="tags-container">
+          <span
+            *ngFor="let tag of proposal.tags; let idx = index"
+            class="tag-pill"
+          >
+            <span class="tag-text">{{ tag }}</span>
+            <button
+              type="button"
+              class="tag-remove-btn"
+              (click)="removeTag(proposal, idx)"
+              aria-label="Remove Tag"
+            >
+              ×
+            </button>
+          </span>
+
+          <!-- Inline Add Tag -->
+          <div class="add-tag-inline">
+            <input
+              type="text"
+              class="inline-tag-input"
+              [(ngModel)]="newTagInputs[proposal.id]"
+              (keyup.enter)="addTag(proposal)"
+              [placeholder]="'autoOrganize.addTagPlaceholder' | translate"
+            />
+            <button
+              type="button"
+              class="add-tag-btn"
+              (click)="addTag(proposal)"
+              [disabled]="!newTagInputs[proposal.id]?.trim()"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Action Buttons (Direct touch & accessibility fallback) -->
+      <div class="card-actions">
+        <button
+          type="button"
+          class="card-action-btn reject-btn"
+          [class.active-btn]="proposal.approvalStatus === 'rejected'"
+          (click)="reject(proposal)"
+        >
+          <app-icon name="close"></app-icon>
+          {{ 'autoOrganize.rejectBtn' | translate }}
+        </button>
+
+        <button
+          type="button"
+          class="card-action-btn approve-btn"
+          [class.active-btn]="proposal.approvalStatus === 'approved'"
+          (click)="approve(proposal)"
+        >
+          <app-icon name="checkmark"></app-icon>
+          {{ 'autoOrganize.approveBtn' | translate }}
+        </button>
+      </div>
+    </article>
+  </main>
+
+  <!-- Sticky Bottom Action Bar -->
+  <footer class="sticky-bottom-bar" *ngIf="proposals.length > 0">
+    <button
+      type="button"
+      class="apply-btn"
+      [disabled]="approvedCount === 0 || isApplying"
+      (click)="applyOrganization()"
+    >
+      <app-icon name="save" *ngIf="!isApplying"></app-icon>
+      <div class="btn-spinner" *ngIf="isApplying"></div>
+      <span>{{ 'autoOrganize.applyChanges' | translate: { count: approvedCount } }}</span>
+    </button>
+  </footer>
+</div>

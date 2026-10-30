@@ -170,6 +170,14 @@ test.describe('Document Scanner & OCR Comprehensive Release Audit Suite', () => 
 
   test('TC-OCR-04: Smart OCR detection, multilingual document processing, text display, and copy', async ({ page }) => {
     test.setTimeout(75000);
+    page.on('console', msg => {
+      if (msg.type() === 'error' || msg.text().includes('OCR') || msg.text().includes('Tesseract')) {
+        console.log(`[Browser ${msg.type()}]: ${msg.text()}`);
+      }
+    });
+    page.on('pageerror', err => {
+      console.log(`[Browser PageError]: ${err.message}`);
+    });
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/features/pdf-ocr');
     await expect(page).toHaveURL(/.*features\/pdf-ocr/);
@@ -182,12 +190,18 @@ test.describe('Document Scanner & OCR Comprehensive Release Audit Suite', () => 
     const settingsHeading = page.getByRole('heading', { name: /ocr settings/i });
     const resultHeading = page.getByRole('heading', { name: /recognized document/i });
 
-    // If on Settings screen, click Start OCR Processing
-    if (await settingsHeading.isVisible({ timeout: 15000 })) {
-      const startOcrBtn = page.getByRole('button', { name: /start ocr processing/i });
-      await expect(startOcrBtn).toBeVisible();
-      await startOcrBtn.click();
+    // Wait for OCR Settings or Start OCR button to be visible after file upload
+    const startOcrBtn = page.getByRole('button', { name: /start ocr processing/i });
+    await expect(startOcrBtn).toBeVisible({ timeout: 30000 });
+
+    const engPill = page.getByTestId('ocr-lang-eng');
+    if (await engPill.isVisible()) {
+      await engPill.click();
     }
+
+    await startOcrBtn.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+    await startOcrBtn.click();
 
     // Wait for OCR recognition to complete and land on Result screen
     await expect(resultHeading).toBeVisible({ timeout: 60000 });

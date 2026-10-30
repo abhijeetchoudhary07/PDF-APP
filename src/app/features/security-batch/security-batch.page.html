@@ -1,0 +1,501 @@
+<app-header [title]="'batchSecurity.title' | translate"></app-header>
+
+<main class="batch-security-container">
+  <!-- Mode Selector Pills -->
+  <section class="mode-nav-section">
+    <div class="mode-pills" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        class="mode-pill"
+        [class.active]="mode === 'protect'"
+        [attr.aria-selected]="mode === 'protect'"
+        (click)="setMode('protect')"
+        [disabled]="isProcessing"
+      >
+        <app-icon name="shield-lock" [size]="18"></app-icon>
+        <span>{{ 'batchSecurity.protectTab' | translate }}</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="mode-pill"
+        [class.active]="mode === 'unlock'"
+        [attr.aria-selected]="mode === 'unlock'"
+        (click)="setMode('unlock')"
+        [disabled]="isProcessing"
+      >
+        <app-icon name="lock-open" [size]="18"></app-icon>
+        <span>{{ 'batchSecurity.unlockTab' | translate }}</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Multi-File Dropzone Area -->
+  <section class="dropzone-section" *ngIf="!isProcessing && !isSummaryOpen">
+    <app-file-dropzone
+      [multiple]="true"
+      accept="application/pdf,.pdf"
+      icon="batch-shield"
+      [title]="'batchSecurity.addFiles' | translate"
+      [description]="'batchSecurity.subtitle' | translate"
+      buttonText="Choose PDF Files"
+      [isLoading]="isInspecting"
+      loadingMessage="Inspecting PDF files..."
+      (filesSelected)="onFilesSelected($event)"
+    ></app-file-dropzone>
+  </section>
+
+  <!-- Document Queue Card List -->
+  <section class="queue-section" *ngIf="queue.length > 0">
+    <div class="queue-header">
+      <div class="queue-title-wrap">
+        <h2 class="queue-title">{{ 'batchSecurity.queueTitle' | translate }}</h2>
+        <span class="queue-count-badge">{{ queue.length }}</span>
+      </div>
+      <button
+        type="button"
+        class="clear-all-btn"
+        (click)="clearQueue()"
+        [disabled]="isProcessing"
+      >
+        <app-icon name="trash" [size]="14"></app-icon>
+        <span>{{ 'batchSecurity.clearQueue' | translate }}</span>
+      </button>
+    </div>
+
+    <div class="queue-card-list">
+      <div
+        class="queue-item-card"
+        *ngFor="let item of queue"
+        [class.item-success]="item.status === 'success'"
+        [class.item-failed]="item.status === 'failed'"
+        [class.item-processing]="item.status === 'processing'"
+      >
+        <div class="item-main-row">
+          <div class="item-icon-box">
+            <app-icon
+              [name]="item.isEncrypted ? 'lock-closed' : 'document'"
+              [size]="22"
+            ></app-icon>
+          </div>
+
+          <div class="item-meta">
+            <div class="item-name" [title]="item.name">{{ item.name }}</div>
+            <div class="item-details">
+              <span>{{ (item.sizeBytes / 1024) | number:'1.0-1' }} KB</span>
+              <span *ngIf="item.pageCount && item.pageCount > 0">• {{ item.pageCount }} pgs</span>
+              <span *ngIf="item.isEncrypted" class="encrypted-tag">Encrypted</span>
+            </div>
+          </div>
+
+          <div class="item-status-pill">
+            <span
+              class="status-badge"
+              [class.badge-ready]="item.status === 'ready'"
+              [class.badge-processing]="item.status === 'processing'"
+              [class.badge-success]="item.status === 'success'"
+              [class.badge-failed]="item.status === 'failed'"
+              [class.badge-skipped]="item.status === 'skipped'"
+            >
+              {{ 'batchSecurity.' + (item.status === 'success' ? (mode === 'protect' ? 'encrypted' : 'unlocked') : item.status) | translate }}
+            </span>
+
+            <button
+              type="button"
+              class="remove-item-btn"
+              (click)="removeQueueItem(item.id)"
+              *ngIf="!isProcessing && !isSummaryOpen"
+              aria-label="Remove file"
+            >
+              <app-icon name="trash" [size]="16"></app-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Optional Per-file password input in unlock mode -->
+        <div class="item-password-row" *ngIf="mode === 'unlock' && !isProcessing && !isSummaryOpen">
+          <label class="per-file-label" [for]="'pwd-' + item.id">Per-file password (optional):</label>
+          <input
+            [id]="'pwd-' + item.id"
+            type="password"
+            class="per-file-input"
+            placeholder="Override master password"
+            [value]="item.password || ''"
+            (input)="setFilePassword(item.id, $any($event.target).value)"
+          />
+        </div>
+
+        <div class="item-error-msg" *ngIf="item.status === 'failed' && item.error">
+          <app-icon name="alert-circle" [size]="14"></app-icon>
+          <span>{{ item.error }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Configuration Panels (when queue has items) -->
+  <section class="config-section" *ngIf="queue.length > 0 && !isProcessing && !isSummaryOpen">
+    <!-- PROTECT CONFIG -->
+    <div class="protect-config-card" *ngIf="mode === 'protect'">
+      <h3 class="config-card-title">
+        <app-icon name="shield-lock" [size]="20"></app-icon>
+        <span>{{ 'securityProtect.standardTitle' | translate }}</span>
+      </h3>
+
+      <div class="standard-pill-selector">
+        <button
+          type="button"
+          class="std-pill"
+          [class.selected]="encryptionStandard === 'aes-256'"
+          (click)="setStandard('aes-256')"
+        >
+          <span class="std-name">{{ 'securityProtect.aes256' | translate }}</span>
+          <span class="std-badge">{{ 'securityProtect.recommended' | translate }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="std-pill"
+          [class.selected]="encryptionStandard === 'aes-128'"
+          (click)="setStandard('aes-128')"
+        >
+          <span class="std-name">{{ 'securityProtect.aes128' | translate }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="std-pill"
+          [class.selected]="encryptionStandard === 'rc4-128'"
+          (click)="setStandard('rc4-128')"
+        >
+          <span class="std-name">{{ 'securityProtect.rc4' | translate }}</span>
+        </button>
+      </div>
+
+      <!-- Password Inputs -->
+      <div class="passwords-group">
+        <div class="field-card">
+          <label class="field-label" for="batch-user-pwd">
+            {{ 'securityProtect.userPasswordLabel' | translate }} *
+          </label>
+          <div class="input-with-eye">
+            <input
+              id="batch-user-pwd"
+              [type]="showUserPassword ? 'text' : 'password'"
+              class="text-input"
+              [(ngModel)]="userPassword"
+              [placeholder]="'securityProtect.userPasswordPlaceholder' | translate"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="eye-btn"
+              (click)="showUserPassword = !showUserPassword"
+              [attr.aria-label]="(showUserPassword ? 'securityProtect.hidePassword' : 'securityProtect.showPassword') | translate"
+            >
+              <app-icon [name]="showUserPassword ? 'eye-off' : 'eye'" [size]="20"></app-icon>
+            </button>
+          </div>
+
+          <!-- Password Strength Meter Component -->
+          <app-password-strength-meter
+            [password]="userPassword"
+            [ownerPassword]="ownerPassword"
+            (passphraseGenerated)="onPassphraseGenerated($event)"
+          ></app-password-strength-meter>
+        </div>
+
+        <div class="field-card">
+          <label class="field-label" for="batch-confirm-user-pwd">
+            {{ 'securityProtect.confirmUserPasswordLabel' | translate }} *
+          </label>
+          <input
+            id="batch-confirm-user-pwd"
+            type="password"
+            class="text-input"
+            [(ngModel)]="confirmUserPassword"
+            [placeholder]="'securityProtect.confirmUserPasswordPlaceholder' | translate"
+            autocomplete="new-password"
+          />
+          <div
+            class="input-mismatch-warn"
+            *ngIf="confirmUserPassword && userPassword !== confirmUserPassword"
+          >
+            {{ 'securityProtect.passwordMismatch' | translate }}
+          </div>
+        </div>
+
+        <!-- Optional Owner Password -->
+        <div class="accordion-card">
+          <button
+            type="button"
+            class="accordion-header"
+            (click)="showAdvancedOwner = !showAdvancedOwner"
+          >
+            <span>{{ 'securityProtect.ownerPasswordLabel' | translate }} (Optional)</span>
+            <app-icon [name]="showAdvancedOwner ? 'chevron-up' : 'chevron-down'" [size]="18"></app-icon>
+          </button>
+
+          <div class="accordion-body" *ngIf="showAdvancedOwner">
+            <div class="field-card">
+              <div class="input-with-eye">
+                <input
+                  [type]="showOwnerPassword ? 'text' : 'password'"
+                  class="text-input"
+                  [(ngModel)]="ownerPassword"
+                  [placeholder]="'securityProtect.ownerPasswordPlaceholder' | translate"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="eye-btn"
+                  (click)="showOwnerPassword = !showOwnerPassword"
+                >
+                  <app-icon [name]="showOwnerPassword ? 'eye-off' : 'eye'" [size]="20"></app-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="field-card" *ngIf="ownerPassword">
+              <input
+                type="password"
+                class="text-input"
+                [(ngModel)]="confirmOwnerPassword"
+                placeholder="Confirm owner password"
+                autocomplete="new-password"
+              />
+              <div
+                class="input-mismatch-warn"
+                *ngIf="confirmOwnerPassword && ownerPassword !== confirmOwnerPassword"
+              >
+                {{ 'securityProtect.passwordMismatch' | translate }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Permissions Switch Toggles -->
+        <div class="permissions-card">
+          <h4 class="perm-title">{{ 'securityProtect.permissionsTitle' | translate }}</h4>
+          <p class="perm-subtitle">{{ 'securityProtect.permissionsSubtitle' | translate }}</p>
+
+          <div class="perm-list">
+            <div class="perm-toggle-row">
+              <div class="perm-text">
+                <span class="perm-name">{{ 'securityProtect.allowPrinting' | translate }}</span>
+                <span class="perm-desc">{{ 'securityProtect.allowPrintingDesc' | translate }}</span>
+              </div>
+              <select
+                [ngModel]="permissions.allowPrinting"
+                (ngModelChange)="togglePrinting($event)"
+                class="perm-select"
+              >
+                <option value="high-resolution">{{ 'securityProtect.printingHigh' | translate }}</option>
+                <option value="low-resolution">{{ 'securityProtect.printingLow' | translate }}</option>
+                <option value="none">{{ 'securityProtect.printingNone' | translate }}</option>
+              </select>
+            </div>
+
+            <label class="perm-toggle-row">
+              <div class="perm-text">
+                <span class="perm-name">{{ 'securityProtect.allowCopying' | translate }}</span>
+                <span class="perm-desc">{{ 'securityProtect.allowCopyingDesc' | translate }}</span>
+              </div>
+              <input
+                type="checkbox"
+                class="toggle-checkbox"
+                [checked]="permissions.allowCopying"
+                (change)="toggleCopying()"
+              />
+            </label>
+
+            <label class="perm-toggle-row">
+              <div class="perm-text">
+                <span class="perm-name">{{ 'securityProtect.allowModifying' | translate }}</span>
+                <span class="perm-desc">{{ 'securityProtect.allowModifyingDesc' | translate }}</span>
+              </div>
+              <input
+                type="checkbox"
+                class="toggle-checkbox"
+                [checked]="permissions.allowModifying"
+                (change)="toggleModifying()"
+              />
+            </label>
+
+            <label class="perm-toggle-row">
+              <div class="perm-text">
+                <span class="perm-name">{{ 'securityProtect.allowForms' | translate }}</span>
+                <span class="perm-desc">{{ 'securityProtect.allowFormsDesc' | translate }}</span>
+              </div>
+              <input
+                type="checkbox"
+                class="toggle-checkbox"
+                [checked]="permissions.allowFillingForms"
+                (change)="toggleForms()"
+              />
+            </label>
+
+            <label class="perm-toggle-row">
+              <div class="perm-text">
+                <span class="perm-name">{{ 'securityProtect.allowAnnotations' | translate }}</span>
+                <span class="perm-desc">{{ 'securityProtect.allowAnnotationsDesc' | translate }}</span>
+              </div>
+              <input
+                type="checkbox"
+                class="toggle-checkbox"
+                [checked]="permissions.allowAnnotating"
+                (change)="toggleAnnotations()"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UNLOCK CONFIG -->
+    <div class="unlock-config-card" *ngIf="mode === 'unlock'">
+      <h3 class="config-card-title">
+        <app-icon name="lock-open" [size]="20"></app-icon>
+        <span>{{ 'batchSecurity.masterPasswordLabel' | translate }}</span>
+      </h3>
+      <p class="config-card-desc">{{ 'batchSecurity.masterPasswordHelp' | translate }}</p>
+
+      <div class="field-card">
+        <div class="input-with-eye">
+          <input
+            [type]="showMasterPassword ? 'text' : 'password'"
+            class="text-input"
+            [(ngModel)]="masterPassword"
+            [placeholder]="'batchSecurity.masterPasswordPlaceholder' | translate"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="eye-btn"
+            (click)="showMasterPassword = !showMasterPassword"
+          >
+            <app-icon [name]="showMasterPassword ? 'eye-off' : 'eye'" [size]="20"></app-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sticky Bottom Action Bar -->
+  <div class="sticky-action-bar" *ngIf="queue.length > 0 && !isProcessing && !isSummaryOpen">
+    <button
+      type="button"
+      class="action-thumb-btn"
+      [disabled]="!canStartBatch"
+      (click)="startBatch()"
+    >
+      <app-icon [name]="mode === 'protect' ? 'shield-lock' : 'lock-open'" [size]="20"></app-icon>
+      <span *ngIf="mode === 'protect'">
+        {{ 'batchSecurity.startBatchProtect' | translate:{ count: queue.length } }}
+      </span>
+      <span *ngIf="mode === 'unlock'">
+        {{ 'batchSecurity.startBatchUnlock' | translate:{ count: queue.length } }}
+      </span>
+    </button>
+  </div>
+
+  <!-- Processing Modal Sheet -->
+  <div class="modal-backdrop" *ngIf="isProcessing">
+    <div class="processing-sheet">
+      <div class="sheet-indicator"></div>
+      <div class="sheet-header">
+        <div class="spinner-ring"></div>
+        <h3 class="sheet-title">{{ 'batchSecurity.processingTitle' | translate }}</h3>
+      </div>
+
+      <div class="progress-info-row">
+        <span class="step-label">Processing {{ progress.currentIndex }} of {{ progress.total }}</span>
+        <span class="pct-label">{{ getProgressPercentage() }}%</span>
+      </div>
+
+      <div class="progress-track">
+        <div
+          class="progress-fill"
+          [style.width.%]="getProgressPercentage()"
+        ></div>
+      </div>
+
+      <div class="current-file-label" [title]="progress.currentFileName">
+        {{ progress.currentFileName }}
+      </div>
+
+      <div class="live-stats-row">
+        <span class="live-stat-badge success">✓ {{ progress.successCount }} passed</span>
+        <span class="live-stat-badge failed" *ngIf="progress.failureCount > 0">
+          ✕ {{ progress.failureCount }} failed
+        </span>
+      </div>
+
+      <button type="button" class="cancel-batch-btn" (click)="cancelBatch()">
+        {{ 'batchSecurity.cancelBtn' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Bottom Sheet -->
+  <div class="modal-backdrop" *ngIf="isSummaryOpen && summary">
+    <div class="summary-sheet">
+      <div class="sheet-indicator"></div>
+      <div class="sheet-header">
+        <div class="summary-icon-box" [class.all-pass]="summary.failureCount === 0">
+          <app-icon
+            [name]="summary.failureCount === 0 ? 'checkmark-circle' : 'alert-circle'"
+            [size]="28"
+          ></app-icon>
+        </div>
+        <h3 class="sheet-title">{{ 'batchSecurity.summaryTitle' | translate }}</h3>
+      </div>
+
+      <div class="summary-stats-grid">
+        <div class="stat-box success-box">
+          <span class="stat-number">{{ summary.successCount }}</span>
+          <span class="stat-caption">{{ 'batchSecurity.successCount' | translate:{ count: summary.successCount } }}</span>
+        </div>
+
+        <div class="stat-box failure-box" *ngIf="summary.failureCount > 0">
+          <span class="stat-number">{{ summary.failureCount }}</span>
+          <span class="stat-caption">{{ 'batchSecurity.failureCount' | translate:{ count: summary.failureCount } }}</span>
+        </div>
+      </div>
+
+      <div class="summary-actions">
+        <button
+          type="button"
+          class="save-all-btn primary-save"
+          *ngIf="summary.successCount > 0"
+          (click)="saveAllIndividually()"
+        >
+          <app-icon name="download" [size]="20"></app-icon>
+          <span>{{ 'batchSecurity.saveAllIndividual' | translate }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="zip-btn secondary-save"
+          *ngIf="summary.successCount > 0"
+          (click)="downloadZip()"
+        >
+          <app-icon name="archive" [size]="20"></app-icon>
+          <span>{{ 'batchSecurity.saveAllZip' | translate }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="reset-btn"
+          (click)="resetBatch()"
+        >
+          <span>New Batch</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<app-footer></app-footer>

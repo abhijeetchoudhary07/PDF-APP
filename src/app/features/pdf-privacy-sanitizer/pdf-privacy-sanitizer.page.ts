@@ -7,6 +7,7 @@ import { FileService } from '../../core/services/file.service';
 import { ShareService } from '../../core/services/share.service';
 import { HistoryService } from '../../core/services/history.service';
 import { ToastService } from '../../core/services/toast.service';
+import { DocumentBridgeService } from '../../core/services/document-bridge.service';
 import {
   PrivacyScanReport,
   PrivacyScanItem,
@@ -48,16 +49,26 @@ export type PrivacyStep = 'select' | 'scanning' | 'scan_result' | 'sanitizing' |
 ],
   providers: [DecimalPipe]
 })
-export class PdfPrivacySanitizerPage {
+export class PdfPrivacySanitizerPage implements OnInit {
   private privacyService = inject(PdfPrivacyService);
   private fileService = inject(FileService);
   private shareService = inject(ShareService);
   private historyService = inject(HistoryService);
   private toastService = inject(ToastService);
+  private documentBridge = inject(DocumentBridgeService);
   private cdr = inject(ChangeDetectorRef);
 
   currentStep: PrivacyStep = 'select';
   selectedFile?: File;
+
+  ngOnInit(): void {
+    const bridged = this.documentBridge.consumeDocument();
+    if (bridged?.file) {
+      this.onFileSelected(bridged.file);
+    } else if (typeof history !== 'undefined' && history.state?.file instanceof File) {
+      this.onFileSelected(history.state.file);
+    }
+  }
 
   // Scan state
   scanReport?: PrivacyScanReport;

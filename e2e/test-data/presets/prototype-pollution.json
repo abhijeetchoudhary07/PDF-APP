@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "id": "proto-exploit",
+  "name": "Proto Exploit",
+  "__proto__": {
+    "isAdmin": true
+  },
+  "photo": {
+    "maxKb": 50
+  }
+}

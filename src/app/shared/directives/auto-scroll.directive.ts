@@ -156,6 +156,26 @@ export class AutoScrollDirective implements OnInit, OnDestroy {
 
     // Manual scroll / swipe
     add('scroll', onScroll, { passive: true });
+
+    // Page Visibility API: pause animation when document/tab is hidden
+    const onVisibilityChange = () => {
+      if (typeof document !== 'undefined') {
+        if (document.hidden) {
+          this.clearResumeTimer();
+          this.isInteracting = true;
+        } else {
+          this.currentScroll = el.scrollLeft;
+          this.clearResumeTimer();
+          this.resumeTimer = setTimeout(() => {
+            this.isInteracting = false;
+          }, 300);
+        }
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibilityChange, { passive: true });
+      this.cleanups.push(() => document.removeEventListener('visibilitychange', onVisibilityChange));
+    }
   }
 
   private setupResizeObserver(el: HTMLElement): void {
@@ -184,6 +204,12 @@ export class AutoScrollDirective implements OnInit, OnDestroy {
 
       // Check user accessibility preference (prefers-reduced-motion)
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        this.animFrameId = requestAnimationFrame(step);
+        return;
+      }
+
+      // Check Page Visibility API: pause when tab is hidden to save CPU and battery
+      if (typeof document !== 'undefined' && document.hidden) {
         this.animFrameId = requestAnimationFrame(step);
         return;
       }

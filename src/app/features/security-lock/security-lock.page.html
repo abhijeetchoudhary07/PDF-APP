@@ -1,0 +1,343 @@
+<app-header [title]="'appLock.title' | translate" [showBack]="true"></app-header>
+
+<main class="security-lock-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-icon-wrap" [class.locked]="config.enabled">
+      <app-icon [name]="config.enabled ? 'lock-closed' : 'shield'" size="38"></app-icon>
+    </div>
+    <h1 class="hero-title">{{ 'appLock.title' | translate }}</h1>
+    <p class="hero-subtitle">{{ 'appLock.subtitle' | translate }}</p>
+    <app-badge [variant]="config.enabled ? 'success' : 'neutral'" class="hero-badge">
+      <app-icon [name]="config.enabled ? 'checkmark-circle' : 'shield'" size="14"></app-icon>
+      <span>{{ (config.enabled ? 'Security Lock Active' : 'Lock Disabled (Default)') }}</span>
+    </app-badge>
+  </section>
+
+  <!-- 1. BIOMETRIC & PIN APP LOCK CARD -->
+  <section class="settings-card lock-card">
+    <div class="card-header-row">
+      <div class="header-left">
+        <div class="icon-wrap" [class.active]="config.enabled">
+          <app-icon name="lock-closed" size="22"></app-icon>
+        </div>
+        <div class="header-text">
+          <h2 class="card-title">{{ 'appLock.biometricPinTitle' | translate }}</h2>
+          <p class="card-desc">{{ 'appLock.biometricPinDesc' | translate }}</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="toggle-switch-btn"
+        data-testid="toggle-app-lock"
+        [class.on]="config.enabled"
+        (click)="onToggleLockClicked()"
+        [attr.aria-label]="'appLock.enableLock' | translate"
+      >
+        <span class="switch-handle"></span>
+      </button>
+    </div>
+
+    <!-- Lock Configuration Details (Visible when lock is enabled) -->
+    <div *ngIf="config.enabled" class="lock-sub-settings">
+      <!-- Lock Target Selection -->
+      <div class="sub-setting-group">
+        <label class="group-label">{{ 'appLock.lockTargetsTitle' | translate }}</label>
+        <div class="target-options-grid">
+          <button
+            type="button"
+            class="target-card-btn"
+            data-testid="target-btn-app"
+            [class.selected]="config.lockAppOnLaunch"
+            (click)="setLockTarget('app')"
+          >
+            <div class="target-icon-row">
+              <app-icon name="lock-closed" size="18"></app-icon>
+              <app-icon *ngIf="config.lockAppOnLaunch" name="checkmark-circle" size="16" class="check-icon"></app-icon>
+            </div>
+            <span class="target-title">{{ 'appLock.lockAppOnLaunch' | translate }}</span>
+            <span class="target-desc">{{ 'appLock.lockAppOnLaunchDesc' | translate }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="target-card-btn"
+            data-testid="target-btn-vault"
+            [class.selected]="config.lockVaultOnly"
+            (click)="setLockTarget('vault')"
+          >
+            <div class="target-icon-row">
+              <app-icon name="archive" size="18"></app-icon>
+              <app-icon *ngIf="config.lockVaultOnly" name="checkmark-circle" size="16" class="check-icon"></app-icon>
+            </div>
+            <span class="target-title">{{ 'appLock.lockVaultOnly' | translate }}</span>
+            <span class="target-desc">{{ 'appLock.lockVaultOnlyDesc' | translate }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Auto-Lock Timeout Selector -->
+      <div class="sub-setting-group">
+        <label class="group-label">{{ 'appLock.autoLockTimeoutTitle' | translate }}</label>
+        <div class="timeout-pills-row">
+          <button
+            type="button"
+            class="timeout-pill"
+            data-testid="timeout-btn-immediate"
+            [class.active]="config.autoLockTimeout === 'immediate'"
+            (click)="setAutoLockTimeout('immediate')"
+          >
+            {{ 'appLock.autoLockImmediate' | translate }}
+          </button>
+          <button
+            type="button"
+            class="timeout-pill"
+            data-testid="timeout-btn-1min"
+            [class.active]="config.autoLockTimeout === '1min'"
+            (click)="setAutoLockTimeout('1min')"
+          >
+            {{ 'appLock.autoLock1Min' | translate }}
+          </button>
+          <button
+            type="button"
+            class="timeout-pill"
+            data-testid="timeout-btn-5min"
+            [class.active]="config.autoLockTimeout === '5min'"
+            (click)="setAutoLockTimeout('5min')"
+          >
+            {{ 'appLock.autoLock5Min' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Biometric Toggle (If device supports biometric) -->
+      <div *ngIf="hasBiometricSupport" class="sub-setting-row">
+        <div class="row-left">
+          <app-icon name="fingerprint" size="20" class="sub-icon"></app-icon>
+          <div class="row-text">
+            <span class="row-title">{{ 'appLock.biometricToggle' | translate }}</span>
+            <span class="row-desc">{{ 'appLock.biometricToggleDesc' | translate }}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="toggle-switch-btn small"
+          data-testid="toggle-biometric"
+          [class.on]="config.biometricEnabled"
+          (click)="toggleBiometric()"
+        >
+          <span class="switch-handle"></span>
+        </button>
+      </div>
+
+      <!-- Change PIN Button -->
+      <div class="action-row">
+        <button
+          type="button"
+          class="btn-secondary"
+          data-testid="btn-change-pin"
+          (click)="openPinModal('change')"
+        >
+          <app-icon name="lock-closed" size="16"></app-icon>
+          <span>{{ 'appLock.changePin' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. TEMP FILES AUTO-CLEAR CARD -->
+  <section class="settings-card cache-card">
+    <div class="card-header-row">
+      <div class="header-left">
+        <div class="icon-wrap cache">
+          <app-icon name="sync" size="20"></app-icon>
+        </div>
+        <div class="header-text">
+          <h2 class="card-title">{{ 'appLock.cacheAutoClearTitle' | translate }}</h2>
+          <p class="card-desc">{{ 'appLock.cacheAutoClearDesc' | translate }}</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="toggle-switch-btn"
+        data-testid="toggle-cache-autoclear"
+        [class.on]="config.autoClearCacheOnExit"
+        (click)="toggleAutoClearCache()"
+        [attr.aria-label]="'appLock.cacheAutoClearTitle' | translate"
+      >
+        <span class="switch-handle"></span>
+      </button>
+    </div>
+
+    <div class="cache-actions-row">
+      <button
+        type="button"
+        class="btn-clean-cache"
+        data-testid="btn-clear-cache-now"
+        [disabled]="isClearingCache"
+        (click)="clearCacheNow()"
+      >
+        <app-icon [name]="isClearingCache ? 'sync' : 'trash'" size="16" [class.spin]="isClearingCache"></app-icon>
+        <span>{{ 'appLock.clearCacheNow' | translate }}</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- 3. PROMINENT EMERGENCY PANIC CLEAR SECTION -->
+  <section class="settings-card panic-card">
+    <div class="panic-header">
+      <div class="panic-icon-wrap">
+        <app-icon name="panic-clear" size="26"></app-icon>
+      </div>
+      <div class="panic-header-text">
+        <h2 class="panic-title">{{ 'appLock.panicClearSectionTitle' | translate }}</h2>
+        <span class="panic-badge">{{ 'appLock.panicClearWarningTitle' | translate }}</span>
+      </div>
+    </div>
+
+    <p class="panic-desc">{{ 'appLock.panicClearWarningDesc' | translate }}</p>
+
+    <div class="panic-action-wrap">
+      <button
+        type="button"
+        class="btn-panic-clear"
+        data-testid="btn-open-panic-clear"
+        (click)="openPanicClear()"
+      >
+        <app-icon name="panic-clear" size="18"></app-icon>
+        <span>{{ 'appLock.panicClearButton' | translate }}</span>
+      </button>
+    </div>
+  </section>
+</main>
+
+<!-- PIN KEYPAD MODAL -->
+<div *ngIf="showPinModal" class="pin-modal-backdrop" data-testid="pin-modal-backdrop" (click)="closePinModal()">
+  <div class="pin-modal-card" data-testid="pin-modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title" data-testid="pin-modal-title">{{ getModalTitle() | translate }}</h3>
+      <button type="button" class="btn-close-modal" data-testid="btn-close-pin-modal" (click)="closePinModal()" aria-label="Close">
+        <app-icon name="close" size="20"></app-icon>
+      </button>
+    </div>
+
+    <!-- 4-Dot Indicators -->
+    <div class="pin-dots-row" data-testid="pin-dots-row" [class.shake]="isPinErrorShaking">
+      <span class="pin-dot" [class.filled]="enteredPin.length >= 1"></span>
+      <span class="pin-dot" [class.filled]="enteredPin.length >= 2"></span>
+      <span class="pin-dot" [class.filled]="enteredPin.length >= 3"></span>
+      <span class="pin-dot" [class.filled]="enteredPin.length >= 4"></span>
+    </div>
+
+    <p *ngIf="pinErrorMessage" class="pin-error-text" data-testid="pin-error-text">{{ pinErrorMessage }}</p>
+
+    <!-- 64x64px Touch Target Keypad Grid -->
+    <div class="keypad-grid">
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-1" (click)="onKeypadPress('1')">1</button>
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-2" (click)="onKeypadPress('2')">2</button>
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-3" (click)="onKeypadPress('3')">3</button>
+
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-4" (click)="onKeypadPress('4')">4</button>
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-5" (click)="onKeypadPress('5')">5</button>
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-6" (click)="onKeypadPress('6')">6</button>
+
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-7" (click)="onKeypadPress('7')">7</button>
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-8" (click)="onKeypadPress('8')">8</button>
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-9" (click)="onKeypadPress('9')">9</button>
+
+      <div class="keypad-btn empty"></div>
+      <button type="button" class="keypad-btn" data-testid="keypad-btn-0" (click)="onKeypadPress('0')">0</button>
+      <button type="button" class="keypad-btn backspace" data-testid="keypad-btn-backspace" (click)="onKeypadBackspace()" aria-label="Backspace">
+        <app-icon name="arrow-undo" size="22"></app-icon>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PANIC CLEAR TWO-STEP CONFIRMATION BOTTOM SHEET -->
+<div *ngIf="showPanicSheet" class="panic-sheet-backdrop" data-testid="panic-sheet-backdrop" (click)="closePanicSheet()">
+  <div class="panic-sheet-card" data-testid="panic-sheet-card" (click)="$event.stopPropagation()">
+    <!-- Step 1: Exact Storage Breakdown -->
+    <div *ngIf="panicSheetStep === 1" class="sheet-content" data-testid="panic-step-1">
+      <div class="sheet-header">
+        <div class="sheet-icon-wrap warning">
+          <app-icon name="panic-clear" size="28"></app-icon>
+        </div>
+        <h3 class="sheet-title">{{ 'appLock.sheetTitleBreakdown' | translate }}</h3>
+        <p class="sheet-desc">{{ 'appLock.sheetSubtitleBreakdown' | translate }}</p>
+      </div>
+
+      <div class="breakdown-list">
+        <div class="breakdown-item">
+          <span class="item-label">{{ 'appLock.cachedFilesLabel' | translate }}</span>
+          <span class="item-value" data-testid="breakdown-cached-files">{{ panicBreakdown?.cachedFilesCount || 0 }} files</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="item-label">{{ 'appLock.historyEntriesLabel' | translate }}</span>
+          <span class="item-value" data-testid="breakdown-history-entries">{{ panicBreakdown?.historyEntriesCount || 0 }} entries</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="item-label">{{ 'appLock.savedSignaturesLabel' | translate }}</span>
+          <span class="item-value" data-testid="breakdown-saved-signatures">{{ panicBreakdown?.savedSignaturesCount || 0 }} signatures</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="item-label">{{ 'appLock.settingsEntriesLabel' | translate }}</span>
+          <span class="item-value" data-testid="breakdown-settings-entries">{{ panicBreakdown?.preferencesKeysCount || 0 }} preferences</span>
+        </div>
+      </div>
+
+      <div class="sheet-buttons">
+        <button
+          type="button"
+          class="btn-sheet-proceed"
+          data-testid="btn-proceed-final-panic"
+          (click)="proceedToFinalPanicConfirm()"
+        >
+          <span>{{ 'appLock.proceedToFinal' | translate }}</span>
+          <app-icon name="chevron-forward" size="16"></app-icon>
+        </button>
+        <button
+          type="button"
+          class="btn-sheet-cancel"
+          data-testid="btn-cancel-panic-sheet-1"
+          (click)="closePanicSheet()"
+        >
+          {{ 'appLock.cancel' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Final High-Urgency Irreversible Warning -->
+    <div *ngIf="panicSheetStep === 2" class="sheet-content" data-testid="panic-step-2">
+      <div class="sheet-header">
+        <div class="sheet-icon-wrap danger">
+          <app-icon name="warning" size="32"></app-icon>
+        </div>
+        <h3 class="sheet-title danger">{{ 'appLock.sheetTitleFinal' | translate }}</h3>
+        <p class="sheet-desc danger">{{ 'appLock.sheetSubtitleFinal' | translate }}</p>
+      </div>
+
+      <div class="sheet-buttons">
+        <button
+          type="button"
+          class="btn-sheet-wipe"
+          data-testid="btn-execute-panic-wipe"
+          [disabled]="isPanicClearing"
+          (click)="executePanicClear()"
+        >
+          <app-icon [name]="isPanicClearing ? 'sync' : 'panic-clear'" size="20" [class.spin]="isPanicClearing"></app-icon>
+          <span>{{ 'appLock.wipePermanentlyButton' | translate }}</span>
+        </button>
+        <button
+          type="button"
+          class="btn-sheet-cancel"
+          data-testid="btn-cancel-panic-sheet-2"
+          [disabled]="isPanicClearing"
+          (click)="closePanicSheet()"
+        >
+          {{ 'appLock.cancel' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,549 @@
+<div class="forms-merge-container">
+  <!-- Top App Navigation / Header -->
+  <header class="merge-header-bar">
+    <div class="header-left">
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="resetBatch()"
+        [attr.aria-label]="'formsMailMerge.title' | translate">
+        <app-icon name="mail-merge" [size]="22"></app-icon>
+      </button>
+      <div class="header-title-box">
+        <h1 class="header-title">{{ 'formsMailMerge.title' | translate }}</h1>
+        <span class="header-subtitle">
+          @if (currentStep === 1) { {{ 'formsMailMerge.stepTemplate' | translate }} }
+          @else if (currentStep === 2) { {{ 'formsMailMerge.stepData' | translate }} }
+          @else if (currentStep === 3) { {{ 'formsMailMerge.stepMapping' | translate }} }
+          @else { {{ 'formsMailMerge.stepSettings' | translate }} }
+        </span>
+      </div>
+    </div>
+    <div class="header-right">
+      <app-badge variant="edit" size="sm">CSV • BATCH</app-badge>
+    </div>
+  </header>
+
+  <!-- Hidden File Inputs -->
+  <input
+    #templateFileInput
+    type="file"
+    accept="application/pdf"
+    class="visually-hidden"
+    data-testid="template-file-input"
+    (change)="onTemplateSelected($event)" />
+
+  <input
+    #csvFileInput
+    type="file"
+    accept=".csv,text/csv"
+    class="visually-hidden"
+    data-testid="csv-file-input"
+    (change)="onCsvSelected($event)" />
+
+  <!-- 4-Step Stepper Header -->
+  <nav class="stepper-nav" aria-label="Mail Merge Steps">
+    <button
+      type="button"
+      class="step-pill"
+      data-testid="step-pill-1"
+      [class.active]="currentStep === 1"
+      [class.completed]="currentStep > 1"
+      (click)="goToStep(1)">
+      <span class="step-num">1</span>
+      <span class="step-text">{{ 'formsMailMerge.stepTemplate' | translate }}</span>
+    </button>
+    <div class="step-divider"></div>
+
+    <button
+      type="button"
+      class="step-pill"
+      data-testid="step-pill-2"
+      [class.active]="currentStep === 2"
+      [class.completed]="currentStep > 2"
+      [disabled]="!templatePdfBytes"
+      (click)="goToStep(2)">
+      <span class="step-num">2</span>
+      <span class="step-text">{{ 'formsMailMerge.stepData' | translate }}</span>
+    </button>
+    <div class="step-divider"></div>
+
+    <button
+      type="button"
+      class="step-pill"
+      data-testid="step-pill-3"
+      [class.active]="currentStep === 3"
+      [class.completed]="currentStep > 3"
+      [disabled]="csvData.totalRows === 0 || !templatePdfBytes"
+      (click)="goToStep(3)">
+      <span class="step-num">3</span>
+      <span class="step-text">{{ 'formsMailMerge.stepMapping' | translate }}</span>
+    </button>
+    <div class="step-divider"></div>
+
+    <button
+      type="button"
+      class="step-pill"
+      data-testid="step-pill-4"
+      [class.active]="currentStep === 4"
+      [disabled]="!hasAtLeastOneMapping() || csvData.totalRows === 0"
+      (click)="goToStep(4)">
+      <span class="step-num">4</span>
+      <span class="step-text">{{ 'formsMailMerge.stepSettings' | translate }}</span>
+    </button>
+  </nav>
+
+  <!-- Scrollable Viewport -->
+  <main class="merge-main-scroll">
+    <!-- ==========================================
+         STEP 1: PDF TEMPLATE
+         ========================================== -->
+    @if (currentStep === 1) {
+      <section class="step-panel" data-testid="step-panel-1">
+        @if (!templatePdfBytes) {
+          <div class="upload-drop-card" data-testid="template-drop-card" (click)="triggerTemplateInput(templateFileInput)">
+            <div class="upload-icon-circle">
+              <app-icon name="document" [size]="40"></app-icon>
+            </div>
+            <h2 class="upload-card-title">{{ 'formsMailMerge.selectTemplateTitle' | translate }}</h2>
+            <p class="upload-card-desc">{{ 'formsMailMerge.selectTemplateDesc' | translate }}</p>
+            <app-button
+              variant="primary"
+              size="md"
+              [block]="true"
+              data-testid="template-select-btn"
+              (clicked)="triggerTemplateInput(templateFileInput)">
+              <app-icon name="folder-open" [size]="18" class="btn-icon"></app-icon>
+              <span>{{ 'formsMailMerge.selectTemplateTitle' | translate }}</span>
+            </app-button>
+          </div>
+        }
+
+        @if (templatePdfBytes) {
+          <div class="loaded-doc-card" data-testid="template-loaded-card">
+            <div class="loaded-doc-top">
+              <div class="doc-icon-box">
+                <app-icon name="document" [size]="28"></app-icon>
+              </div>
+              <div class="loaded-doc-info">
+                <span class="doc-badge-status">{{ 'formsMailMerge.templateLoaded' | translate }}</span>
+                <strong class="loaded-filename">{{ templateFileName }}</strong>
+                <span class="doc-fields-count">
+                  {{ 'formsMailMerge.fieldsDetected' | translate:{ count: detectedFields.length } }}
+                </span>
+              </div>
+            </div>
+
+            @if (detectedFields.length === 0) {
+              <div class="warning-banner">
+                <app-icon name="alert-circle" [size]="18"></app-icon>
+                <span>{{ 'formsMailMerge.noFieldsWarning' | translate }}</span>
+              </div>
+            }
+
+            <div class="doc-actions-row">
+              <button
+                type="button"
+                class="secondary-action-btn"
+                (click)="triggerTemplateInput(templateFileInput)">
+                <app-icon name="refresh" [size]="16"></app-icon>
+                <span>{{ 'formsMailMerge.changeTemplate' | translate }}</span>
+              </button>
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ==========================================
+         STEP 2: CSV DATA SHEET
+         ========================================== -->
+    @if (currentStep === 2) {
+      <section class="step-panel" data-testid="step-panel-2">
+        @if (csvData.totalRows === 0) {
+          <div class="upload-drop-card" data-testid="csv-drop-card" (click)="triggerCsvInput(csvFileInput)">
+            <div class="upload-icon-circle circle-green">
+              <app-icon name="cloud-upload" [size]="40"></app-icon>
+            </div>
+            <h2 class="upload-card-title">{{ 'formsMailMerge.selectCsvTitle' | translate }}</h2>
+            <p class="upload-card-desc">{{ 'formsMailMerge.selectCsvDesc' | translate }}</p>
+            <app-button
+              variant="primary"
+              size="md"
+              [block]="true"
+              data-testid="csv-select-btn"
+              (clicked)="triggerCsvInput(csvFileInput)">
+              <app-icon name="folder-open" [size]="18" class="btn-icon"></app-icon>
+              <span>{{ 'formsMailMerge.selectCsvTitle' | translate }}</span>
+            </app-button>
+          </div>
+        }
+
+        @if (csvData.totalRows > 0) {
+          <div class="loaded-doc-card" data-testid="csv-loaded-card">
+            <div class="loaded-doc-top">
+              <div class="doc-icon-box box-green">
+                <app-icon name="file-tray-full" [size]="28"></app-icon>
+              </div>
+              <div class="loaded-doc-info">
+                <span class="doc-badge-status status-green">{{ 'formsMailMerge.csvLoaded' | translate }}</span>
+                <strong class="loaded-filename">{{ csvFileName }}</strong>
+                <span class="doc-fields-count">
+                  {{ 'formsMailMerge.rowCount' | translate:{ count: csvData.totalRows } }}
+                </span>
+              </div>
+            </div>
+
+            <div class="doc-actions-row">
+              <button
+                type="button"
+                class="secondary-action-btn"
+                (click)="triggerCsvInput(csvFileInput)">
+                <app-icon name="refresh" [size]="16"></app-icon>
+                <span>{{ 'formsMailMerge.changeCsv' | translate }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sample Rows Horizontal Preview Card -->
+          <div class="sample-preview-card" data-testid="sample-table-card">
+            <h3 class="sample-title">{{ 'formsMailMerge.sampleRowsPreview' | translate }}</h3>
+            <div class="sample-table-scroll">
+              <table class="sample-table" data-testid="sample-table">
+                <thead>
+                  <tr>
+                    <th class="col-num">#</th>
+                    @for (header of csvData.headers; track header) {
+                      <th>{{ header }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of sampleRows; track $index) {
+                    <tr>
+                      <td class="col-num">{{ $index + 1 }}</td>
+                      @for (header of csvData.headers; track header) {
+                        <td>{{ row[header] ?? '—' }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ==========================================
+         STEP 3: MAPPING CONTROLS
+         ========================================== -->
+    @if (currentStep === 3) {
+      <section class="step-panel" data-testid="step-panel-3">
+        <div class="mapping-header-box">
+          <h2 class="step-heading">{{ 'formsMailMerge.mappingTitle' | translate }}</h2>
+          <p class="step-subheading">{{ 'formsMailMerge.mappingSubtitle' | translate }}</p>
+        </div>
+
+        <div class="mappings-list" data-testid="mappings-list">
+          @for (mapping of mappings; track mapping.fieldName) {
+            <div class="mapping-card" [class.unmapped]="!mapping.csvColumn" [attr.data-testid]="'mapping-card-' + mapping.fieldName">
+              <div class="mapping-field-info">
+                <div class="field-title-row">
+                  <strong class="field-name-text">{{ mapping.fieldName }}</strong>
+                  <app-badge variant="secondary" size="sm">{{ mapping.fieldType }}</app-badge>
+                </div>
+                @if (mapping.isAutoMatched) {
+                  <span class="auto-match-pill" [attr.data-testid]="'auto-match-pill-' + mapping.fieldName">
+                    <app-icon name="checkmark-circle" [size]="12"></app-icon>
+                    <span>{{ 'formsMailMerge.autoMatchedBadge' | translate }}</span>
+                    <span class="confidence-tag">
+                      {{ 'formsMailMerge.matchConfidence' | translate:{ percent: (mapping.confidence * 100) | number:'1.0-0' } }}
+                    </span>
+                  </span>
+                }
+              </div>
+
+              <div class="mapping-select-box">
+                <select
+                  class="column-picker-select"
+                  [attr.data-testid]="'column-picker-' + mapping.fieldName"
+                  [value]="mapping.csvColumn ?? 'null'"
+                  (change)="onMappingChange(mapping, $any($event.target).value)"
+                  [attr.aria-label]="mapping.fieldName">
+                  <option value="null">{{ 'formsMailMerge.ignoreField' | translate }}</option>
+                  @for (col of csvData.headers; track col) {
+                    <option [value]="col">{{ col }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ==========================================
+         STEP 4: GENERATION SETTINGS & QUOTA
+         ========================================== -->
+    @if (currentStep === 4) {
+      <section class="step-panel" data-testid="step-panel-4">
+        <!-- Quota Preview Banner -->
+        @if (!isUnlimitedQuota && quotaRemaining !== null) {
+          <div class="quota-banner" [class.quota-warning]="quotaExceeded">
+            <app-icon [name]="quotaExceeded ? 'warning' : 'information-circle'" [size]="20"></app-icon>
+            <div class="quota-text">
+              @if (quotaExceeded) {
+                <span>
+                  {{ 'formsMailMerge.quotaBannerWarning' | translate:{ count: csvData.totalRows, remaining: quotaRemaining } }}
+                </span>
+              } @else {
+                <span>
+                  {{ 'formsMailMerge.quotaBannerNormal' | translate:{ count: csvData.totalRows, remaining: quotaRemaining } }}
+                </span>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="settings-card">
+          <h2 class="settings-card-title">{{ 'formsMailMerge.settingsTitle' | translate }}</h2>
+
+          <!-- File Naming Pattern -->
+          <div class="setting-group">
+            <label class="setting-label" for="namingPatternInput">
+              {{ 'formsMailMerge.namingPatternLabel' | translate }}
+            </label>
+            <input
+              id="namingPatternInput"
+              type="text"
+              class="setting-input"
+              data-testid="naming-pattern-input"
+              [(ngModel)]="namingPattern"
+              placeholder="Document_{index}.pdf" />
+            <span class="setting-hint">{{ 'formsMailMerge.namingPatternHint' | translate }}</span>
+
+            <!-- Dynamic Token Chips -->
+            <div class="tokens-chips-wrap">
+              <button
+                type="button"
+                class="token-chip"
+                (click)="appendTokenToPattern('index')">
+                + &#123;index&#125;
+              </button>
+              @for (header of csvData.headers; track header) {
+                <button
+                  type="button"
+                  class="token-chip"
+                  (click)="appendTokenToPattern(header)">
+                  + {{ '{' + header + '}' }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Flatten Output PDFs Toggle -->
+          <div class="setting-toggle-row">
+            <div class="toggle-text">
+              <strong class="toggle-title">{{ 'formsMailMerge.flattenToggle' | translate }}</strong>
+              <span class="toggle-desc">{{ 'formsMailMerge.flattenDesc' | translate }}</span>
+            </div>
+            <label class="switch-control" data-testid="flatten-toggle">
+              <input type="checkbox" [(ngModel)]="flattenPdf" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Bundle as ZIP Archive Toggle -->
+          <div class="setting-toggle-row">
+            <div class="toggle-text">
+              <strong class="toggle-title">{{ 'formsMailMerge.bundleZipToggle' | translate }}</strong>
+              <span class="toggle-desc">{{ 'formsMailMerge.bundleZipDesc' | translate }}</span>
+            </div>
+            <label class="switch-control" data-testid="bundle-zip-toggle">
+              <input type="checkbox" [(ngModel)]="bundleAsZip" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+    }
+  </main>
+
+  <!-- Sticky Bottom Navigation Bar with Safe Area -->
+  <footer class="wizard-bottom-bar">
+    @if (currentStep > 1 && !isProcessing && !showSummary) {
+      <button
+        type="button"
+        class="nav-btn btn-secondary"
+        data-testid="wizard-prev-btn"
+        (click)="prevStep()">
+        <app-icon name="arrow-back" [size]="18"></app-icon>
+        <span>{{ 'formsMailMerge.prevStep' | translate }}</span>
+      </button>
+    }
+
+    @if (currentStep < 4 && !isProcessing && !showSummary) {
+      <button
+        type="button"
+        class="nav-btn btn-primary"
+        data-testid="wizard-next-btn"
+        [disabled]="(currentStep === 1 && !templatePdfBytes) || (currentStep === 2 && csvData.totalRows === 0) || (currentStep === 3 && !hasAtLeastOneMapping())"
+        (click)="nextStep()">
+        <span>{{ 'formsMailMerge.nextStep' | translate }}</span>
+        <app-icon name="arrow-forward" [size]="18"></app-icon>
+      </button>
+    }
+
+    @if (currentStep === 4 && !isProcessing && !showSummary) {
+      <button
+        type="button"
+        class="nav-btn btn-primary btn-generate"
+        data-testid="start-batch-btn"
+        [disabled]="csvData.totalRows === 0"
+        (click)="startBatchMerge()">
+        <app-icon name="mail-merge" [size]="20"></app-icon>
+        <span>{{ 'formsMailMerge.startBatchBtn' | translate:{ count: csvData.totalRows } }}</span>
+      </button>
+    }
+  </footer>
+
+  <!-- Non-Blocking Progress Modal -->
+  @if (isProcessing) {
+    <div class="progress-modal-backdrop" data-testid="progress-modal-backdrop">
+      <div class="progress-card">
+        <h3 class="progress-title">{{ 'formsMailMerge.progressTitle' | translate }}</h3>
+
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" [style.width.%]="progress.percent"></div>
+        </div>
+
+        <div class="progress-info-row">
+          <span class="progress-counter" data-testid="progress-counter">
+            {{ 'formsMailMerge.processingCounter' | translate:{ current: progress.current, total: progress.total } }}
+          </span>
+          <strong class="progress-percent">{{ progress.percent }}%</strong>
+        </div>
+
+        <app-button
+          variant="outline"
+          size="md"
+          [block]="true"
+          data-testid="cancel-batch-btn"
+          (clicked)="cancelBatch()">
+          <app-icon name="close-circle" [size]="18" class="btn-icon"></app-icon>
+          <span>{{ 'formsMailMerge.cancelBatchBtn' | translate }}</span>
+        </app-button>
+      </div>
+    </div>
+  }
+
+  <!-- Post-Generation Summary Sheet -->
+  @if (showSummary && batchResult) {
+    <div class="summary-sheet-backdrop" data-testid="summary-sheet-backdrop" (click)="showSummary = false"></div>
+    <aside class="summary-bottom-sheet" data-testid="summary-bottom-sheet">
+      <div class="sheet-handle-bar">
+        <div class="sheet-pill-handle"></div>
+      </div>
+
+      <div class="summary-sheet-header">
+        <div class="summary-title-group">
+          <h2 class="summary-sheet-title" data-testid="summary-sheet-title">{{ 'formsMailMerge.summaryTitle' | translate }}</h2>
+          <span class="summary-sheet-subtitle">
+            {{ 'formsMailMerge.successCount' | translate:{ count: batchResult.successCount } }}
+          </span>
+        </div>
+        <button
+          type="button"
+          class="icon-btn-sm"
+          data-testid="close-summary-btn"
+          (click)="showSummary = false"
+          [attr.aria-label]="'common.close' | translate">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="summary-sheet-body">
+        <div class="stats-summary-grid">
+          <div class="stat-pill stat-success" data-testid="summary-success-pill">
+            <span class="stat-num" data-testid="summary-success-count">{{ batchResult.successCount }}</span>
+            <span class="stat-lbl">{{ 'formsMailMerge.successCount' | translate:{ count: batchResult.successCount } }}</span>
+          </div>
+          @if (batchResult.failedCount > 0 || batchResult.skippedCount > 0) {
+            <div class="stat-pill stat-fail" data-testid="summary-failed-pill">
+              <span class="stat-num">{{ batchResult.failedCount + batchResult.skippedCount }}</span>
+              <span class="stat-lbl">{{ 'formsMailMerge.skippedOrFailedCount' | translate:{ count: batchResult.failedCount + batchResult.skippedCount } }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="summary-actions-stack">
+          @if (batchResult.zipBlob) {
+            <button
+              type="button"
+              class="sheet-action-btn btn-primary"
+              data-testid="download-zip-btn"
+              (click)="downloadZip()">
+              <app-icon name="download" [size]="18"></app-icon>
+              <span>{{ 'formsMailMerge.downloadZipBtn' | translate }}</span>
+            </button>
+            <button
+              type="button"
+              class="sheet-action-btn btn-secondary"
+              data-testid="share-zip-btn"
+              (click)="shareZip()">
+              <app-icon name="share-social" [size]="18"></app-icon>
+              <span>{{ 'formsMailMerge.shareZipBtn' | translate }}</span>
+            </button>
+          }
+
+          <button
+            type="button"
+            class="toggle-log-btn"
+            data-testid="toggle-log-btn"
+            (click)="showLog = !showLog">
+            <app-icon [name]="showLog ? 'chevron-up' : 'chevron-down'" [size]="16"></app-icon>
+            <span>{{ 'formsMailMerge.viewResultsLog' | translate }}</span>
+          </button>
+        </div>
+
+        <!-- Per-Row Result Log -->
+        @if (showLog) {
+          <div class="results-log-card" data-testid="results-log-card">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th>{{ 'formsMailMerge.logRowCol' | translate }}</th>
+                  <th>{{ 'formsMailMerge.logFileCol' | translate }}</th>
+                  <th>{{ 'formsMailMerge.logStatusCol' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of batchResult.rowResults; track item.rowIndex) {
+                  <tr [class.row-err]="item.status === 'error'" [class.row-skip]="item.status === 'skipped'">
+                    <td>{{ item.rowIndex }}</td>
+                    <td class="log-filename">{{ item.fileName }}</td>
+                    <td>
+                      <span class="status-badge" [class]="'badge-' + item.status">
+                        {{ item.status }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <button
+          type="button"
+          class="sheet-action-btn btn-ghost"
+          data-testid="new-batch-btn"
+          (click)="resetBatch()">
+          <app-icon name="refresh" [size]="16"></app-icon>
+          <span>{{ 'formsMailMerge.newBatchBtn' | translate }}</span>
+        </button>
+      </div>
+    </aside>
+  }
+</div>

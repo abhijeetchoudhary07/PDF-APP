@@ -1,0 +1,214 @@
+<app-header [title]="'privacyCard.title' | translate" [showBack]="true"></app-header>
+
+<main class="privacy-card-container">
+  <!-- State 1: File Selection Dropzone -->
+  <section *ngIf="!reportCard && !isEvaluating" class="dropzone-section">
+    <div class="hero-banner">
+      <div class="hero-icon-wrap">
+        <app-icon name="report-card" size="38" class="hero-icon"></app-icon>
+      </div>
+      <h1 class="hero-title">{{ 'privacyCard.title' | translate }}</h1>
+      <p class="hero-desc">{{ 'privacyCard.subtitle' | translate }}</p>
+      <app-badge variant="primary" class="hero-badge">
+        <app-icon name="shield" size="14"></app-icon>
+        {{ 'privacyCard.badge' | translate }}
+      </app-badge>
+    </div>
+
+    <app-file-dropzone
+      [title]="'privacyCard.dropzoneTitle' | translate"
+      [description]="'privacyCard.dropzoneDesc' | translate"
+      accept=".pdf,application/pdf"
+      [multiple]="false"
+      (fileSelected)="handleFileSelected($event)"
+      class="report-dropzone"
+    ></app-file-dropzone>
+  </section>
+
+  <!-- State 2: Evaluation Progress -->
+  <section *ngIf="isEvaluating" class="evaluating-state">
+    <div class="scanner-pulse">
+      <div class="pulse-ring ring-1"></div>
+      <div class="pulse-ring ring-2"></div>
+      <app-icon name="report-card" size="44" class="eval-icon"></app-icon>
+    </div>
+    <h2 class="eval-title">{{ 'privacyCard.scanning' | translate }}</h2>
+    <p class="eval-file">{{ fileName }}</p>
+  </section>
+
+  <!-- State 3: Report Card View -->
+  <section *ngIf="reportCard && !isEvaluating" class="report-content-section">
+    <!-- Document Pill Header -->
+    <div class="doc-header-pill">
+      <div class="doc-info">
+        <app-icon name="document" size="18" class="doc-icon"></app-icon>
+        <span class="doc-name" [title]="reportCard.fileName">{{ reportCard.fileName }}</span>
+        <span class="doc-size">({{ (reportCard.fileSizeBytes / 1024) | number:'1.0-1' }} KB)</span>
+      </div>
+      <button
+        type="button"
+        class="btn-change-doc"
+        (click)="resetReport()"
+        aria-label="Change document"
+      >
+        <app-icon name="refresh" size="15"></app-icon>
+        <span>{{ 'privacyCard.changeDocument' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Prominent Mobile Grade Card Banner -->
+    <div class="grade-banner-card" [class]="'grade-' + reportCard.grade.replace('+', '-plus').toLowerCase()">
+      <div class="grade-top-row">
+        <div class="grade-badge-circle" [style.background]="getGradeColor(reportCard.grade)">
+          <span class="grade-letter">{{ reportCard.grade }}</span>
+          <span class="grade-caption">{{ 'privacyCard.gradeLabel' | translate }}</span>
+        </div>
+
+        <div class="grade-summary-text">
+          <div class="score-pill-row">
+            <span class="score-pill" [style.color]="getGradeColor(reportCard.grade)">
+              {{ 'privacyCard.scoreLabel' | translate }}: {{ reportCard.score }}/100
+            </span>
+          </div>
+          <h2 class="headline-summary">{{ reportCard.headlineSummary }}</h2>
+        </div>
+      </div>
+
+      <!-- Plain-Language Synthesis Sentence -->
+      <div class="plain-language-box">
+        <app-icon name="shield" size="16" class="quote-icon"></app-icon>
+        <p class="plain-sentence">{{ reportCard.plainLanguageSummary }}</p>
+      </div>
+    </div>
+
+    <!-- Export Success Notice -->
+    <div *ngIf="savedReportUrl" class="saved-notice-card">
+      <div class="saved-left">
+        <app-icon name="checkmark-circle" size="20" class="saved-icon"></app-icon>
+        <span class="saved-text">{{ 'privacyCard.exportSuccess' | translate }}</span>
+      </div>
+      <button type="button" class="btn-share" (click)="shareReport()">
+        <app-icon name="share-social" size="16"></app-icon>
+        <span>Share</span>
+      </button>
+    </div>
+
+    <!-- 4 Layman Disclosure Cards -->
+    <div class="layman-cards-grid">
+      <!-- 1. Who Created It -->
+      <div class="disclosure-card" [class.exposed]="reportCard.cards.creator.hasExposure">
+        <div class="card-header">
+          <div class="card-title-left">
+            <div class="card-icon-wrap" [class.flagged]="reportCard.cards.creator.hasExposure">
+              <app-icon [name]="reportCard.cards.creator.icon" size="20"></app-icon>
+            </div>
+            <h3 class="card-title">{{ reportCard.cards.creator.titleKey | translate }}</h3>
+          </div>
+          <span class="exposure-badge" [class.clean]="!reportCard.cards.creator.hasExposure">
+            <app-icon [name]="reportCard.cards.creator.hasExposure ? 'alert' : 'checkmark'" size="12"></app-icon>
+            {{ (reportCard.cards.creator.hasExposure ? 'privacyCard.exposureDetected' : 'privacyCard.zeroExposure') | translate }}
+          </span>
+        </div>
+        <p class="card-headline">{{ reportCard.cards.creator.headline }}</p>
+        <ul class="bullet-list">
+          <li *ngFor="let b of reportCard.cards.creator.bulletPoints">{{ b }}</li>
+        </ul>
+      </div>
+
+      <!-- 2. Device & Software -->
+      <div class="disclosure-card" [class.exposed]="reportCard.cards.device.hasExposure">
+        <div class="card-header">
+          <div class="card-title-left">
+            <div class="card-icon-wrap" [class.flagged]="reportCard.cards.device.hasExposure">
+              <app-icon [name]="reportCard.cards.device.icon" size="20"></app-icon>
+            </div>
+            <h3 class="card-title">{{ reportCard.cards.device.titleKey | translate }}</h3>
+          </div>
+          <span class="exposure-badge" [class.clean]="!reportCard.cards.device.hasExposure">
+            <app-icon [name]="reportCard.cards.device.hasExposure ? 'alert' : 'checkmark'" size="12"></app-icon>
+            {{ (reportCard.cards.device.hasExposure ? 'privacyCard.exposureDetected' : 'privacyCard.zeroExposure') | translate }}
+          </span>
+        </div>
+        <p class="card-headline">{{ reportCard.cards.device.headline }}</p>
+        <ul class="bullet-list">
+          <li *ngFor="let b of reportCard.cards.device.bulletPoints">{{ b }}</li>
+        </ul>
+      </div>
+
+      <!-- 3. Time & Location -->
+      <div class="disclosure-card" [class.exposed]="reportCard.cards.timeLocation.hasExposure">
+        <div class="card-header">
+          <div class="card-title-left">
+            <div class="card-icon-wrap" [class.flagged]="reportCard.cards.timeLocation.hasExposure">
+              <app-icon [name]="reportCard.cards.timeLocation.icon" size="20"></app-icon>
+            </div>
+            <h3 class="card-title">{{ reportCard.cards.timeLocation.titleKey | translate }}</h3>
+          </div>
+          <span class="exposure-badge" [class.clean]="!reportCard.cards.timeLocation.hasExposure" [class.danger]="reportCard.cards.timeLocation.severity === 'danger'">
+            <app-icon [name]="reportCard.cards.timeLocation.hasExposure ? 'alert' : 'checkmark'" size="12"></app-icon>
+            {{ (reportCard.cards.timeLocation.hasExposure ? 'privacyCard.exposureDetected' : 'privacyCard.zeroExposure') | translate }}
+          </span>
+        </div>
+        <p class="card-headline">{{ reportCard.cards.timeLocation.headline }}</p>
+        <ul class="bullet-list">
+          <li *ngFor="let b of reportCard.cards.timeLocation.bulletPoints">{{ b }}</li>
+        </ul>
+      </div>
+
+      <!-- 4. Concealed Content -->
+      <div class="disclosure-card" [class.exposed]="reportCard.cards.concealed.hasExposure">
+        <div class="card-header">
+          <div class="card-title-left">
+            <div class="card-icon-wrap" [class.flagged]="reportCard.cards.concealed.hasExposure">
+              <app-icon [name]="reportCard.cards.concealed.icon" size="20"></app-icon>
+            </div>
+            <h3 class="card-title">{{ reportCard.cards.concealed.titleKey | translate }}</h3>
+          </div>
+          <span class="exposure-badge" [class.clean]="!reportCard.cards.concealed.hasExposure" [class.danger]="reportCard.cards.concealed.hasExposure">
+            <app-icon [name]="reportCard.cards.concealed.hasExposure ? 'alert' : 'checkmark'" size="12"></app-icon>
+            {{ (reportCard.cards.concealed.hasExposure ? 'privacyCard.exposureDetected' : 'privacyCard.zeroExposure') | translate }}
+          </span>
+        </div>
+        <p class="card-headline">{{ reportCard.cards.concealed.headline }}</p>
+        <ul class="bullet-list">
+          <li *ngFor="let b of reportCard.cards.concealed.bulletPoints">{{ b }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Deductions List (If points deducted) -->
+    <div *ngIf="reportCard.deductions.length > 0" class="deductions-card">
+      <h3 class="deductions-title">{{ 'privacyCard.deductionsTitle' | translate }}</h3>
+      <div class="deductions-list">
+        <div *ngFor="let d of reportCard.deductions" class="deduction-row">
+          <span class="deduction-points">{{ 'privacyCard.pointsDeducted' | translate:{ points: d.points } }}</span>
+          <span class="deduction-reason">{{ d.reason }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Sticky Bottom Action Bar -->
+<footer *ngIf="reportCard && !isEvaluating" class="privacy-card-sticky-bar">
+  <div class="action-buttons-wrap">
+    <button
+      type="button"
+      class="btn-action export-btn"
+      [disabled]="isExporting"
+      (click)="exportReportCardPdf()"
+    >
+      <app-icon [name]="isExporting ? 'sync' : 'download'" size="18" [class.spin]="isExporting"></app-icon>
+      <span>{{ (isExporting ? 'privacyCard.exportingReport' : 'privacyCard.exportPdfReport') | translate }}</span>
+    </button>
+
+    <button
+      type="button"
+      class="btn-action sanitize-btn"
+      (click)="sanitizeDocumentNow()"
+    >
+      <app-icon name="shield" size="18"></app-icon>
+      <span>{{ 'privacyCard.sanitizeAction' | translate }}</span>
+    </button>
+  </div>
+</footer>

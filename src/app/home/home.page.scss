@@ -355,6 +355,11 @@
     border-color: var(--color-border-hover);
     transform: translateY(-1px);
   }
+
+  @media (pointer: coarse), (max-width: 960px) {
+    min-height: var(--min-touch-target, 44px);
+    padding: 0 12px;
+  }
 }
 
 .chip-dot {
@@ -407,7 +412,7 @@
  */
 .tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(clamp(250px, 28vw, 320px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(240px, 28vw, 320px)), 1fr));
   gap: clamp(var(--space-3), 1.5vw, var(--space-5));
 }
 

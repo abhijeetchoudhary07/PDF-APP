@@ -60,7 +60,12 @@ The application is an offline-first, client-side document and media processing w
 │   ├── PDF Password Protection & Encryption (User/Owner, ISO 32000-1)
 │   ├── Granular Permissions Control (Print, Copy, Modify, Annotate)
 │   ├── PDF Unlock & Decryption
-│   └── Privacy Sanitizer (Metadata Scrubbing, XMP, Comments, Scripts)
+│   ├── Privacy Sanitizer (Metadata Scrubbing, XMP, Comments, Scripts)
+│   ├── PDF Metadata Editor (Dual Info Dict & XMP Stream Synchronizer)
+│   ├── Verified Redaction Audit (Forensic Dual-Pass Purge & 300 DPI Raster Fallback)
+│   ├── Hidden-Content Audit (Report-Only Forensic Concealment & Pre-Share Scanner)
+│   ├── App Lock & Panic Clear (Biometric/PIN Security & Emergency Zero-Remnant Wipe)
+│   └── Per-Document Privacy Report Card (Layman Grade A-F, Disclosure Breakdown & 1-Tap Sanitize)
 │
 └── 6. ADVANCED UTILITIES, OCR, EXTRACTION & AI
     ├── Smart OCR Engine (Searchable PDF, Multi-Lingual Text Extraction)
@@ -81,9 +86,11 @@ The application is an offline-first, client-side document and media processing w
 > [SUITE_UPGRADE_SECTIONS_2-6.md](SUITE_UPGRADE_SECTIONS_2-6.md) (Sections II–VI).
 > Nothing from those documents belongs here, or in Play Store listing text, until it ships.
 >
-> Two known inaccuracies in this document, both tracked in the Sections II–VI doc:
-> the converter count is 15 (not the 8 listed in Section III), and OCR language models
-> are fetched from a public CDN on first use, so OCR's first run is not offline.
+> Note on offline delivery: The converter count is 15 (Section III). OCR implements Option (c)
+> Hybrid Bundled + On-Demand Local Cache: English (`eng.traineddata.gz`, ~4MB) is bundled directly
+> in app assets, guaranteeing 100% offline OCR immediately upon install with zero network. Extended
+> Indic languages (Hindi, Marathi, Bengali, Punjabi, Tamil) are downloaded once on-demand via the
+> in-app OCR Language Manager and permanently cached on-device for 100% offline use.
 
 ---
 
@@ -278,6 +285,71 @@ Convert between PDF and industry-standard office document formats on-device:
 - **Hidden Stream Sanitization:** Removes embedded XMP metadata streams, private edit histories, and cached document thumbnails.
 - **Structural Deep-Clean:** Strips private comments, embedded file attachments, form data, JavaScript routines, and hidden vector layers.
 
+#### 26. Verified Redaction & Post-Redaction Forensic Audit
+- **Dual-Pass Forensic Verification:**
+  - *Pass 1 (Text Layer Extraction):* Extracts complete page text via `pdfjs-dist` to verify zero residual strings match sensitive target snippets.
+  - *Pass 2 (Content Stream Syntax Audit):* Decompresses and parses `/Contents` streams via `pdf-lib` to ensure no text-showing operators (`Tj`, `TJ`, `'`, `"`) contain target substrings, immediately flagging superficial blackout overlays.
+- **Provable vs. Unprovable Reporting:**
+  - Categorizes each redaction as "Verified Scrubbed" (proven vector removal) or "Vector Residual Risk" (complex fonts/clipping paths).
+- **One-Tap Region Rasterization Fallback:**
+  - Converts unprovable vector regions into flattened 300 DPI image patches directly on an off-screen canvas, removing underlying vector operators while preserving adjacent selectable text.
+- **Claim Integrity Guarantee:** Never displays "Permanently Removed" unless verification passes 100%.
+
+#### 27. PDF Metadata Editor
+- **Dual Info Dict & XMP Stream Synchronization:** Sets and corrects metadata attributes (Title, Author, Subject, Keywords, Creator, Producer, Creation Date, Modification Date) simultaneously in both the legacy PDF Info dictionary and modern XMP stream (`dc:title`, `dc:creator`, `dc:description`, `dc:subject`, `pdf:Keywords`, `pdf:Producer`, `xmp:CreateDate`, `xmp:ModifyDate`).
+- **Tag/Pill Keyword Management:** Intuitive tag-chip interface with comma-delimited input and tap-to-remove badges.
+- **Date Standardization:** Supports setting timestamps to current device time or custom dates formatted to standard PDF specification (`D:YYYYMMDDHHmmSSOHH'mm'`) and ISO 8601.
+- **Unicode & Non-Latin Script Integrity:** Complete UTF-8 encoding support for Indic scripts (Hindi, Marathi, etc.) with zero corruption.
+- **Sanitizer Independence:** Complements the bulk Privacy Sanitizer without interfering with bulk strip workflows.
+
+#### 28. Hidden-Content Audit (Forensic Pre-Share Risk Inspector)
+- **5 Structural Concealment Detectors:**
+  - **Hidden Layers (OCG):** Scans `/OCProperties` in the document catalog; detects hidden layers, disabled default states (`/OFF`), and print-only layers.
+  - **Off-Page Content:** Inspects page content streams for text, line art, or image objects placed outside visible `/CropBox` or `/MediaBox` coordinates.
+  - **Invisible / Low-Contrast Text:** Analyzes text operations where fill color matches the background (e.g. white text on white page via `1 1 1 rg` or `1 g`), opacity is zero (`/CA 0`), text rendering mode is invisible (`3 Tr`), or font size is below 0.5pt. Accurately preserves ordinary light-grey watermarks.
+  - **Off-Page Annotations:** Inspects the `/Annots` array for sticky notes, comments, or form fields positioned beyond visible page boundaries.
+  - **Embedded Scripts & Attachments:** Identifies embedded files (`/EmbeddedFiles`, `/AF`) and JavaScript actions (`/OpenAction`, `/AA`, `/JavaScript`).
+- **Forensic Health Gauge Dashboard:**
+  - Visual circular risk meter indicating Low, Moderate, or High Privacy Risk with total findings count and severity breakdowns.
+- **Categorized Expandable Audit Cards:**
+  - Expandable cards for each concealment category with badge counts, severity tags (High, Warning, Info), text snippet previews, and coordinate tags.
+- **Remediation & Report Export:**
+  - **PDF Forensic Audit Report:** Exports a formatted, downloadable forensic PDF audit report document with complete finding descriptions.
+  - **1-Tap Sanitizer Handoff:** Seamlessly hands off the document to the Privacy Sanitizer via `DocumentBridgeService` to scrub flagged concealed structures before sharing.
+
+#### 29. App Lock & Panic Clear (Biometric/PIN Security & Emergency Data Wipe)
+- **Biometric & 4-Digit PIN Security:**
+  - Secure hardware biometric authentication (Fingerprint, Face Unlock) with 4-digit PIN fallback.
+  - Salted SHA-256 cryptographic hashing for PIN storage with brute-force lockout protection (30s lockout after 5 consecutive failed attempts).
+- **Configurable Lock Targets:**
+  - *Lock Entire App on Launch:* Requires authentication whenever the application opens or returns from background.
+  - *Lock History Vault Only:* Restricts access to document history and saved vault without interrupting normal tool browsing.
+- **Configurable Auto-Lock Timers:**
+  - Lock immediately on backgrounding, after 1 minute, or after 5 minutes.
+  - Default is OFF: Launch flow remains completely untouched until user explicitly enables it.
+- **Temp Files Auto-Clear:**
+  - Automated deletion of cached render canvases, temporary export files, and staging blobs upon app pause/exit or daily cleanup.
+- **Emergency Panic Clear (Zero-Remnant Data Wipe):**
+  - One-tap immediate purge of all local storage across IndexedDB databases (`keyval-store`, `pdf_cache`, etc.), Capacitor Preferences, LocalStorage, SessionStorage, and Filesystem Cache directories.
+  - Two-step confirmation bottom sheet detailing exact storage breakdown before irreversible erasure.
+
+#### 30. Per-Document Privacy Report Card (Layman Privacy Synthesis & Grade)
+- **Privacy Synthesis Algorithm:**
+  - Multi-service audit aggregator combining forensic scans from `PdfPrivacyService`, `PdfMetadataEditorService`, and `PdfHiddenContentAuditService`.
+  - Calculates a unified Privacy Score (0–100) and Letter Grade (A+, A, B, C, D, F):
+    - *Grade A+:* Score $\ge 95$ with zero personal metadata, no author traces, no software signatures, no EXIF/GPS, and no hidden layers.
+    - *Deductions:* Personal Author name revealed (-15), Software/OS version traces (-10), Camera/device EXIF metadata (-15), Geolocation GPS coordinates in embedded images (-25), Hidden text or layers (-20), Embedded attachments or JavaScript actions (-30).
+- **Plain-Language Translation Engine:**
+  - Converts complex forensic PDF dictionary tags into conversational non-technical statements easily understood by non-technical users (e.g., *"This document tells anyone who receives it that it was created by 'John Doe' using 'Word 2024' on October 28."*, *"Contains 2 photos with embedded GPS locations showing where they were taken."*).
+- **4 Layman Disclosure Cards:**
+  - *Who Created It:* Identifies author names, contributor tags, and company references.
+  - *Device & Software:* Flags editing software signatures, operating system footprints, and PDF producer identifiers.
+  - *Time & Location:* Detects creation/modification dates, timezone offsets, and embedded image GPS coordinates.
+  - *Concealed Content:* Highlights invisible text, hidden OCG layers, off-page elements, and active scripts.
+- **Export & Remediation Handoff:**
+  - *PDF Report Card Export:* Generates a clean, shareable single-page PDF report card with visual grade badge, score, plain-language summary, and itemized deduction ledger.
+  - *1-Tap Sanitizer Handoff:* Seamlessly transports the document into the Privacy Sanitizer via `DocumentBridgeService` to scrub all flagged attributes in one tap.
+
 ---
 
 ### Section VI: Advanced Utilities, OCR, Extraction & Local AI
@@ -286,12 +358,13 @@ Convert between PDF and industry-standard office document formats on-device:
 - **Client-Side Text Recognition:** Powered by on-device WebAssembly `tesseract.js`.
 - **Searchable PDF Generation:** Generates a dual-layer PDF with an invisible, selectable text layer positioned precisely over original scanned images. Text can be searched, selected, copied, and highlighted while preserving original visual appearance.
 - **Plain Text Extraction:** Export recognized text directly into `.txt` or markdown.
-- **Multi-Language Support:**
-  - English (`eng`)
-  - Hindi (`hin`)
-  - Marathi (`mar`)
-  - Bengali (`ben`)
-  - Punjabi (`pan`)
+- **Multi-Language Support & Hybrid Offline Delivery (18 Languages):**
+  - *Primary Bundled Model:* English (`eng.traineddata.gz`, ~4MB) bundled in app assets for zero-network 100% offline OCR on initial install.
+  - *13 Indic Scripts:* Hindi (`hin`), Marathi (`mar`), Bengali (`ben`), Tamil (`tam`), Telugu (`tel`), Kannada (`kan`), Malayalam (`mal`), Gujarati (`guj`), Odia (`ori`), Assamese (`asm`), Urdu (`urd`), Sanskrit (`san`), Nepali (`nep`) with optimized high-accuracy Indic models.
+  - *5 International Languages:* English (`eng`), Spanish (`spa`), French (`fra`), Arabic (`ara`), Chinese Simplified (`chi_sim`).
+  - *Bilingual Multi-Language Combination Pass:* Multi-select up to 2 simultaneous languages (e.g. `hin+eng`, `tam+eng`) with visual primary/secondary badges.
+  - *RTL Text Layer Support:* Right-to-Left coordinate mapping and text layer rendering for Urdu and Arabic scripts.
+  - *In-App OCR Language Selector & Manager:* Bottom sheet to search by English or native script name, filter by Indian (13) vs International (5) tabs, inspect file sizes, manage storage, and free up space.
 
 #### 27. PDF Content Extractor
 - **Extract All Images:** Discovers every embedded raster image in a PDF and allows previewing and downloading individually or as a `.zip` archive.
@@ -322,6 +395,30 @@ Convert between PDF and industry-standard office document formats on-device:
 - **Pre-Upload Verification:** Validates documents, photos, and signatures against target size specifications.
 - **Rule Verification:** Checks file size limits (min/max KB), dimensions (width/height), aspect ratio, and file format.
 - **1-Click Auto-Fix:** Automatically executes an automated resizing and recompression pipeline that brings non-compliant files into spec with a single tap.
+
+#### 32. Entity & Clause Extraction with Page Anchors
+- **Key Entity Extraction:** Extracts dates, monetary amounts, contracting parties, deadlines, and reference/account numbers with exact bounding box coordinates (PDF points) and page anchors.
+- **Operative Clause Detection:** Linguistic modal markers ("must", "shall", "agrees to", "within [N] days", "subject to", "penalty", "termination") classify contractual provisions into Obligations, Deadlines, Penalties, and Rights.
+- **Interactive Document Viewer:** Canvas-based interactive page viewer with touchable bounding boxes and popovers displaying passage metadata.
+- **Bottom Sheet Drawer:** Segmented tab bar ([Amounts], [Dates & Deadlines], [Parties], [Clauses]) with card lists that jump the document canvas directly to the exact passage.
+- **Strict Honesty Gate:** Explicitly displays the disclaimer: *"Information extraction only. This tool finds text patterns and does not provide legal advice."*
+- **Export Capabilities:** One-tap export to CSV, structured JSON, and printable executive summary report.
+
+#### 33. Reading Time & Readability Scores
+- **Document Statistics:** Computes total word count, character count, sentence count, syllable count, and complex words count.
+- **Pace-Based Time Estimates:** Calculates silent reading time based on 200 words per minute (wpm) and presentation/speaking time based on 130 wpm.
+- **Standard Readability Indices:** Implements Flesch Reading Ease (0-100), Flesch-Kincaid Grade Level, and Gunning Fog Index.
+- **Plain-Language Complexity Bands:** Classifies text into Easy / Conversational (Reading Ease >= 80, Grade <= 6), Moderate / Standard (Reading Ease 60-79, Grade 7-10), and Dense / Academic / Technical (Reading Ease < 60, Grade 11+).
+- **Multi-Level Granularity:** Provides overall document scores plus per-page and per-section breakdowns.
+- **Interactive Gauges & Explanations:** Mobile dials and educational explanation cards explaining formulas and score interpretations.
+- **1-Tap Report Share:** Instant sharing or copying of readability analysis summaries via system share sheet.
+
+#### 34. Side-by-Side Translation Reader & Multi-Format Summary Export
+- **Dual-Pane Synchronized Scroll-Lock:** Left/top pane renders original PDF pages via `pdfjs-dist`, while right/bottom pane displays translated text with synchronized scroll-locking that accurately pairs pages across unequal text lengths.
+- **Layout Fidelity Contract:** Translation is presented in a synchronized dual-pane view, preventing visual clipping or unreadable overflow caused by 30-40% translated text expansion in Indic languages.
+- **Mobile Split View:** Dynamic vertically stacked split view in portrait orientation and side-by-side view in landscape orientation with a draggable touch divider handle (20% to 80% range).
+- **Quick-Switch Pill Chips:** Instant source-to-target language switching across English, Hindi, Marathi, Bengali, and Punjabi.
+- **Multi-Format Export:** Sticky bottom action bar with thumb-accessible buttons for exporting translated documents to formatted PDF (preserving page breaks matching the original document) and Microsoft Word (.docx with preserved headings, bold text, and paragraphs).
 
 ---
 

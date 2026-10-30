@@ -1,0 +1,257 @@
+<div class="search-redact-page">
+  <app-header [title]="'searchRedact.title' | translate"></app-header>
+
+  <main class="page-content">
+    <!-- HERO / TITLE -->
+    <header class="section-hero">
+      <div class="hero-badge">
+        <app-icon name="search-redact" [size]="20" class="hero-icon"></app-icon>
+        <span>{{ 'searchRedact.title' | translate }}</span>
+      </div>
+      <h1 class="hero-title">{{ 'searchRedact.title' | translate }}</h1>
+      <p class="hero-subtitle">{{ 'searchRedact.subtitle' | translate }}</p>
+    </header>
+
+    <!-- DROPZONE (When no file selected) -->
+    @if (!currentFile) {
+      <div class="dropzone-section">
+        <app-file-dropzone
+          accept="application/pdf"
+          [title]="'searchRedact.dropzoneTitle' | translate"
+          [description]="'searchRedact.dropzoneDesc' | translate"
+          (fileSelected)="handleFileSelected($event)">
+        </app-file-dropzone>
+      </div>
+    }
+
+    <!-- MAIN DASHBOARD (When file is loaded) -->
+    @if (currentFile && currentPdfBytes) {
+      <div class="dashboard-container">
+
+        <!-- FILE SUMMARY CARD -->
+        <section class="card file-summary-card">
+          <div class="file-info-col">
+            <div class="file-icon-box">
+              <app-icon name="document-text" [size]="24"></app-icon>
+            </div>
+            <div class="file-text-meta">
+              <h3 class="file-name" [title]="fileName">{{ fileName }}</h3>
+              <p class="file-specs">
+                {{ (fileSize / 1024) | number:'1.0-1' }} KB
+              </p>
+            </div>
+          </div>
+
+          <!-- STATUS BADGE -->
+          <div class="file-status-badge">
+            @if (redactionResult) {
+              <span class="badge-pill badge-purged" data-testid="status-redacted">
+                <app-icon name="checkmark-circle" [size]="16"></app-icon>
+                <span>{{ redactionResult.redactedCount }} Redacted & Verified</span>
+              </span>
+            } @else if (scanCompleted) {
+              <span class="badge-pill badge-detected" data-testid="status-detected">
+                <app-icon name="alert-circle" [size]="16"></app-icon>
+                <span>{{ matches.length }} Patterns Found</span>
+              </span>
+            } @else {
+              <span class="badge-pill badge-ready">
+                <app-icon name="sparkles" [size]="16"></app-icon>
+                <span>Ready to Scan</span>
+              </span>
+            }
+          </div>
+        </section>
+
+        <!-- PATTERN PRESETS CARD -->
+        <section class="card presets-card">
+          <div class="card-header-row">
+            <div>
+              <h2 class="card-title">{{ 'searchRedact.presetsTitle' | translate }}</h2>
+              <p class="card-subtitle">Select patterns to automatically discover across pages</p>
+            </div>
+
+            <button
+              class="scan-action-btn"
+              [disabled]="isScanning || activePresets.size === 0"
+              (click)="runPatternScan()"
+              data-testid="scan-btn">
+              <app-icon name="refresh" [size]="16" [class.spinning]="isScanning"></app-icon>
+              <span>{{ isScanning ? ('searchRedact.scanning' | translate) : ('searchRedact.scanBtn' | translate) }}</span>
+            </button>
+          </div>
+
+          <!-- PRESET PILLS -->
+          <div class="preset-chips-grid">
+            @for (preset of availablePresets; track preset.id) {
+              <button
+                type="button"
+                class="preset-chip"
+                [class.active]="isPresetActive(preset.id)"
+                (click)="togglePreset(preset.id)"
+                [attr.data-testid]="'preset-chip-' + preset.id">
+                <app-icon [name]="preset.icon" [size]="16"></app-icon>
+                <span>{{ preset.labelKey | translate }}</span>
+                @if (isPresetActive(preset.id)) {
+                  <app-icon name="checkmark-circle" [size]="14" class="check-icon"></app-icon>
+                }
+              </button>
+            }
+          </div>
+
+          <!-- CUSTOM REGEX ROW -->
+          @if (isPresetActive('custom')) {
+            <div class="custom-regex-box" data-testid="custom-regex-box">
+              <div class="custom-regex-input-row">
+                <app-icon name="code-working" [size]="18" class="regex-icon"></app-icon>
+                <input
+                  type="text"
+                  class="custom-regex-input"
+                  [(ngModel)]="customRegex"
+                  [placeholder]="'searchRedact.customRegexPlaceholder' | translate"
+                  (keyup.enter)="applyCustomRegex()"
+                  data-testid="custom-regex-input" />
+                <button
+                  class="apply-regex-btn"
+                  [disabled]="!customRegex.trim()"
+                  (click)="applyCustomRegex()">
+                  Apply
+                </button>
+              </div>
+
+              @if (customRegexError) {
+                <div class="regex-error-notice" data-testid="regex-error">
+                  <app-icon name="warning" [size]="16"></app-icon>
+                  <span>{{ customRegexError }}</span>
+                </div>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- DETECTED MATCHES REVIEW LIST -->
+        @if (scanCompleted) {
+          <section class="card matches-card" data-testid="matches-section">
+            <div class="card-header-row">
+              <div>
+                <h2 class="card-title">{{ 'searchRedact.matchesTitle' | translate }}</h2>
+                <p class="card-subtitle">
+                  {{ 'searchRedact.selectedCount' | translate : { selected: getSelectedCount(), total: matches.length } }}
+                </p>
+              </div>
+
+              <button
+                class="select-all-btn"
+                (click)="toggleSelectAll()"
+                data-testid="select-all-btn">
+                <app-icon [name]="isAllSelected() ? 'checkbox' : 'square-outline'" [size]="18"></app-icon>
+                <span>{{ (isAllSelected() ? 'searchRedact.deselectAll' : 'searchRedact.selectAll') | translate }}</span>
+              </button>
+            </div>
+
+            <!-- MATCHES ITEMS -->
+            @if (matches.length === 0) {
+              <div class="empty-matches-notice">
+                <app-icon name="checkmark-circle" [size]="28" class="empty-icon"></app-icon>
+                <p>{{ 'searchRedact.noMatches' | translate }}</p>
+              </div>
+            } @else {
+              <div class="matches-list">
+                @for (item of matches; track item.id) {
+                  <div
+                    class="match-item-card"
+                    [class.selected]="item.selected"
+                    (click)="toggleMatch(item)"
+                    data-testid="match-item-card">
+                    
+                    <div class="item-checkbox-col">
+                      <input
+                        type="checkbox"
+                        class="match-checkbox"
+                        [checked]="item.selected"
+                        (click)="$event.stopPropagation(); toggleMatch(item)" />
+                    </div>
+
+                    <div class="item-body-col">
+                      <div class="item-meta-row">
+                        <span class="preset-tag preset-{{ item.presetType }}">
+                          {{ ('searchRedact.' + item.presetType + 'Preset') | translate }}
+                        </span>
+                        <span class="page-badge">{{ 'tools.pageCount' | translate : { count: item.pageNumber } }}</span>
+                        <span class="masked-code">{{ item.maskedText }}</span>
+                      </div>
+
+                      <div class="context-snippet-quote">
+                        <span class="context-text">{{ item.contextBefore }}</span>
+                        <mark class="matched-highlight">{{ item.matchedText }}</mark>
+                        <span class="context-text">{{ item.contextAfter }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        <!-- REDACTION POST-PROCESS BANNER -->
+        @if (redactionResult) {
+          <section class="card success-audit-card" data-testid="success-card">
+            <div class="success-header-row">
+              <div class="success-icon-box">
+                <app-icon name="shield-checkmark" [size]="26"></app-icon>
+              </div>
+              <div class="success-meta">
+                <h3 class="success-title">Redaction Completed & Verified</h3>
+                <p class="success-desc">
+                  {{ redactionResult.redactedCount }} sensitive items permanently purged at byte & stream level.
+                </p>
+              </div>
+            </div>
+
+            <div class="success-actions-row">
+              <button class="btn-open-audit" (click)="openInVerificationAudit()" data-testid="btn-open-audit">
+                <app-icon name="verified-stamp" [size]="18"></app-icon>
+                <span>{{ 'searchRedact.openInAudit' | translate }}</span>
+              </button>
+              <button class="btn-share" (click)="shareFile()" [disabled]="!savedFileUrl">
+                <app-icon name="share-outline" [size]="18"></app-icon>
+                <span>Share</span>
+              </button>
+            </div>
+          </section>
+        }
+
+      </div>
+    }
+  </main>
+
+  <!-- STICKY ACTION BAR -->
+  @if (currentFile && currentPdfBytes) {
+    <footer class="sticky-action-bar">
+      <div class="action-bar-inner">
+        <button
+          class="btn-reset"
+          (click)="resetWorkflow()"
+          data-testid="btn-reset">
+          <app-icon name="close-circle" [size]="18"></app-icon>
+          <span>{{ 'common.cancel' | translate }}</span>
+        </button>
+
+        <button
+          class="btn-redact"
+          [disabled]="isRedacting || getSelectedCount() === 0"
+          (click)="executeRedactions()"
+          data-testid="btn-redact">
+          @if (isRedacting) {
+            <app-icon name="refresh" [size]="20" class="spinning"></app-icon>
+            <span>{{ 'searchRedact.redacting' | translate }}</span>
+          } @else {
+            <app-icon name="sparkles" [size]="20"></app-icon>
+            <span>{{ 'searchRedact.redactBtn' | translate : { count: getSelectedCount() } }}</span>
+          }
+        </button>
+      </div>
+    </footer>
+  }
+</div>

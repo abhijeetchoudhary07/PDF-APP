@@ -69,7 +69,6 @@ import { CommonModule } from '@angular/common';
       border-radius: var(--radius-lg, 14px);
       box-shadow: var(--shadow-modal);
       width: 100%;
-      max-height: 90vh;
       max-height: min(90dvh, 880px);
       display: flex;
       flex-direction: column;
@@ -126,8 +125,8 @@ import { CommonModule } from '@angular/common';
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 32px;
-      min-height: 32px;
+      min-width: var(--min-touch-target, 44px);
+      min-height: var(--min-touch-target, 44px);
       border-radius: var(--radius-sm, 6px);
       flex-shrink: 0;
     }
@@ -173,8 +172,7 @@ import { CommonModule } from '@angular/common';
       .modal-dialog {
         width: 100%;
         max-width: 100%;
-        max-height: calc(100vh - 20px);
-        max-height: calc(100dvh - 20px);
+        max-height: min(90dvh, calc(100dvh - 20px));
         border-radius: var(--radius-lg, 14px);
         margin: 0;
       }
@@ -204,8 +202,8 @@ import { CommonModule } from '@angular/common';
       }
 
       .modal-close-btn {
-        min-width: 38px;
-        min-height: 38px;
+        min-width: var(--min-touch-target, 44px);
+        min-height: var(--min-touch-target, 44px);
         font-size: 26px;
       }
 

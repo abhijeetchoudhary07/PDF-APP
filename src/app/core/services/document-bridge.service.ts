@@ -106,4 +106,17 @@ export class DocumentBridgeService {
     this.genericDocumentSubject.next(null);
     return val;
   }
+
+  /**
+   * Clears all in-memory bridged documents across all workflows.
+   * Invoked during Emergency Panic Clear to ensure zero in-memory remnants.
+   */
+  clearAll(): void {
+    this.ocrTargetSubject.next(null);
+    this.validatorTargetSubject.next(null);
+    this.intelligenceTargetSubject.next(null);
+    this.qrTargetSubject.next(null);
+    this.compressTargetSubject.next(null);
+    this.genericDocumentSubject.next(null);
+  }
 }

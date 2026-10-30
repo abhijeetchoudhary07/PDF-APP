@@ -1,0 +1,183 @@
+@if (isOpen) {
+  <div
+    class="bottom-sheet-backdrop"
+    (click)="onBackdropClick($event)"
+    role="presentation"
+  >
+    <div
+      class="bottom-sheet-panel"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'ocr.selectLanguages' | translate"
+      data-testid="ocr-language-selector-sheet"
+    >
+      <!-- Drag Handle -->
+      <div class="sheet-handle-bar">
+        <span class="sheet-handle"></span>
+      </div>
+
+      <!-- Header -->
+      <div class="sheet-header">
+        <div class="header-titles">
+          <h2 class="sheet-title">
+            <app-icon name="globe-lang" size="md"></app-icon>
+            <span>{{ 'ocr.selectLanguages' | translate }}</span>
+          </h2>
+          <span class="sheet-subtitle">{{ 'ocr.multiLangHint' | translate }}</span>
+        </div>
+        <button
+          type="button"
+          class="close-btn"
+          (click)="close()"
+          aria-label="Close language selector"
+        >
+          <app-icon name="close" size="sm"></app-icon>
+        </button>
+      </div>
+
+      <!-- Top Search Bar -->
+      <div class="search-bar-row">
+        <div class="search-input-wrapper">
+          <app-icon name="search" size="sm" class="search-icon"></app-icon>
+          <input
+            type="search"
+            class="language-search-input"
+            [placeholder]="'ocr.searchLanguagesPlaceholder' | translate"
+            [(ngModel)]="searchTerm"
+            aria-label="Search languages"
+            data-testid="ocr-language-search-input"
+          />
+          @if (searchTerm) {
+            <button
+              type="button"
+              class="clear-search-btn"
+              (click)="searchTerm = ''"
+              aria-label="Clear search"
+            >
+              <app-icon name="close-circle" size="xs"></app-icon>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Two Tab Categories -->
+      <div class="category-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="tab-btn"
+          [class.active]="activeTab === 'indic'"
+          [attr.aria-selected]="activeTab === 'indic'"
+          (click)="setTab('indic')"
+          data-testid="tab-indic"
+        >
+          <span>{{ 'ocr.tabIndian' | translate }}</span>
+          <span class="tab-count">{{ indicCount }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="tab-btn"
+          [class.active]="activeTab === 'international'"
+          [attr.aria-selected]="activeTab === 'international'"
+          (click)="setTab('international')"
+          data-testid="tab-international"
+        >
+          <span>{{ 'ocr.tabInternational' | translate }}</span>
+          <span class="tab-count">{{ internationalCount }}</span>
+        </button>
+      </div>
+
+      <!-- Scrollable Language List Grid -->
+      <div class="sheet-body-scrollable">
+        @if (filteredLanguages.length === 0) {
+          <div class="empty-search-state">
+            <app-icon name="search" size="lg"></app-icon>
+            <p>{{ 'ocr.noLanguagesFound' | translate }}</p>
+          </div>
+        } @else {
+          <div class="language-chips-grid">
+            @for (lang of filteredLanguages; track trackByCode($index, lang)) {
+              <button
+                type="button"
+                class="language-chip"
+                [class.selected]="isSelected(lang.code)"
+                [class.primary]="isPrimary(lang.code)"
+                [class.secondary]="isSecondary(lang.code)"
+                [class.cached]="isCached(lang.code)"
+                [attr.aria-pressed]="isSelected(lang.code)"
+                [attr.data-testid]="'lang-chip-' + lang.code"
+                (click)="toggleLanguage(lang.code)"
+              >
+                <!-- Selection Badges -->
+                @if (isPrimary(lang.code)) {
+                  <span class="selection-badge primary-badge">
+                    {{ 'ocr.primaryBadge' | translate }}
+                  </span>
+                } @else if (isSecondary(lang.code)) {
+                  <span class="selection-badge secondary-badge">
+                    {{ 'ocr.secondaryBadge' | translate }}
+                  </span>
+                }
+
+                <div class="chip-main">
+                  <span class="chip-native">{{ lang.nativeName }}</span>
+                  <span class="chip-name">{{ lang.name }}</span>
+                  <span class="chip-script">{{ lang.scriptName }}</span>
+                </div>
+
+                <div class="chip-meta">
+                  <!-- Download status icon -->
+                  @if (isCached(lang.code)) {
+                    <span class="status-icon ready" [title]="'ocr.offlineReady' | translate">
+                      <app-icon name="checkmark-circle" size="xs"></app-icon>
+                    </span>
+                  } @else {
+                    <span class="status-icon download" [title]="'ocr.downloadAvailable' | translate">
+                      <app-icon name="download-cloud" size="xs"></app-icon>
+                      <span class="size-text">{{ lang.fileSizeMB }}MB</span>
+                    </span>
+                  }
+                </div>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Sticky Bottom Action Bar -->
+      <div class="sticky-action-bar">
+        <div class="action-bar-inner">
+          <div class="selection-summary-row">
+            @if (currentSelected.length === 1) {
+              <span class="summary-label">
+                <span class="dot-indicator single"></span>
+                {{ 'ocr.oneLanguageSelected' | translate }}:
+                <strong>{{ getLanguageName(currentSelected[0]) }}</strong>
+              </span>
+            } @else if (currentSelected.length === 2) {
+              <span class="summary-label">
+                <span class="dot-indicator dual"></span>
+                {{ 'ocr.twoLanguagesSelected' | translate }}:
+                <strong>{{ getLanguageName(currentSelected[0]) }} + {{ getLanguageName(currentSelected[1]) }}</strong>
+              </span>
+            }
+          </div>
+
+          <div class="action-buttons-row">
+            <app-button
+              variant="primary"
+              size="lg"
+              [block]="true"
+              class="confirm-button"
+              (clicked)="confirm()"
+              data-testid="confirm-languages-btn"
+            >
+              {{ 'ocr.confirmLanguagesBtn' | translate }} ({{ currentSelected.length }})
+            </app-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -4,6 +4,7 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HistoryService, HistoryItem } from '../../core/services/history.service';
 import { ShareService } from '../../core/services/share.service';
+import { AppSecurityLockService } from '../../core/services/app-security-lock.service';
 
 import { RouterModule } from '@angular/router';
 import {
@@ -44,25 +45,64 @@ export class HistoryPage implements OnInit {
   private historyService = inject(HistoryService);
   private shareService = inject(ShareService);
   private alertCtrl = inject(AlertController);
+  public securityLockService = inject(AppSecurityLockService);
 
   history: HistoryItem[] = [];
   selectedFilter = 'ALL';
 
   filters = ['ALL', 'PHOTO', 'SIGNATURE', 'PDF', 'CONVERT', 'FORMS', 'SECURITY', 'OCR', 'SCAN', 'VALIDATE', 'COMPARE', 'QR', 'AI'];
 
-  /*
-   * `isLoading` exists so the empty state is not shown while storage is still
-   * being read — otherwise the page flashed "No Processing History" on every
-   * visit before the real list arrived.
-   */
   isLoading = true;
 
+  // Vault Lock Gating State
+  isVaultLocked = false;
+  canUseBiometric = false;
+  vaultPinInput = '';
+  vaultPinError = '';
+
   async ionViewWillEnter() {
+    this.checkVaultLock();
     await this.loadHistory();
   }
 
   async ngOnInit() {
+    this.checkVaultLock();
+    this.securityLockService.isVaultLocked$.subscribe(locked => {
+      this.isVaultLocked = locked;
+    });
+    this.canUseBiometric = await this.securityLockService.isBiometricAvailable() && !!this.securityLockService.currentConfig.biometricEnabled;
     await this.loadHistory();
+  }
+
+  private checkVaultLock(): void {
+    const cfg = this.securityLockService.currentConfig;
+    if (cfg.enabled && cfg.lockVaultOnly) {
+      this.isVaultLocked = this.securityLockService.isVaultCurrentlyLocked;
+    } else {
+      this.isVaultLocked = false;
+    }
+  }
+
+  async unlockVaultWithPin(): Promise<void> {
+    if (!this.vaultPinInput) return;
+    const res = await this.securityLockService.verifyPin(this.vaultPinInput);
+    if (res.success) {
+      this.vaultPinInput = '';
+      this.vaultPinError = '';
+      this.securityLockService.unlockVault();
+      this.isVaultLocked = false;
+    } else {
+      this.vaultPinError = res.errorMessage || 'Incorrect PIN.';
+      this.vaultPinInput = '';
+    }
+  }
+
+  async unlockVaultWithBiometric(): Promise<void> {
+    const success = await this.securityLockService.authenticateBiometric();
+    if (success) {
+      this.securityLockService.unlockVault();
+      this.isVaultLocked = false;
+    }
   }
 
   private async loadHistory() {

@@ -1,0 +1,460 @@
+<div class="studio-container">
+  <!-- Top Header Navigation -->
+  <header class="studio-header">
+    <div class="header-left">
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="setTab('templates')"
+        [attr.aria-label]="'signTemplates.tabTemplates' | translate">
+        <app-icon name="signature-template" [size]="22"></app-icon>
+      </button>
+      <div class="header-title-box">
+        <h1 class="header-title">{{ 'signTemplates.title' | translate }}</h1>
+        <span class="header-subtitle">{{ 'signTemplates.subtitle' | translate }}</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <app-badge variant="signature" size="sm">APPEARANCE</app-badge>
+    </div>
+  </header>
+
+  <!-- Segmented Control Bar: [Draw] [Type] [Upload] [Templates] -->
+  <nav class="studio-tabs-nav" aria-label="Signature Studio Modes">
+    <div class="segmented-track" role="tablist">
+      <button
+        type="button"
+        class="tab-pill"
+        role="tab"
+        [attr.aria-selected]="activeTab === 'draw'"
+        [class.active]="activeTab === 'draw'"
+        (click)="setTab('draw')">
+        <app-icon name="pencil" [size]="16"></app-icon>
+        <span>{{ 'signTemplates.tabDraw' | translate }}</span>
+      </button>
+      <button
+        type="button"
+        class="tab-pill"
+        role="tab"
+        [attr.aria-selected]="activeTab === 'type'"
+        [class.active]="activeTab === 'type'"
+        (click)="setTab('type')">
+        <app-icon name="text" [size]="16"></app-icon>
+        <span>{{ 'signTemplates.tabType' | translate }}</span>
+      </button>
+      <button
+        type="button"
+        class="tab-pill"
+        role="tab"
+        [attr.aria-selected]="activeTab === 'upload'"
+        [class.active]="activeTab === 'upload'"
+        (click)="setTab('upload')">
+        <app-icon name="cloud-upload" [size]="16"></app-icon>
+        <span>{{ 'signTemplates.tabUpload' | translate }}</span>
+      </button>
+      <button
+        type="button"
+        class="tab-pill"
+        role="tab"
+        [attr.aria-selected]="activeTab === 'templates'"
+        [class.active]="activeTab === 'templates'"
+        (click)="setTab('templates')">
+        <app-icon name="signature-template" [size]="16"></app-icon>
+        <span>{{ 'signTemplates.tabTemplates' | translate }}</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Scrollable Viewport -->
+  <main class="studio-main-scroll">
+    <!-- Live Signature Stamp Preview on Paper Mockup -->
+    <section class="stamp-preview-section">
+      <div class="paper-mockup-card">
+        <div class="paper-header-hint">
+          <span>{{ 'signTemplates.previewPaperMockup' | translate }}</span>
+          <app-badge variant="secondary" size="sm">
+            {{ currentTemplate.layoutPreset }}
+          </app-badge>
+        </div>
+        <div class="stamp-render-box">
+          @if (liveStampResult) {
+            <img
+              [src]="liveStampResult.dataUrl"
+              class="stamp-preview-img"
+              alt="Signature Appearance Preview" />
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Ink Color Palette -->
+    <section class="ink-palette-row">
+      <span class="palette-label">{{ 'signTemplates.inkColorLabel' | translate }}</span>
+      <div class="color-bubbles-wrap">
+        @for (color of inkColors; track color.code) {
+          <button
+            type="button"
+            class="color-bubble"
+            [style.background-color]="color.code"
+            [class.active]="currentTemplate.inkColor === color.code"
+            [attr.aria-label]="color.labelKey | translate"
+            (click)="selectInkColor(color.code)">
+            @if (currentTemplate.inkColor === color.code) {
+              <app-icon name="checkmark" [size]="14" class="check-icon"></app-icon>
+            }
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 1: DRAW SIGNATURE
+         ========================================== -->
+    @if (activeTab === 'draw') {
+      <section class="tab-content-panel">
+        <div class="draw-pad-wrapper">
+          <canvas
+            #drawCanvas
+            class="signature-canvas"
+            (mousedown)="startDrawing($event)"
+            (mousemove)="draw($event)"
+            (mouseup)="stopDrawing()"
+            (mouseleave)="stopDrawing()"
+            (touchstart)="startDrawing($event)"
+            (touchmove)="draw($event)"
+            (touchend)="stopDrawing()"></canvas>
+          <button
+            type="button"
+            class="clear-pad-btn"
+            (click)="clearDrawing()"
+            [attr.aria-label]="'signTemplates.clearPad' | translate">
+            <app-icon name="trash" [size]="16"></app-icon>
+            <span>{{ 'signTemplates.clearPad' | translate }}</span>
+          </button>
+        </div>
+      </section>
+    }
+
+    <!-- ==========================================
+         TAB 2: TYPE SIGNATURE (5 Cursive Fonts)
+         ========================================== -->
+    @if (activeTab === 'type') {
+      <section class="tab-content-panel">
+        <!-- Signer Name Input -->
+        <div class="input-field-group">
+          <label class="field-label" for="signerNameInput">
+            {{ 'signTemplates.signerNameInput' | translate }}
+          </label>
+          <input
+            id="signerNameInput"
+            type="text"
+            class="studio-text-input"
+            [(ngModel)]="currentTemplate.signer.fullName"
+            (ngModelChange)="onSignerNameChange()"
+            [placeholder]="'signTemplates.signerNamePlaceholder' | translate" />
+        </div>
+
+        <!-- 5 Cursive Calligraphy Previews -->
+        <div class="font-carousel-header">
+          <span class="carousel-title">{{ 'signTemplates.fontStyleLabel' | translate }}</span>
+        </div>
+
+        <div class="font-cards-list">
+          @for (font of fonts; track font) {
+            <div
+              class="font-preview-card"
+              [class.active]="currentTemplate.typedFont === font"
+              (click)="selectFont(font)">
+              <div class="font-card-top">
+                <span class="font-family-name">{{ font }}</span>
+                @if (currentTemplate.typedFont === font) {
+                  <app-badge variant="primary" size="sm">Active</app-badge>
+                }
+              </div>
+              <div class="font-img-container">
+                @if (fontPreviews[font]) {
+                  <img
+                    [src]="fontPreviews[font]"
+                    class="cursive-preview-img"
+                    [alt]="font" />
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ==========================================
+         TAB 3: UPLOAD SIGNATURE
+         ========================================== -->
+    @if (activeTab === 'upload') {
+      <section class="tab-content-panel">
+        <input
+          #sigFileInput
+          type="file"
+          accept="image/png,image/jpeg"
+          class="visually-hidden"
+          (change)="onSignatureUpload($event)" />
+
+        <div class="upload-box" (click)="triggerUploadInput(sigFileInput)">
+          <div class="upload-icon-circle">
+            <app-icon name="cloud-upload" [size]="36"></app-icon>
+          </div>
+          <strong class="upload-title">{{ 'signTemplates.uploadSigTitle' | translate }}</strong>
+          <span class="upload-hint">{{ 'signTemplates.uploadSigHint' | translate }}</span>
+          <app-button
+            variant="outline"
+            size="md"
+            [disabled]="isProcessingUpload"
+            (clicked)="triggerUploadInput(sigFileInput)">
+            <app-icon name="image" [size]="18" class="btn-icon"></app-icon>
+            <span>{{ isProcessingUpload ? 'Cleaning background...' : ('signTemplates.uploadSigTitle' | translate) }}</span>
+          </app-button>
+        </div>
+      </section>
+    }
+
+    <!-- ==========================================
+         TAB 4: TEMPLATES & METADATA CONFIG
+         ========================================== -->
+    @if (activeTab === 'templates') {
+      <section class="tab-content-panel">
+        <!-- Saved Templates Quick List -->
+        @if (savedTemplates.length > 0) {
+          <div class="saved-templates-scroll">
+            @for (tmpl of savedTemplates; track tmpl.id) {
+              <div
+                class="saved-template-chip"
+                [class.active]="currentTemplate.id === tmpl.id"
+                (click)="applyTemplate(tmpl)">
+                <app-icon name="signature-template" [size]="16"></app-icon>
+                <span class="tmpl-name">{{ tmpl.name }}</span>
+                <button
+                  type="button"
+                  class="del-tmpl-btn"
+                  (click)="deleteTemplate(tmpl.id, $event)"
+                  [attr.aria-label]="'signTemplates.deleteTemplateBtn' | translate">
+                  <app-icon name="close" [size]="14"></app-icon>
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Layout Preset Picker -->
+        <div class="config-card">
+          <label class="config-card-title">{{ 'signTemplates.layoutPresetLabel' | translate }}</label>
+          <div class="layout-presets-grid">
+            <button
+              type="button"
+              class="layout-preset-btn"
+              [class.active]="currentTemplate.layoutPreset === 'standard-horizontal'"
+              (click)="setLayoutPreset('standard-horizontal')">
+              <span class="preset-name">{{ 'signTemplates.layoutHorizontal' | translate }}</span>
+              <span class="preset-desc">Left signature • Right metadata</span>
+            </button>
+            <button
+              type="button"
+              class="layout-preset-btn"
+              [class.active]="currentTemplate.layoutPreset === 'compact-stacked'"
+              (click)="setLayoutPreset('compact-stacked')">
+              <span class="preset-name">{{ 'signTemplates.layoutStacked' | translate }}</span>
+              <span class="preset-desc">Top signature • Bottom centered</span>
+            </button>
+            <button
+              type="button"
+              class="layout-preset-btn"
+              [class.active]="currentTemplate.layoutPreset === 'formal-seal'"
+              (click)="setLayoutPreset('formal-seal')">
+              <span class="preset-name">{{ 'signTemplates.layoutSeal' | translate }}</span>
+              <span class="preset-desc">Rectangular seal • Initials badge</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Signer Details -->
+        <div class="config-card">
+          <h2 class="config-card-title">{{ 'signTemplates.signerDetailsHeader' | translate }}</h2>
+          <div class="form-row">
+            <label class="field-label" for="tmplFullName">{{ 'signTemplates.fullNameLabel' | translate }}</label>
+            <input
+              id="tmplFullName"
+              type="text"
+              class="studio-text-input"
+              [(ngModel)]="currentTemplate.signer.fullName"
+              (ngModelChange)="refreshLiveStamp()" />
+          </div>
+
+          <div class="form-row">
+            <label class="field-label" for="tmplRole">{{ 'signTemplates.titleRoleLabel' | translate }}</label>
+            <input
+              id="tmplRole"
+              type="text"
+              class="studio-text-input"
+              [(ngModel)]="currentTemplate.signer.titleOrRole"
+              (ngModelChange)="refreshLiveStamp()"
+              [placeholder]="'signTemplates.titleRolePlaceholder' | translate" />
+          </div>
+
+          <div class="form-row">
+            <label class="field-label" for="tmplOrg">{{ 'signTemplates.organizationLabel' | translate }}</label>
+            <input
+              id="tmplOrg"
+              type="text"
+              class="studio-text-input"
+              [(ngModel)]="currentTemplate.signer.organization"
+              (ngModelChange)="refreshLiveStamp()"
+              [placeholder]="'signTemplates.organizationPlaceholder' | translate" />
+          </div>
+        </div>
+
+        <!-- Formal Metadata Block -->
+        <div class="config-card">
+          <h2 class="config-card-title">{{ 'signTemplates.metadataBlockHeader' | translate }}</h2>
+
+          <!-- Include Date/Time Toggle -->
+          <div class="config-toggle-row">
+            <span class="toggle-lbl">{{ 'signTemplates.includeDateToggle' | translate }}</span>
+            <label class="switch-control">
+              <input
+                type="checkbox"
+                [(ngModel)]="currentTemplate.metadata.includeTimestamp"
+                (ngModelChange)="refreshLiveStamp()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Include Reason Toggle & Presets -->
+          <div class="config-toggle-row">
+            <span class="toggle-lbl">{{ 'signTemplates.includeReasonToggle' | translate }}</span>
+            <label class="switch-control">
+              <input
+                type="checkbox"
+                [(ngModel)]="currentTemplate.metadata.includeReason"
+                (ngModelChange)="refreshLiveStamp()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          @if (currentTemplate.metadata.includeReason) {
+            <div class="nested-input-wrap">
+              <input
+                type="text"
+                class="studio-text-input"
+                [(ngModel)]="currentTemplate.metadata.reason"
+                (ngModelChange)="refreshLiveStamp()"
+                [placeholder]="'signTemplates.reasonPlaceholder' | translate" />
+              <div class="quick-presets-row">
+                <button
+                  type="button"
+                  class="preset-chip"
+                  (click)="setReasonPreset('Approved')">
+                  {{ 'signTemplates.presetApproved' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="preset-chip"
+                  (click)="setReasonPreset('Reviewed')">
+                  {{ 'signTemplates.presetReviewed' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="preset-chip"
+                  (click)="setReasonPreset('Authorized')">
+                  {{ 'signTemplates.presetAuthorized' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Include Location Toggle -->
+          <div class="config-toggle-row">
+            <span class="toggle-lbl">{{ 'signTemplates.includeLocationToggle' | translate }}</span>
+            <label class="switch-control">
+              <input
+                type="checkbox"
+                [(ngModel)]="currentTemplate.metadata.includeLocation"
+                (ngModelChange)="refreshLiveStamp()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          @if (currentTemplate.metadata.includeLocation) {
+            <div class="nested-input-wrap">
+              <input
+                type="text"
+                class="studio-text-input"
+                [(ngModel)]="currentTemplate.metadata.location"
+                (ngModelChange)="refreshLiveStamp()"
+                [placeholder]="'signTemplates.locationPlaceholder' | translate" />
+            </div>
+          }
+
+          <!-- Include Initials Badge Toggle -->
+          <div class="config-toggle-row">
+            <span class="toggle-lbl">{{ 'signTemplates.includeInitialsToggle' | translate }}</span>
+            <label class="switch-control">
+              <input
+                type="checkbox"
+                [(ngModel)]="currentTemplate.includeInitialsBadge"
+                (ngModelChange)="refreshLiveStamp()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Include Organization Logo Toggle -->
+          <input
+            #logoFileInput
+            type="file"
+            accept="image/png"
+            class="visually-hidden"
+            (change)="onLogoUpload($event)" />
+
+          <div class="config-toggle-row">
+            <span class="toggle-lbl">{{ 'signTemplates.includeLogoToggle' | translate }}</span>
+            <label class="switch-control">
+              <input
+                type="checkbox"
+                [(ngModel)]="currentTemplate.includeLogo"
+                (ngModelChange)="refreshLiveStamp()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          @if (currentTemplate.includeLogo) {
+            <div class="nested-input-wrap">
+              <button
+                type="button"
+                class="secondary-outline-btn"
+                (click)="triggerUploadInput(logoFileInput)">
+                <app-icon name="image" [size]="16"></app-icon>
+                <span>{{ 'signTemplates.uploadLogoBtn' | translate }}</span>
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </main>
+
+  <!-- Sticky Bottom Action Bar with Safe Area -->
+  <footer class="studio-bottom-bar">
+    <button
+      type="button"
+      class="action-thumb-btn btn-secondary"
+      data-testid="save-template-btn"
+      (click)="saveCurrentTemplate()">
+      <app-icon name="save" [size]="18"></app-icon>
+      <span>{{ 'signTemplates.saveTemplateBtn' | translate }}</span>
+    </button>
+    <button
+      type="button"
+      class="action-thumb-btn btn-primary"
+      data-testid="use-signature-pdf-btn"
+      (click)="useSignatureOnPdf()">
+      <app-icon name="pencil" [size]="18"></app-icon>
+      <span>{{ 'signTemplates.useOnPdfBtn' | translate }}</span>
+    </button>
+  </footer>
+</div>

@@ -53,7 +53,17 @@ const INDIAN_LANGUAGE_LEXICON: Record<SupportedLanguage, Record<string, string>>
     'government': 'सरकार',
     'requirements': 'आवश्यकताएं',
     'important': 'महत्वपूर्ण',
-    'instructions': 'निर्देश'
+    'instructions': 'निर्देश',
+    'agreement': 'समझौता (Agreement)',
+    'contract': 'अनुबंध (Contract)',
+    'services': 'सेवाएं (Services)',
+    'payment': 'भुगतान (Payment)',
+    'terms': 'शर्तें एवं नियम (Terms & Conditions)',
+    'confidentiality': 'गोपनीयता (Confidentiality)',
+    'protection': 'सुरक्षा एवं संरक्षण (Protection)',
+    'termination': 'समाप्ति (Termination)',
+    'parties': 'पक्षकार (Parties)',
+    'purpose': 'उद्देश्य एवं प्रयोजन (Purpose)'
   },
   mr: {
     'summary': 'सारांश',
@@ -77,7 +87,17 @@ const INDIAN_LANGUAGE_LEXICON: Record<SupportedLanguage, Record<string, string>>
     'government': 'शासन',
     'requirements': 'आवश्यकता',
     'important': 'महत्त्वाचे',
-    'instructions': 'सूचना'
+    'instructions': 'सूचना',
+    'agreement': 'करार (Agreement)',
+    'contract': 'कंत्राट (Contract)',
+    'services': 'सेवा (Services)',
+    'payment': 'देयक (Payment)',
+    'terms': 'अटी व शर्ती (Terms & Conditions)',
+    'confidentiality': 'गोपनीयता (Confidentiality)',
+    'protection': 'संरक्षण (Protection)',
+    'termination': 'समाप्ती (Termination)',
+    'parties': 'पक्षकार (Parties)',
+    'purpose': 'उद्देश (Purpose)'
   },
   bn: {
     'summary': 'সারসংক্ষেপ',
@@ -101,7 +121,17 @@ const INDIAN_LANGUAGE_LEXICON: Record<SupportedLanguage, Record<string, string>>
     'government': 'সরকার',
     'requirements': 'প্রয়োজনীয়তা',
     'important': 'গুরুত্বপূর্ণ',
-    'instructions': 'নির্দেশনা'
+    'instructions': 'নির্দেশনা',
+    'agreement': 'চুক্তি (Agreement)',
+    'contract': 'চুক্তিপত্র (Contract)',
+    'services': 'সেবাসমূহ (Services)',
+    'payment': 'পরিশোধ (Payment)',
+    'terms': 'শর্তাবলী (Terms & Conditions)',
+    'confidentiality': 'গোপনীয়তা (Confidentiality)',
+    'protection': 'সুরক্ষা (Protection)',
+    'termination': 'বাতিলকরণ (Termination)',
+    'parties': 'পক্ষসমূহ (Parties)',
+    'purpose': 'উদ্দেশ্য (Purpose)'
   },
   pa: {
     'summary': 'ਸੰਖੇਪ',
@@ -125,7 +155,17 @@ const INDIAN_LANGUAGE_LEXICON: Record<SupportedLanguage, Record<string, string>>
     'government': 'ਸਰਕਾਰ',
     'requirements': 'ਲੋੜਾਂ',
     'important': 'ਮਹੱਤਵਪੂਰਨ',
-    'instructions': 'ਹਦਾਇਤਾਂ'
+    'instructions': 'ਹਦਾਇਤਾਂ',
+    'agreement': 'ਸਮਝੌਤਾ (Agreement)',
+    'contract': 'ਇਕਰਾਰਨਾਮਾ (Contract)',
+    'services': 'ਸੇਵਾਵਾਂ (Services)',
+    'payment': 'ਭੁਗਤਾਨ (Payment)',
+    'terms': 'ਸ਼ਰਤਾਂ (Terms & Conditions)',
+    'confidentiality': 'ਗੁਪਤਤਾ (Confidentiality)',
+    'protection': 'ਸੁਰੱਖਿਆ (Protection)',
+    'termination': 'ਰੱਦ (Termination)',
+    'parties': 'ਧਿਰਾਂ (Parties)',
+    'purpose': 'ਮਕਸਦ (Purpose)'
   }
 };
 

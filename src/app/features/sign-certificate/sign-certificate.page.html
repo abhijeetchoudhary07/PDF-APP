@@ -1,0 +1,348 @@
+<div class="crypto-sign-container">
+  <!-- Hidden File Input for PDF -->
+  <input
+    #pdfFileInput
+    type="file"
+    accept="application/pdf"
+    class="visually-hidden"
+    aria-label="Upload PDF file"
+    (change)="onPdfSelected($event)"
+  />
+
+  <!-- Hidden File Input for PKCS#12 Certificate -->
+  <input
+    #certFileInput
+    type="file"
+    accept=".p12,.pfx,application/x-pkcs12"
+    class="visually-hidden"
+    aria-label="Upload PKCS#12 Certificate file"
+    (change)="onCertSelected($event)"
+  />
+
+  <!-- Top Navigation Header -->
+  <header class="crypto-header-bar">
+    <div class="header-left">
+      <button
+        type="button"
+        class="icon-btn back-btn"
+        aria-label="Go back"
+        (click)="navigateBack()"
+      >
+        <app-icon name="arrow-back"></app-icon>
+      </button>
+      <div class="title-meta">
+        <h1 class="screen-title">{{ 'cryptoSign.title' | translate }}</h1>
+        <span class="file-name-pill" [attr.aria-label]="fileName">{{ fileName }}</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button
+        type="button"
+        class="icon-btn"
+        aria-label="Select PDF Document"
+        (click)="triggerPdfInput(pdfFileInput)"
+      >
+        <app-icon name="folder-open"></app-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- Scrollable Main Viewport -->
+  <main class="crypto-viewport" tabindex="-1">
+    <!-- Strict Honesty Compliance Notice Banner -->
+    <div class="honesty-banner" role="note">
+      <app-icon name="ribbon"></app-icon>
+      <p class="honesty-text">{{ 'cryptoSign.integrityNotice' | translate }}</p>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 1. PKCS#12 CERTIFICATE SELECTION CARD          -->
+    <!-- ============================================== -->
+    <section class="card cert-selection-card">
+      <div class="card-header-row">
+        <h2 class="section-title">PKCS#12 Certificate (.p12 / .pfx)</h2>
+        @if (unlockedData) {
+          <span class="unlocked-badge">
+            <app-icon name="checkmark-circle"></app-icon>
+            {{ 'cryptoSign.unlockedBadge' | translate }}
+          </span>
+        }
+      </div>
+
+      @if (!p12Bytes) {
+        <div class="file-picker-box">
+          <button
+            type="button"
+            class="pick-cert-btn"
+            data-testid="pick-cert-btn"
+            (click)="triggerCertInput(certFileInput)"
+          >
+            <app-icon name="document-text"></app-icon>
+            <span>{{ 'cryptoSign.selectCertBtn' | translate }}</span>
+          </button>
+
+          <span class="or-divider">or</span>
+
+          <button
+            type="button"
+            class="generate-test-cert-btn"
+            data-testid="generate-test-cert-btn"
+            (click)="generateTestCertificate()"
+          >
+            <app-icon name="sparkles"></app-icon>
+            <span>{{ 'cryptoSign.generateTestCertBtn' | translate }}</span>
+          </button>
+        </div>
+      } @else {
+        <!-- Loaded Cert File Row -->
+        <div class="cert-file-row">
+          <div class="cert-file-info">
+            <app-icon name="fingerprint"></app-icon>
+            <span class="cert-filename">{{ p12FileName || 'Certificate.p12' }}</span>
+          </div>
+          <button
+            type="button"
+            class="change-cert-btn"
+            data-testid="change-cert-btn"
+            aria-label="Change Certificate"
+            (click)="clearCertificate()"
+          >
+            {{ 'cryptoSign.changeCertBtn' | translate }}
+          </button>
+        </div>
+
+        <!-- Password Unlock Form (if not yet unlocked) -->
+        @if (!unlockedData) {
+          <div class="password-unlock-row">
+            <div class="input-with-toggle">
+              <input
+                id="certPasswordInput"
+                data-testid="cert-password-input"
+                [type]="showPassword ? 'text' : 'password'"
+                class="app-input"
+                [(ngModel)]="p12Password"
+                placeholder="{{ 'cryptoSign.certPasswordPlaceholder' | translate }}"
+                (keyup.enter)="unlockCertificate()"
+              />
+              <button
+                type="button"
+                class="toggle-eye-btn"
+                aria-label="Toggle password visibility"
+                (click)="togglePasswordVisibility()"
+              >
+                <app-icon [name]="showPassword ? 'eye-off' : 'eye'"></app-icon>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              class="unlock-action-btn"
+              data-testid="unlock-cert-btn"
+              [disabled]="isUnlockingCert || !p12Password"
+              (click)="unlockCertificate()"
+            >
+              <span>{{ 'cryptoSign.unlockCertBtn' | translate }}</span>
+            </button>
+          </div>
+        }
+      }
+
+      <!-- Error feedback if unlock failed -->
+      @if (certError) {
+        <div class="error-msg-box" data-testid="cert-error-box" role="alert">
+          <app-icon name="alert-circle"></app-icon>
+          <span>{{ certError }}</span>
+        </div>
+      }
+    </section>
+
+    <!-- ============================================== -->
+    <!-- 2. CERTIFICATE INSPECTION CARD (X.509 DETAILS) -->
+    <!-- ============================================== -->
+    @if (unlockedData) {
+      <section class="card cert-inspection-card">
+        <div class="card-header-row">
+          <h2 class="section-title">{{ 'cryptoSign.certDetailsTitle' | translate }}</h2>
+          <span
+            class="validity-chip"
+            data-testid="cert-validity-chip"
+            [class.valid]="unlockedData.certInfo.isValid"
+            [class.expired]="unlockedData.certInfo.isExpired"
+          >
+            {{ unlockedData.certInfo.isValid ? ('cryptoSign.validityValid' | translate) : ('cryptoSign.validityExpired' | translate) }}
+          </span>
+        </div>
+
+        <div class="cert-meta-grid">
+          <div class="meta-row">
+            <span class="meta-label">{{ 'cryptoSign.subjectCn' | translate }}:</span>
+            <span class="meta-val strong-val" data-testid="cert-common-name">{{ unlockedData.certInfo.commonName }}</span>
+          </div>
+
+          @if (unlockedData.certInfo.organization) {
+            <div class="meta-row">
+              <span class="meta-label">{{ 'cryptoSign.organization' | translate }}:</span>
+              <span class="meta-val">{{ unlockedData.certInfo.organization }}</span>
+            </div>
+          }
+
+          <div class="meta-row">
+            <span class="meta-label">{{ 'cryptoSign.issuer' | translate }}:</span>
+            <span class="meta-val" data-testid="cert-issuer">{{ unlockedData.certInfo.issuer }}</span>
+          </div>
+
+          <div class="meta-row">
+            <span class="meta-label">{{ 'cryptoSign.validity' | translate }}:</span>
+            <span class="meta-val">
+              {{ unlockedData.certInfo.validityNotBefore | date:'mediumDate' }} — {{ unlockedData.certInfo.validityNotAfter | date:'mediumDate' }}
+            </span>
+          </div>
+
+          <div class="meta-row">
+            <span class="meta-label">{{ 'cryptoSign.serialNumber' | translate }}:</span>
+            <span class="meta-val mono-val">{{ unlockedData.certInfo.serialNumber }}</span>
+          </div>
+
+          <div class="meta-row fingerprint-row">
+            <span class="meta-label">{{ 'cryptoSign.fingerprint' | translate }}:</span>
+            <span class="meta-val fingerprint-val mono-val">{{ unlockedData.certInfo.fingerprintSha256 }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- 3. SIGNATURE CONFIGURATION CARD                -->
+      <!-- ============================================== -->
+      <section class="card signature-config-card">
+        <h2 class="section-title">{{ 'cryptoSign.signConfigTitle' | translate }}</h2>
+
+        <div class="form-group">
+          <label class="field-label" for="signingReasonInput">
+            {{ 'cryptoSign.reasonLabel' | translate }}
+          </label>
+          <input
+            id="signingReasonInput"
+            data-testid="signing-reason-input"
+            type="text"
+            class="app-input"
+            [(ngModel)]="reason"
+            placeholder="{{ 'cryptoSign.reasonPlaceholder' | translate }}"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="field-label" for="signingLocationInput">
+            {{ 'cryptoSign.locationLabel' | translate }}
+          </label>
+          <input
+            id="signingLocationInput"
+            data-testid="signing-location-input"
+            type="text"
+            class="app-input"
+            [(ngModel)]="location"
+            placeholder="{{ 'cryptoSign.locationPlaceholder' | translate }}"
+          />
+        </div>
+
+        <!-- Visual Stamp Toggle -->
+        <div class="toggle-group-row">
+          <label class="toggle-label" for="visualStampCheck">
+            <input
+              id="visualStampCheck"
+              data-testid="visual-stamp-toggle"
+              type="checkbox"
+              [(ngModel)]="includeVisualStamp"
+            />
+            <span class="toggle-text">{{ 'cryptoSign.visualStampToggle' | translate }}</span>
+          </label>
+
+          @if (includeVisualStamp && pageCount > 1) {
+            <div class="page-selector-row">
+              <label class="field-label" for="stampPageSelect">
+                {{ 'cryptoSign.stampPageLabel' | translate }}:
+              </label>
+              <select id="stampPageSelect" class="app-select" [(ngModel)]="stampPage">
+                @for (p of [].constructor(pageCount); track $index) {
+                  <option [value]="$index + 1">Page {{ $index + 1 }}</option>
+                }
+              </select>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ============================================== -->
+    <!-- 4. SIGNED VERIFICATION REPORT (AFTER SIGNING)  -->
+    <!-- ============================================== -->
+    @if (verificationReport) {
+      <section class="card verification-report-card" data-testid="verification-report-card">
+        <div class="report-header-row">
+          <div class="report-icon" [class.success]="verificationReport.isValid" [class.failure]="!verificationReport.isValid">
+            <app-icon [name]="verificationReport.isValid ? 'checkmark-circle' : 'close-circle'"></app-icon>
+          </div>
+          <div class="report-title-meta">
+            <h2 class="section-title">
+              {{ verificationReport.isValid ? ('cryptoSign.verifyValid' | translate) : ('cryptoSign.verifyInvalid' | translate) }}
+            </h2>
+            <p class="report-subtitle">
+              {{ verificationReport.isValid ? ('cryptoSign.verifyHashMatch' | translate) : ('cryptoSign.verifyHashMismatch' | translate) }}
+            </p>
+          </div>
+        </div>
+
+        <div class="digest-audit-box">
+          <div class="digest-row">
+            <span class="digest-label">SHA-256 Digest:</span>
+            <span class="digest-code mono-val">{{ verificationReport.expectedDigest }}</span>
+          </div>
+          @if (verificationReport.byteRange) {
+            <div class="digest-row">
+              <span class="digest-label">ByteRange:</span>
+              <span class="digest-code mono-val">[{{ verificationReport.byteRange.join(', ') }}]</span>
+            </div>
+          }
+        </div>
+
+        <!-- Actions to Share or Download -->
+        <div class="post-sign-actions">
+          <button
+            type="button"
+            class="secondary-action-btn share-btn"
+            data-testid="share-signed-btn"
+            (click)="shareSignedDocument()"
+          >
+            <app-icon name="share-social"></app-icon>
+            <span>{{ 'cryptoSign.shareSignedBtn' | translate }}</span>
+          </button>
+          <button
+            type="button"
+            class="primary-action-btn download-btn"
+            data-testid="download-signed-btn"
+            (click)="downloadSignedDocument()"
+          >
+            <app-icon name="download"></app-icon>
+            <span>{{ 'cryptoSign.downloadSignedBtn' | translate }}</span>
+          </button>
+        </div>
+      </section>
+    }
+  </main>
+
+  <!-- Sticky Bottom Action Bar -->
+  <footer class="crypto-sticky-bar">
+    <button
+      type="button"
+      class="primary-action-btn sign-btn"
+      data-testid="sign-document-btn"
+      [disabled]="!pdfBytes || !unlockedData || isSigning || (unlockedData && !unlockedData.certInfo.isValid)"
+      (click)="executeCertificateSign()"
+    >
+      <app-icon name="certificate-sign"></app-icon>
+      <span>
+        {{ isSigning ? ('cryptoSign.signingInProgress' | translate) : ('cryptoSign.signDocumentBtn' | translate) }}
+      </span>
+    </button>
+  </footer>
+</div>

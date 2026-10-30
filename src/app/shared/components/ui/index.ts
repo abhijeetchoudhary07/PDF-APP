@@ -18,6 +18,8 @@ export * from './toast/toast-container.component';
 export * from './privacy-support-nav/privacy-support-nav.component';
 export * from './gov-disclaimer/gov-disclaimer.component';
 export * from './language-selector/language-selector.component';
+export * from './password-strength/password-strength.component';
+export * from './security-lock-overlay/security-lock-overlay.component';
 export * from '../../../core/i18n/translate.pipe';
 
 // Reusable Preview & File Workflow Components

@@ -44,6 +44,17 @@ if (typeof Map !== 'undefined' && !(Map.prototype as any).getOrInsertComputed) {
   };
 }
 
+// Polyfill Math.sumPrecise for pdfjs-dist v6 in environments prior to ES2024 / Node 22 full rollout
+if (typeof (Math as any).sumPrecise !== 'function') {
+  (Math as any).sumPrecise = function (iterable: Iterable<number>): number {
+    let sum = 0;
+    for (const val of iterable) {
+      sum += Number(val);
+    }
+    return sum;
+  };
+}
+
 // Polyfill Path2D for pdfjs-dist in headless / jsdom environments
 if (typeof (globalThis as any).Path2D === 'undefined') {
   (globalThis as any).Path2D = class Path2D {
@@ -84,5 +95,3 @@ if (typeof (globalThis as any).Path2D === 'undefined') {
     }
   };
 }
-
-

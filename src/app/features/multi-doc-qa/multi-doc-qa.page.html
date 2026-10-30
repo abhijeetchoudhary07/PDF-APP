@@ -1,0 +1,306 @@
+<div class="multi-qa-container">
+  <!-- Top Header with Actions -->
+  <header class="page-header">
+    <div class="header-top-row">
+      <div class="title-group">
+        <h1 class="page-title">{{ 'multiDocQa.title' | translate }}</h1>
+        <p class="page-subtitle">{{ 'multiDocQa.subtitle' | translate }}</p>
+      </div>
+
+      <div class="header-actions">
+        <button
+          *ngIf="messages.length > 0"
+          type="button"
+          class="btn-icon-action"
+          (click)="clearChatHistory()"
+          [title]="'multiDocQa.clearHistory' | translate"
+          aria-label="Clear chat history">
+          <app-icon name="trash" [size]="18"></app-icon>
+        </button>
+
+        <div class="export-btn-group" *ngIf="messages.length > 0">
+          <button
+            type="button"
+            class="btn-icon-action"
+            (click)="exportTranscriptPdf()"
+            [title]="'multiDocQa.exportPdf' | translate"
+            aria-label="Export transcript as PDF">
+            <app-icon name="file-text" [size]="18"></app-icon>
+          </button>
+          <button
+            type="button"
+            class="btn-icon-action"
+            (click)="exportTranscriptTxt()"
+            [title]="'multiDocQa.exportTxt' | translate"
+            aria-label="Export transcript as TXT">
+            <app-icon name="download" [size]="18"></app-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Document Scope Carousel -->
+    <div class="scope-carousel-section">
+      <div class="scope-meta-row">
+        <span class="scope-label">Search Scope:</span>
+        <span class="scope-counter" *ngIf="loadedDocs.length > 0">
+          {{ 'multiDocQa.loadedDocsCount' | translate:{ active: activeDocsCount, total: loadedDocs.length } }}
+        </span>
+      </div>
+
+      <div class="carousel-track" role="region" aria-label="Loaded document corpus">
+        <!-- Add Document Chip -->
+        <button
+          type="button"
+          class="chip add-doc-chip"
+          (click)="triggerPdfUpload()"
+          [disabled]="loadedDocs.length >= qaService.MAX_DOCUMENTS"
+          aria-label="Add PDF to corpus">
+          <app-icon name="plus" [size]="16"></app-icon>
+          <span>{{ 'multiDocQa.addDocument' | translate }}</span>
+        </button>
+
+        <!-- Document Chips -->
+        <div
+          *ngFor="let doc of loadedDocs"
+          class="chip doc-chip"
+          [class.active]="doc.enabled"
+          (click)="toggleDoc(doc.id, $event)">
+          <input
+            type="checkbox"
+            class="chip-checkbox"
+            [checked]="doc.enabled"
+            (click)="$event.stopPropagation()"
+            (change)="toggleDoc(doc.id)"
+            [attr.aria-label]="'Toggle ' + doc.fileName">
+
+          <app-icon name="file-text" [size]="14" class="doc-icon"></app-icon>
+          <span class="doc-name" [title]="doc.fileName">{{ doc.fileName }}</span>
+          <span class="doc-pages">{{ doc.pageCount }}p</span>
+
+          <button
+            type="button"
+            class="chip-remove-btn"
+            (click)="removeDoc(doc.id, $event)"
+            [attr.aria-label]="'Remove ' + doc.fileName">
+            &times;
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================================= -->
+  <!-- CHAT STREAM & MESSAGE HISTORY                                           -->
+  <!-- ======================================================================= -->
+  <main class="chat-viewport" #messagesContainer>
+    <!-- Empty State: No Documents Loaded -->
+    <div *ngIf="loadedDocs.length === 0" class="empty-state-card">
+      <div class="empty-icon-bubble">
+        <app-icon name="multi-qa" [size]="40"></app-icon>
+      </div>
+      <h3>{{ 'multiDocQa.emptyDocsTitle' | translate }}</h3>
+      <p>{{ 'multiDocQa.emptyDocsDesc' | translate }}</p>
+      <button type="button" class="btn-primary select-docs-btn" (click)="triggerPdfUpload()">
+        <app-icon name="plus" [size]="18"></app-icon>
+        <span>{{ 'multiDocQa.chooseFilesBtn' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Empty State: Docs Loaded, Ready for Questions -->
+    <div *ngIf="loadedDocs.length > 0 && messages.length === 0" class="ready-state-card">
+      <app-icon name="multi-qa" [size]="32" class="ready-icon"></app-icon>
+      <h3>Ready to query {{ loadedDocs.length }} documents</h3>
+      <p>Ask questions in plain English or select a suggestion below:</p>
+      <div class="suggestion-chips">
+        <button
+          type="button"
+          class="suggestion-chip"
+          (click)="askQuestion('What are the main requirements and eligibility criteria?')">
+          "What are the main requirements?"
+        </button>
+        <button
+          type="button"
+          class="suggestion-chip"
+          (click)="askQuestion('What are the important deadlines or dates?')">
+          "What are the important deadlines?"
+        </button>
+        <button
+          type="button"
+          class="suggestion-chip"
+          (click)="askQuestion('What are the fees, costs, or allowances?')">
+          "What are the fees or allowances?"
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Messages Stream -->
+    <div *ngIf="messages.length > 0" class="messages-stream">
+      <div
+        *ngFor="let msg of messages"
+        class="message-row"
+        [class.user-row]="msg.sender === 'user'"
+        [class.assistant-row]="msg.sender === 'assistant'">
+        <!-- User Bubble -->
+        <div *ngIf="msg.sender === 'user'" class="user-bubble">
+          <p class="bubble-text">{{ msg.text }}</p>
+          <span class="bubble-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+        </div>
+
+        <!-- Assistant Answer Card -->
+        <div *ngIf="msg.sender === 'assistant'" class="assistant-card">
+          <div class="card-header-bar">
+            <app-icon name="multi-qa" [size]="18" class="card-brand-icon"></app-icon>
+            <span class="card-title">Grounded Answer</span>
+
+            <span
+              *ngIf="msg.answerData"
+              class="scope-badge"
+              [class.unanswered]="!msg.answerData.isAnswerable">
+              {{ 'multiDocQa.searchScopeBadge' | translate:{ count: msg.answerData.searchScope.searchedDocumentCount } }}
+            </span>
+          </div>
+
+          <!-- Answer Body -->
+          <div class="answer-content">
+            <p
+              class="answer-text"
+              [class.unanswered-text]="msg.answerData && !msg.answerData.isAnswerable">
+              {{ msg.text }}
+            </p>
+          </div>
+
+          <!-- Dual Citation Attribution Badges -->
+          <div
+            *ngIf="msg.answerData?.citations && msg.answerData!.citations.length > 0"
+            class="citations-section">
+            <span class="citations-header">{{ 'multiDocQa.citationsLabel' | translate }}:</span>
+            <div class="citations-badges-wrap">
+              <button
+                *ngFor="let citation of msg.answerData!.citations"
+                type="button"
+                class="citation-badge"
+                (click)="openCitationPreview(citation)">
+                <app-icon name="file-text" [size]="12"></app-icon>
+                <span class="citation-ref">{{ citation.formattedCitation }}</span>
+                <span class="citation-match">
+                  {{ 'multiDocQa.confidenceTag' | translate:{ score: citation.confidence } }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Zero-Relevance Documents Warning Notice -->
+          <div
+            *ngIf="msg.answerData?.searchScope?.irrelevantDocuments?.length"
+            class="irrelevant-scope-notice">
+            <app-icon name="alert-circle" [size]="14" class="notice-icon"></app-icon>
+            <span>
+              {{ 'multiDocQa.noRelevanceDocNotice' | translate:{ docs: msg.answerData!.searchScope.irrelevantDocuments.join(', ') } }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Thinking Indicator -->
+      <div *ngIf="isSearching" class="message-row assistant-row">
+        <div class="assistant-card searching-indicator">
+          <div class="pulse-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="searching-label">{{ 'multiDocQa.thinking' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ======================================================================= -->
+  <!-- PINNED QUESTION INPUT BAR (Responsive with dvh)                        -->
+  <!-- ======================================================================= -->
+  <footer class="pinned-input-bar">
+    <div class="input-form">
+      <input
+        #questionInput
+        type="text"
+        class="question-input"
+        [(ngModel)]="currentQuestion"
+        (keyup.enter)="askQuestion()"
+        [placeholder]="'multiDocQa.inputPlaceholder' | translate"
+        [disabled]="isSearching || activeDocsCount === 0"
+        autocomplete="off"
+        spellcheck="false">
+
+      <button
+        type="button"
+        class="btn-send"
+        [disabled]="!currentQuestion.trim() || isSearching || activeDocsCount === 0"
+        (click)="askQuestion()"
+        [attr.aria-label]="'multiDocQa.sendBtn' | translate">
+        <app-icon name="check" [size]="18"></app-icon>
+      </button>
+    </div>
+  </footer>
+
+  <!-- ======================================================================= -->
+  <!-- CITATION PREVIEW MODAL                                                  -->
+  <!-- ======================================================================= -->
+  <div *ngIf="activeCitationPreview" class="modal-backdrop" (click)="closeCitationPreview()">
+    <div class="citation-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <app-icon name="file-text" [size]="20" class="modal-icon"></app-icon>
+          <div class="modal-title-group">
+            <h3 class="modal-doc-name">{{ activeCitationPreview.fileName }}</h3>
+            <span class="modal-page-tag">Page {{ activeCitationPreview.pageNumber }}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="modal-close-btn"
+          (click)="closeCitationPreview()"
+          aria-label="Close modal">
+          &times;
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <label class="modal-label">{{ 'multiDocQa.previewCitationTitle' | translate }}</label>
+        <blockquote class="excerpt-box">
+          <p>{{ activeCitationPreview.snippet }}</p>
+        </blockquote>
+
+        <div class="modal-meta-row">
+          <span class="badge-confidence">
+            Confidence: {{ activeCitationPreview.confidence }}%
+          </span>
+          <span class="badge-citation-tag">
+            {{ activeCitationPreview.formattedCitation }}
+          </span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-close" (click)="closeCitationPreview()">
+          {{ 'multiDocQa.closePreview' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden PDF file input -->
+  <input
+    #pdfFileInput
+    type="file"
+    accept=".pdf"
+    multiple
+    class="hidden-file-input"
+    (change)="onPdfFilesSelected($event)">
+
+  <!-- Toast Notification Overlay -->
+  <div *ngIf="toastMessage" class="toast-notification">
+    <app-icon name="check" [size]="16" class="toast-icon"></app-icon>
+    <span>{{ toastMessage }}</span>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, Input, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
@@ -10,14 +10,16 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
 import { AppLanguageSelectorComponent } from '../language-selector/language-selector.component';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { AutoScrollDirective } from '../../../directives/auto-scroll.directive';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, AppLanguageSelectorComponent, TranslatePipe],
+  imports: [CommonModule, RouterModule, AppLanguageSelectorComponent, TranslatePipe, AutoScrollDirective],
   template: `
     <header class="app-header" [class.is-scrolled]="scrolled">
+      @let navQuota = quota.remaining$ | async;
       <div class="header-inner">
         <!-- 0. Back (mobile, anywhere but the dashboard) -->
         @if (showBack) {
@@ -167,7 +169,6 @@ import { TranslationService } from '../../../../core/services/translation.servic
           in an object literal, which is always truthy; @let binds
           unconditionally and the wrapper is no longer needed.
           -->
-          @let navQuota = quota.remaining$ | async;
           @if (navQuota !== null) {
             <a
               routerLink="/features/premium"
@@ -263,6 +264,137 @@ import { TranslationService } from '../../../../core/services/translation.servic
           </button>
         </div>
       </div>
+
+      <!-- 4. Mobile Auto-Sliding Header Options Rail (<=960px) -->
+      <div class="header-rail-wrapper">
+        <nav
+          #headerRail
+          class="header-nav-rail"
+          [appAutoScroll]="true"
+          [autoScrollMode]="'ping-pong'"
+          [autoScrollSpeed]="0.65"
+          [edgePauseDuration]="1200"
+          [autoScrollPauseDelay]="2500"
+          aria-label="Header Navigation Options">
+          <div class="rail-items">
+            <!-- Tools Dropdown Trigger / Chip -->
+            <div class="nav-dropdown-wrap">
+              <button
+                type="button"
+                class="nav-item tools-dropdown-btn rail-item"
+                [class.active]="toolsMenuOpen"
+                (click)="toolsMenuOpen = !toolsMenuOpen"
+                aria-haspopup="true"
+                [attr.aria-expanded]="toolsMenuOpen">
+                <span>{{ 'header.tools' | translate }}</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" class="dropdown-chevron">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
+              @if (toolsMenuOpen) {
+                <div class="tools-dropdown-menu" (click)="toolsMenuOpen = false">
+                  <div class="dropdown-column">
+                    <span class="column-title">{{ 'header.columnMedia' | translate }}</span>
+                    <a routerLink="/features/photo" class="dropdown-item">
+                      <span class="item-dot color-photo"></span>
+                      <div>
+                        <span class="item-name">{{ 'tools.photo_tools.title' | translate }}</span>
+                        <span class="item-sub">{{ 'header.toolPhotoSub' | translate }}</span>
+                      </div>
+                    </a>
+                    <a routerLink="/features/signature" class="dropdown-item">
+                      <span class="item-dot color-signature"></span>
+                      <div>
+                        <span class="item-name">{{ 'tools.signature_tools.title' | translate }}</span>
+                        <span class="item-sub">{{ 'header.toolSigSub' | translate }}</span>
+                      </div>
+                    </a>
+                    <a routerLink="/features/batch" class="dropdown-item">
+                      <span class="item-dot color-batch"></span>
+                      <div>
+                        <span class="item-name">{{ 'tools.batch_images.title' | translate }}</span>
+                        <span class="item-sub">{{ 'header.toolBatchSub' | translate }}</span>
+                      </div>
+                    </a>
+                  </div>
+                  <div class="dropdown-column">
+                    <span class="column-title">{{ 'header.columnPdf' | translate }}</span>
+                    <a routerLink="/features/pdf" class="dropdown-item">
+                      <span class="item-dot color-pdf"></span>
+                      <div>
+                        <span class="item-name">{{ 'header.pdf' | translate }}</span>
+                        <span class="item-sub">{{ 'header.toolPdfSub' | translate }}</span>
+                      </div>
+                    </a>
+                    <a routerLink="/features/pdf/conversion" class="dropdown-item">
+                      <span class="item-dot color-convert"></span>
+                      <div>
+                        <span class="item-name">{{ 'tools.doc_converter.title' | translate }}</span>
+                        <span class="item-sub">{{ 'header.toolConvertSub' | translate }}</span>
+                      </div>
+                    </a>
+                    <a routerLink="/features/pdf/organize" class="dropdown-item">
+                      <span class="item-dot color-organize"></span>
+                      <div>
+                        <span class="item-name">{{ 'tools.pdf_organize.title' | translate }}</span>
+                        <span class="item-sub">{{ 'header.toolOrganizeSub' | translate }}</span>
+                      </div>
+                    </a>
+                  </div>
+                  <div class="dropdown-column">
+                    <span class="column-title">{{ 'header.columnEdit' | translate }}</span>
+                    <a routerLink="/features/pdf/editor" class="dropdown-item">
+                      <span class="item-dot color-edit"></span>
+                      <div>
+                        <span class="item-name">{{ 'tools.pdf_editor.title' | translate }}</span>
+                        <span class="item-sub">{{ 'header.toolEditorSub' | translate }}</span>
+                      </div>
+                    </a>
+                    <a routerLink="/features/pdf/sign" class="dropdown-item">
+                      <span class="item-dot color-sign"></span>
+                      <div>
+                        <span class="item-name">{{ 'tools.sign_pdf.title' | translate }}</span>
+                        <span class="item-sub">{{ 'header.toolSignSub' | translate }}</span>
+                      </div>
+                    </a>
+                    <a routerLink="/features/pdf/security" class="dropdown-item">
+                      <span class="item-dot color-security"></span>
+                      <div>
+                        <span class="item-name">{{ 'tools.pdf_protect.title' | translate }}</span>
+                        <span class="item-sub">{{ 'header.toolSecuritySub' | translate }}</span>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Direct Links in Rail -->
+            <a routerLink="/features/pdf" routerLinkActive="active" class="nav-item rail-item">{{ 'header.pdf' | translate }}</a>
+            <a routerLink="/features/photo" routerLinkActive="active" class="nav-item rail-item">{{ 'header.photo' | translate }}</a>
+            <a routerLink="/features/signature" routerLinkActive="active" class="nav-item rail-item">{{ 'header.signature' | translate }}</a>
+            <a routerLink="/features/presets" routerLinkActive="active" class="nav-item rail-item">{{ 'header.presets' | translate }}</a>
+            <a routerLink="/features/history" routerLinkActive="active" class="nav-item rail-item">{{ 'header.history' | translate }}</a>
+            <a routerLink="/features/premium" routerLinkActive="active" class="nav-item nav-item-pro rail-item">
+              <span class="pro-sparkle">&starf;</span>
+              <span>{{ 'header.premium' | translate }}</span>
+            </a>
+
+            @if (navQuota !== null) {
+              <a
+                routerLink="/features/premium"
+                class="quota-chip rail-quota"
+                [class.is-low]="navQuota <= 2"
+                [attr.title]="'quota.fullLabel' | translate: { remaining: navQuota, limit: quota.limit }"
+                data-testid="quota-chip-rail">
+                <span class="quota-count">{{ navQuota }}</span>
+                <span class="quota-label">{{ 'quota.leftToday' | translate }}</span>
+              </a>
+            }
+          </div>
+        </nav>
+      </div>
     </header>
     
     <!--
@@ -280,7 +412,7 @@ import { TranslationService } from '../../../../core/services/translation.servic
         <div class="mobile-drawer-content" (click)="$event.stopPropagation()">
           <!-- Drawer Header with Profile Card -->
           <div class="drawer-profile-card">
-            <a routerLink="/profile" (click)="closeMobileMenu()" class="drawer-profile-link">
+            <a routerLink="/profile" (click)="onDrawerLinkClick('/profile')" class="drawer-profile-link">
               <div class="drawer-avatar">
                 @if ((profileService.profile$ | async)?.avatarUrl; as avatarUrl) {
                   <img
@@ -337,7 +469,7 @@ import { TranslationService } from '../../../../core/services/translation.servic
               <a
                 [routerLink]="link.route"
                 routerLinkActive="is-active"
-                (click)="closeMobileMenu()"
+                (click)="onDrawerLinkClick(link.route)"
                 class="drawer-link"
                 [class.pro-link]="link.pro"
                 [style.--stagger]="i">
@@ -377,7 +509,9 @@ import { TranslationService } from '../../../../core/services/translation.servic
      * there pins the bar for the whole scroll range.
      */
     :host {
-      --header-height: 60px;
+      --header-top-height: 60px;
+      --header-rail-height: 0px;
+      --header-height: calc(var(--header-top-height) + var(--header-rail-height));
       /*
        * Android draws the status bar (and any punch-hole camera) over the
        * webview because the app is laid out edge-to-edge and index.html asks
@@ -429,7 +563,7 @@ import { TranslationService } from '../../../../core/services/translation.servic
          inset keeps the back button and the burger out from under it. */
       padding-left: calc(var(--space-4, 16px) + env(safe-area-inset-left, 0px));
       padding-right: calc(var(--space-4, 16px) + env(safe-area-inset-right, 0px));
-      height: var(--header-height, 60px);
+      height: var(--header-top-height, 60px);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -622,6 +756,62 @@ import { TranslationService } from '../../../../core/services/translation.servic
     }
     .pro-sparkle {
       font-size: 14px;
+    }
+
+    /* Mobile Auto-Sliding Header Options Rail */
+    .header-rail-wrapper {
+      display: none;
+      position: relative;
+      width: 100%;
+      height: var(--header-rail-height, 44px);
+      overflow: hidden;
+      border-top: 1px solid var(--color-divider);
+    }
+
+    .header-nav-rail {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .header-nav-rail {
+        scroll-behavior: auto;
+      }
+    }
+
+    .rail-items {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2, 8px);
+      padding: 0 calc(var(--space-4, 16px) + env(safe-area-inset-left, 0px));
+      white-space: nowrap;
+      min-width: max-content;
+    }
+
+    .rail-item {
+      min-height: max(var(--control-h-sm, 32px), var(--min-touch-target, 44px));
+      display: inline-flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: var(--font-small, 13px);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .rail-quota {
+      margin-left: 2px;
     }
 
     /* Tools Dropdown */
@@ -1180,10 +1370,38 @@ import { TranslationService } from '../../../../core/services/translation.servic
      */
     @media (max-width: 960px) {
       :host {
-        --header-height: 52px;
+        --header-top-height: 52px;
+        --header-rail-height: 44px;
+        --header-height: calc(var(--header-top-height) + var(--header-rail-height));
+        --header-total-height: calc(var(--header-height) + var(--header-inset-top));
+      }
+
+      @media (max-height: 500px) {
+        :host {
+          --header-top-height: 40px;
+          --header-rail-height: 32px;
+          --header-height: calc(var(--header-top-height) + var(--header-rail-height));
+          --header-total-height: calc(var(--header-height) + var(--header-inset-top));
+        }
+      }
+      .header-rail-wrapper {
+        display: block !important;
       }
       .desktop-nav, .search-kbd, .search-btn-text, .profile-btn-name {
         display: none !important;
+      }
+      .tools-dropdown-menu {
+        position: fixed;
+        top: var(--header-total-height);
+        left: 8px;
+        right: 8px;
+        width: auto;
+        max-width: calc(100vw - 16px);
+        max-height: calc(85dvh - var(--header-total-height));
+        overflow-y: auto;
+        grid-template-columns: 1fr;
+        z-index: var(--z-dropdown, 1200);
+        margin-top: 4px;
       }
       .back-btn {
         display: inline-flex;
@@ -1273,7 +1491,10 @@ import { TranslationService } from '../../../../core/services/translation.servic
 
     @media (max-width: 768px) {
       :host {
-        --header-height: 50px;
+        --header-top-height: 50px;
+        --header-rail-height: 44px;
+        --header-height: calc(var(--header-top-height) + var(--header-rail-height));
+        --header-total-height: calc(var(--header-height) + var(--header-inset-top));
       }
       /* Theme toggle and Profile button are redundant in top bar because both
          are prominently featured at the very top of the mobile drawer */
@@ -1299,7 +1520,10 @@ import { TranslationService } from '../../../../core/services/translation.servic
 
     @media (max-width: 480px) {
       :host {
-        --header-height: 48px;
+        --header-top-height: 48px;
+        --header-rail-height: 44px;
+        --header-height: calc(var(--header-top-height) + var(--header-rail-height));
+        --header-total-height: calc(var(--header-height) + var(--header-inset-top));
       }
       .header-inner {
         padding-left: calc(10px + env(safe-area-inset-left, 0px));
@@ -1367,11 +1591,13 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
   mobileMenuOpen = false;
   toolsMenuOpen = false;
 
+  @ViewChild('headerRail', { static: false }) headerRailRef?: ElementRef<HTMLElement>;
+
   /** Drives the compact/elevated header treatment once the page scrolls. */
   scrolled = false;
 
   /** The mobile back affordance is pointless on the dashboard itself. */
-  showBack = false;
+  @Input() showBack = false;
 
   readonly themeOptions: { mode: ThemeMode; label: string }[] = [
     { mode: 'light', label: 'Light' },
@@ -1433,10 +1659,29 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
     }
   };
 
+  scrollActiveRailItemIntoView() {
+    if (typeof window === 'undefined') return;
+    setTimeout(() => {
+      const rail = (this.headerRailRef?.nativeElement ??
+        this.host.nativeElement.querySelector('.header-nav-rail')) as HTMLElement | null;
+      if (!rail) return;
+      const activeItem = rail.querySelector('.nav-item.active') as HTMLElement | null;
+      if (activeItem) {
+        const targetScroll = activeItem.offsetLeft - (rail.clientWidth / 2) + (activeItem.clientWidth / 2);
+        const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        rail.scrollTo({
+          left: Math.max(0, targetScroll),
+          behavior: prefersReduced ? 'auto' : 'smooth'
+        });
+      }
+    }, 60);
+  }
+
   ngOnInit() {
     document.addEventListener('scroll', this.onAnyScroll, true);
 
     this.syncBackVisibility(this.router.url);
+    this.scrollActiveRailItemIntoView();
     this.routerSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(e => {
@@ -1444,15 +1689,27 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
         // A route change from inside the drawer should never leave it hanging.
         this.closeMobileMenu();
         this.toolsMenuOpen = false;
+        this.scrollActiveRailItemIntoView();
       });
   }
 
-  private syncBackVisibility(url: string) {
-    const path = (url || '').split('?')[0].split('#')[0];
-    const next = path !== '/home' && path !== '/';
+  private syncBackVisibility(url?: string) {
+    const raw = (url && url !== '/')
+      ? url
+      : (typeof window !== 'undefined' && window.location?.pathname ? window.location.pathname : (url || ''));
+    const path = raw.split('?')[0].split('#')[0];
+    const next = path !== '' && path !== '/home' && path !== '/';
     if (next !== this.showBack) {
       this.showBack = next;
       this.cdr.markForCheck();
+    }
+  }
+
+  onDrawerLinkClick(route: string) {
+    if (this.router.url === route) {
+      this.closeMobileMenu();
+    } else {
+      setTimeout(() => this.closeMobileMenu(), 50);
     }
   }
 

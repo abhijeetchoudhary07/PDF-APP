@@ -7,6 +7,33 @@
     [badge]="'ocr.badge' | translate"
   ></app-page-header>
 
+  <!-- Mode Switcher: Printed Document | Handwritten Notes -->
+  <div class="ocr-mode-switcher-container" role="region" aria-label="OCR Mode Switcher">
+    <div class="ocr-mode-segmented-control" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        class="ocr-mode-tab active"
+        aria-selected="true"
+        data-testid="mode-tab-printed"
+      >
+        <app-icon name="file-text" [size]="16"></app-icon>
+        <span>{{ 'handwritingOcr.printedMode' | translate }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="ocr-mode-tab"
+        aria-selected="false"
+        (click)="navigateToHandwriting()"
+        data-testid="mode-tab-handwriting"
+      >
+        <app-icon name="pen-tool" [size]="16"></app-icon>
+        <span>{{ 'handwritingOcr.handwrittenMode' | translate }}</span>
+      </button>
+    </div>
+  </div>
+
   <!-- STEP 1: SELECT FILE -->
   @if (currentStep === 'select') {
     <section class="workflow-card">
@@ -53,6 +80,83 @@
         </app-badge>
       </div>
       <div class="detection-body">
+        <!-- Smart Detection Banner -->
+        @if (showSmartDetectionBanner && scriptDetectionResult) {
+          <div class="smart-detection-banner" role="status" aria-live="polite" data-testid="smart-detection-banner">
+            <div class="banner-left">
+              <div class="banner-icon-badge">
+                <app-icon name="magic-detect" size="sm"></app-icon>
+              </div>
+              <div class="banner-text">
+                <span class="banner-headline">
+                  {{ 'ocr.detectedScript' | translate:{ script: detectedScriptDisplay, language: detectedLanguageDisplay, confidence: detectionConfidence } }}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="banner-change-btn"
+              (click)="onChangeDetectedScript()"
+              aria-label="Change detected language"
+              data-testid="smart-detect-change-btn"
+            >
+              {{ 'ocr.changeScriptBtn' | translate }}
+            </button>
+          </div>
+        }
+
+        <!-- Low-Confidence Selection Sheet -->
+        @if (showLowConfidenceSheet && scriptDetectionResult) {
+          <div class="low-confidence-sheet" role="region" aria-label="Language selection" data-testid="low-confidence-sheet">
+            <div class="sheet-header">
+              <div class="sheet-title-row">
+                <span class="sheet-icon">
+                  <app-icon name="magic-detect" size="sm"></app-icon>
+                </span>
+                <h3 class="sheet-title">{{ 'ocr.uncertainDetectionTitle' | translate }}</h3>
+              </div>
+              <p class="sheet-subtitle">{{ 'ocr.uncertainDetectionSubtitle' | translate }}</p>
+            </div>
+            <div class="sheet-suggestions-container">
+              <span class="suggestions-label">{{ 'ocr.topSuggestions' | translate }}:</span>
+              <div class="suggestions-pills-row">
+                @for (langCode of getTopSuggestions(); track langCode) {
+                  @if (getLanguageOption(langCode); as opt) {
+                    <button
+                      type="button"
+                      class="suggestion-pill-btn"
+                      [class.active]="selectedLanguage === langCode"
+                      (click)="onSelectSuggestion(langCode)"
+                      [attr.data-testid]="'suggestion-pill-' + langCode"
+                    >
+                      <span class="pill-native">{{ opt.nativeName }}</span>
+                      <span class="pill-name">({{ opt.name }})</span>
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+            <div class="sheet-footer-row">
+              <button
+                type="button"
+                class="browse-all-btn"
+                (click)="openLanguageSelector()"
+                data-testid="browse-all-languages-btn"
+              >
+                <app-icon name="globe-lang" size="sm"></app-icon>
+                <span>{{ 'ocr.allLanguagesBtn' | translate }}</span>
+              </button>
+              <button
+                type="button"
+                class="dismiss-btn"
+                (click)="dismissLowConfidenceSheet()"
+              >
+                {{ 'common.dismiss' | translate }}
+              </button>
+            </div>
+          </div>
+        }
+
         <div class="detection-info-box" [class.highlight]="hasSelectableText">
           <div class="icon">{{ hasSelectableText ? 'ℹ️' : '📷' }}</div>
           <div class="text">
@@ -110,22 +214,139 @@
         <h2>{{ 'ocr.configureTitle' | translate }}</h2>
         <span class="file-name">{{ selectedFile?.name }}</span>
       </div>
+
+      <!-- Smart Detection Banner -->
+      @if (showSmartDetectionBanner && scriptDetectionResult) {
+        <div class="smart-detection-banner configure-banner" role="status" aria-live="polite" data-testid="smart-detection-banner">
+          <div class="banner-left">
+            <div class="banner-icon-badge">
+              <app-icon name="magic-detect" size="sm"></app-icon>
+            </div>
+            <div class="banner-text">
+              <span class="banner-headline">
+                {{ 'ocr.detectedScript' | translate:{ script: detectedScriptDisplay, language: detectedLanguageDisplay, confidence: detectionConfidence } }}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="banner-change-btn"
+            (click)="onChangeDetectedScript()"
+            aria-label="Change detected language"
+            data-testid="smart-detect-change-btn"
+          >
+            {{ 'ocr.changeScriptBtn' | translate }}
+          </button>
+        </div>
+      }
+
+      <!-- Low-Confidence Selection Sheet -->
+      @if (showLowConfidenceSheet && scriptDetectionResult) {
+        <div class="low-confidence-sheet configure-sheet" role="region" aria-label="Language selection" data-testid="low-confidence-sheet">
+          <div class="sheet-header">
+            <div class="sheet-title-row">
+              <span class="sheet-icon">
+                <app-icon name="magic-detect" size="sm"></app-icon>
+              </span>
+              <h3 class="sheet-title">{{ 'ocr.uncertainDetectionTitle' | translate }}</h3>
+            </div>
+            <p class="sheet-subtitle">{{ 'ocr.uncertainDetectionSubtitle' | translate }}</p>
+          </div>
+          <div class="sheet-suggestions-container">
+            <span class="suggestions-label">{{ 'ocr.topSuggestions' | translate }}:</span>
+            <div class="suggestions-pills-row">
+              @for (langCode of getTopSuggestions(); track langCode) {
+                @if (getLanguageOption(langCode); as opt) {
+                  <button
+                    type="button"
+                    class="suggestion-pill-btn"
+                    [class.active]="selectedLanguage === langCode"
+                    (click)="onSelectSuggestion(langCode)"
+                    [attr.data-testid]="'suggestion-pill-' + langCode"
+                  >
+                    <span class="pill-native">{{ opt.nativeName }}</span>
+                    <span class="pill-name">({{ opt.name }})</span>
+                  </button>
+                }
+              }
+            </div>
+          </div>
+          <div class="sheet-footer-row">
+            <button
+              type="button"
+              class="browse-all-btn"
+              (click)="openLanguageSelector()"
+              data-testid="browse-all-languages-btn"
+            >
+              <app-icon name="globe-lang" size="sm"></app-icon>
+              <span>{{ 'ocr.allLanguagesBtn' | translate }}</span>
+            </button>
+            <button
+              type="button"
+              class="dismiss-btn"
+              (click)="dismissLowConfidenceSheet()"
+            >
+              {{ 'common.dismiss' | translate }}
+            </button>
+          </div>
+        </div>
+      }
+
       <div class="config-grid">
         <!-- Primary Language -->
         <div class="config-group">
-          <label class="config-label">{{ 'ocr.primaryLanguage' | translate }}</label>
+          <div class="config-label-row">
+            <label class="config-label">{{ 'ocr.primaryLanguage' | translate }}</label>
+            <div class="lang-actions-header">
+              <button
+                type="button"
+                class="select-languages-btn"
+                (click)="openLanguageSelector()"
+                aria-label="Select from 18 languages"
+                data-testid="open-language-selector-btn"
+              >
+                <app-icon name="globe-lang" size="sm"></app-icon>
+                <span>{{ 'ocr.selectLanguages' | translate }} (18)</span>
+              </button>
+              <button
+                type="button"
+                class="manage-languages-link-btn"
+                (click)="openLanguageManager()"
+                aria-label="Manage offline languages"
+                data-testid="open-language-manager-btn"
+              >
+                <app-icon name="download-cloud" size="sm"></app-icon>
+                <span>{{ 'ocr.manageLanguages' | translate }}</span>
+              </button>
+            </div>
+          </div>
           <div class="lang-selector-grid">
             @for (lang of availableLanguages; track lang) {
               <button
                 type="button"
                 class="lang-pill"
                 [class.active]="selectedLanguage === lang.code"
+                [class.cached]="cachedLanguageCodes.has(lang.code)"
                 [attr.data-testid]="'ocr-lang-' + lang.code"
                 [attr.aria-pressed]="selectedLanguage === lang.code"
-                (click)="selectedLanguage = lang.code"
+                (click)="onLanguagePillClicked(lang.code)"
                 >
-                <span class="native">{{ lang.nativeName }}</span>
-                <span class="name">{{ lang.name }}</span>
+                <div class="pill-names">
+                  <span class="native">{{ lang.nativeName }}</span>
+                  <span class="name">{{ lang.name }}</span>
+                </div>
+                @if (lang.code === 'eng' || cachedLanguageCodes.has(lang.code)) {
+                  <span class="status-indicator ready" title="Offline ready">✓</span>
+                } @else {
+                  <span
+                    class="status-indicator download"
+                    title="Download required"
+                    (click)="promptModelDownload($event, lang.code)"
+                    [attr.data-testid]="'pill-download-trigger-' + lang.code"
+                  >
+                    <app-icon name="download-cloud" size="xs"></app-icon>
+                  </span>
+                }
               </button>
             }
           </div>
@@ -212,6 +433,7 @@
           size="lg"
           [disabled]="selectedPageNumbers.length === 0"
           (clicked)="startOcr()"
+          data-testid="start-ocr-button"
           >
           🚀 {{ 'ocr.startOcrBtn' | translate }}
         </app-button>
@@ -349,7 +571,12 @@
       </div>
       <!-- Export Actions Grid -->
       <div class="export-options-grid">
-        <button type="button" class="export-tile" (click)="downloadSearchablePdf()">
+        <button
+          type="button"
+          class="export-tile"
+          (click)="downloadSearchablePdf()"
+          data-testid="download-searchable-pdf-btn"
+        >
           <div class="tile-icon">📑</div>
           <div class="tile-text">
             <div class="tile-title">{{ 'ocr.searchablePdfTitle' | translate }}</div>
@@ -388,6 +615,23 @@
       </div>
     </section>
   }
+
+  <app-ocr-language-manager
+    [isOpen]="isLanguageManagerOpen"
+    [showConfirmModal]="showDownloadConfirmModal"
+    [confirmModel]="pendingDownloadModel"
+    (closed)="closeLanguageManager()"
+    (confirmClosed)="showDownloadConfirmModal = false"
+    (modelDownloaded)="onModelDownloaded($event)"
+  ></app-ocr-language-manager>
+
+  <app-ocr-language-selector
+    [isOpen]="isLanguageSelectorOpen"
+    [selectedLanguages]="getSelectedLanguagesList()"
+    [cachedCodes]="cachedLanguageCodes"
+    (closed)="closeLanguageSelector()"
+    (languagesConfirmed)="onLanguagesConfirmed($event)"
+  ></app-ocr-language-selector>
 
   <app-related-tools currentToolId="pdf_ocr"></app-related-tools>
 </main>

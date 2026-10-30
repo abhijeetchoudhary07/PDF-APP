@@ -168,6 +168,10 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       background-color: var(--color-secondary-hover);
       border-color: var(--color-secondary-hover);
     }
+    .btn-secondary:active:not(:disabled) {
+      background-color: var(--color-secondary-hover);
+      transform: translateY(1px);
+    }
 
     .btn-outline {
       background-color: transparent;
@@ -179,6 +183,10 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       border-color: var(--color-border-hover);
       color: var(--color-primary);
     }
+    .btn-outline:active:not(:disabled) {
+      background-color: var(--color-background-subtle);
+      transform: translateY(1px);
+    }
 
     .btn-ghost {
       background-color: transparent;
@@ -188,6 +196,10 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
     .btn-ghost:hover:not(:disabled) {
       background-color: var(--color-background-subtle);
       color: var(--color-text);
+    }
+    .btn-ghost:active:not(:disabled) {
+      background-color: var(--color-border);
+      transform: translateY(1px);
     }
 
     .btn-danger {
@@ -199,6 +211,10 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       background-color: var(--color-error-hover);
       border-color: var(--color-error-hover);
     }
+    .btn-danger:active:not(:disabled) {
+      background-color: var(--color-error-hover);
+      transform: translateY(1px);
+    }
 
     .btn-success {
       background-color: var(--color-success);
@@ -209,6 +225,10 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       background-color: var(--color-success-hover);
       border-color: var(--color-success-hover);
     }
+    .btn-success:active:not(:disabled) {
+      background-color: var(--color-success-hover);
+      transform: translateY(1px);
+    }
 
     .btn-warning {
       background-color: var(--color-warning);
@@ -218,6 +238,10 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
     .btn-warning:hover:not(:disabled) {
       background-color: var(--color-warning-hover);
       border-color: var(--color-warning-hover);
+    }
+    .btn-warning:active:not(:disabled) {
+      background-color: var(--color-warning-hover);
+      transform: translateY(1px);
     }
 
     /* Spinner */
@@ -277,6 +301,23 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
      */
     .btn-text ::ng-deep app-icon {
       flex-shrink: 0;
+    }
+
+    .btn.btn-icon-only {
+      min-width: var(--control-h-md, 42px);
+      padding: 0;
+    }
+    .btn-sm.btn-icon-only {
+      min-width: var(--control-h-sm, 32px);
+      padding: 0;
+    }
+    .btn-md.btn-icon-only {
+      min-width: var(--control-h-md, 42px);
+      padding: 0;
+    }
+    .btn-lg.btn-icon-only {
+      min-width: var(--control-h-lg, 48px);
+      padding: 0;
     }
   `]
 })

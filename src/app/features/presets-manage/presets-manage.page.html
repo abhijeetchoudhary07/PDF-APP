@@ -1,0 +1,308 @@
+<app-header [title]="'profileTransfer.title' | translate" [showBack]="true"></app-header>
+
+<main class="presets-manage-container">
+  <!-- Hero Banner -->
+  <section class="hero-banner">
+    <div class="hero-icon-wrap">
+      <app-icon name="profile-json" size="38" class="hero-icon"></app-icon>
+    </div>
+    <h1 class="hero-title">{{ 'profileTransfer.title' | translate }}</h1>
+    <p class="hero-desc">{{ 'profileTransfer.subtitle' | translate }}</p>
+    <app-badge variant="primary" class="hero-badge">
+      <app-icon name="profile-json" size="14"></app-icon>
+      {{ 'profileTransfer.badge' | translate }}
+    </app-badge>
+  </section>
+
+  <!-- Section 1: Saved Profiles List -->
+  <section class="saved-profiles-section">
+    <div class="section-header-row">
+      <div class="section-title-wrap">
+        <h2 class="section-title">{{ 'profileTransfer.savedProfilesTitle' | translate }}</h2>
+        <span class="count-pill">{{ 'profileTransfer.savedProfilesCount' | translate:{ count: profiles.length } }}</span>
+      </div>
+      <button type="button" class="btn-create-link" (click)="goToPresetBuilder()">
+        <app-icon name="add" size="16"></app-icon>
+        <span>{{ 'profileTransfer.goToBuilder' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && profiles.length === 0" class="empty-profiles-card">
+      <div class="empty-icon-wrap">
+        <app-icon name="preset-builder" size="32"></app-icon>
+      </div>
+      <h3 class="empty-title">{{ 'profileTransfer.noProfilesTitle' | translate }}</h3>
+      <p class="empty-desc">{{ 'profileTransfer.noProfilesDesc' | translate }}</p>
+      <div class="empty-actions">
+        <button type="button" class="btn-empty-action builder-btn" (click)="goToPresetBuilder()">
+          <app-icon name="preset-builder" size="16"></app-icon>
+          <span>{{ 'profileTransfer.goToBuilder' | translate }}</span>
+        </button>
+        <button type="button" class="btn-empty-action import-btn" (click)="scrollToImportSection()">
+          <app-icon name="download" size="16"></app-icon>
+          <span>{{ 'profileTransfer.importBtn' | translate }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Cards Grid/List -->
+    <div *ngIf="profiles.length > 0" class="profiles-card-list">
+      <div *ngFor="let p of profiles" class="profile-card">
+        <div class="profile-card-top">
+          <div class="profile-title-block">
+            <span class="type-pill" [attr.data-type]="getTypeLabel(p).toLowerCase()">
+              {{ getTypeLabel(p) }}
+            </span>
+            <h3 class="profile-name" [title]="p.name">{{ p.name }}</h3>
+          </div>
+          <span class="schema-tag">v1.0</span>
+        </div>
+
+        <!-- Chips Row: Dimensions, Size Limit, Format, DPI -->
+        <div class="profile-chips-row">
+          <span *ngIf="getRequirement(p)?.width && getRequirement(p)?.height" class="spec-chip chip-dim">
+            <app-icon name="expand" size="13"></app-icon>
+            {{ getRequirement(p)?.width }} &times; {{ getRequirement(p)?.height }} {{ getRequirement(p)?.unit || p.unit || 'px' }}
+          </span>
+
+          <span *ngIf="getRequirement(p)?.maxKb" class="spec-chip chip-size">
+            <app-icon name="document" size="13"></app-icon>
+            <ng-container *ngIf="getRequirement(p)?.minKb">{{ getRequirement(p)?.minKb }} – </ng-container>
+            {{ getRequirement(p)?.maxKb }} KB
+          </span>
+
+          <span *ngIf="getRequirement(p)?.format" class="spec-chip chip-format">
+            {{ getRequirement(p)?.format }}
+          </span>
+
+          <span *ngIf="p.dpi || getRequirement(p)?.dpi" class="spec-chip chip-dpi">
+            {{ p.dpi || getRequirement(p)?.dpi }} DPI
+          </span>
+        </div>
+
+        <!-- Card Bottom Touch Action Buttons -->
+        <div class="profile-card-actions">
+          <button
+            type="button"
+            class="btn-card-action btn-share"
+            (click)="shareProfile(p)"
+            aria-label="Share profile JSON"
+          >
+            <app-icon name="share-social" size="16"></app-icon>
+            <span>{{ 'profileTransfer.shareBtn' | translate }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn-card-action btn-delete"
+            (click)="promptDelete(p)"
+            aria-label="Delete profile"
+          >
+            <app-icon name="trash" size="16"></app-icon>
+            <span>{{ 'profileTransfer.deleteBtn' | translate }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Import Section -->
+  <section id="import-section" class="import-section">
+    <div class="section-title-wrap">
+      <h2 class="section-title">{{ 'profileTransfer.importSectionTitle' | translate }}</h2>
+    </div>
+
+    <!-- Error notice if validation fails -->
+    <div *ngIf="validationError" class="validation-error-card">
+      <app-icon name="alert-circle" size="18" class="err-icon"></app-icon>
+      <div class="err-content">
+        <strong>Validation Error</strong>
+        <span>{{ validationError }}</span>
+      </div>
+      <button type="button" class="btn-dismiss-err" (click)="validationError = null">
+        <app-icon name="close" size="14"></app-icon>
+      </button>
+    </div>
+
+    <!-- Dashed Dropzone Card -->
+    <app-file-dropzone
+      [title]="'profileTransfer.dropzoneTitle' | translate"
+      [description]="'profileTransfer.dropzoneSubtitle' | translate"
+      accept=".json,application/json"
+      [multiple]="false"
+      (fileSelected)="handleFileSelected($event)"
+      class="profile-dropzone"
+    ></app-file-dropzone>
+
+    <!-- Paste JSON Option -->
+    <div class="paste-json-container">
+      <button
+        type="button"
+        class="toggle-paste-btn"
+        (click)="showPasteBox = !showPasteBox"
+      >
+        <app-icon [name]="showPasteBox ? 'chevron-up' : 'document-text'" size="16"></app-icon>
+        <span>{{ 'profileTransfer.pasteJsonBtn' | translate }}</span>
+      </button>
+
+      <div *ngIf="showPasteBox" class="paste-box-card">
+        <textarea
+          class="paste-textarea"
+          rows="5"
+          [(ngModel)]="pastedJsonText"
+          [placeholder]="'profileTransfer.pasteJsonPlaceholder' | translate"
+        ></textarea>
+        <button
+          type="button"
+          class="btn-validate-paste"
+          [disabled]="!pastedJsonText.trim()"
+          (click)="handlePasteValidate()"
+        >
+          <app-icon name="checkmark-circle" size="16"></app-icon>
+          <span>{{ 'profileTransfer.validateAndPreviewBtn' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Validation Preview Modal -->
+<app-modal
+  [isOpen]="showPreviewModal"
+  [title]="'profileTransfer.previewModalTitle' | translate"
+  (closed)="closePreviewModal()"
+>
+  <div *ngIf="pendingProfile" class="preview-modal-body">
+    <div class="modal-badge-row">
+      <app-badge variant="success" size="sm">
+        <app-icon name="checkmark-circle" size="12"></app-icon>
+        {{ 'profileTransfer.previewValidBadge' | translate }}
+      </app-badge>
+      <span class="type-pill" [attr.data-type]="getTypeLabel(pendingProfile).toLowerCase()">
+        {{ getTypeLabel(pendingProfile) }}
+      </span>
+    </div>
+
+    <div class="preview-name-row">
+      <h3 class="preview-profile-name">{{ pendingProfile.name }}</h3>
+      <span class="preview-id-code">ID: {{ pendingProfile.id }}</span>
+    </div>
+
+    <!-- Duplicate Warning Notice -->
+    <div *ngIf="isDuplicate" class="duplicate-warning-box">
+      <app-icon name="alert-circle" size="18" class="warn-icon"></app-icon>
+      <div class="warn-text">
+        <strong>{{ 'profileTransfer.importOverwriteTitle' | translate }}</strong>
+        <p>{{ 'profileTransfer.importOverwriteMsg' | translate:{ name: pendingProfile.name } }}</p>
+      </div>
+    </div>
+
+    <!-- Spec breakdown table -->
+    <div class="spec-table">
+      <div *ngIf="getRequirement(pendingProfile)?.width && getRequirement(pendingProfile)?.height" class="spec-row">
+        <span class="row-label">{{ 'profileTransfer.dimensionsLabel' | translate }}</span>
+        <span class="row-val">
+          {{ getRequirement(pendingProfile)?.width }} &times; {{ getRequirement(pendingProfile)?.height }} {{ getRequirement(pendingProfile)?.unit || pendingProfile.unit || 'px' }}
+        </span>
+      </div>
+
+      <div *ngIf="getRequirement(pendingProfile)?.maxKb" class="spec-row">
+        <span class="row-label">{{ 'profileTransfer.fileSizeLabel' | translate }}</span>
+        <span class="row-val">
+          <ng-container *ngIf="getRequirement(pendingProfile)?.minKb">{{ getRequirement(pendingProfile)?.minKb }} – </ng-container>
+          {{ getRequirement(pendingProfile)?.maxKb }} KB
+        </span>
+      </div>
+
+      <div *ngIf="getRequirement(pendingProfile)?.format" class="spec-row">
+        <span class="row-label">{{ 'profileTransfer.formatLabel' | translate }}</span>
+        <span class="row-val">{{ getRequirement(pendingProfile)?.format }}</span>
+      </div>
+
+      <div *ngIf="pendingProfile.dpi || getRequirement(pendingProfile)?.dpi" class="spec-row">
+        <span class="row-label">{{ 'profileTransfer.dpiLabel' | translate }}</span>
+        <span class="row-val">{{ pendingProfile.dpi || getRequirement(pendingProfile)?.dpi }} DPI</span>
+      </div>
+    </div>
+
+    <!-- Modal Actions -->
+    <div class="modal-buttons-row">
+      <button type="button" class="btn-cancel" (click)="closePreviewModal()">
+        {{ 'profileTransfer.cancel' | translate }}
+      </button>
+
+      <!-- If duplicate, offer overwrite or copy -->
+      <ng-container *ngIf="isDuplicate">
+        <button
+          type="button"
+          class="btn-confirm-import overwrite"
+          [disabled]="isImporting"
+          (click)="confirmImport(true)"
+        >
+          {{ 'profileTransfer.btnOverwrite' | translate }}
+        </button>
+        <button
+          type="button"
+          class="btn-confirm-import save-copy"
+          [disabled]="isImporting"
+          (click)="confirmImportAsCopy()"
+        >
+          {{ 'profileTransfer.btnSaveAsCopy' | translate }}
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="!isDuplicate">
+        <button
+          type="button"
+          class="btn-confirm-import"
+          [disabled]="isImporting"
+          (click)="confirmImport(false)"
+        >
+          <app-icon [name]="isImporting ? 'sync' : 'download'" size="16" [class.spin]="isImporting"></app-icon>
+          <span>{{ 'profileTransfer.importBtn' | translate }}</span>
+        </button>
+      </ng-container>
+    </div>
+  </div>
+</app-modal>
+
+<!-- Delete Confirmation Modal -->
+<app-modal
+  [isOpen]="showDeleteModal"
+  [title]="'profileTransfer.deleteConfirmTitle' | translate"
+  (closed)="closeDeleteModal()"
+>
+  <div *ngIf="profileToDelete" class="delete-modal-body">
+    <div class="delete-warn-icon-wrap">
+      <app-icon name="trash" size="32" class="delete-icon"></app-icon>
+    </div>
+    <p class="delete-confirm-text">
+      {{ 'profileTransfer.deleteConfirmMsg' | translate:{ name: profileToDelete.name } }}
+    </p>
+
+    <div class="modal-buttons-row">
+      <button type="button" class="btn-cancel" (click)="closeDeleteModal()">
+        {{ 'profileTransfer.cancel' | translate }}
+      </button>
+      <button type="button" class="btn-confirm-delete" (click)="confirmDelete()">
+        <app-icon name="trash" size="16"></app-icon>
+        <span>{{ 'profileTransfer.deleteBtn' | translate }}</span>
+      </button>
+    </div>
+  </div>
+</app-modal>
+
+<!-- Sticky Bottom Action Bar with Safe-Area Padding -->
+<footer class="presets-manage-sticky-bar">
+  <div class="action-buttons-wrap">
+    <button
+      type="button"
+      class="btn-sticky-import"
+      (click)="scrollToImportSection()"
+    >
+      <app-icon name="download" size="20"></app-icon>
+      <span>{{ 'profileTransfer.importBtn' | translate }}</span>
+    </button>
+  </div>
+</footer>

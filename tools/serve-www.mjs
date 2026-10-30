@@ -44,6 +44,8 @@ const TYPES = new Map(
     '.pdf': 'application/pdf',
     '.txt': 'text/plain; charset=utf-8',
     '.map': 'application/json; charset=utf-8',
+    '.gz': 'application/gzip',
+    '.traineddata': 'application/octet-stream',
   }),
 );
 

@@ -1,0 +1,314 @@
+<div class="app-page-wrapper">
+  <app-header></app-header>
+
+  <main class="app-main-content">
+    <div class="app-container">
+      <app-page-header
+        [title]="'presetBatchCheck.title' | translate"
+        [subtitle]="'presetBatchCheck.subtitle' | translate"
+        [breadcrumbs]="[{ label: ('presetsPage.title' | translate), url: '/features/presets' }, { label: ('presetBatchCheck.title' | translate) }]"
+        badge="AUDIT"
+        badgeVariant="presets"
+        backUrl="/features/presets">
+      </app-page-header>
+
+      <div class="batch-check-content">
+        <!-- Profile Selection Card -->
+        <div class="profile-select-card">
+          <div class="select-header">
+            <app-icon name="options-outline" class="select-icon"></app-icon>
+            <div>
+              <label class="select-label" for="profile-dropdown">{{ 'presetBatchCheck.selectProfileLabel' | translate }}</label>
+              <p class="select-sub">{{ 'presetBatchCheck.chooseProfilePrompt' | translate }}</p>
+            </div>
+          </div>
+
+          <div class="select-wrapper">
+            <select
+              id="profile-dropdown"
+              class="profile-dropdown"
+              [value]="selectedPreset?.id"
+              (change)="onPresetChange($event)">
+              @for (preset of presets; track preset.id) {
+                <option [value]="preset.id">
+                  {{ preset.name }} ({{ preset.category | titlecase }})
+                </option>
+              }
+            </select>
+          </div>
+
+          <!-- Active Profile Limits Chips -->
+          @if (selectedPreset) {
+            <div class="profile-chips">
+              @if (selectedPreset.photo?.maxKb || selectedPreset.pdf?.maxKb) {
+                <div class="chip">
+                  <app-icon name="speedometer-outline" class="chip-icon"></app-icon>
+                  <span>Max {{ selectedPreset.photo?.maxKb || selectedPreset.pdf?.maxKb }} KB</span>
+                </div>
+              }
+              @if (selectedPreset.photo?.width && selectedPreset.photo?.height) {
+                <div class="chip">
+                  <app-icon name="crop-outline" class="chip-icon"></app-icon>
+                  <span>{{ selectedPreset.photo?.width }} × {{ selectedPreset.photo?.height }} px</span>
+                </div>
+              }
+              @if (selectedPreset.photo?.format || selectedPreset.pdf?.format) {
+                <div class="chip">
+                  <app-icon name="document-text-outline" class="chip-icon"></app-icon>
+                  <span>{{ selectedPreset.photo?.format || selectedPreset.pdf?.format }}</span>
+                </div>
+              }
+              @if (selectedPreset.photo?.dpi || selectedPreset.dpi) {
+                <div class="chip">
+                  <app-icon name="scan-outline" class="chip-icon"></app-icon>
+                  <span>{{ selectedPreset.photo?.dpi || selectedPreset.dpi }} DPI</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Multi-File Dropzone -->
+        <div class="dropzone-section">
+          <app-file-dropzone
+            [title]="'presetBatchCheck.uploadTitle' | translate"
+            [description]="'presetBatchCheck.uploadSubtitle' | translate"
+            [multiple]="true"
+            accept="image/*,application/pdf"
+            icon="cloud-upload"
+            (filesSelected)="onFilesAdded($event)"
+            (fileSelected)="onSingleFileAdded($event)">
+          </app-file-dropzone>
+        </div>
+
+        <!-- Quota Warning Alert -->
+        @if (quotaWarning) {
+          <div class="quota-warning-banner" role="alert">
+            <app-icon name="warning-outline" class="quota-icon"></app-icon>
+            <div class="quota-body">
+              <strong>Quota Limit Reached</strong>
+              <p>{{ quotaWarning }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- Live Progress Drawer during Auto-Fix -->
+        @if (isAutoFixing && autoFixProgress) {
+          <div class="progress-card">
+            <div class="progress-header">
+              <span class="progress-title">
+                <app-icon name="sync" class="spin-icon"></app-icon>
+                {{ 'presetBatchCheck.autoFixingProgress' | translate:{ current: autoFixProgress.currentFileIndex, total: autoFixProgress.totalFiles } }}
+              </span>
+              <span class="progress-percent">{{ autoFixProgress.progressPercent }}%</span>
+            </div>
+            <app-progress [value]="autoFixProgress.progressPercent" [showPercentage]="false"></app-progress>
+            <div class="progress-filename">{{ autoFixProgress.currentFileName }}</div>
+          </div>
+        }
+
+        <!-- Batch Audit Scorecard Section -->
+        @if (scorecards.length > 0) {
+          <div class="audit-scorecard-section">
+            <!-- Summary Bar -->
+            <div class="scorecard-summary-bar">
+              <div class="summary-counts">
+                <h3 class="summary-title">{{ 'presetBatchCheck.auditSummaryTitle' | translate }}</h3>
+                <div class="count-badges">
+                  <app-badge variant="neutral">{{ scorecards.length }} Files</app-badge>
+                  <app-badge variant="success">{{ compliantCount }} Compliant</app-badge>
+                  @if (scorecards.length - compliantCount > 0) {
+                    <app-badge variant="danger">{{ scorecards.length - compliantCount }} Non-Compliant</app-badge>
+                  }
+                </div>
+              </div>
+
+              <button class="clear-all-btn" (click)="clearAll()" [attr.aria-label]="'presetBatchCheck.clearAll' | translate">
+                <app-icon name="trash" class="btn-icon"></app-icon>
+                {{ 'presetBatchCheck.clearAll' | translate }}
+              </button>
+            </div>
+
+            <!-- Top Summary Fix Chip -->
+            @if (fixableCount > 0) {
+              <div class="fix-needed-chip">
+                <app-icon name="alert-circle-outline" class="chip-alert-icon"></app-icon>
+                <span>{{ 'presetBatchCheck.filesNeedFixingChip' | translate:{ count: fixableCount, total: scorecards.length } }}</span>
+              </div>
+            } @else if (scorecards.length > 0 && compliantCount === scorecards.length) {
+              <div class="all-compliant-chip">
+                <app-icon name="checkmark-circle" class="chip-check-icon"></app-icon>
+                <span>{{ 'presetBatchCheck.allCompliantMsg' | translate }}</span>
+              </div>
+            }
+
+            <!-- Scorecard List -->
+            <div class="scorecard-list">
+              @for (card of scorecards; track card.fileId; let idx = $index) {
+                <div class="scorecard-item" [class.passed]="card.passed" [class.failed]="!card.passed">
+                  <div class="scorecard-main-row" (click)="toggleExpand(card.fileId)">
+                    <!-- Thumbnail / Icon -->
+                    <div class="card-thumbnail-box">
+                      @if (card.thumbnailUrl) {
+                        <img [src]="card.thumbnailUrl" [alt]="card.fileName" class="card-thumbnail-img" />
+                      } @else {
+                        <div class="card-icon-fallback" [class.pdf]="card.slotType === 'pdf'">
+                          <app-icon [name]="card.slotType === 'pdf' ? 'document-text-outline' : 'image-outline'"></app-icon>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- File Info -->
+                    <div class="card-file-info">
+                      <div class="card-filename" [title]="card.fileName">{{ card.fileName }}</div>
+                      <div class="card-meta">
+                        <span>{{ card.fileSizeBytes / 1024 | number:'1.0-0' }} KB</span>
+                        <span class="dot">•</span>
+                        <span class="slot-badge">{{ card.slotType | uppercase }}</span>
+                        @if (card.fixStatus === 'fixed' && card.fixedFile) {
+                          <span class="dot">•</span>
+                          <span class="fixed-badge">Auto-Fixed</span>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Compliance Status Badge -->
+                    <div class="card-status-badge">
+                      @if (card.passed) {
+                        <span class="status-pill status-compliant">
+                          <app-icon name="checkmark-circle"></app-icon>
+                          {{ 'presetBatchCheck.compliantBadge' | translate }}
+                        </span>
+                      } @else if (card.fixStatus === 'fixing') {
+                        <span class="status-pill status-fixing">
+                          <app-icon name="sync" class="spin-icon"></app-icon>
+                          Fixing...
+                        </span>
+                      } @else if (card.fixStatus === 'failed') {
+                        <span class="status-pill status-error">
+                          <app-icon name="close-circle"></app-icon>
+                          Failed
+                        </span>
+                      } @else if (card.isFixable) {
+                        <span class="status-pill status-noncompliant">
+                          <app-icon name="close-circle"></app-icon>
+                          {{ 'presetBatchCheck.nonCompliantBadge' | translate }}
+                        </span>
+                      } @else {
+                        <span class="status-pill status-unfixable">
+                          <app-icon name="alert-circle-outline"></app-icon>
+                          Unfixable
+                        </span>
+                      }
+                    </div>
+
+                    <!-- Actions: Chevron & Remove -->
+                    <div class="card-actions" (click)="$event.stopPropagation()">
+                      <button
+                        class="icon-action-btn"
+                        (click)="toggleExpand(card.fileId)"
+                        [attr.aria-expanded]="isExpanded(card.fileId)"
+                        aria-label="Toggle details">
+                        <app-icon [name]="isExpanded(card.fileId) ? 'chevron-up' : 'chevron-down'"></app-icon>
+                      </button>
+                      <button
+                        class="icon-action-btn remove-btn"
+                        (click)="removeFile(idx)"
+                        aria-label="Remove file">
+                        <app-icon name="trash"></app-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Expandable Rules Breakdown -->
+                  @if (isExpanded(card.fileId)) {
+                    <div class="scorecard-details-drawer">
+                      <div class="rules-table">
+                        @for (rule of card.rules; track rule.category) {
+                          <div class="rule-row" [class.rule-passed]="rule.passed" [class.rule-failed]="!rule.passed">
+                            <div class="rule-icon-col">
+                              <app-icon
+                                [name]="rule.passed ? 'checkmark-circle' : 'close-circle'"
+                                [class.text-success]="rule.passed"
+                                [class.text-danger]="!rule.passed">
+                              </app-icon>
+                            </div>
+                            <div class="rule-content-col">
+                              <div class="rule-name-bar">
+                                <span class="rule-name">{{ rule.name }}</span>
+                                @if (!rule.passed && rule.fixAction) {
+                                  <span class="fix-action-tag">Fix: {{ rule.fixAction | uppercase }}</span>
+                                }
+                              </div>
+                              <div class="rule-measurements">
+                                <span>Measured: <strong>{{ rule.measured }}</strong></span>
+                                <span class="divider">|</span>
+                                <span>Required: <strong>{{ rule.requiredLimit }}</strong></span>
+                              </div>
+                              @if (!rule.passed && rule.errorMessage) {
+                                <div class="rule-error-msg">{{ rule.errorMessage }}</div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      @if (!card.passed && !card.isFixable) {
+                        <div class="unfixable-notice">
+                          <app-icon name="alert-circle-outline"></app-icon>
+                          <span>{{ 'presetBatchCheck.unfixableWarning' | translate }}</span>
+                        </div>
+                      }
+
+                      @if (card.passed || card.fixedFile) {
+                        <div class="card-drawer-footer">
+                          <app-button
+                            variant="secondary"
+                            size="sm"
+                            (clicked)="downloadCardFile(card)">
+                            <app-icon name="download"></app-icon>
+                            {{ 'presetBatchCheck.downloadSingle' | translate }}
+                          </app-button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </main>
+
+  <!-- Sticky Bottom Action Bar with Safe Area Padding -->
+  @if (scorecards.length > 0) {
+    <footer class="sticky-action-bar">
+      <div class="action-bar-container">
+        @if (compliantCount > 0) {
+          <app-button
+            variant="secondary"
+            size="md"
+            [disabled]="isAutoFixing"
+            (clicked)="downloadAllZip()">
+            <app-icon name="download"></app-icon>
+            {{ 'presetBatchCheck.downloadFixedZip' | translate }} ({{ compliantCount }})
+          </app-button>
+        }
+
+        @if (fixableCount > 0) {
+          <app-button
+            variant="primary"
+            size="md"
+            [loading]="isAutoFixing"
+            [disabled]="isAutoFixing"
+            (clicked)="autoFixAll()">
+            <app-icon name="refresh"></app-icon>
+            {{ 'presetBatchCheck.oneClickAutoFixBtn' | translate:{ count: fixableCount } }}
+          </app-button>
+        }
+      </div>
+    </footer>
+  }
+</div>

@@ -39,6 +39,49 @@
       }
 
       <div class="history-content-container">
+        @if (isVaultLocked) {
+          <div class="vault-locked-card" data-testid="vault-locked-card">
+            <div class="vault-icon-circle">
+              <app-icon name="lock-closed" size="36"></app-icon>
+            </div>
+            <h2 class="vault-title">{{ 'appLock.lockVaultOnly' | translate }}</h2>
+            <p class="vault-desc">{{ 'appLock.lockVaultOnlyDesc' | translate }}</p>
+            <div class="vault-unlock-actions">
+              <div class="pin-entry-row">
+                <input
+                  type="password"
+                  inputmode="numeric"
+                  maxlength="4"
+                  placeholder="••••"
+                  [(ngModel)]="vaultPinInput"
+                  data-testid="vault-pin-input"
+                  class="vault-pin-input"
+                  (keyup.enter)="unlockVaultWithPin()" />
+                <app-button
+                  variant="primary"
+                  size="md"
+                  data-testid="btn-unlock-vault"
+                  (clicked)="unlockVaultWithPin()">
+                  Unlock
+                </app-button>
+              </div>
+              @if (canUseBiometric) {
+                <app-button
+                  variant="outline"
+                  size="md"
+                  data-testid="btn-vault-biometric"
+                  (clicked)="unlockVaultWithBiometric()"
+                  style="margin-top: 10px;">
+                  <app-icon name="fingerprint" class="btn-icon"></app-icon>
+                  {{ 'appLock.useBiometrics' | translate }}
+                </app-button>
+              }
+              @if (vaultPinError) {
+                <p class="vault-error-text" data-testid="vault-pin-error">{{ vaultPinError }}</p>
+              }
+            </div>
+          </div>
+        } @else {
         <!-- LOADING: skeleton rows shaped like the real history cards -->
         @if (isLoading) {
           <div class="history-skeleton-list">
@@ -123,6 +166,7 @@
               </div>
             }
           </div>
+        }
         }
       </div>
 
