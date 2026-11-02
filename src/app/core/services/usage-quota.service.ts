@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
 import { BehaviorSubject } from 'rxjs';
 import { MonetizationService } from './monetization.service';
+import { BILLING_ENABLED } from '../config/store.config';
 
 /** What a free account may produce in one day. */
 export const FREE_DAILY_OPERATIONS = 5;
@@ -73,7 +74,10 @@ export class UsageQuotaService {
   }
 
   get isUnlimited(): boolean {
-    return this.monetization.isUserPremium;
+    // With billing off there is nothing to upgrade to, so capping a free user
+    // would leave them stranded at five outputs with no way out. The whole
+    // mechanism below stays intact and tested; this is the one switch.
+    return !BILLING_ENABLED || this.monetization.isUserPremium;
   }
 
   /** Today in the device's own timezone — the day boundary a user expects. */

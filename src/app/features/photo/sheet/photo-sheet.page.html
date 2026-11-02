@@ -163,6 +163,15 @@
               <app-icon name="document" class="btn-icon"></app-icon>
               {{ 'photoSheet.exportPdf' | translate }}
             </app-button>
+            <app-button
+              variant="outline"
+              size="lg"
+              [block]="true"
+              (clicked)="shareSheetPdf()"
+              [disabled]="isProcessing">
+              <app-icon name="share-social" class="btn-icon"></app-icon>
+              {{ 'common.share' | translate }}
+            </app-button>
           </div>
         </div>
       }

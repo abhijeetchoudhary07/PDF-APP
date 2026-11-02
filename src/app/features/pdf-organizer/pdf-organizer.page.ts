@@ -2780,9 +2780,13 @@ export class PdfOrganizerPage implements OnInit, OnDestroy {
   }
 
   async shareResult(result: PdfExportResult) {
-    const uri = await this.storageService.saveFile(result.file, 'document_share');
-    if (uri && uri !== 'web-download') {
-      await this.shareService.shareFile(uri, result.name);
+    if (result.file) {
+      await this.shareService.shareFile(result.file, result.name);
+    } else {
+      const uri = await this.storageService.saveFile(result.file, 'document_share');
+      if (uri && uri !== 'web-download') {
+        await this.shareService.shareFile(uri, result.name);
+      }
     }
   }
 

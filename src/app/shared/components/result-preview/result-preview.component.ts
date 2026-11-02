@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectionStrategy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { AppButtonComponent } from '../ui/button/button.component';
 import { AppBadgeComponent } from '../ui/badge/badge.component';
@@ -27,6 +27,7 @@ export interface PreviewData {
 })
 export class ResultPreviewComponent implements OnInit, OnChanges {
   private shareService = inject(ShareService);
+  private cdr = inject(ChangeDetectorRef, { optional: true });
 
   @Input() beforeData?: PreviewData;
   @Input() afterData?: PreviewData;
@@ -39,20 +40,6 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
   @Input() showWarning?: string; // For "Impossible Targets" warning
   @Input() showVisualComparison = true;
 
-  /*
-   * One name per event.
-   *
-   * There used to be two of each — `onSave`/`saved`, `onShare`/`shared` and
-   * `onChangeSettings`/`reset` — with every action emitting both halves. Five
-   * templates bound one set and one template bound the other, and nothing
-   * said which was current, so a new caller had an even chance of binding the
-   * pair that would eventually be deleted.
-   *
-   * The surviving names avoid both traps the old ones fell into: no `on`
-   * prefix (Angular supplies that at the binding site), and nothing that
-   * shadows a native DOM event — `reset` is a real event, so `(reset)` on this
-   * component read as though it might be one.
-   */
   @Output() saved = new EventEmitter<void>();
   @Output() shared = new EventEmitter<void>();
   @Output() resetRequested = new EventEmitter<void>();
@@ -86,11 +73,42 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
     }
   }
 
+  async resolveFile(): Promise<File | undefined> {
+    if (this.file) {
+      return this.file;
+    }
+    if (this.afterUrl) {
+      try {
+        const res = await fetch(this.afterUrl);
+        const blob = await res.blob();
+        const filename = this.outputFilename || this.afterData?.name || 'document';
+        const type = this.afterData?.type || blob.type || 'application/octet-stream';
+        return new File([blob], filename, { type });
+      } catch (e) {
+        console.warn('Could not resolve file from afterUrl:', e);
+      }
+    }
+    return undefined;
+  }
+
   handleSave(): void {
     this.saved.emit();
   }
 
-  handleShare(): void {
+  async handleShare(): Promise<void> {
+    const fileToShare = await this.resolveFile();
+    const fileName = this.outputFilename || this.afterData?.name || fileToShare?.name || 'document';
+
+    // 1. Try native file sharing first (Capacitor native app or modern Web Share API supporting files)
+    if (fileToShare && this.shareService.canShareFiles(fileToShare)) {
+      const success = await this.shareService.shareFile(fileToShare, fileName);
+      if (success) {
+        this.shared.emit();
+      }
+      return;
+    }
+
+    // 2. Fallback: if native sharing not supported on this platform, open share modal
     this.openShareModal();
   }
 
@@ -98,7 +116,7 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
     const filename = this.outputFilename || this.afterData?.name || 'document';
     const title = `Share ${filename}`;
     const text = `Document prepared with Indian Form Helper: ${filename}`;
-    const pageUrl = typeof window !== 'undefined' ? window.location.href : 'https://indianformhelper.com';
+    const pageUrl = 'https://indianformhelper.com';
 
     this.shareUrls = this.shareService.getSocialShareUrls({
       title,
@@ -107,31 +125,92 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
     });
 
     this.isShareModalOpen = true;
-    this.shared.emit();
+    this.cdr?.markForCheck();
   }
 
   closeShareModal(): void {
     this.isShareModalOpen = false;
+    this.cdr?.markForCheck();
   }
 
-  shareNative(): void {
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      const shareData: any = {
-        title: this.outputFilename || this.afterData?.name || 'Processed File',
-        text: `Prepared with Indian Form Helper: ${this.outputFilename || this.afterData?.name || ''}`,
-        url: window.location.href
-      };
-      if (this.file && (navigator as any).canShare && (navigator as any).canShare({ files: [this.file] })) {
-        shareData.files = [this.file];
+  async shareViaWhatsApp(): Promise<void> {
+    const fileToShare = await this.resolveFile();
+    const fileName = this.outputFilename || this.afterData?.name || fileToShare?.name || 'document';
+
+    if (fileToShare && this.shareService.canShareFiles(fileToShare)) {
+      const shared = await this.shareService.shareFile(fileToShare, fileName);
+      if (shared) {
+        this.shared.emit();
+        this.closeShareModal();
+        return;
       }
-      navigator.share(shareData).catch((err) => {
-        if (err.name !== 'AbortError') console.warn('Native share error', err);
-      });
+    }
+
+    // Fallback on desktop browsers where Web Share API cannot attach files:
+    // Download the actual file and open WhatsApp Web so the user can easily attach it
+    if (fileToShare) {
+      this.shareService.triggerBrowserDownload(fileToShare, fileName);
+    }
+    this.shared.emit();
+    window.open(this.shareUrls.whatsapp || 'https://web.whatsapp.com', '_blank');
+    this.closeShareModal();
+  }
+
+  async shareViaTelegram(): Promise<void> {
+    const fileToShare = await this.resolveFile();
+    const fileName = this.outputFilename || this.afterData?.name || fileToShare?.name || 'document';
+
+    if (fileToShare && this.shareService.canShareFiles(fileToShare)) {
+      const shared = await this.shareService.shareFile(fileToShare, fileName);
+      if (shared) {
+        this.shared.emit();
+        this.closeShareModal();
+        return;
+      }
+    }
+
+    if (fileToShare) {
+      this.shareService.triggerBrowserDownload(fileToShare, fileName);
+    }
+    this.shared.emit();
+    window.open(this.shareUrls.telegram || 'https://web.telegram.org', '_blank');
+    this.closeShareModal();
+  }
+
+  async shareViaEmail(): Promise<void> {
+    const fileToShare = await this.resolveFile();
+    const fileName = this.outputFilename || this.afterData?.name || fileToShare?.name || 'document';
+
+    if (fileToShare && this.shareService.canShareFiles(fileToShare)) {
+      const shared = await this.shareService.shareFile(fileToShare, fileName);
+      if (shared) {
+        this.shared.emit();
+        this.closeShareModal();
+        return;
+      }
+    }
+
+    if (fileToShare) {
+      this.shareService.triggerBrowserDownload(fileToShare, fileName);
+    }
+    this.shared.emit();
+    window.location.href = this.shareUrls.email;
+    this.closeShareModal();
+  }
+
+  async shareNative(): Promise<void> {
+    const fileToShare = await this.resolveFile();
+    const fileName = this.outputFilename || this.afterData?.name || fileToShare?.name || 'document';
+    if (fileToShare) {
+      await this.shareService.shareFile(fileToShare, fileName);
     }
   }
 
   async copyShareLink(): Promise<void> {
-    const text = `Prepared with Indian Form Helper: ${this.outputFilename || this.afterData?.name || 'Document'} - ${window.location.href}`;
+    const url = typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')
+      ? window.location.href
+      : 'https://indianformhelper.com';
+    const text = `Prepared with Indian Form Helper: ${this.outputFilename || this.afterData?.name || 'Document'} - ${url}`;
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(text);
@@ -152,7 +231,7 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
   }
 
   get canNativeShare(): boolean {
-    return typeof navigator !== 'undefined' && !!navigator.share;
+    return this.shareService.canShareFiles(this.file);
   }
 
   handleReset(): void {
@@ -169,4 +248,3 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
     return this.showVisualComparison && (!!this.beforeUrl || !!this.afterUrl);
   }
 }
-

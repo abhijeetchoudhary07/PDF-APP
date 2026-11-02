@@ -763,11 +763,10 @@ export class PdfLayoutPage implements OnInit, OnDestroy {
   }
 
   async shareResult(): Promise<void> {
-    if (!this.savedUri || this.savedUri === 'web-download') {
-      await this.saveResult();
+    if (this.result) {
+      await this.share.shareFile(this.result.file, this.translate.translate('layout.title'));
       return;
     }
-    await this.share.shareFile(this.savedUri, this.translate.translate('layout.title'));
   }
 
   /** Opens the finished file in a new tab, for a look before saving. */

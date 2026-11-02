@@ -3,6 +3,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AppLanguageSelectorComponent } from '../language-selector/language-selector.component';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { BILLING_ENABLED } from '../../../../core/config/store.config';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -60,7 +61,9 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
             <span class="col-title">{{ 'footer.productPricing' | translate }}</span>
             <ul class="col-links">
               <li><a routerLink="/home">{{ 'footer.productOverview' | translate }}</a></li>
-              <li><a routerLink="/features/premium">{{ 'footer.goPremium' | translate }}</a></li>
+              @if (billingEnabled) {
+                <li><a routerLink="/features/premium">{{ 'footer.goPremium' | translate }}</a></li>
+              }
               <li><a routerLink="/features/batch">{{ 'footer.batchPhoto' | translate }}</a></li>
               <li><a routerLink="/features/batch-pdf">{{ 'footer.batchPdf' | translate }}</a></li>
               <li><a routerLink="/features/history">{{ 'footer.processHistory' | translate }}</a></li>
@@ -335,4 +338,6 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
     }
   `]
 })
-export class AppFooterComponent {}
+export class AppFooterComponent {
+  /** False in 1.0.5: see BILLING_ENABLED. */
+  readonly billingEnabled = BILLING_ENABLED;}

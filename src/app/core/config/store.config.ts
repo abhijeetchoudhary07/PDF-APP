@@ -9,9 +9,33 @@
  * Get them from RevenueCat → Project settings → API keys → Public app keys.
  */
 export const REVENUECAT_API_KEYS = {
-  android: 'goog_XXXXX',
-  ios: 'appl_XXXXX',
+  android: '',
+  ios: '',
 } as const;
+
+/**
+ * Whether this build sells anything at all.
+ *
+ * **False for 1.0.5**, the first production release. The Play Console has no
+ * products yet, so RevenueCat cannot issue a key, so every plan button would
+ * end in a toast — see `StoreStatus.not-configured` below. Rather than ship a
+ * paywall that cannot take money, this build has no paywall: the premium route
+ * redirects home, the upgrade entry points are not rendered, and
+ * `UsageQuotaService.isUnlimited` is true for everyone, because a daily cap
+ * whose only escape hatch is a dead button is worse than no cap.
+ *
+ * The placeholder keys above were emptied for the same reason. They are not a
+ * key that happens to be wrong; there is no key, and
+ * `verifyReleaseStoreKeys` in `android/app/build.gradle` passes honestly
+ * instead of being overridden with `-PallowPlaceholderStoreKey`.
+ *
+ * **To re-enable billing:** create the three products in Play Console →
+ * Monetise → Products, import them into RevenueCat, put the real `goog_…` key
+ * in `REVENUECAT_API_KEYS.android`, and flip this to `true`. Nothing else was
+ * deleted — the paywall, the purchase flow and the quota mechanism are all
+ * still here and still tested.
+ */
+export const BILLING_ENABLED = false;
 
 /**
  * True once a real key has replaced the placeholder.

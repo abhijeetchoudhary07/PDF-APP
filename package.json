@@ -1,6 +1,6 @@
 {
   "name": "indian-form-helper",
-  "version": "0.0.1",
+  "version": "1.0.6",
   "author": "Ionic Framework",
   "homepage": "https://ionicframework.com/",
   "scripts": {
@@ -28,6 +28,7 @@
     "@angular/platform-browser": "22.1.7",
     "@angular/platform-browser-dynamic": "22.1.7",
     "@angular/router": "22.1.7",
+    "@capacitor-community/admob": "^8.3.0",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "8.1.1",
     "@capacitor/camera": "^8.2.4",

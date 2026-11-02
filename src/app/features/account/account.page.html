@@ -73,7 +73,7 @@
                     <dd>{{ lastSyncedLabel() }}</dd>
                   </div>
                 </dl>
-                @if (!entitlement.isPremium) {
+                @if (!entitlement.isPremium && billingEnabled) {
                   <app-button
                     variant="primary"
                     size="md"
@@ -87,9 +87,11 @@
                 <app-button variant="outline" size="md" [loading]="busy" (clicked)="refresh()">
                   Refresh status
                 </app-button>
-                <app-button variant="outline" size="md" [loading]="busy" (clicked)="restorePurchases()">
-                  Restore purchases
-                </app-button>
+                @if (billingEnabled) {
+                  <app-button variant="outline" size="md" [loading]="busy" (clicked)="restorePurchases()">
+                    Restore purchases
+                  </app-button>
+                }
                 <app-button variant="ghost" size="md" (clicked)="signOut()">
                   Sign out
                 </app-button>

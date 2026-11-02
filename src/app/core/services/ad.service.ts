@@ -1,0 +1,327 @@
+import { Injectable, inject, isDevMode } from '@angular/core';
+import { Platform } from '@ionic/angular';
+import { BehaviorSubject } from 'rxjs';
+import {
+  AdMob,
+  BannerAdOptions,
+  BannerAdPosition,
+  BannerAdSize,
+  AdmobConsentStatus,
+  type AdMobRewardItem,
+} from '@capacitor-community/admob';
+import { ADMOB_CONFIG, AdMobConfig } from '../config/admob.config';
+import { MonetizationService } from './monetization.service';
+
+/**
+ * Production-ready Google AdMob advertisement service.
+ *
+ * Capabilities:
+ * - Dynamic environment detection (uses Google test IDs in dev mode to prevent AdMob self-click bans).
+ * - Google UMP (User Messaging Platform) GDPR / UK consent gathering for Play Store compliance.
+ * - Frequency capping & natural transition interstitial triggering (avoids policy penalties).
+ * - Automatic suppression for PRO / Premium subscribers via MonetizationService.
+ * - Safe banner placement on native Android with bottom offset management.
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export class AdService {
+  private readonly platform = inject(Platform);
+  private readonly monetization = inject(MonetizationService);
+
+  public readonly config: AdMobConfig = ADMOB_CONFIG;
+
+  /** Whether the banner is currently active / visible in UI. */
+  public readonly isBannerVisible$ = new BehaviorSubject<boolean>(false);
+
+  /** Whether AdMob native SDK has been initialized. */
+  private isInitialized = false;
+
+  /** Track if we are running in Capacitor native runtime. */
+  public readonly isNative: boolean;
+
+  /** Timestamp of the last displayed interstitial ad. */
+  private lastInterstitialTime = 0;
+
+  /** Count of user actions (conversions, saves, exports) since last ad. */
+  private completedActionCount = 0;
+
+  constructor() {
+    this.isNative = this.platform.is('capacitor');
+    void this.initialize();
+
+    // Automatically hide/remove ads when the user upgrades to PRO
+    this.monetization.isPremium$.subscribe((isPremium) => {
+      if (isPremium) {
+        void this.hideBanner();
+      } else if (this.config.adsEnabled) {
+        void this.showBanner();
+      }
+    });
+  }
+
+  /**
+   * Whether the service is operating in test mode.
+   * Defaults to test mode in dev builds to protect the AdMob account,
+   * and live production IDs in production release builds.
+   */
+  get isTesting(): boolean {
+    return this.config.isTesting || isDevMode();
+  }
+
+  /**
+   * Initializes the Google AdMob SDK and requests UMP consent if on a native device.
+   */
+  async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+
+    if (!this.isNative) {
+      this.isInitialized = true;
+      if (this.config.adsEnabled && !this.monetization.isUserPremium) {
+        this.isBannerVisible$.next(true);
+      }
+      return;
+    }
+
+    try {
+      // 1. Gather GDPR / UMP Consent for EEA/UK compliance on Google Play
+      await this.requestConsent();
+
+      // 2. Initialize AdMob Native SDK
+      await AdMob.initialize({
+        initializeForTesting: this.isTesting,
+      });
+      this.isInitialized = true;
+
+      // 3. Show bottom banner on initial launch for free users
+      if (this.config.adsEnabled && !this.monetization.isUserPremium) {
+        await this.showBanner();
+      }
+    } catch (error) {
+      console.warn('[AdService] AdMob initialization error:', error);
+    }
+  }
+
+  /**
+   * Requests consent information via Google User Messaging Platform (UMP).
+   * Complies with Google Play's EU User Consent Policy.
+   */
+  private async requestConsent(): Promise<void> {
+    if (!this.isNative) return;
+
+    try {
+      const consentInfo = await AdMob.requestConsentInfo();
+      if (
+        consentInfo.isConsentFormAvailable &&
+        consentInfo.status === AdmobConsentStatus.REQUIRED
+      ) {
+        await AdMob.showConsentForm();
+      }
+    } catch (err) {
+      // Non-fatal: In regions without UMP requirement or offline, continue gracefully
+      console.info('[AdService] UMP consent info request completed:', err);
+    }
+  }
+
+  /**
+   * Opens the privacy options form so users in GDPR regions can review/update consent.
+   * Can be linked from Settings / Privacy Policy screen.
+   */
+  async showPrivacyOptions(): Promise<void> {
+    if (!this.isNative) return;
+
+    try {
+      await AdMob.showPrivacyOptionsForm();
+    } catch (err) {
+      console.warn('[AdService] Unable to open privacy options form:', err);
+    }
+  }
+
+  get bannerAdUnitId(): string {
+    return this.isTesting
+      ? this.config.banner.test
+      : this.config.banner.production;
+  }
+
+  get interstitialAdUnitId(): string {
+    return this.isTesting
+      ? this.config.interstitial.test
+      : this.config.interstitial.production;
+  }
+
+  get rewardedAdUnitId(): string {
+    return this.isTesting
+      ? this.config.rewarded.test
+      : this.config.rewarded.production;
+  }
+
+  /**
+   * Displays the bottom adaptive banner ad with automatic retry.
+   */
+  async showBanner(retryCount = 0): Promise<void> {
+    if (!this.config.adsEnabled || this.monetization.isUserPremium) {
+      this.isBannerVisible$.next(false);
+      return;
+    }
+
+    if (!this.isNative) {
+      // In web/preview environment, activate visual banner component
+      this.isBannerVisible$.next(true);
+      return;
+    }
+
+    try {
+      const options: BannerAdOptions = {
+        adId: this.bannerAdUnitId,
+        adSize: BannerAdSize.ADAPTIVE_BANNER,
+        position: BannerAdPosition.BOTTOM_CENTER,
+        margin: 0,
+        isTesting: this.isTesting,
+      };
+
+      await AdMob.showBanner(options);
+      this.isBannerVisible$.next(true);
+    } catch (error) {
+      console.warn('[AdService] Failed to show banner ad:', error);
+      if (retryCount < 2) {
+        setTimeout(() => void this.showBanner(retryCount + 1), 3000);
+      }
+    }
+  }
+
+  /**
+   * Hides the active banner ad.
+   */
+  async hideBanner(): Promise<void> {
+    this.isBannerVisible$.next(false);
+
+    if (!this.isNative) {
+      return;
+    }
+
+    try {
+      await AdMob.hideBanner();
+    } catch (error) {
+      console.warn('[AdService] Failed to hide banner ad:', error);
+    }
+  }
+
+  /**
+   * Resumes the hidden banner ad.
+   */
+  async resumeBanner(): Promise<void> {
+    if (!this.config.adsEnabled || this.monetization.isUserPremium) {
+      return;
+    }
+
+    if (!this.isNative) {
+      this.isBannerVisible$.next(true);
+      return;
+    }
+
+    try {
+      await AdMob.resumeBanner();
+      this.isBannerVisible$.next(true);
+    } catch (error) {
+      console.warn('[AdService] Failed to resume banner ad:', error);
+    }
+  }
+
+  /**
+   * Removes the banner ad completely from memory.
+   */
+  async removeBanner(): Promise<void> {
+    this.isBannerVisible$.next(false);
+
+    if (!this.isNative) {
+      return;
+    }
+
+    try {
+      await AdMob.removeBanner();
+    } catch (error) {
+      console.warn('[AdService] Failed to remove banner ad:', error);
+    }
+  }
+
+  /**
+   * Records a completed document action (e.g. document converted, saved, or compressed)
+   * and displays an interstitial ad only when frequency and cooldown thresholds are satisfied.
+   *
+   * AdMob Policy Requirement: Interstitials must occur at natural breaks and not spam users.
+   */
+  async triggerActionInterstitial(): Promise<boolean> {
+    if (!this.config.adsEnabled || this.monetization.isUserPremium) {
+      return false;
+    }
+
+    this.completedActionCount++;
+
+    const now = Date.now();
+    const cooldownMs = this.config.interstitialCooldownSeconds * 1000;
+    const isCooldownElapsed = (now - this.lastInterstitialTime) >= cooldownMs;
+    const isActionThresholdReached = this.completedActionCount >= this.config.minActionsBeforeInterstitial;
+
+    if (isCooldownElapsed && isActionThresholdReached) {
+      return this.showInterstitial();
+    }
+
+    return false;
+  }
+
+  /**
+   * Loads and displays a full-screen Interstitial Ad immediately (for free users).
+   */
+  async showInterstitial(): Promise<boolean> {
+    if (!this.config.adsEnabled || this.monetization.isUserPremium) {
+      return false;
+    }
+
+    if (!this.isNative) {
+      console.info('[AdService] Interstitial triggered in web preview mode.');
+      this.lastInterstitialTime = Date.now();
+      this.completedActionCount = 0;
+      return true;
+    }
+
+    try {
+      await AdMob.prepareInterstitial({
+        adId: this.interstitialAdUnitId,
+        isTesting: this.isTesting,
+      });
+
+      await AdMob.showInterstitial();
+      this.lastInterstitialTime = Date.now();
+      this.completedActionCount = 0;
+      return true;
+    } catch (error) {
+      console.warn('[AdService] Failed to display interstitial ad:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Loads and displays a Rewarded Video Ad.
+   */
+  async showRewardedAd(): Promise<AdMobRewardItem | null> {
+    if (!this.isNative) {
+      console.info('[AdService] Rewarded ad triggered in web preview mode.');
+      return { type: 'Reward', amount: 1 };
+    }
+
+    try {
+      await AdMob.prepareRewardVideoAd({
+        adId: this.rewardedAdUnitId,
+        isTesting: this.isTesting,
+      });
+
+      const reward = await AdMob.showRewardVideoAd();
+      return reward;
+    } catch (error) {
+      console.warn('[AdService] Failed to display rewarded ad:', error);
+      return null;
+    }
+  }
+}

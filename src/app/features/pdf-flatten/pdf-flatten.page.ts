@@ -246,8 +246,8 @@ export class PdfFlattenPage {
         {
           text: 'Share',
           handler: () => {
-            if (uri && uri !== 'web-download') {
-              this.shareService.shareFile(uri, 'Flattened Document');
+            if (this.flattenResult?.flattenedFile) {
+              this.shareService.shareFile(this.flattenResult.flattenedFile, 'Flattened Document');
             }
           }
         },

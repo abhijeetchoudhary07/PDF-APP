@@ -5,6 +5,7 @@ import { AppHeaderComponent } from './header.component';
 import { GlobalSearchService } from '../../../../core/services/global-search.service';
 import { ThemeService } from '../../../../core/services/theme.service';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { BILLING_ENABLED } from '../../../../core/config/store.config';
 
 describe('AppHeaderComponent', () => {
   let fixture: ComponentFixture<AppHeaderComponent>;
@@ -113,9 +114,12 @@ describe('AppHeaderComponent', () => {
     const rail = fixture.nativeElement.querySelector('.header-nav-rail');
     expect(rail).toBeTruthy();
 
-    // Verify all navigation options are present in the rail
+    // Verify all navigation options are present in the rail.
+    // The PRO link is one of them only while there is something to sell, so
+    // the count follows the flag rather than a literal that has to be
+    // remembered and edited every time billing is switched.
     const railItems = rail.querySelectorAll('.rail-item');
-    expect(railItems.length).toBeGreaterThanOrEqual(7);
+    expect(railItems.length).toBeGreaterThanOrEqual(BILLING_ENABLED ? 7 : 6);
 
     // Tools dropdown trigger button
     const toolsBtn = rail.querySelector('.tools-dropdown-btn');
@@ -128,7 +132,15 @@ describe('AppHeaderComponent', () => {
     expect(links).toContain('/features/signature');
     expect(links).toContain('/features/presets');
     expect(links).toContain('/features/history');
-    expect(links).toContain('/features/premium');
+
+    // Asserted both ways round: with billing off this is the check that the
+    // paywall really is unreachable from the shipped chrome, which is the
+    // whole point of the switch and not something to take on trust.
+    if (BILLING_ENABLED) {
+      expect(links).toContain('/features/premium');
+    } else {
+      expect(links).not.toContain('/features/premium');
+    }
   });
 
   it('should toggle tools menu when tools button in rail is clicked', () => {

@@ -10,6 +10,7 @@ import { ThemeService, ThemeMode } from '../../../../core/services/theme.service
 import { AppLanguageSelectorComponent } from '../language-selector/language-selector.component';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { BILLING_ENABLED } from '../../../../core/config/store.config';
 import { AutoScrollDirective } from '../../../directives/auto-scroll.directive';
 
 @Component({
@@ -153,10 +154,12 @@ import { AutoScrollDirective } from '../../../directives/auto-scroll.directive';
           <a routerLink="/features/signature" routerLinkActive="active" class="nav-item nav-item-secondary">{{ 'header.signature' | translate }}</a>
           <a routerLink="/features/presets" routerLinkActive="active" class="nav-item nav-item-secondary">{{ 'header.presets' | translate }}</a>
           <a routerLink="/features/history" routerLinkActive="active" class="nav-item nav-item-secondary">{{ 'header.history' | translate }}</a>
-          <a routerLink="/features/premium" routerLinkActive="active" class="nav-item nav-item-pro">
-            <span class="pro-sparkle">&starf;</span>
-            <span>{{ 'header.premium' | translate }}</span>
-          </a>
+          @if (billingEnabled) {
+            <a routerLink="/features/premium" routerLinkActive="active" class="nav-item nav-item-pro">
+              <span class="pro-sparkle">&starf;</span>
+              <span>{{ 'header.premium' | translate }}</span>
+            </a>
+          }
           <!--
           The free tier's remaining operations, shown before they run out
           rather than at the moment a save is refused. Null means premium,
@@ -376,10 +379,12 @@ import { AutoScrollDirective } from '../../../directives/auto-scroll.directive';
             <a routerLink="/features/signature" routerLinkActive="active" class="nav-item rail-item">{{ 'header.signature' | translate }}</a>
             <a routerLink="/features/presets" routerLinkActive="active" class="nav-item rail-item">{{ 'header.presets' | translate }}</a>
             <a routerLink="/features/history" routerLinkActive="active" class="nav-item rail-item">{{ 'header.history' | translate }}</a>
-            <a routerLink="/features/premium" routerLinkActive="active" class="nav-item nav-item-pro rail-item">
-              <span class="pro-sparkle">&starf;</span>
-              <span>{{ 'header.premium' | translate }}</span>
-            </a>
+            @if (billingEnabled) {
+              <a routerLink="/features/premium" routerLinkActive="active" class="nav-item nav-item-pro rail-item">
+                <span class="pro-sparkle">&starf;</span>
+                <span>{{ 'header.premium' | translate }}</span>
+              </a>
+            }
 
             @if (navQuota !== null) {
               <a
@@ -1609,6 +1614,9 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
    * The drawer used to repeat the same anchor twelve times. Driving it from
    * data keeps the markup to one *ngFor and makes the stagger index free.
    */
+  /** False in 1.0.5: see BILLING_ENABLED. Hides every upgrade entry point. */
+  readonly billingEnabled = BILLING_ENABLED;
+
   readonly drawerLinks: { route: string; labelKey: string; bullet: string; pro?: boolean }[] = [
     { route: '/home', labelKey: 'header.tools', bullet: '' },
     { route: '/features/pdf', labelKey: 'tools.pdf_dashboard.title', bullet: 'bullet-pdf' },
@@ -1622,7 +1630,7 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
     { route: '/features/premium', labelKey: 'header.premium', bullet: 'bullet-pro', pro: true },
     { route: '/profile', labelKey: 'common.profile', bullet: '' },
     { route: '/features/settings', labelKey: 'settings.title', bullet: '' }
-  ];
+  ].filter(link => BILLING_ENABLED || link.route !== '/features/premium');
 
   private routerSub?: Subscription;
 

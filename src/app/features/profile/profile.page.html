@@ -178,35 +178,49 @@
           <div class="premium-card" [class.is-pro]="monetization.isPremium$ | async">
             <div class="premium-info">
               <div class="premium-badge-row">
-                <span class="plan-title">{{ (monetization.isPremium$ | async) ? 'PRO Membership Active' : 'Free Tier Active' }}</span>
-                <span class="status-indicator" [class.active]="monetization.isPremium$ | async">
-                  {{ (monetization.isPremium$ | async) ? 'Active' : 'Standard' }}
+<span class="plan-title">{{ (monetization.isPremium$ | async)
+                  ? 'PRO Membership Active'
+                  : (billingEnabled ? 'Free Tier Active' : 'All Tools Unlocked') }}</span>
+                <span class="status-indicator" [class.active]="!billingEnabled || (monetization.isPremium$ | async)">
+                  {{ (monetization.isPremium$ | async)
+                  ? 'Active'
+                  : (billingEnabled ? 'Standard' : 'Unlimited') }}
                 </span>
               </div>
-              <p class="plan-desc">
+<p class="plan-desc">
                 {{ (monetization.isPremium$ | async)
                 ? 'Unlimited batch processing, no daily save limit, and priority WebAssembly conversion unlocked.'
-                : 'Upgrade to PRO to unlock unlimited batch processing, remove all ads, and support offline development.' }}
+                : (billingEnabled
+                  ? 'Upgrade to PRO to unlock unlimited batch processing, remove all ads, and support offline development.'
+                  : 'Every tool is unlocked, with unlimited batch processing and no daily save limit. There is nothing to buy.') }}
               </p>
             </div>
 
-            <div class="premium-actions">
-              @if ((monetization.isPremium$ | async) === false) {
-                <app-button
-                  variant="primary"
-                  size="md"
-                  routerLink="/features/premium">
-                  Upgrade to PRO
-                </app-button>
-              }
+<!--
+            Both controls are purchase controls, so both go when billing does:
+            "Restore Purchases" on a build with no store reaches an
+            unconfigured plugin and can only ever report failure, which reads
+            as a broken app rather than an app that sells nothing.
+            -->
+            @if (billingEnabled) {
+              <div class="premium-actions">
+                @if ((monetization.isPremium$ | async) === false) {
+                  <app-button
+                    variant="primary"
+                    size="md"
+                    routerLink="/features/premium">
+                    Upgrade to PRO
+                  </app-button>
+                }
 
-              <app-button
-                variant="outline"
-                size="md"
-                (clicked)="restorePurchases()">
-                Restore Purchases
-              </app-button>
-            </div>
+                <app-button
+                  variant="outline"
+                  size="md"
+                  (clicked)="restorePurchases()">
+                  Restore Purchases
+                </app-button>
+              </div>
+            }
           </div>
         </section>
 

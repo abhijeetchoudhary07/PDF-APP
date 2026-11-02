@@ -385,14 +385,24 @@ export class PdfSecurityPage implements OnInit {
   }
 
   shareUnlockResult(): void {
-    if (this.unlockSavedUri && this.unlockSavedUri !== 'web-download') {
-      this.shareService.shareFile(this.unlockSavedUri, 'Unlocked Document');
+    const fileOrUri = this.unlockResultFile || (this.unlockSavedUri && this.unlockSavedUri !== 'web-download' ? this.unlockSavedUri : undefined);
+    if (fileOrUri) {
+      this.shareService.shareFile(fileOrUri, 'Unlocked Document');
     }
   }
 
   shareProtectResult(): void {
-    if (this.protectSavedUri && this.protectSavedUri !== 'web-download') {
-      this.shareService.shareFile(this.protectSavedUri, 'Protected Document');
+    const fileOrUri = this.protectResultFile || (this.protectSavedUri && this.protectSavedUri !== 'web-download' ? this.protectSavedUri : undefined);
+    if (fileOrUri) {
+      this.shareService.shareFile(fileOrUri, 'Protected Document');
     }
+  }
+
+  shareUnlockedFile(): void {
+    this.shareUnlockResult();
+  }
+
+  shareProtectedFile(): void {
+    this.shareProtectResult();
   }
 }

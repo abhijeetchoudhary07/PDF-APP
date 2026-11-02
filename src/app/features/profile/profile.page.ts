@@ -6,6 +6,7 @@ import { AuthService } from '../../core/api/auth.service';
 import { ProfileService, UserProfile, UsageStats } from '../../core/services/profile.service';
 import { MonetizationService } from '../../core/services/monetization.service';
 import { ThemeService, ThemeMode } from '../../core/services/theme.service';
+import { BILLING_ENABLED } from '../../core/config/store.config';
 import { ToastService } from '../../core/services/toast.service';
 import {
   AppHeaderComponent,
@@ -35,6 +36,9 @@ import {
   ]
 })
 export class ProfilePage implements OnInit {
+  /** False in 1.0.5: see BILLING_ENABLED. Hides the purchase controls. */
+  readonly billingEnabled = BILLING_ENABLED;
+
   profileService = inject(ProfileService);
   monetization = inject(MonetizationService);
   auth = inject(AuthService);

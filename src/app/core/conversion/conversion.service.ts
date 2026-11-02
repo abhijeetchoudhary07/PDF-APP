@@ -122,9 +122,8 @@ export class ConversionService {
    * Shares the generated conversion result file via native device share dialog.
    */
   async shareResult(file: File, title: string = 'Converted Document'): Promise<void> {
-    const uri = await this.storageService.saveFile(file, 'share_temp');
-    if (uri && uri !== 'web-download') {
-      await this.shareService.shareFile(uri, title);
+    if (file) {
+      await this.shareService.shareFile(file, title);
     }
   }
 

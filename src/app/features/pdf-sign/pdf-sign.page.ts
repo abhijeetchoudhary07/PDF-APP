@@ -395,9 +395,7 @@ export class PdfSignPage implements AfterViewInit, OnDestroy {
           {
             text: 'Share',
             handler: () => {
-              if (uri && uri !== 'web-download') {
-                this.shareService.shareFile(uri, 'Signed Document');
-              }
+              this.shareService.shareFile(result.file, 'Signed Document');
             }
           },
           { text: 'Done', role: 'cancel' }

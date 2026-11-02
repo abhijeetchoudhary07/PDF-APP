@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { BILLING_ENABLED } from './core/config/store.config';
 
 export const APP_ROUTES: Routes = [
   {
@@ -1168,10 +1169,16 @@ export const APP_ROUTES: Routes = [
     redirectTo: 'account',
     pathMatch: 'full'
   },
-  {
-    path: 'features/premium',
-    loadComponent: () => import('./features/premium/premium.page').then(m => m.PremiumPage)
-  },
+  // Billing is off in 1.0.5, so the paywall is a dead end wherever it is
+  // reached from — including a stale deep link or a bookmark. Redirecting is
+  // the backstop that makes hiding the entry points sufficient rather than
+  // merely tidy. See BILLING_ENABLED.
+  ...((BILLING_ENABLED
+    ? [{
+        path: 'features/premium',
+        loadComponent: () => import('./features/premium/premium.page').then(m => m.PremiumPage)
+      }]
+    : [{ path: 'features/premium', redirectTo: 'home', pathMatch: 'full' }]) as Routes),
   {
     path: 'profile',
     loadComponent: () => import('./features/profile/profile.page').then(m => m.ProfilePage)

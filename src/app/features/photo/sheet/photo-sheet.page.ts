@@ -285,6 +285,27 @@ export class PhotoSheetPage {
     }
   }
 
+  async shareSheetPdf() {
+    if (!this.renderedSheetCanvas || this.files.length === 0) return;
+
+    this.isProcessing = true;
+    try {
+      const pdfBytes = await this.sheetService.exportToPdf(
+        this.renderedSheetCanvas,
+        this.paperSize
+      );
+
+      const fileName = `photo_sheet_${this.paperSize}.pdf`;
+      const pdfFile = new File([pdfBytes as any], fileName, { type: 'application/pdf' });
+      await this.shareService.shareFile(pdfFile, 'Printable Photo Sheet');
+    } catch (err: any) {
+      this.toast.error(err?.message || 'Failed to share PDF');
+    } finally {
+      this.isProcessing = false;
+      this.cdr.markForCheck();
+    }
+  }
+
   reset() {
     this.files = [];
     this.loadedImageCanvases = [];

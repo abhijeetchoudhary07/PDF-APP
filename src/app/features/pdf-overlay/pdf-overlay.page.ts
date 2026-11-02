@@ -534,11 +534,10 @@ export class PdfOverlayPage implements OnInit, OnDestroy {
   }
 
   async shareResult(): Promise<void> {
-    if (!this.savedUri || this.savedUri === 'web-download') {
-      await this.saveResult();
+    if (this.result) {
+      await this.share.shareFile(this.result.file, this.translate.translate('overlay.title'));
       return;
     }
-    await this.share.shareFile(this.savedUri, this.translate.translate('overlay.title'));
   }
 
   previewResult(): void {

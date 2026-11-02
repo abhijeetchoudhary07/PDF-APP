@@ -487,8 +487,9 @@ export class PdfPage implements OnInit, OnDestroy {
   }
 
   async sharePdf(): Promise<void> {
-    // Sharing is handled via the Social Media Share modal inside app-result-preview.
-    // Avoid triggering storageService.saveFile() which downloads the file on web.
+    if (this.processedResult?.file) {
+      await this.shareService.shareFile(this.processedResult.file, this.processedResult.file.name);
+    }
   }
 
   async saveCompressedPdf(): Promise<void> {

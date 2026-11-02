@@ -247,9 +247,7 @@ export class PdfFormsPage implements OnDestroy {
           {
             text: 'Share',
             handler: () => {
-              if (uri && uri !== 'web-download') {
-                this.shareService.shareFile(uri, 'Completed PDF Form');
-              }
+              this.shareService.shareFile(result.file, 'Completed PDF Form');
             }
           },
           { text: 'Done', role: 'cancel' }

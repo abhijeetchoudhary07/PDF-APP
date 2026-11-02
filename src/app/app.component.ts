@@ -5,11 +5,13 @@ import { IonApp, IonRouterOutlet } from '@ionic/angular';
 import { ThemeService } from './core/services/theme.service';
 import { MonetizationService } from './core/services/monetization.service';
 import { ToastService } from './core/services/toast.service';
+import { AdService } from './core/services/ad.service';
 import {
   AppToastContainerComponent,
   AppGlobalSearchModalComponent,
   AppOnboardingModalComponent,
-  AppSecurityLockOverlayComponent
+  AppSecurityLockOverlayComponent,
+  AdBannerComponent
 } from './shared/components/ui';
 
 @Component({
@@ -24,12 +26,14 @@ import {
     AppToastContainerComponent,
     AppGlobalSearchModalComponent,
     AppOnboardingModalComponent,
-    AppSecurityLockOverlayComponent
+    AppSecurityLockOverlayComponent,
+    AdBannerComponent
   ],
 })
 export class AppComponent implements OnDestroy {
   private themeService = inject(ThemeService);
   private monetization = inject(MonetizationService);
+  private adService = inject(AdService);
   public toastService = inject(ToastService);
 
   private resumeListener?: PluginListenerHandle;

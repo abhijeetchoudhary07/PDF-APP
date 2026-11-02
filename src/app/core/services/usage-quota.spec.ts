@@ -14,6 +14,18 @@ import { FREE_DAILY_OPERATIONS, UsageQuotaService } from './usage-quota.service'
  */
 const store = new Map<string, string>();
 
+/*
+ * These tests are about the cap itself, which 1.0.5 ships switched off
+ * (BILLING_ENABLED = false, so every account is unlimited). Forcing the flag
+ * on here keeps them testing the mechanism rather than the switch — otherwise
+ * the whole suite would pass by never counting anything, which is exactly the
+ * "quietly fails open" outcome it exists to catch.
+ */
+vi.mock('../config/store.config', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../config/store.config')>()),
+  BILLING_ENABLED: true,
+}));
+
 vi.mock('@capacitor/preferences', () => ({
   Preferences: {
     get: vi.fn(async ({ key }: { key: string }) => ({ value: store.get(key) ?? null })),

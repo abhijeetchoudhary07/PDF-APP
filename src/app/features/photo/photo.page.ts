@@ -534,8 +534,9 @@ export class PhotoPage implements OnDestroy {
   }
 
   async sharePhoto(): Promise<void> {
-    // Sharing is handled via the Social Media Share modal inside app-result-preview.
-    // Automatic browser download is avoided.
+    if (this.processedResult?.file) {
+      await this.shareService.shareFile(this.processedResult.file, this.processedResult.file.name);
+    }
   }
 }
 

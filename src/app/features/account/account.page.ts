@@ -9,6 +9,7 @@ import { PdfApiService } from '../../core/api/pdf-api.service';
 import type { PdfPlan } from '../../core/api/pdf-api.types';
 import { MonetizationService } from '../../core/services/monetization.service';
 import { ToastService } from '../../core/services/toast.service';
+import { BILLING_ENABLED } from '../../core/config/store.config';
 import {
   AppButtonComponent,
   AppFooterComponent,
@@ -49,6 +50,9 @@ type Mode = 'signIn' | 'register';
   ],
 })
 export class AccountPage implements OnInit, OnDestroy {
+  /** False in 1.0.5: see BILLING_ENABLED. Hides the purchase controls. */
+  readonly billingEnabled = BILLING_ENABLED;
+
   readonly auth = inject(AuthService);
   readonly monetization = inject(MonetizationService);
   private readonly api = inject(PdfApiService);

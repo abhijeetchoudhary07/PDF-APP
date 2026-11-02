@@ -340,8 +340,9 @@ export class SecurityProtectPage implements OnInit {
   }
 
   shareResult(): void {
-    if (this.savedUri && this.savedUri !== 'web-download') {
-      this.shareService.shareFile(this.savedUri, 'Protected Document');
+    const fileOrUri = this.resultFile || (this.savedUri && this.savedUri !== 'web-download' ? this.savedUri : undefined);
+    if (fileOrUri) {
+      this.shareService.shareFile(fileOrUri, 'Protected Document');
     }
   }
 

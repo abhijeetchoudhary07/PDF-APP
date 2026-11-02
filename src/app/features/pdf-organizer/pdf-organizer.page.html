@@ -707,6 +707,8 @@
       -->
       @if (lastExportResult && (mode !== 'split' || isSectioningSplit) && beforePreviewData && afterPreviewData) {
         <app-result-preview
+          [file]="lastExportResult.file"
+          [outputFilename]="lastExportResult.name"
           [beforeData]="beforePreviewData"
           [afterData]="afterPreviewData"
           (saved)="saveResult(lastExportResult)"

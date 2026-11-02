@@ -11,6 +11,7 @@ import {
   AppButtonComponent,
   TranslatePipe
 } from '../../shared/components/ui';
+import { BILLING_ENABLED } from '../../core/config/store.config';
 
 export interface FaqItem {
   id: string;
@@ -50,7 +51,7 @@ export class HelpFaqPage {
     { id: 'troubleshooting', label: 'Troubleshooting' }
   ];
 
-  faqs: FaqItem[] = [
+  faqs: FaqItem[] = ([
     {
       id: 'faq-1',
       category: 'photo',
@@ -114,7 +115,9 @@ export class HelpFaqPage {
       answer: 'Go to Settings & Preferences and click "Restore Purchases". If you purchased on Android (Google Play) or iOS (App Store), your active license will sync automatically through the store account logged in on your device.',
       isOpen: false
     }
-  ];
+    // There is no Lifetime PRO to restore while billing is off, and no
+    // "Restore Purchases" control left to send anyone to. See BILLING_ENABLED.
+  ] as FaqItem[]).filter(faq => BILLING_ENABLED || faq.id !== 'faq-9');
 
   get filteredFaqs(): FaqItem[] {
     return this.faqs.filter(f => {

@@ -721,11 +721,10 @@ export class PdfCombinePage implements OnInit, OnDestroy {
   }
 
   async shareResult(): Promise<void> {
-    if (!this.savedUri || this.savedUri === 'web-download') {
-      await this.saveResult();
+    if (this.result) {
+      await this.share.shareFile(this.result.file, this.translate.translate('combine.title'));
       return;
     }
-    await this.share.shareFile(this.savedUri, this.translate.translate('combine.title'));
   }
 
   previewResult(): void {
