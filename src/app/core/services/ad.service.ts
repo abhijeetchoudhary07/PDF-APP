@@ -6,6 +6,8 @@ import {
   BannerAdOptions,
   BannerAdPosition,
   BannerAdSize,
+  BannerAdPluginEvents,
+  InterstitialAdPluginEvents,
   AdmobConsentStatus,
   type AdMobRewardItem,
 } from '@capacitor-community/admob';
@@ -21,6 +23,7 @@ import { MonetizationService } from './monetization.service';
  * - Frequency capping & natural transition interstitial triggering (avoids policy penalties).
  * - Automatic suppression for PRO / Premium subscribers via MonetizationService.
  * - Safe banner placement on native Android with bottom offset management.
+ * - Robust event listening & error logging (diagnostic code 3 NO_FILL, 1 INVALID_REQUEST, etc.).
  */
 @Injectable({
   providedIn: 'root'
@@ -36,6 +39,9 @@ export class AdService {
 
   /** Whether AdMob native SDK has been initialized. */
   private isInitialized = false;
+
+  /** Singleton initialization promise to prevent race conditions. */
+  private initPromise: Promise<void> | null = null;
 
   /** Track if we are running in Capacitor native runtime. */
   public readonly isNative: boolean;
@@ -54,7 +60,7 @@ export class AdService {
     this.monetization.isPremium$.subscribe((isPremium) => {
       if (isPremium) {
         void this.hideBanner();
-      } else if (this.config.adsEnabled) {
+      } else if (this.config.adsEnabled && this.isInitialized) {
         void this.showBanner();
       }
     });
@@ -71,8 +77,17 @@ export class AdService {
 
   /**
    * Initializes the Google AdMob SDK and requests UMP consent if on a native device.
+   * Guaranteed to run only once and safe to await concurrently.
    */
   async initialize(): Promise<void> {
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+    this.initPromise = this.performInitialization();
+    return this.initPromise;
+  }
+
+  private async performInitialization(): Promise<void> {
     if (this.isInitialized) {
       return;
     }
@@ -86,21 +101,57 @@ export class AdService {
     }
 
     try {
-      // 1. Gather GDPR / UMP Consent for EEA/UK compliance on Google Play
+      // 1. Setup diagnostic event listeners
+      this.registerEventListeners();
+
+      // 2. Gather GDPR / UMP Consent for EEA/UK compliance on Google Play
       await this.requestConsent();
 
-      // 2. Initialize AdMob Native SDK
+      // 3. Initialize AdMob Native SDK
       await AdMob.initialize({
         initializeForTesting: this.isTesting,
       });
       this.isInitialized = true;
 
-      // 3. Show bottom banner on initial launch for free users
+      // 4. Show bottom banner on initial launch for free users
       if (this.config.adsEnabled && !this.monetization.isUserPremium) {
         await this.showBanner();
       }
     } catch (error) {
       console.warn('[AdService] AdMob initialization error:', error);
+    }
+  }
+
+  /**
+   * Registers lifecycle event listeners for banner and interstitial ads
+   * to provide clear logs and diagnostic error messages.
+   */
+  private registerEventListeners(): void {
+    if (!this.isNative) return;
+
+    try {
+      void AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
+        console.info('[AdService] Banner ad loaded successfully.');
+        this.isBannerVisible$.next(true);
+      });
+
+      void AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (err: any) => {
+        const code = err?.code;
+        const msg = err?.message || 'Unknown error';
+        console.warn(`[AdService] Banner ad failed to load (Code: ${code}): ${msg}`);
+        if (code === 3) {
+          console.info(
+            '[AdService] Note: AdMob Error Code 3 (ERROR_CODE_NO_FILL) indicates no ad inventory is available yet. ' +
+            'New releases and newly created ad units typically take 24-48 hours to start serving, and require App Store linking approval in the AdMob console.'
+          );
+        }
+      });
+
+      void AdMob.addListener(InterstitialAdPluginEvents.FailedToLoad, (err: any) => {
+        console.warn(`[AdService] Interstitial failed to load (Code: ${err?.code}): ${err?.message}`);
+      });
+    } catch (err) {
+      console.warn('[AdService] Could not register AdMob event listeners:', err);
     }
   }
 
@@ -169,6 +220,12 @@ export class AdService {
     if (!this.isNative) {
       // In web/preview environment, activate visual banner component
       this.isBannerVisible$.next(true);
+      return;
+    }
+
+    // Ensure initialization and consent are complete before requesting native banner
+    if (!this.isInitialized) {
+      await this.initialize();
       return;
     }
 
@@ -286,6 +343,10 @@ export class AdService {
       return true;
     }
 
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
     try {
       await AdMob.prepareInterstitial({
         adId: this.interstitialAdUnitId,
@@ -309,6 +370,10 @@ export class AdService {
     if (!this.isNative) {
       console.info('[AdService] Rewarded ad triggered in web preview mode.');
       return { type: 'Reward', amount: 1 };
+    }
+
+    if (!this.isInitialized) {
+      await this.initialize();
     }
 
     try {
