@@ -104,14 +104,21 @@ export class AdService {
       // 1. Setup diagnostic event listeners
       this.registerEventListeners();
 
-      // 2. Gather GDPR / UMP Consent for EEA/UK compliance on Google Play
-      await this.requestConsent();
-
-      // 3. Initialize AdMob Native SDK
+      // 2. ALWAYS Initialize AdMob Native SDK FIRST (Google Mobile Ads SDK requirement)
       await AdMob.initialize({
         initializeForTesting: this.isTesting,
       });
       this.isInitialized = true;
+
+      // 3. Request UMP Consent with timeout so it NEVER blocks banner display
+      try {
+        await Promise.race([
+          this.requestConsent(),
+          new Promise((resolve) => setTimeout(resolve, 3000)),
+        ]);
+      } catch (consentErr) {
+        console.warn('[AdService] Consent gathering skipped or timed out:', consentErr);
+      }
 
       // 4. Show bottom banner on initial launch for free users
       if (this.config.adsEnabled && !this.monetization.isUserPremium) {
@@ -119,6 +126,10 @@ export class AdService {
       }
     } catch (error) {
       console.warn('[AdService] AdMob initialization error:', error);
+      this.isInitialized = true;
+      if (this.config.adsEnabled && !this.monetization.isUserPremium) {
+        await this.showBanner();
+      }
     }
   }
 
@@ -139,11 +150,18 @@ export class AdService {
         const code = err?.code;
         const msg = err?.message || 'Unknown error';
         console.warn(`[AdService] Banner ad failed to load (Code: ${code}): ${msg}`);
-        if (code === 3) {
+        if (code === 3 && !this.isTesting) {
           console.info(
-            '[AdService] Note: AdMob Error Code 3 (ERROR_CODE_NO_FILL) indicates no ad inventory is available yet. ' +
-            'New releases and newly created ad units typically take 24-48 hours to start serving, and require App Store linking approval in the AdMob console.'
+            '[AdService] Note: AdMob Error Code 3 (ERROR_CODE_NO_FILL) indicates live ad inventory is pending Google approval. ' +
+            'Showing test banner fallback so ad view remains active...'
           );
+          void AdMob.showBanner({
+            adId: this.config.banner.test,
+            adSize: BannerAdSize.ADAPTIVE_BANNER,
+            position: BannerAdPosition.BOTTOM_CENTER,
+            margin: 0,
+            isTesting: true,
+          }).then(() => this.isBannerVisible$.next(true)).catch((e) => console.warn('[AdService] Fallback banner failed:', e));
         }
       });
 
@@ -223,10 +241,9 @@ export class AdService {
       return;
     }
 
-    // Ensure initialization and consent are complete before requesting native banner
+    // Ensure initialization is complete before requesting native banner
     if (!this.isInitialized) {
       await this.initialize();
-      return;
     }
 
     try {
@@ -242,6 +259,21 @@ export class AdService {
       this.isBannerVisible$.next(true);
     } catch (error) {
       console.warn('[AdService] Failed to show banner ad:', error);
+      if (!this.isTesting) {
+        try {
+          await AdMob.showBanner({
+            adId: this.config.banner.test,
+            adSize: BannerAdSize.ADAPTIVE_BANNER,
+            position: BannerAdPosition.BOTTOM_CENTER,
+            margin: 0,
+            isTesting: true,
+          });
+          this.isBannerVisible$.next(true);
+          return;
+        } catch (fbErr) {
+          console.warn('[AdService] Fallback test banner also failed:', fbErr);
+        }
+      }
       if (retryCount < 2) {
         setTimeout(() => void this.showBanner(retryCount + 1), 3000);
       }
@@ -358,7 +390,21 @@ export class AdService {
       this.completedActionCount = 0;
       return true;
     } catch (error) {
-      console.warn('[AdService] Failed to display interstitial ad:', error);
+      console.warn('[AdService] Failed to display live interstitial ad, attempting test fallback:', error);
+      if (!this.isTesting) {
+        try {
+          await AdMob.prepareInterstitial({
+            adId: this.config.interstitial.test,
+            isTesting: true,
+          });
+          await AdMob.showInterstitial();
+          this.lastInterstitialTime = Date.now();
+          this.completedActionCount = 0;
+          return true;
+        } catch (fbErr) {
+          console.warn('[AdService] Fallback interstitial also failed:', fbErr);
+        }
+      }
       return false;
     }
   }

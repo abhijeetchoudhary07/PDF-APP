@@ -6,6 +6,7 @@ import { AppModalComponent } from '../ui/modal/modal.component';
 import { BeforeAfterPreviewComponent } from '../before-after-preview/before-after-preview.component';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { ShareService } from '../../../core/services/share.service';
+import { AdService } from '../../../core/services/ad.service';
 
 export interface PreviewData {
   name: string;
@@ -27,6 +28,7 @@ export interface PreviewData {
 })
 export class ResultPreviewComponent implements OnInit, OnChanges {
   private shareService = inject(ShareService);
+  private adService = inject(AdService, { optional: true });
   private cdr = inject(ChangeDetectorRef, { optional: true });
 
   @Input() beforeData?: PreviewData;
@@ -92,10 +94,12 @@ export class ResultPreviewComponent implements OnInit, OnChanges {
   }
 
   handleSave(): void {
+    void this.adService?.triggerActionInterstitial();
     this.saved.emit();
   }
 
   async handleShare(): Promise<void> {
+    void this.adService?.triggerActionInterstitial();
     const fileToShare = await this.resolveFile();
     const fileName = this.outputFilename || this.afterData?.name || fileToShare?.name || 'document';
 
