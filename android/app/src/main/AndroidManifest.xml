@@ -46,6 +46,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Google Play Advertising ID permission (Required on Android 13+ / API 33+ for AdMob) -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <!--
       Saving a finished file.
